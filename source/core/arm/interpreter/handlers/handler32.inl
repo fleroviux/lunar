@@ -326,8 +326,6 @@ void ARM_SignedHalfwordMultiply(std::uint32_t instruction) {
   std::int16_t value1;
   std::int16_t value2;
 
-  LOG_WARN("Hit SMULxy/SMLAxy instruction - implementation is experimental. @ r15 = 0x{0:08X}", state.r15);
-
   if (x) {
     value1 = std::int16_t(state.reg[op1] >> 16);
   } else {
@@ -360,8 +358,6 @@ void ARM_SignedWordHalfwordMultiply(std::uint32_t instruction) {
   int op3 = (instruction >> 12) & 0xF;
   int dst = (instruction >> 16) & 0xF;
 
-  LOG_WARN("Hit SMULWy/SMLAWy instruction - implementation is experimental. @ r15 = 0x{0:08X}", state.r15);
-
   std::int32_t value1 = std::int32_t(state.reg[op1]);
   std::int16_t value2;
   
@@ -371,7 +367,7 @@ void ARM_SignedWordHalfwordMultiply(std::uint32_t instruction) {
     value2 = std::int16_t(state.reg[op2] & 0xFFFF);
   }
   
-  state.reg[dst] = std::uint32_t((value1 * value2)/0x10000);
+  state.reg[dst] = std::uint32_t((value1 * value2) >> 16);
 
   if (accumulate) {
     /* Set sticky overflow on accumulation overflow,
@@ -389,8 +385,6 @@ void ARM_SignedHalfwordMultiplyLongAccumulate(std::uint32_t instruction) {
   int op2 = (instruction >> 8) & 0xF;
   int dst_lo = (instruction >> 12) & 0xF;
   int dst_hi = (instruction >> 16) & 0xF;
-
-  LOG_WARN("Hit SMLALxy instruction - implementation is experimental. @ r15 = 0x{0:08X}", state.r15);
 
   std::int16_t value1;
   std::int16_t value2;
