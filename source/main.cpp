@@ -51,6 +51,8 @@ struct ARM9MemoryBus final : MemoryBase {
         switch (address & 0x00FFFFFF) {
           case 0x04:
             return (vblank_flag ^= 1);
+          case 0x05:
+            return 0;
           case 0x130:
             return keyinput & 0xFF;
           case 0x131:
@@ -224,11 +226,21 @@ auto main(int argc, const char** argv) -> int {
   auto arm9 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm9_mem.get());
 
   // TODO: this is really messed up but it works for now :cringeharold:
-  rom.seekg(0x200);
-  rom.read((char*)&arm9_mem->ewram[0x4000], 0x40D0);
+  u8 data;
+  u32 dst = header->arm9.load_address;
+  rom.seekg(header->arm9.file_address);
+  /*rom.read((char*)&arm9_mem->ewram[0x4000], 0x40D0);
   if (!rom.good()) {
     puts("failed to read ARM9 binary from ROM into ARM9 memory");
     return -3;
+  }*/
+  for (u32 i = 0; i < header->arm9.size; i++) {
+    rom.read((char*)&data, 1);
+    if (!rom.good()) {
+      puts("failed to read ARM9 binary from ROM into ARM9 memory");
+      return -3;
+    }
+    arm9_mem->WriteByte(dst++, data, 0);
   }
 
   arm9->ExceptionBase(0xFFFF0000);
