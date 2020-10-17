@@ -34,7 +34,153 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
+struct Register {
+  virtual auto GetWidth() const -> uint = 0;
+  
+  virtual auto Read(uint offset) -> u8 {
+    LOG_WARN("Register: attempted to read write-only register.");
+    return 0;
+  }
+  
+  virtual void Write(uint offset, u8 value) {
+    LOG_WARN("Register: attempted to write read-only register.");
+  }
+};
+
+struct RegisterHalf : Register {
+  auto GetWidth() const -> uint override { return sizeof(u16); }
+};
+
+struct RegisterWord : Register {
+  auto GetWidth() const -> uint override { return sizeof(u32); }
+};
+
+struct RegisterSet {
+  RegisterSet(uint capacity) : capacity(capacity) {
+    views = std::make_unique<View[]>(capacity);
+  }
+
+  void Map(uint offset, Register& reg) {
+    auto width = reg.GetWidth();
+
+    for (uint i = 0; i < width; i++) {
+      ASSERT(offset < capacity, "cannot map register to out-of-bounds offset.");
+      ASSERT(views[offset].reg == nullptr ||
+             views[offset].reg == &reg, "cannot map two registers to the same location.");
+      views[offset++] = { &reg, i };
+    }
+  }
+
+  void Map(uint offset, RegisterSet const& set) {
+    for (uint i = 0; i < set.capacity; i++) {
+      if (set.views[i].reg == nullptr)
+        continue;
+      ASSERT(offset < capacity, "cannot map register to out-of-bounds offset.");
+      ASSERT(views[offset].reg == nullptr ||
+             views[offset].reg == set.views[i].reg, "cannot map two registers to the same location.");
+      views[offset++] = set.views[i];
+    }
+  }
+
+  auto Read(uint offset) -> u8 {
+    if (offset >= capacity) {
+      LOG_WARN("RegisterSet: out-of-bounds read to offset 0x{0:08X}", offset);
+      return 0;
+    }
+
+    auto const& view = views[offset];
+    if (view.reg == nullptr) {
+      LOG_WARN("RegisterSet: read to unmapped offset 0x{0:08X}", offset);
+      return 0;
+    }
+
+    return view.reg->Read(view.offset);
+  }
+
+  void Write(uint offset, u8 value) {
+    if (offset >= capacity) {
+      LOG_WARN("RegisterSet: out-of-bounds write to offset 0x{0:08X} = 0x{1:02X}",
+        offset, value);
+      return;
+    }
+
+    auto const& view = views[offset];
+    if (view.reg == nullptr) {
+      LOG_WARN("RegisterSet: write to unmapped offset 0x{0:08X} = 0x{1:02X}",
+        offset, value);
+      return;
+    }
+
+    view.reg->Write(view.offset, value);
+  }
+
+private:
+  uint capacity;
+
+  struct View {
+    Register* reg = nullptr;
+    uint offset = 0;
+  };
+
+  std::unique_ptr<View[]> views;
+};
+
+#include <string.h>
+
+struct Interconnect {
+  Interconnect() { Reset(); }
+
+  void Reset() {
+    memset(swram, 0, sizeof(swram));
+  }
+
+  struct FakeDISPSTAT : RegisterHalf {
+    int vblank_flag = 0;
+
+    auto Read(uint offset) -> u8 override {
+      if (offset == 0)
+        return (vblank_flag ^= 1);
+      return 0;
+    }
+
+    void Write(uint offset, u8 value) {}
+  } fake_dispstat = {};
+
+  struct KeyInput : RegisterHalf {
+    bool a = false;
+    bool b = false;
+    bool select = false;
+    bool start = false;
+    bool right = false;
+    bool left = false;
+    bool up = false;
+    bool down = false;
+    bool r = false;
+    bool l = false;
+
+    auto Read(uint offset) -> u8 override {
+      return (a      ? 0 :   1) |
+             (b      ? 0 :   2) |
+             (select ? 0 :   4) |
+             (start  ? 0 :   8) |
+             (right  ? 0 :  16) |
+             (left   ? 0 :  32) |
+             (up     ? 0 :  64) |
+             (down   ? 0 : 128) |
+             (r      ? 0 : 256) |
+             (l      ? 0 : 512);
+    }
+  } keyinput = {};
+
+  u8 swram[0x8000];
+};
+
 struct ARM9MemoryBus final : MemoryBase {
+  ARM9MemoryBus(Interconnect* interconnect) : interconnect(interconnect) {
+    mmio.Map(0x0004, interconnect->fake_dispstat);
+    mmio.Map(0x0130, interconnect->keyinput);
+  }
+
   auto GetMemoryModel() const -> MemoryModel override {
     return MemoryModel::ProtectionUnit;
   }
@@ -60,19 +206,7 @@ struct ARM9MemoryBus final : MemoryBase {
       case 0x02:
         return ewram[address & 0x3FFFFF];
       case 0x04:
-        switch (address & 0x00FFFFFF) {
-          case 0x04:
-            return (vblank_flag ^= 1);
-          case 0x05:
-            return 0;
-          case 0x130:
-            return keyinput & 0xFF;
-          case 0x131:
-            return keyinput >> 8;
-          default:
-            LOG_WARN("ARM9: unhandled MMIO register at 0x{0:08X}", address);
-        }
-        break;
+        return mmio.Read(address & 0x00FFFFFF);
       default:
         LOG_ERROR("ARM9: unhandled read byte from 0x{0:08X}", address);
         for (;;) ;
@@ -107,7 +241,7 @@ struct ARM9MemoryBus final : MemoryBase {
         ewram[address & 0x3FFFFF] = value;
         break;
       case 0x04:
-        LOG_WARN("ARM9: unhandled MMIO write byte 0x{0:08X} = 0x{1:02X}", address, value);
+        mmio.Write(address & 0xFFFFFF, value);
         break;
       case 0x06:
         vram[address & 0x1FFFFF] = value;
@@ -129,12 +263,12 @@ struct ARM9MemoryBus final : MemoryBase {
     WriteHalf(address + 2, value >> 16, core);
   }
 
-  u32 dtcm_base  {0};
-  u32 dtcm_limit {0};
+  u32 dtcm_base  = 0;
+  u32 dtcm_limit = 0;
   u8 dtcm[0x4000] {0};
 
-  u32 itcm_base  {0};
-  u32 itcm_limit {0};
+  u32 itcm_base  = 0;
+  u32 itcm_limit = 0;
   u8 itcm[0x8000] {0};
 
   u8 ewram[0x400000] {0};
@@ -143,7 +277,8 @@ struct ARM9MemoryBus final : MemoryBase {
   // TODO: this is completely stupid and inaccurate as hell.
   u8 vram[0x200000];
 
-  u16 keyinput = 0x3FF;
+  RegisterSet mmio {0x106E};
+  Interconnect* interconnect;
 };
 
 void loop(CPUCoreBase* arm9, ARM9MemoryBus* arm9_mem) {
@@ -186,24 +321,19 @@ void loop(CPUCoreBase* arm9, ARM9MemoryBus* arm9_mem) {
         int key = -1;
         bool pressed = event.type == SDL_KEYDOWN;
 
-        switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
-          case SDLK_a: key = 1; break;
-          case SDLK_s: key = 2; break;
-          case SDLK_BACKSPACE: key = 4; break;
-          case SDLK_RETURN: key = 8; break;
-          case SDLK_RIGHT: key = 16; break;
-          case SDLK_LEFT: key = 32; break;
-          case SDLK_UP: key = 64; break;
-          case SDLK_DOWN: key = 128; break;
-          case SDLK_d: key = 256; break;
-          case SDLK_f: key = 512; break;
-        }
+        auto& keyinput = arm9_mem->interconnect->keyinput;
 
-        if (key != -1) {
-          if (pressed) 
-            arm9_mem->keyinput &= ~key;
-          else
-            arm9_mem->keyinput |=  key;
+        switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
+          case SDLK_a: keyinput.a = pressed; break;
+          case SDLK_s: keyinput.b = pressed; break;
+          case SDLK_BACKSPACE: keyinput.select = pressed; break;
+          case SDLK_RETURN: keyinput.start = pressed; break;
+          case SDLK_RIGHT: keyinput.right = pressed; break;
+          case SDLK_LEFT: keyinput.left = pressed; break;
+          case SDLK_UP: keyinput.up = pressed; break;
+          case SDLK_DOWN: keyinput.down = pressed; break;
+          case SDLK_d: keyinput.l = pressed; break;
+          case SDLK_f: keyinput.r = pressed; break;
         }
       }
     }
@@ -241,18 +371,14 @@ auto main(int argc, const char** argv) -> int {
   printf("ARM9 load_address=0x%08X size=0x%08X file_address=0x%08X\n",
     header->arm9.load_address, header->arm9.size, header->arm9.file_address);
 
-  auto arm9_mem = std::make_unique<ARM9MemoryBus>();
+  auto interconnect = std::make_unique<Interconnect>();
+  auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
   auto arm9 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm9_mem.get());
 
   // TODO: this is really messed up but it works for now :cringeharold:
   u8 data;
   u32 dst = header->arm9.load_address;
   rom.seekg(header->arm9.file_address);
-  /*rom.read((char*)&arm9_mem->ewram[0x4000], 0x40D0);
-  if (!rom.good()) {
-    puts("failed to read ARM9 binary from ROM into ARM9 memory");
-    return -3;
-  }*/
   for (u32 i = 0; i < header->arm9.size; i++) {
     rom.read((char*)&data, 1);
     if (!rom.good()) {
