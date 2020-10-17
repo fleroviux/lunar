@@ -707,7 +707,7 @@ void ARM_BlockDataTransfer(std::uint32_t instruction) {
   if (writeback && load) {
     // LDM ARMv5: writeback if base is the only register or not the last register.
     // LDM ARMv6: writeback if base in not in the register list.  
-    writeback &= (arch == Architecture::ARMv6K) ? (last != base || list == (1 << base)) : !(list & (1 << base));
+    writeback &= (arch == Architecture::ARMv5TE) ? (last != base || list == (1 << base)) : !(list & (1 << base));
   }
 
   if (writeback) {
