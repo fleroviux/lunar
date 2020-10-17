@@ -1,7 +1,9 @@
 set(SOURCES
   arm/interpreter/cp15.cpp
   arm/interpreter/interpreter.cpp
-  arm/interpreter/tablegen/tablegen.cpp)
+  arm/interpreter/tablegen/tablegen.cpp
+  arm9/bus.cpp
+  core.cpp)
 
 set(HEADERS
   arm/interpreter/handlers/arithmetic.inl
@@ -15,7 +17,11 @@ set(HEADERS
   arm/interpreter/state.hpp
   arm/cpu_core.hpp
   arm/decoder.hpp
-  arm/memory.hpp)
+  arm/memory.hpp
+  arm9/bus.hpp
+  core.hpp
+  interconnect.hpp
+  register.hpp)
 
 add_library(core STATIC ${SOURCES} ${HEADERS})
 target_link_libraries(core common fmt)
