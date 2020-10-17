@@ -17,7 +17,8 @@ CP15::CP15(int core, MemoryBase* memory) : cpu_id(core), memory(memory) {
     handler_wr[i] = &CP15::DefaultWrite;
   }
 
-  RegisterHandler(0, 0, 5, &CP15::ReadCPUID);
+  RegisterHandler(0, 0, 0, &CP15::ReadMainID);
+  RegisterHandler(0, 0, 1, &CP15::ReadCacheType);
 }
 
 void CP15::Reset() {

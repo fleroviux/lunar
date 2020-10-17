@@ -84,9 +84,12 @@ private:
     LOG_WARN("CP15: unknown write c{0} c{1} #{2} = 0x{3:08X}", cn, cm, opcode, value);
   }
 
-  auto ReadCPUID(int cn, int cm, int opcode) -> std::uint32_t {
-    LOG_INFO("CP15: CPU id was read on core #{0}", cpu_id);
-    return cpu_id;
+  auto ReadMainID(int cn, int cm, int opcode) -> std::uint32_t {
+    return 0x41059461;
+  }
+
+  auto ReadCacheType(int cn, int cm, int opcode) -> std::uint32_t {
+    return 0x0F0D2112;
   }
 
   int cpu_id;
