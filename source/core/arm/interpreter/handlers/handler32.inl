@@ -797,30 +797,33 @@ void ARM_SaturatingAddSubtract(std::uint32_t instruction) {
   int src1 =  instruction & 0xF;
   int src2 = (instruction >> 16) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
-  
-  switch (opcode) {
-    case 0b0000: {
-      state.reg[dst] = QADD(state.reg[src1], state.reg[src2]);
-      break;
-    }
-    case 0b0010: {
-      state.reg[dst] = QSUB(state.reg[src1], state.reg[src2]);
-      break;
-    }
-    case 0b0100: {
-      state.reg[dst] = QADD(state.reg[src1], state.reg[src2] * 2);
-      break;
-    }
-    case 0b0110: {
-      state.reg[dst] = QSUB(state.reg[src1], state.reg[src2] * 2);
-      break;
-    }
-    default: {
-      ARM_Undefined(instruction);
-      return;
-    }
+  std::uint32_t op2 = state.reg[src2];
+
+  if ((opcode & 0b1001) != 0) {
+    ARM_Undefined(instruction);
+    return;
   }
-  
+
+  bool subtract = opcode & 2;
+  bool double_op2 = opcode & 4;
+
+  if (double_op2) {
+    std::uint32_t result = op2 + op2;
+    
+    if ((op2 ^ result) >> 31) {
+      state.cpsr.f.q = 1;
+      result = 0x80000000 - (result >> 31);
+    }
+
+    op2 = result;
+  }
+
+  if (subtract) {
+    state.reg[dst] = QSUB(state.reg[src1], op2);  
+  } else {
+    state.reg[dst] = QADD(state.reg[src1], op2);
+  }
+
   state.r15 += 4;
 }
 

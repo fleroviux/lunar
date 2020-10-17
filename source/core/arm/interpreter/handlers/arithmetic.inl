@@ -77,11 +77,17 @@ std::uint32_t QADD(std::uint32_t op1, std::uint32_t op2, bool saturate = true) {
 }
 
 std::uint32_t QSUB(std::uint32_t op1, std::uint32_t op2) {
-  return QADD(op1, ~(op2 - 1), true);
+  std::uint32_t result = op1 - op2;
+
+  if (((op1 ^ op2) & (op1 ^ result)) >> 31) {
+    state.cpsr.f.q = 1;
+    return 0x80000000 - (result >> 31);
+  }
+
+  return result;
 }
 
 void DoShift(int opcode, std::uint32_t& operand, std::uint32_t amount, int& carry, bool immediate) {
-  /* TODO: how does ARMv6K/ARM11 MPCore handle shift amounts > 255? */
   amount &= 0xFF;
 
   switch (opcode) {
