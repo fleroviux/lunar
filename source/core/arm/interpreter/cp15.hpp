@@ -84,15 +84,20 @@ private:
     LOG_WARN("CP15: unknown write c{0} c{1} #{2} = 0x{3:08X}", cn, cm, opcode, value);
   }
 
-  auto ReadMainID(int cn, int cm, int opcode) -> std::uint32_t {
-    return 0x41059461;
-  }
-
-  auto ReadCacheType(int cn, int cm, int opcode) -> std::uint32_t {
-    return 0x0F0D2112;
-  }
+  auto ReadMainID(int cn, int cm, int opcode) -> std::uint32_t;
+  auto ReadCacheType(int cn, int cm, int opcode) -> std::uint32_t;
+  auto ReadDTCMConfig(int cn, int cm, int opcode) -> std::uint32_t;
+  auto ReadITCMConfig(int cn, int cm, int opcode) -> std::uint32_t;
+  void WriteDTCMConfig(int cn, int cm, int opcode, std::uint32_t value);
+  void WriteITCMConfig(int cn, int cm, int opcode, std::uint32_t value);
 
   int cpu_id;
+
+  struct TCMConfig {
+    std::uint32_t value;
+    std::uint32_t base;
+    std::uint32_t limit;
+  } dtcm, itcm;
 
   /** The memory implementation of this CPU core.
     * CP15 forwards information about memory configuration to the

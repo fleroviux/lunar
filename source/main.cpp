@@ -39,10 +39,22 @@ struct ARM9MemoryBus final : MemoryBase {
     return MemoryModel::ProtectionUnit;
   }
 
+  void SetDTCM(std::uint32_t base, std::uint32_t limit) override {
+    dtcm_base = base;
+    dtcm_limit = limit;
+  }
+  
+  void SetITCM(std::uint32_t base, std::uint32_t limit) override {
+    itcm_base = base;
+    itcm_limit = limit;
+  }
+
   auto ReadByte(u32 address, Bus bus, int core) -> u8 override {
-    // TODO: this likely isn't the most efficient solution.
+    if (address >= itcm_base && address <= itcm_limit)
+      return itcm[(address - itcm_base) & 0x7FFF];
+
     if (bus == Bus::Data && address >= dtcm_base && address <= dtcm_limit)
-      return dtcm[address - dtcm_base];
+      return dtcm[(address - dtcm_base) & 0x3FFF];
 
     switch (address >> 24) {
       case 0x02:
@@ -80,9 +92,13 @@ struct ARM9MemoryBus final : MemoryBase {
   }
   
   void WriteByte(u32 address, u8 value, int core) override {
-    // TODO: this likely isn't the most efficient solution.
+    if (address >= itcm_base && address <= itcm_limit) {
+      itcm[(address - itcm_base) & 0x7FFF] = value;
+      return;
+    }
+
     if (address >= dtcm_base && address <= dtcm_limit) {
-      dtcm[address - dtcm_base] = value;
+      dtcm[(address - dtcm_base) & 0x3FFF] = value;
       return;
     }
 
@@ -113,10 +129,13 @@ struct ARM9MemoryBus final : MemoryBase {
     WriteHalf(address + 2, value >> 16, core);
   }
 
-  // TODO: retrive this information from the CP15 coprocessor.
-  u32 dtcm_base  = 0x00800000;
-  u32 dtcm_limit = 0x00803FFF;
+  u32 dtcm_base  {0};
+  u32 dtcm_limit {0};
   u8 dtcm[0x4000] {0};
+
+  u32 itcm_base  {0};
+  u32 itcm_limit {0};
+  u8 itcm[0x8000] {0};
 
   u8 ewram[0x400000] {0};
   u8 vblank_flag = 0;

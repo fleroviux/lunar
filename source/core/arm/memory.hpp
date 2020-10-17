@@ -43,6 +43,10 @@ public:
 
   virtual auto GetMemoryModel() const -> MemoryModel = 0;
 
+  virtual void SetDTCM(std::uint32_t base, std::uint32_t limit) = 0;
+
+  virtual void SetITCM(std::uint32_t base, std::uint32_t limit) = 0;
+
   virtual auto ReadByte(std::uint32_t address,
                         Bus bus,
                         int core) -> std::uint8_t  = 0;
