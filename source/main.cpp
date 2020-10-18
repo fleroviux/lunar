@@ -8,6 +8,7 @@
 #include <core/arm/cpu_core.hpp>
 #include <core/arm/interpreter/interpreter.hpp>
 #include <core/interconnect.hpp>
+#include <core/arm7/bus.hpp>
 #include <core/arm9/bus.hpp>
 
 #include <SDL2/SDL.h>
@@ -37,7 +38,7 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
-void loop(CPUCoreBase* arm9, ARM9MemoryBus* arm9_mem) {
+void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* vram) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
@@ -63,9 +64,12 @@ void loop(CPUCoreBase* arm9, ARM9MemoryBus* arm9_mem) {
   SDL_Event event;
 
   for (;;) {
-    arm9->Run(1024 * 1024);
+    for (int i = 0; i < 1024 * 512; i++) {
+      //arm7->Run(1);
+      arm9->Run(2);
+    }
 
-    SDL_UpdateTexture(tex_top, nullptr, arm9_mem->vram, sizeof(u16) * 256);
+    SDL_UpdateTexture(tex_top, nullptr, vram, sizeof(u16) * 256);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, tex_top, nullptr, &dest_top);
     SDL_RenderPresent(renderer);
@@ -77,7 +81,7 @@ void loop(CPUCoreBase* arm9, ARM9MemoryBus* arm9_mem) {
         int key = -1;
         bool pressed = event.type == SDL_KEYDOWN;
 
-        auto& keyinput = arm9_mem->interconnect->keyinput;
+        auto& keyinput = interconnect->keyinput;
 
         switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
           case SDLK_a: keyinput.a = pressed; break;
@@ -128,25 +132,47 @@ auto main(int argc, const char** argv) -> int {
     header->arm9.load_address, header->arm9.size, header->arm9.file_address);
 
   auto interconnect = std::make_unique<Interconnect>();
+  auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
   auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
+  auto arm7 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm7_mem.get());
   auto arm9 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm9_mem.get());
   
-  u8 data;
-  u32 dst = header->arm9.load_address;
-  rom.seekg(header->arm9.file_address);
-  for (u32 i = 0; i < header->arm9.size; i++) {
-    rom.read((char*)&data, 1);
-    if (!rom.good()) {
-      puts("failed to read ARM9 binary from ROM into ARM9 memory");
-      return -3;
+  {
+    u8 data;
+    u32 dst = header->arm7.load_address;
+    rom.seekg(header->arm7.file_address);
+    for (u32 i = 0; i < header->arm7.size; i++) {
+      rom.read((char*)&data, 1);
+      if (!rom.good()) {
+        puts("failed to read ARM7 binary from ROM into ARM7 memory");
+        return -3;
+      }
+      arm7_mem->WriteByte(dst++, data, 0);
     }
-    arm9_mem->WriteByte(dst++, data, 0);
+
+    arm7->ExceptionBase(0);
+    arm7->Reset();
+    arm7->SetPC(header->arm7.entrypoint);
   }
 
-  arm9->ExceptionBase(0xFFFF0000);
-  arm9->Reset();
-  arm9->SetPC(header->arm9.entrypoint);
+  {
+    u8 data;
+    u32 dst = header->arm9.load_address;
+    rom.seekg(header->arm9.file_address);
+    for (u32 i = 0; i < header->arm9.size; i++) {
+      rom.read((char*)&data, 1);
+      if (!rom.good()) {
+        puts("failed to read ARM9 binary from ROM into ARM9 memory");
+        return -3;
+      }
+      arm9_mem->WriteByte(dst++, data, 0);
+    }
 
-  loop(arm9.get(), arm9_mem.get());
+    arm9->ExceptionBase(0xFFFF0000);
+    arm9->Reset();
+    arm9->SetPC(header->arm9.entrypoint);
+  }
+
+  loop(arm7.get(), arm9.get(), interconnect.get(), arm9_mem->vram);
   return 0;
 } 

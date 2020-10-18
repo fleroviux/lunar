@@ -13,20 +13,6 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : interconnect(intercon
   mmio.Map(0x0130, interconnect->keyinput);
 }
 
-auto ARM9MemoryBus::GetMemoryModel() const -> MemoryModel {
-  return MemoryModel::ProtectionUnit;
-}
-
-void ARM9MemoryBus::SetDTCM(u32 base, u32 limit) {
-  dtcm_base = base;
-  dtcm_limit = limit;
-}
- 
-void ARM9MemoryBus::SetITCM(u32 base, u32 limit) {
-  itcm_base = base;
-  itcm_limit = limit;
-}
-
 auto ARM9MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
   if (address >= itcm_base && address <= itcm_limit)
     return itcm[(address - itcm_base) & 0x7FFF];

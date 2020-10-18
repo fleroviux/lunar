@@ -2,6 +2,7 @@ set(SOURCES
   arm/interpreter/cp15.cpp
   arm/interpreter/interpreter.cpp
   arm/interpreter/tablegen/tablegen.cpp
+  arm7/bus.cpp
   arm9/bus.cpp
   core.cpp)
 
@@ -18,6 +19,7 @@ set(HEADERS
   arm/cpu_core.hpp
   arm/decoder.hpp
   arm/memory.hpp
+  arm7/bus.cpp
   arm9/bus.hpp
   core.hpp
   interconnect.hpp
