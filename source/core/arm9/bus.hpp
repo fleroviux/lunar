@@ -39,6 +39,12 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   u8 vram[0x200000];
 
 private:
+  template<typename T>
+  auto Read(u32 address, Bus bus, int core) -> T;
+
+  template<typename T>
+  void Write(u32 address, T value, int core);
+
   u32 dtcm_base  = 0;
   u32 dtcm_limit = 0;
   u8 dtcm[0x4000] {0};
