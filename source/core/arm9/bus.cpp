@@ -2,6 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#include <common/bit.hpp>
 #include <common/log.hpp>
 #include <type_traits>
 
@@ -16,6 +17,8 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : swram(interconnect->s
 
 template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
+  auto bitcount =  bit::number_of_bits<T>();
+
   // TODO: fix this god-damn-fucking-awful formatting.
   static_assert(
     std::is_same<T, u32>::value ||
@@ -47,15 +50,14 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
                (mmio.Read(address | 3) << 24);
       }
       if constexpr (std::is_same<T, u16>::value) {
-        return (mmio.Read(address | 0) <<  0) |
-               (mmio.Read(address | 1) <<  8);
+        return (mmio.Read(address | 0) << 0) |
+               (mmio.Read(address | 1) << 8);
       }
       if constexpr (std::is_same<T, u8>::value) {
         return mmio.Read(address);
       }
     default:
-      // FIXME: specialize the error log based on the template type.
-      LOG_ERROR("ARM9: unhandled read from 0x{0:08X}", address);
+      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
       for (;;) ;
   }
 
@@ -65,6 +67,8 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
 
 template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value, int core) {
+  auto bitcount = bit::number_of_bits<T>();
+
   // TODO: fix this god-damn-fucking-awful formatting.
   static_assert(
     std::is_same<T, u32>::value ||
@@ -112,8 +116,7 @@ void ARM9MemoryBus::Write(u32 address, T value, int core) {
       *reinterpret_cast<T*>(&vram[address & 0x1FFFFF]) = value;
       break;
     default:
-      // FIXME: specialize the error log based on the template type.
-      LOG_ERROR("ARM9: unhandled write byte 0x{0:08X} = 0x{1:02X}", address, value);
+      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
       for (;;) ;
   }
 }
