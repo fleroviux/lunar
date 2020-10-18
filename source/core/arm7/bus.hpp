@@ -26,7 +26,9 @@ struct ARM7MemoryBus final : arm::MemoryBase {
   void WriteWord(u32 address, u32 value, int core) override;
 
 private:
-  Interconnect* interconnect;
+  // TODO: merge IWRAM with SWRAM?
+  u8 iwram[0x10000];
+  Interconnect::SWRAM::Alloc const& swram;
 };
 
 } // namespace fauxDS::core

@@ -11,12 +11,58 @@
 namespace fauxDS::core {
 
 struct Interconnect {
-  Interconnect() { Reset(); }
+  Interconnect() : wramcnt(swram) { Reset(); }
 
   void Reset() {
-    memset(swram, 0, sizeof(swram));
+    memset(swram.data, 0, sizeof(swram));
+    // For direct boot only - map all of SWRAM to the ARM7.
+    wramcnt.Write(0, 3);
   }
 
+  struct SWRAM {
+    u8 data[0x8000];
+
+    struct Alloc {
+      u8* data = nullptr;
+      u32 mask = 0;
+    } arm9 = {}, arm7 = {};
+  } swram;
+
+  struct WRAMCNT : RegisterByte {
+    WRAMCNT(SWRAM& swram) : swram(swram) {}
+
+    auto Read(uint offset) -> u8 override {
+      return value;
+    }
+
+    void Write(uint offset, u8 value) override {
+      this->value = value & 3;
+      switch (this->value) {
+        case 0:
+          swram.arm9 = { swram.data, 0x7FFF };
+          swram.arm7 = { nullptr, 0 };
+          break;
+        case 1:
+          swram.arm9 = { &swram.data[0x4000], 0x3FFF };
+          swram.arm7 = { &swram.data[0x0000], 0x3FFF };
+          break;
+        case 2:
+          swram.arm9 = { &swram.data[0x0000], 0x3FFF };
+          swram.arm7 = { &swram.data[0x4000], 0x3FFF };
+          break;
+        case 3:
+          swram.arm9 = { nullptr, 0 };
+          swram.arm7 = { swram.data, 0x7FFF };
+          break;
+      }
+    }
+
+  private:
+    int value = 0;
+    SWRAM& swram;
+  } wramcnt;
+
+  // TODO: this needs to be heavily refactored...
   struct FakeDISPSTAT : RegisterHalf {
     int vblank_flag = 0;
 
@@ -54,8 +100,6 @@ struct Interconnect {
              (l      ? 0 : 512);
     }
   } keyinput = {};
-
-  u8 swram[0x8000];
 };
 
 } // namespace fauxDS::core

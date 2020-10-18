@@ -8,7 +8,7 @@
 
 namespace fauxDS::core {
 
-ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : interconnect(interconnect) {
+ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : swram(interconnect->swram.arm9) {
   mmio.Map(0x0004, interconnect->fake_dispstat);
   mmio.Map(0x0130, interconnect->keyinput);
 }
@@ -21,8 +21,15 @@ auto ARM9MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
     return dtcm[(address - dtcm_base) & 0x3FFF];
 
   switch (address >> 24) {
+    // TODO: EWRAM actually is shared between the ARM9 and ARM7 core.
     case 0x02:
       return ewram[address & 0x3FFFFF];
+    case 0x03:
+      if (swram.data == nullptr) {
+        LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
+        return 0;
+      }
+      return swram.data[address & swram.mask];
     case 0x04:
       return mmio.Read(address & 0x00FFFFFF);
     default:
@@ -57,6 +64,13 @@ void ARM9MemoryBus::WriteByte(u32 address, u8 value, int core) {
   switch (address >> 24) {
     case 0x02:
       ewram[address & 0x3FFFFF] = value;
+      break;
+    case 0x03:
+      if (swram.data == nullptr) {
+        LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
+        return;
+      }
+      swram.data[address & swram.mask] = value;
       break;
     case 0x04:
       mmio.Write(address & 0xFFFFFF, value);

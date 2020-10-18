@@ -65,7 +65,7 @@ void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* 
 
   for (;;) {
     for (int i = 0; i < 1024 * 512; i++) {
-      //arm7->Run(1);
+      arm7->Run(1);
       arm9->Run(2);
     }
 
@@ -130,6 +130,9 @@ auto main(int argc, const char** argv) -> int {
 
   printf("ARM9 load_address=0x%08X size=0x%08X file_address=0x%08X\n",
     header->arm9.load_address, header->arm9.size, header->arm9.file_address);
+
+  printf("ARM7 load_address=0x%08X size=0x%08X file_address=0x%08X\n",
+    header->arm7.load_address, header->arm7.size, header->arm7.file_address);
 
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());

@@ -35,7 +35,10 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   void WriteHalf(u32 address, u16 value, int core) override;
   void WriteWord(u32 address, u32 value, int core) override;
 
-//private:
+  // TODO: this is completely stupid and inaccurate as hell.
+  u8 vram[0x200000];
+
+private:
   u32 dtcm_base  = 0;
   u32 dtcm_limit = 0;
   u8 dtcm[0x4000] {0};
@@ -47,11 +50,8 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   u8 ewram[0x400000] {0};
   u8 vblank_flag = 0;
 
-  // TODO: this is completely stupid and inaccurate as hell.
-  u8 vram[0x200000];
-
   RegisterSet mmio {0x106E};
-  Interconnect* interconnect;
+  Interconnect::SWRAM::Alloc const& swram;
 };
 
 } // namespace fauxDS::core

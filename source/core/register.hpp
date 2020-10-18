@@ -22,6 +22,10 @@ struct Register {
   }
 };
 
+struct RegisterByte : Register {
+  auto GetWidth() const -> uint final { return sizeof(u8); }
+};
+
 struct RegisterHalf : Register {
   auto GetWidth() const -> uint final { return sizeof(u16); }
 };
@@ -31,18 +35,24 @@ struct RegisterWord : Register {
 };
 
 struct RegisterSet {
+  enum MapFlags : uint {
+    Readable = 1,
+    Writable = 2,
+    All = Readable | Writable
+  };
+
   RegisterSet(uint capacity) : capacity(capacity) {
     views = std::make_unique<View[]>(capacity);
   }
 
-  void Map(uint offset, Register& reg) {
+  void Map(uint offset, Register& reg, MapFlags flags = MapFlags::All) {
     auto width = reg.GetWidth();
 
     for (uint i = 0; i < width; i++) {
       ASSERT(offset < capacity, "cannot map register to out-of-bounds offset.");
       ASSERT(views[offset].reg == nullptr ||
              views[offset].reg == &reg, "cannot map two registers to the same location.");
-      views[offset++] = { &reg, i };
+      views[offset++] = { &reg, i, flags };
     }
   }
 
@@ -69,6 +79,11 @@ struct RegisterSet {
       return 0;
     }
 
+    if (~view.flags & MapFlags::Readable) {
+      LOG_WARN("RegisterSet: read to unreadable offset 0x{0:08X}", offset);
+      return 0;
+    }
+
     return view.reg->Read(view.offset);
   }
 
@@ -86,6 +101,12 @@ struct RegisterSet {
       return;
     }
 
+    if (~view.flags & MapFlags::Writable) {
+      LOG_WARN("RegisterSet: write to unwritable offset 0x{0:08X} = 0x{1:02X}",
+        offset, value);
+      return; 
+    }
+
     view.reg->Write(view.offset, value);
   }
 
@@ -95,6 +116,7 @@ private:
   struct View {
     Register* reg = nullptr;
     uint offset = 0;
+    MapFlags flags = MapFlags::All;
   };
 
   std::unique_ptr<View[]> views;
