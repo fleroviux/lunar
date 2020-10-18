@@ -16,12 +16,8 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) : swram(interconnect->s
 auto ARM7MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
   switch (address >> 24) {
     case 0x03:
-      if (address & 0x00800000) {
+      if ((address & 0x00800000) || swram.data == nullptr) {
         return iwram[address & 0xFFFFF];
-      }
-      if (swram.data == nullptr) {
-        LOG_ERROR("ARM7: attempted to read from SWRAM but it isn't mapped.");
-        return 0;
       }
       return swram.data[address & swram.mask];
     default:
@@ -44,13 +40,9 @@ auto ARM7MemoryBus::ReadWord(u32 address, Bus bus, int core) -> u32 {
 void ARM7MemoryBus::WriteByte(u32 address, u8 value, int core) {
   switch (address >> 24) {
     case 0x03:
-      if (address & 0x00800000) {
+      if ((address & 0x00800000) || swram.data == nullptr) {
         iwram[address & 0xFFFFF] = value;
         break;
-      }
-      if (swram.data == nullptr) {
-        LOG_ERROR("ARM7: attempted to read from SWRAM but it isn't mapped.");
-        return;
       }
       swram.data[address & swram.mask] = value;
       break;
