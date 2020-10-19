@@ -17,7 +17,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : swram(interconnect->s
 
 template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
-  auto bitcount =  bit::number_of_bits<T>();
+  auto bitcount = bit::number_of_bits<T>();
 
   // TODO: fix this god-damn-fucking-awful formatting.
   static_assert(
@@ -57,8 +57,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
         return mmio.Read(address);
       }
     default:
-      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
-      for (;;) ;
+      ASSERT(false, "ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
 
   return 0;
@@ -116,8 +115,7 @@ void ARM9MemoryBus::Write(u32 address, T value, int core) {
       *reinterpret_cast<T*>(&vram[address & 0x1FFFFF]) = value;
       break;
     default:
-      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
-      for (;;) ;
+      ASSERT(false, "ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
   }
 }
 
