@@ -10,7 +10,8 @@
 
 namespace fauxDS::core {
 
-ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect) : swram(interconnect->swram.arm9) {
+ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
+    : ewram(interconnect->ewram), swram(interconnect->swram.arm9) {
   mmio.Map(0x0004, interconnect->fake_dispstat);
   mmio.Map(0x0130, interconnect->keyinput);
 }

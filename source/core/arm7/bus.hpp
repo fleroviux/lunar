@@ -32,6 +32,8 @@ private:
   template<typename T>
   void Write(u32 address, T value, int core);
 
+  u8* ewram;
+
   // TODO: merge IWRAM with SWRAM?
   u8 iwram[0x10000];
   Interconnect::SWRAM::Alloc const& swram;

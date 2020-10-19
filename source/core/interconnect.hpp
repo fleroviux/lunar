@@ -14,10 +14,13 @@ struct Interconnect {
   Interconnect() : wramcnt(swram) { Reset(); }
 
   void Reset() {
+    memset(ewram, 0, sizeof(ewram));
     memset(swram.data, 0, sizeof(swram));
     // For direct boot only - map all of SWRAM to the ARM7.
     wramcnt.Write(0, 3);
   }
+
+  u8 ewram[0x400000];
 
   struct SWRAM {
     u8 data[0x8000];

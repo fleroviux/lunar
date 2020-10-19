@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 #include <core/arm/memory.hpp>
 #include <core/interconnect.hpp>
+#include <cstddef>
 
 namespace fauxDS::core {
 
@@ -53,8 +54,7 @@ private:
   u32 itcm_limit = 0;
   u8 itcm[0x8000] {0};
 
-  u8 ewram[0x400000] {0};
-  u8 vblank_flag = 0;
+  u8* ewram;
 
   RegisterSet mmio {0x106E};
   Interconnect::SWRAM::Alloc const& swram;

@@ -10,7 +10,8 @@
 
 namespace fauxDS::core {
 
-ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) : swram(interconnect->swram.arm7) {
+ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) 
+    : ewram(interconnect->ewram), swram(interconnect->swram.arm7) {
   memset(iwram, 0, sizeof(iwram));
 }
 
@@ -19,6 +20,8 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
   switch (address >> 24) {
+    case 0x02:
+      return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
     case 0x03:
       if ((address & 0x00800000) || swram.data == nullptr) {
         return *reinterpret_cast<T*>(&iwram[address & 0xFFFFF]);
@@ -35,6 +38,9 @@ template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value, int core) {
   auto bitcount = bit::number_of_bits<T>();
   switch (address >> 24) {
+    case 0x02:
+      *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
+      break;
     case 0x03:
       if ((address & 0x00800000) || swram.data == nullptr) {
         *reinterpret_cast<T*>(&iwram[address & 0xFFFFF]) = value;
