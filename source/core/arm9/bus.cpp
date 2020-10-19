@@ -33,7 +33,6 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
     return *reinterpret_cast<T*>(&dtcm[(address - dtcm_base) & 0x3FFF]);
 
   switch (address >> 24) {
-    // TODO: EWRAM actually is shared between the ARM9 and ARM7 core.
     case 0x02:
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
     case 0x03:
