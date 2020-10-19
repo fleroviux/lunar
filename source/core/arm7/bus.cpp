@@ -24,7 +24,7 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
     case 0x03:
       if ((address & 0x00800000) || swram.data == nullptr) {
-        return *reinterpret_cast<T*>(&iwram[address & 0xFFFFF]);
+        return *reinterpret_cast<T*>(&iwram[address & 0xFFFF]);
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
     default:
