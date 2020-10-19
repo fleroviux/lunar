@@ -26,6 +26,12 @@ struct ARM7MemoryBus final : arm::MemoryBase {
   void WriteWord(u32 address, u32 value, int core) override;
 
 private:
+  template<typename T>
+  auto Read(u32 address, Bus bus, int core) -> T;
+
+  template<typename T>
+  void Write(u32 address, T value, int core);
+
   // TODO: merge IWRAM with SWRAM?
   u8 iwram[0x10000];
   Interconnect::SWRAM::Alloc const& swram;

@@ -2,6 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#include <common/bit.hpp>
 #include <common/log.hpp>
 #include <string.h>
 
@@ -13,52 +14,61 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) : swram(interconnect->s
   memset(iwram, 0, sizeof(iwram));
 }
 
-auto ARM7MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
+template<typename T>
+auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
+  auto bitcount = bit::number_of_bits<T>();
+
   switch (address >> 24) {
     case 0x03:
       if ((address & 0x00800000) || swram.data == nullptr) {
-        return iwram[address & 0xFFFFF];
+        return *reinterpret_cast<T*>(&iwram[address & 0xFFFFF]);
       }
-      return swram.data[address & swram.mask];
+      return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
     default:
-      LOG_ERROR("ARM7: unhandled read byte from 0x{0:08X}", address);
+      ASSERT(false, "ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
 
   return 0;
 }
-  
-auto ARM7MemoryBus::ReadHalf(u32 address, Bus bus, int core) -> u16 {
-  return ReadByte(address + 0, bus, core) | 
-        (ReadByte(address + 1, bus, core) << 8);
-}
-  
-auto ARM7MemoryBus::ReadWord(u32 address, Bus bus, int core) -> u32 {
-  return ReadHalf(address + 0, bus, core) | 
-        (ReadHalf(address + 2, bus, core) << 16);
-}
-  
-void ARM7MemoryBus::WriteByte(u32 address, u8 value, int core) {
+
+template<typename T>
+void ARM7MemoryBus::Write(u32 address, T value, int core) {
+  auto bitcount = bit::number_of_bits<T>();
   switch (address >> 24) {
     case 0x03:
       if ((address & 0x00800000) || swram.data == nullptr) {
-        iwram[address & 0xFFFFF] = value;
+        *reinterpret_cast<T*>(&iwram[address & 0xFFFFF]) = value;
         break;
       }
-      swram.data[address & swram.mask] = value;
+      *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
     default:
-      LOG_ERROR("ARM7: unhandled write byte 0x{0:08X} = 0x{1:02X}", address, value);
+      ASSERT(false, "ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
   }
+}
+
+auto ARM7MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
+  return Read<u8>(address, bus, core);
+}
+  
+auto ARM7MemoryBus::ReadHalf(u32 address, Bus bus, int core) -> u16 {
+  return Read<u16>(address, bus, core);
+}
+  
+auto ARM7MemoryBus::ReadWord(u32 address, Bus bus, int core) -> u32 {
+  return Read<u32>(address, bus, core);
+}
+  
+void ARM7MemoryBus::WriteByte(u32 address, u8 value, int core) {
+  Write<u8>(address, value, core);
 }
   
 void ARM7MemoryBus::WriteHalf(u32 address, u16 value, int core) {
-  WriteByte(address + 0, value & 0xFF, core);
-  WriteByte(address + 1, value >> 8, core);
+  Write<u16>(address, value, core);
 }
 
 void ARM7MemoryBus::WriteWord(u32 address, u32 value, int core) {
-  WriteHalf(address + 0, value & 0xFFFF, core);
-  WriteHalf(address + 2, value >> 16, core);
+  Write<u32>(address, value, core);
 }
 
 } // namespace fauxDS::core
