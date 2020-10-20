@@ -63,7 +63,6 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
   return 0;
 }
 
-
 template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value, int core) {
   auto bitcount = bit::number_of_bits<T>();

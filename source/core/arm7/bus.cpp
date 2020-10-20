@@ -37,6 +37,7 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
 template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value, int core) {
   auto bitcount = bit::number_of_bits<T>();
+  
   switch (address >> 24) {
     case 0x02:
       *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
