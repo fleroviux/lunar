@@ -24,7 +24,6 @@ auto trim_filepath(const char* file) -> std::string {
 
 void append(Level level,
             const char* file,
-            const char* function,
             int line,
             std::string const& message) {
   std::string prefix;
@@ -50,7 +49,7 @@ void append(Level level,
       break;
   }
 
-  fmt::print("{0} {1}:{2} [{3}]: {4}\e[39m\n", prefix, trim_filepath(file), line, function, message);
+  fmt::print("{0} {1}:{2}: {3}\e[39m\n", prefix, trim_filepath(file), line, message);
 }
 
 } // namespace common::logger
