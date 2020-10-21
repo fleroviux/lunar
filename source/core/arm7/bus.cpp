@@ -19,6 +19,12 @@ template<typename T>
 auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
+  // TODO: fix this god-damn-fucking-awful formatting.
+  static_assert(
+    std::is_same<T, u32>::value ||
+    std::is_same<T, u16>::value ||
+    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+
   switch (address >> 24) {
     case 0x02:
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
@@ -38,6 +44,12 @@ template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value, int core) {
   auto bitcount = bit::number_of_bits<T>();
   
+  // TODO: fix this god-damn-fucking-awful formatting.
+  static_assert(
+    std::is_same<T, u32>::value ||
+    std::is_same<T, u16>::value ||
+    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+
   switch (address >> 24) {
     case 0x02:
       *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
