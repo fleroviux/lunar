@@ -42,20 +42,16 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
     case 0x04:
-      address &= 0x00FFFFFF;
       if constexpr (std::is_same<T, u32>::value) {
-        return (mmio.Read(address | 0) <<  0) |
-               (mmio.Read(address | 1) <<  8) |
-               (mmio.Read(address | 2) << 16) |
-               (mmio.Read(address | 3) << 24);
+        return ReadWordIO(address);
       }
       if constexpr (std::is_same<T, u16>::value) {
-        return (mmio.Read(address | 0) << 0) |
-               (mmio.Read(address | 1) << 8);
+        return ReadHalfIO(address);
       }
       if constexpr (std::is_same<T, u8>::value) {
-        return mmio.Read(address);
+        return ReadByteIO(address);
       }
+      return 0;
     default:
       ASSERT(false, "ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
@@ -95,19 +91,14 @@ void ARM9MemoryBus::Write(u32 address, T value, int core) {
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
     case 0x04:
-      address &= 0x00FFFFFF;
       if constexpr (std::is_same<T, u32>::value) {
-        mmio.Write(address | 0, (value >>  0) & 0xFF);
-        mmio.Write(address | 1, (value >>  8) & 0xFF);
-        mmio.Write(address | 2, (value >> 16) & 0xFF);
-        mmio.Write(address | 3, (value >> 24) & 0xFF);
+        WriteWordIO(address, value);
       }
       if constexpr (std::is_same<T, u16>::value) {
-        mmio.Write(address | 0, value & 0xFF);
-        mmio.Write(address | 1, value >> 8);
+        WriteHalfIO(address, value);
       }
       if constexpr (std::is_same<T, u8>::value) {
-        mmio.Write(address, value & 0xFF);
+        WriteByteIO(address, value);
       }
       break;
     case 0x06:

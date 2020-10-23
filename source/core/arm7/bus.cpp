@@ -33,6 +33,17 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus, int core) -> T {
         return *reinterpret_cast<T*>(&iwram[address & 0xFFFF]);
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
+    case 0x04:
+      if constexpr (std::is_same<T, u32>::value) {
+        return ReadWordIO(address);
+      }
+      if constexpr (std::is_same<T, u16>::value) {
+        return ReadHalfIO(address);
+      }
+      if constexpr (std::is_same<T, u8>::value) {
+        return ReadByteIO(address);
+      }
+      return 0;
     default:
       ASSERT(false, "ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
@@ -60,6 +71,17 @@ void ARM7MemoryBus::Write(u32 address, T value, int core) {
         break;
       }
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
+      break;
+    case 0x04:
+      if constexpr (std::is_same<T, u32>::value) {
+        WriteWordIO(address, value);
+      }
+      if constexpr (std::is_same<T, u16>::value) {
+        WriteHalfIO(address, value);
+      }
+      if constexpr (std::is_same<T, u8>::value) {
+        WriteByteIO(address, value);
+      }
       break;
     default:
       ASSERT(false, "ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
