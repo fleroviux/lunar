@@ -46,6 +46,14 @@ private:
   template<typename T>
   void Write(u32 address, T value, int core);
 
+  auto ReadByteIO(u32 address) ->  u8;
+  auto ReadHalfIO(u32 address) -> u16;
+  auto ReadWordIO(u32 address) -> u32;
+  
+  void WriteByteIO(u32 address,  u8 value);
+  void WriteHalfIO(u32 address, u16 value);
+  void WriteWordIO(u32 address, u32 value);
+
   u32 dtcm_base  = 0;
   u32 dtcm_limit = 0;
   u8 dtcm[0x4000] {0};

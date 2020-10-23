@@ -106,16 +106,9 @@ cleanup:
   SDL_DestroyWindow(window);
 } 
 
-#include <core/register_new.hpp>
-void test() {
-
-}
-
 auto main(int argc, const char** argv) -> int {
   const char* rom_path;
-
-  test();
-
+  
   if (argc <= 1) {
     rom_path = "armwrestler.nds";
   } else {
