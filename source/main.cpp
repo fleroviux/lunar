@@ -81,7 +81,7 @@ void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* 
         int key = -1;
         bool pressed = event.type == SDL_KEYDOWN;
 
-        auto& keyinput = interconnect->keyinput;
+        /*auto& keyinput = interconnect->keyinput;
 
         switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
           case SDLK_a: keyinput.a = pressed; break;
@@ -94,7 +94,7 @@ void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* 
           case SDLK_DOWN: keyinput.down = pressed; break;
           case SDLK_d: keyinput.l = pressed; break;
           case SDLK_f: keyinput.r = pressed; break;
-        }
+        }*/
       }
     }
   }
@@ -108,7 +108,7 @@ cleanup:
 
 auto main(int argc, const char** argv) -> int {
   const char* rom_path;
-  
+
   if (argc <= 1) {
     rom_path = "armwrestler.nds";
   } else {

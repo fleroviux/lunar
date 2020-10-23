@@ -49,7 +49,7 @@ private:
   auto ReadByteIO(u32 address) ->  u8;
   auto ReadHalfIO(u32 address) -> u16;
   auto ReadWordIO(u32 address) -> u32;
-  
+
   void WriteByteIO(u32 address,  u8 value);
   void WriteHalfIO(u32 address, u16 value);
   void WriteWordIO(u32 address, u32 value);
@@ -64,7 +64,6 @@ private:
 
   u8* ewram;
 
-  RegisterSet mmio {0x106E};
   Interconnect::SWRAM::Alloc const& swram;
 };
 
