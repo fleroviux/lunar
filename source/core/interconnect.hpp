@@ -5,16 +5,20 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
+
+#include "scheduler.hpp"
 
 namespace fauxDS::core {
 
 struct Interconnect {
-  Interconnect() /*: wramcnt(swram)*/ { Reset(); }
+  Interconnect() : video_unit(&scheduler) { Reset(); }
 
   void Reset() {
     memset(ewram, 0, sizeof(ewram));
     memset(swram.data, 0, sizeof(swram));
+    video_unit.Reset();
     // For direct boot only - map all of SWRAM to the ARM7.
     //wramcnt.Write(0, 3);
   }
@@ -29,6 +33,9 @@ struct Interconnect {
       u32 mask = 0;
     } arm9 = {}, arm7 = {};
   } swram;
+
+  Scheduler scheduler;
+  VideoUnit video_unit;
 
   /*struct WRAMCNT : RegisterByte {
     WRAMCNT(SWRAM& swram) : swram(swram) {}

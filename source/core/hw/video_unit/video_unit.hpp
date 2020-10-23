@@ -6,12 +6,13 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/scheduler.hpp>
 
 namespace fauxDS::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
-  VideoUnit();
+  VideoUnit(Scheduler* scheduler);
 
   void Reset();
 
@@ -79,6 +80,10 @@ struct VideoUnit {
     friend struct fauxDS::core::VideoUnit;
     u16 value = 0;
   } vcount;
+
+private:
+  Scheduler* scheduler;
+  Scheduler::Event* state_event = nullptr;
 };
 
 } // namespace fauxDS::core

@@ -9,11 +9,20 @@
 namespace fauxDS::core {
 
 enum Registers {
+  REG_DISPSTAT = 0x0400'0004,
+  REG_VCOUNT = 0x0400'0006
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
   switch (address) {
-
+    case REG_DISPSTAT|0:
+      return video_unit->dispstat.ReadByte(0);
+    case REG_DISPSTAT|1:
+      return video_unit->dispstat.ReadByte(1);
+    case REG_VCOUNT|0:
+      return video_unit->vcount.ReadByte(0);
+    case REG_VCOUNT|1:
+      return video_unit->vcount.ReadByte(1);
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
   }
@@ -34,7 +43,16 @@ auto ARM9MemoryBus::ReadWordIO(u32 address) -> u32 {
 }
 
 void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
-  LOG_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+  switch (address) {
+    case REG_DISPSTAT|0:
+      video_unit->dispstat.WriteByte(0, value);
+      break;
+    case REG_DISPSTAT|1:
+      video_unit->dispstat.WriteByte(1, value);
+      break;
+    default:
+      LOG_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+  }
 }
 
 void ARM9MemoryBus::WriteHalfIO(u32 address, u16 value) {

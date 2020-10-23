@@ -11,7 +11,8 @@
 namespace fauxDS::core {
 
 ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) 
-    : ewram(interconnect->ewram), swram(interconnect->swram.arm7) {
+    : ewram(interconnect->ewram)
+    , swram(interconnect->swram.arm7) {
   memset(iwram, 0, sizeof(iwram));
 }
 

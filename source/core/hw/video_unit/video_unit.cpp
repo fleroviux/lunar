@@ -6,7 +6,8 @@
 
 namespace fauxDS::core {
 
-VideoUnit::VideoUnit() {
+VideoUnit::VideoUnit(Scheduler* scheduler)
+    : scheduler(scheduler) {
   Reset();
 }
 

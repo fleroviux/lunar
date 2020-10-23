@@ -11,7 +11,9 @@
 namespace fauxDS::core {
 
 ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
-    : ewram(interconnect->ewram), swram(interconnect->swram.arm9) {
+    : ewram(interconnect->ewram)
+    , swram(interconnect->swram.arm9)
+    , video_unit(&interconnect->video_unit) {
 }
 
 template <typename T>

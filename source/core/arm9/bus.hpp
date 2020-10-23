@@ -65,6 +65,8 @@ private:
   u8* ewram;
 
   Interconnect::SWRAM::Alloc const& swram;
+
+  VideoUnit* video_unit;
 };
 
 } // namespace fauxDS::core
