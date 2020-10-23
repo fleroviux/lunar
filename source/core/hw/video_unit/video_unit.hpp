@@ -61,6 +61,24 @@ struct VideoUnit {
     u16 vcount_setting = 0;
   } dispstat;
 
+  /// Currently rendered scanline.
+  /// NOTE: this register reportedly is writable.
+  struct VCOUNT {
+    auto ReadByte(uint offset) -> u8 {
+      switch (offset) {
+        case 0:
+          return value & 0xFF;
+        case 1:
+          return (value >> 8) & 1;
+      }
+
+      ASSERT_UNREACHABLE;
+    }
+
+  private:
+    friend struct fauxDS::core::VideoUnit;
+    u16 value = 0;
+  } vcount;
 };
 
 } // namespace fauxDS::core

@@ -12,6 +12,7 @@ VideoUnit::VideoUnit() {
 
 void VideoUnit::Reset() {
   dispstat = {};
+  vcount = {};
 }
 
 } // namespace fauxDS::core
