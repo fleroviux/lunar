@@ -7,7 +7,8 @@ set(SOURCES
   arm9/bus.cpp
   arm9/bus_mmio.cpp
   hw/video_unit/video_unit.cpp
-  core.cpp)
+  core.cpp
+  scheduler.cpp)
 
 set(HEADERS
   arm/interpreter/handlers/arithmetic.inl
@@ -26,7 +27,8 @@ set(HEADERS
   arm9/bus.hpp
   hw/video_unit/video_unit.hpp
   core.hpp
-  interconnect.hpp)
+  interconnect.hpp
+  scheduler.hpp)
 
 add_library(core STATIC ${SOURCES} ${HEADERS})
 target_link_libraries(core common fmt)
