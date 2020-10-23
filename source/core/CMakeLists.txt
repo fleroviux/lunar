@@ -6,6 +6,7 @@ set(SOURCES
   arm7/bus_mmio.cpp
   arm9/bus.cpp
   arm9/bus_mmio.cpp
+  hw/video_unit/video_unit.cpp
   core.cpp)
 
 set(HEADERS
@@ -23,9 +24,9 @@ set(HEADERS
   arm/memory.hpp
   arm7/bus.hpp
   arm9/bus.hpp
+  hw/video_unit/video_unit.hpp
   core.hpp
-  interconnect.hpp
-  register.hpp)
+  interconnect.hpp)
 
 add_library(core STATIC ${SOURCES} ${HEADERS})
 target_link_libraries(core common fmt)
