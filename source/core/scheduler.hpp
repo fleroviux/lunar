@@ -10,8 +10,8 @@
 
 namespace fauxDS::core {
 
-class Scheduler {
-public:
+/// Manages hardware events in a priority queue based on time (cycles).
+struct Scheduler {
   Scheduler();
  ~Scheduler();
 
