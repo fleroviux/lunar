@@ -12,7 +12,7 @@
 using namespace fauxDS::core::arm;
 
 void ARM::Reset() {
-  constexpr std::uint32_t nop = 0xE320F000;
+  constexpr u32 nop = 0xE320F000;
 
   state.Reset();
   SwitchMode(MODE_SYS);

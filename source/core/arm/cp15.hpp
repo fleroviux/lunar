@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <common/integer.hpp>
 #include <common/log.hpp>
 #include <core/arm/memory.hpp>
 
@@ -34,7 +34,7 @@ public:
     *
     * @returns the value contained in the coprocessor register.
     */
-  auto Read(int opcode1, int cn, int cm, int opcode2) -> std::uint32_t;
+  auto Read(int opcode1, int cn, int cm, int opcode2) -> u32;
 
   /**
     * Write to coprocessor register.
@@ -45,15 +45,15 @@ public:
     * @param  opcode2  Opcode #2
     * @param  value    Word to write
     */
-  void Write(int opcode1, int cn, int cm, int opcode2, std::uint32_t value);
+  void Write(int opcode1, int cn, int cm, int opcode2, u32 value);
 
 private:
   auto Index(int cn, int cm, int opcode) -> int {
     return (cn << 7) | (cm << 3) | opcode;
   }
 
-  typedef auto (CP15::*ReadHandler )(int cn, int cm, int opcode) -> std::uint32_t;
-  typedef void (CP15::*WriteHandler)(int cn, int cm, int opcode, std::uint32_t value);
+  typedef auto (CP15::*ReadHandler )(int cn, int cm, int opcode) -> u32;
+  typedef void (CP15::*WriteHandler)(int cn, int cm, int opcode, u32 value);
 
   /** 
     * Register a register read handler.
@@ -75,28 +75,28 @@ private:
     */
   void RegisterHandler(int cn, int cm, int opcode, WriteHandler handler);
 
-  auto DefaultRead(int cn, int cm, int opcode) -> std::uint32_t {
+  auto DefaultRead(int cn, int cm, int opcode) -> u32 {
     LOG_WARN("CP15: unknown read c{0} c{1} #{2}", cn, cm, opcode);
     return 0;
   }
 
-  void DefaultWrite(int cn, int cm, int opcode, std::uint32_t value) {
+  void DefaultWrite(int cn, int cm, int opcode, u32 value) {
     LOG_WARN("CP15: unknown write c{0} c{1} #{2} = 0x{3:08X}", cn, cm, opcode, value);
   }
 
-  auto ReadMainID(int cn, int cm, int opcode) -> std::uint32_t;
-  auto ReadCacheType(int cn, int cm, int opcode) -> std::uint32_t;
-  auto ReadDTCMConfig(int cn, int cm, int opcode) -> std::uint32_t;
-  auto ReadITCMConfig(int cn, int cm, int opcode) -> std::uint32_t;
-  void WriteDTCMConfig(int cn, int cm, int opcode, std::uint32_t value);
-  void WriteITCMConfig(int cn, int cm, int opcode, std::uint32_t value);
+  auto ReadMainID(int cn, int cm, int opcode) -> u32;
+  auto ReadCacheType(int cn, int cm, int opcode) -> u32;
+  auto ReadDTCMConfig(int cn, int cm, int opcode) -> u32;
+  auto ReadITCMConfig(int cn, int cm, int opcode) -> u32;
+  void WriteDTCMConfig(int cn, int cm, int opcode, u32 value);
+  void WriteITCMConfig(int cn, int cm, int opcode, u32 value);
 
   int cpu_id;
 
   struct TCMConfig {
-    std::uint32_t value;
-    std::uint32_t base;
-    std::uint32_t limit;
+    u32 value;
+    u32 base;
+    u32 limit;
   } dtcm, itcm;
 
   /** The memory implementation of this CPU core.

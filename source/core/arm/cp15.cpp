@@ -43,7 +43,7 @@ void CP15::RegisterHandler(int cn, int cm, int opcode, WriteHandler handler) {
 auto CP15::Read(int opcode1,
                 int cn,
                 int cm,
-                int opcode2) -> std::uint32_t {
+                int opcode2) -> u32 {
   if (opcode1 == 0) {
     return std::invoke(handler_rd[Index(cn, cm, opcode2)], this, cn, cm, opcode2);
   }
@@ -55,29 +55,29 @@ void CP15::Write(int opcode1,
                  int cn,
                  int cm,
                  int opcode2,
-                 std::uint32_t value) {
+                 u32 value) {
   if (opcode1 == 0) {
     std::invoke(handler_wr[Index(cn, cm, opcode2)], this, cn, cm, opcode2, value);
   }
 }
 
-auto CP15::ReadMainID(int cn, int cm, int opcode) -> std::uint32_t {
+auto CP15::ReadMainID(int cn, int cm, int opcode) -> u32 {
   return 0x41059461;
 }
 
-auto CP15::ReadCacheType(int cn, int cm, int opcode) -> std::uint32_t {
+auto CP15::ReadCacheType(int cn, int cm, int opcode) -> u32 {
   return 0x0F0D2112;
 }
 
-auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> std::uint32_t {
+auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {
   return dtcm.value;
 }
 
-auto CP15::ReadITCMConfig(int cn, int cm, int opcode) -> std::uint32_t {
+auto CP15::ReadITCMConfig(int cn, int cm, int opcode) -> u32 {
   return itcm.value;
 }
 
-void CP15::WriteDTCMConfig(int cn, int cm, int opcode, std::uint32_t value) {
+void CP15::WriteDTCMConfig(int cn, int cm, int opcode, u32 value) {
   auto base = value & 0xFFFFF000;
   auto size = (value >> 1) & 0x1F;
   if (size < 3 || size > 23) {
@@ -93,7 +93,7 @@ void CP15::WriteDTCMConfig(int cn, int cm, int opcode, std::uint32_t value) {
   memory->SetDTCM(dtcm.base, dtcm.limit);
 }
 
-void CP15::WriteITCMConfig(int cn, int cm, int opcode, std::uint32_t value) {
+void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
   auto base = value & 0xFFFFF000;
   if (base != 0) {
     base = 0;

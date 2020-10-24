@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <common/integer.hpp>
 
 namespace fauxDS::core::arm {
 
@@ -69,7 +69,7 @@ enum class ThumbInstrType {
   Undefined
 };
 
-constexpr auto GetARMInstructionTypeUnconditional(std::uint32_t instruction) -> ARMInstrType {
+constexpr auto GetARMInstructionTypeUnconditional(u32 instruction) -> ARMInstrType {
   /* TODO: properly decode the unconditional instructions. */
   if (((instruction >> 25) & 7) == 5) {
     return ARMInstrType::BranchLinkExchangeImm;
@@ -77,7 +77,7 @@ constexpr auto GetARMInstructionTypeUnconditional(std::uint32_t instruction) -> 
   return ARMInstrType::Unconditional;
 }
 
-constexpr auto GetARMInstructionTypeConditional(std::uint32_t instruction) -> ARMInstrType {
+constexpr auto GetARMInstructionTypeConditional(u32 instruction) -> ARMInstrType {
   const auto opcode = instruction & 0x0FFFFFFF;
   
   switch (opcode >> 25) {
@@ -219,7 +219,7 @@ constexpr auto GetARMInstructionTypeConditional(std::uint32_t instruction) -> AR
   return ARMInstrType::Undefined;
 }
 
-constexpr auto GetARMInstructionType(std::uint32_t instruction) -> ARMInstrType {
+constexpr auto GetARMInstructionType(u32 instruction) -> ARMInstrType {
   const auto condition = instruction >> 28;
   if (condition == 15) {
     return GetARMInstructionTypeUnconditional(instruction);
@@ -227,7 +227,7 @@ constexpr auto GetARMInstructionType(std::uint32_t instruction) -> ARMInstrType 
   return GetARMInstructionTypeConditional(instruction);
 }
 
-constexpr auto GetThumbInstructionType(std::uint16_t instruction) -> ThumbInstrType {
+constexpr auto GetThumbInstructionType(u16 instruction) -> ThumbInstrType {
   if ((instruction & 0xF800) <  0x1800) return ThumbInstrType::MoveShiftedRegister;
   if ((instruction & 0xF800) == 0x1800) return ThumbInstrType::AddSub;
   if ((instruction & 0xE000) == 0x2000) return ThumbInstrType::MoveCompareAddSubImm;

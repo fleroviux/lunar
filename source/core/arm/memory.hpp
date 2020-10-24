@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <common/integer.hpp>
 
 namespace fauxDS::core::arm {
 
@@ -22,31 +22,31 @@ struct MemoryBase {
     Data
   };
 
-  virtual void SetDTCM(std::uint32_t base, std::uint32_t limit) {}
-  virtual void SetITCM(std::uint32_t base, std::uint32_t limit) {}
+  virtual void SetDTCM(u32 base, u32 limit) {}
+  virtual void SetITCM(u32 base, u32 limit) {}
 
-  virtual auto ReadByte(std::uint32_t address,
+  virtual auto ReadByte(u32 address,
                         Bus bus,
-                        int core) -> std::uint8_t  = 0;
+                        int core) -> u8  = 0;
   
-  virtual auto ReadHalf(std::uint32_t address,
+  virtual auto ReadHalf(u32 address,
                         Bus bus, 
-                        int core) -> std::uint16_t = 0;
+                        int core) -> u16 = 0;
   
-  virtual auto ReadWord(std::uint32_t address, 
+  virtual auto ReadWord(u32 address, 
                         Bus bus,
-                        int core) -> std::uint32_t = 0;
+                        int core) -> u32 = 0;
   
-  virtual void WriteByte(std::uint32_t address,
-                         std::uint8_t  value,
+  virtual void WriteByte(u32 address,
+                         u8  value,
                          int core) = 0;
   
-  virtual void WriteHalf(std::uint32_t address,
-                         std::uint16_t value,
+  virtual void WriteHalf(u32 address,
+                         u16 value,
                          int core) = 0;
   
-  virtual void WriteWord(std::uint32_t address,
-                         std::uint32_t value,
+  virtual void WriteWord(u32 address,
+                         u32 value,
                          int core) = 0;
 };
 

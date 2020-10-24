@@ -42,19 +42,16 @@ struct ARM {
   void Reset();
   void Run(int instructions);
 
-  auto ExceptionBase() -> std::uint32_t const { return exception_base; }
-  void ExceptionBase(std::uint32_t base) { exception_base = base; } 
+  auto ExceptionBase() -> u32 const { return exception_base; }
+  void ExceptionBase(u32 base) { exception_base = base; } 
 
-  // TODO(fleroviux): Hold exception raised state,
-  // in case that an exception cannot be served immediately?
-  // Also implement other exception signals like prefetch/data abort.
   void SignalIRQ();
 
-  auto GetPC() -> std::uint32_t {
+  auto GetPC() -> u32 {
     return state.r15 - (state.cpsr.f.thumb ? 4 : 8);
   }
 
-  void SetPC(std::uint32_t value) {
+  void SetPC(u32 value) {
     state.r15 = value;
     if (state.cpsr.f.thumb) {
       ReloadPipeline16();
@@ -66,8 +63,8 @@ struct ARM {
   // TODO: remove this hack.
   bool hit_unimplemented_or_undefined = false;
 
-  typedef void (ARM::*Handler16)(std::uint16_t);
-  typedef void (ARM::*Handler32)(std::uint32_t);
+  typedef void (ARM::*Handler16)(u16);
+  typedef void (ARM::*Handler32)(u32);
 private:
   friend struct MemoryBase;
   friend struct TableGen;
@@ -88,7 +85,7 @@ private:
   bool waiting_for_irq;
   
   // TODO: store exception base configuration in CP15.
-  std::uint32_t exception_base = 0;
+  u32 exception_base = 0;
 
   int core;
   CP15 cp15;
@@ -96,7 +93,7 @@ private:
   State state;
   State::StatusRegister* p_spsr;
   MemoryBase* memory;
-  std::uint32_t opcode[2];
+  u32 opcode[2];
 
   bool condition_table[16][16];
 

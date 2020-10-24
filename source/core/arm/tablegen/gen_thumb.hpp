@@ -5,7 +5,7 @@
  * Refer to the included LICENSE file.
  */
 
-template <std::uint16_t instruction>
+template <u16 instruction>
 static constexpr auto GenerateHandlerThumb() -> Handler16 {
   switch (GetThumbInstructionType(instruction)) {
     case ThumbInstrType::MoveShiftedRegister: {

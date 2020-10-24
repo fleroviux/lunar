@@ -25,15 +25,15 @@ enum class DataOp {
 };
 
 template <bool immediate, int opcode, bool _set_flags, int field4>
-void ARM_DataProcessing(std::uint32_t instruction) {
+void ARM_DataProcessing(u32 instruction) {
   bool set_flags = _set_flags;
 
   int reg_dst = (instruction >> 12) & 0xF;
   int reg_op1 = (instruction >> 16) & 0xF;
   int reg_op2 = (instruction >>  0) & 0xF;
 
-  std::uint32_t op2 = 0;
-  std::uint32_t op1 = state.reg[reg_op1];
+  u32 op2 = 0;
+  u32 op1 = state.reg[reg_op1];
 
   int carry = state.cpsr.f.c;
 
@@ -48,7 +48,7 @@ void ARM_DataProcessing(std::uint32_t instruction) {
       op2 = value;
     }
   } else {
-    std::uint32_t shift;
+    u32 shift;
     int  shift_type = ( field4 >> 1) & 3;
     bool shift_imm  = (~field4 >> 0) & 1;
 
@@ -111,13 +111,13 @@ void ARM_DataProcessing(std::uint32_t instruction) {
       result = SBC(op2, op1, set_flags);
       break;
     case DataOp::TST: {
-      std::uint32_t result = op1 & op2;
+      u32 result = op1 & op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
       break;
     }
     case DataOp::TEQ: {
-      std::uint32_t result = op1 ^ op2;
+      u32 result = op1 ^ op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
       break;
@@ -170,11 +170,11 @@ void ARM_DataProcessing(std::uint32_t instruction) {
 }
 
 template <bool immediate, bool use_spsr, bool to_status>
-void ARM_StatusTransfer(std::uint32_t instruction) {
+void ARM_StatusTransfer(u32 instruction) {
   if (to_status) {
-    std::uint32_t op;
-    std::uint32_t mask = 0;
-    std::uint8_t  fsxc = (instruction >> 16) & 0xF;
+    u32 op;
+    u32 mask = 0;
+    u8  fsxc = (instruction >> 16) & 0xF;
 
     if (immediate && fsxc == 0) {
       /* Hint instructions are implemented as move immediate to
@@ -200,7 +200,7 @@ void ARM_StatusTransfer(std::uint32_t instruction) {
       op = state.reg[instruction & 0xF];
     }
 
-    std::uint32_t value = op & mask;
+    u32 value = op & mask;
 
     if (!use_spsr) {
       if (mask & 0xFF) {
@@ -226,8 +226,8 @@ void ARM_StatusTransfer(std::uint32_t instruction) {
 }
 
 template <bool accumulate, bool set_flags>
-void ARM_Multiply(std::uint32_t instruction) {
-  std::uint32_t result;
+void ARM_Multiply(u32 instruction) {
+  u32 result;
 
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
@@ -249,18 +249,18 @@ void ARM_Multiply(std::uint32_t instruction) {
 }
 
 template <bool sign_extend, bool accumulate, bool set_flags>
-void ARM_MultiplyLong(std::uint32_t instruction) {
+void ARM_MultiplyLong(u32 instruction) {
   int op1 = (instruction >> 0) & 0xF;
   int op2 = (instruction >> 8) & 0xF;
 
   int dst_lo = (instruction >> 12) & 0xF;
   int dst_hi = (instruction >> 16) & 0xF;
 
-  std::int64_t result;
+  s64 result;
 
   if (sign_extend) {
-    std::int64_t a = state.reg[op1];
-    std::int64_t b = state.reg[op2];
+    s64 a = state.reg[op1];
+    s64 b = state.reg[op2];
 
     /* Sign-extend operands */
     if (a & 0x80000000) a |= 0xFFFFFFFF00000000;
@@ -268,13 +268,13 @@ void ARM_MultiplyLong(std::uint32_t instruction) {
 
     result = a * b;
   } else {
-    std::uint64_t uresult = (std::uint64_t)state.reg[op1] * (std::uint64_t)state.reg[op2];
+    u64 uresult = (u64)state.reg[op1] * (u64)state.reg[op2];
 
-    result = (std::int64_t)uresult;
+    result = (s64)uresult;
   }
 
   if (accumulate) {
-    std::int64_t value = state.reg[dst_hi];
+    s64 value = state.reg[dst_hi];
 
     /* Workaround x86 shift limitations. */
     value <<= 16;
@@ -284,7 +284,7 @@ void ARM_MultiplyLong(std::uint32_t instruction) {
     result += value;
   }
 
-  std::uint32_t result_hi = result >> 32;
+  u32 result_hi = result >> 32;
 
   state.reg[dst_lo] = result & 0xFFFFFFFF;
   state.reg[dst_hi] = result_hi;
@@ -297,7 +297,7 @@ void ARM_MultiplyLong(std::uint32_t instruction) {
   state.r15 += 4;
 }
 
-void ARM_UnsignedMultiplyLongAccumulateAccumulate(std::uint32_t instruction) {
+void ARM_UnsignedMultiplyLongAccumulateAccumulate(u32 instruction) {
   int op1 = (instruction >> 0) & 0xF;
   int op2 = (instruction >> 8) & 0xF;
   int dst_lo = (instruction >> 12) & 0xF;
@@ -305,7 +305,7 @@ void ARM_UnsignedMultiplyLongAccumulateAccumulate(std::uint32_t instruction) {
   
   LOG_WARN("Hit UMAAL instruction - implementation is experimental. @ r15 = 0x{0:08X}", state.r15);
 
-  std::uint64_t result = (std::uint64_t)state.reg[op1] * (std::uint64_t)state.reg[op2];
+  u64 result = (u64)state.reg[op1] * (u64)state.reg[op2];
   
   result += state.reg[dst_lo];
   result += state.reg[dst_hi];
@@ -317,28 +317,28 @@ void ARM_UnsignedMultiplyLongAccumulateAccumulate(std::uint32_t instruction) {
 }
 
 template <bool accumulate, bool x, bool y>
-void ARM_SignedHalfwordMultiply(std::uint32_t instruction) {
+void ARM_SignedHalfwordMultiply(u32 instruction) {
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
   int op3 = (instruction >> 12) & 0xF;
   int dst = (instruction >> 16) & 0xF;
 
-  std::int16_t value1;
-  std::int16_t value2;
+  s16 value1;
+  s16 value2;
 
   if (x) {
-    value1 = std::int16_t(state.reg[op1] >> 16);
+    value1 = s16(state.reg[op1] >> 16);
   } else {
-    value1 = std::int16_t(state.reg[op1] & 0xFFFF);
+    value1 = s16(state.reg[op1] & 0xFFFF);
   }
   
   if (y) {
-    value2 = std::int16_t(state.reg[op2] >> 16);
+    value2 = s16(state.reg[op2] >> 16);
   } else {
-    value2 = std::int16_t(state.reg[op2] & 0xFFFF);
+    value2 = s16(state.reg[op2] & 0xFFFF);
   }
   
-  state.reg[dst] = std::uint32_t(value1 * value2);
+  state.reg[dst] = u32(value1 * value2);
 
   if (accumulate) {
     /* Set sticky overflow on accumulation overflow,
@@ -351,23 +351,23 @@ void ARM_SignedHalfwordMultiply(std::uint32_t instruction) {
 }
 
 template <bool accumulate, bool y>
-void ARM_SignedWordHalfwordMultiply(std::uint32_t instruction) {
+void ARM_SignedWordHalfwordMultiply(u32 instruction) {
   /* NOTE: this is probably used as fixed point fractional multiply. */
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
   int op3 = (instruction >> 12) & 0xF;
   int dst = (instruction >> 16) & 0xF;
 
-  std::int32_t value1 = std::int32_t(state.reg[op1]);
-  std::int16_t value2;
+  s32 value1 = s32(state.reg[op1]);
+  s16 value2;
   
   if (y) {
-    value2 = std::int16_t(state.reg[op2] >> 16);
+    value2 = s16(state.reg[op2] >> 16);
   } else {
-    value2 = std::int16_t(state.reg[op2] & 0xFFFF);
+    value2 = s16(state.reg[op2] & 0xFFFF);
   }
   
-  state.reg[dst] = std::uint32_t((value1 * value2) >> 16);
+  state.reg[dst] = u32((value1 * value2) >> 16);
 
   if (accumulate) {
     /* Set sticky overflow on accumulation overflow,
@@ -380,31 +380,31 @@ void ARM_SignedWordHalfwordMultiply(std::uint32_t instruction) {
 }
 
 template <bool x, bool y>
-void ARM_SignedHalfwordMultiplyLongAccumulate(std::uint32_t instruction) {
+void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
   int op1 = (instruction >> 0) & 0xF;
   int op2 = (instruction >> 8) & 0xF;
   int dst_lo = (instruction >> 12) & 0xF;
   int dst_hi = (instruction >> 16) & 0xF;
 
-  std::int16_t value1;
-  std::int16_t value2;
+  s16 value1;
+  s16 value2;
   
   if (x) {
-    value1 = std::int16_t(state.reg[op1] >> 16);
+    value1 = s16(state.reg[op1] >> 16);
   } else {
-    value1 = std::int16_t(state.reg[op1] & 0xFFFF);
+    value1 = s16(state.reg[op1] & 0xFFFF);
   }
   
   if (y) {
-    value2 = std::int16_t(state.reg[op2] >> 16);
+    value2 = s16(state.reg[op2] >> 16);
   } else {
-    value2 = std::int16_t(state.reg[op2] & 0xFFFF);
+    value2 = s16(state.reg[op2] & 0xFFFF);
   }
   
-  std::uint64_t result = value1 * value2;
+  u64 result = value1 * value2;
   
   result += state.reg[dst_lo];
-  result += std::uint64_t(state.reg[dst_hi]) << 32;
+  result += u64(state.reg[dst_hi]) << 32;
   
   state.reg[dst_lo] = result & 0xFFFFFFFF;
   state.reg[dst_hi] = result >> 32;
@@ -413,16 +413,16 @@ void ARM_SignedHalfwordMultiplyLongAccumulate(std::uint32_t instruction) {
 }
 
 template <bool byte>
-void ARM_SingleDataSwap(std::uint32_t instruction) {
+void ARM_SingleDataSwap(u32 instruction) {
   int src  = (instruction >>  0) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
   int base = (instruction >> 16) & 0xF;
 
-  std::uint32_t tmp;
+  u32 tmp;
 
   if (byte) {
     tmp = ReadByte(state.reg[base]);
-    WriteByte(state.reg[base], (std::uint8_t)state.reg[src]);
+    WriteByte(state.reg[base], (u8)state.reg[src]);
   } else {
     tmp = ReadWordRotate(state.reg[base]);
     WriteWord(state.reg[base], state.reg[src]);
@@ -433,8 +433,8 @@ void ARM_SingleDataSwap(std::uint32_t instruction) {
 }
 
 template <bool link>
-void ARM_BranchAndExchangeMaybeLink(std::uint32_t instruction) {
-  std::uint32_t address = state.reg[instruction & 0xF];
+void ARM_BranchAndExchangeMaybeLink(u32 instruction) {
+  u32 address = state.reg[instruction & 0xF];
 
   if (link) {
     state.r14 = state.r15 - 4;
@@ -451,12 +451,12 @@ void ARM_BranchAndExchangeMaybeLink(std::uint32_t instruction) {
 }
 
 template <bool pre, bool add, bool immediate, bool writeback, bool load, int opcode>
-void ARM_SingleHalfwordDoubleTransfer(std::uint32_t instruction) {
+void ARM_SingleHalfwordDoubleTransfer(u32 instruction) {
   int dst  = (instruction >> 12) & 0xF;
   int base = (instruction >> 16) & 0xF;
 
-  std::uint32_t offset;
-  std::uint32_t address = state.reg[base];
+  u32 offset;
+  u32 address = state.reg[base];
 
   if (immediate) {
     offset = (instruction & 0xF) | ((instruction >> 4) & 0xF0);
@@ -472,7 +472,7 @@ void ARM_SingleHalfwordDoubleTransfer(std::uint32_t instruction) {
   if (opcode == 1 && load) {
     state.reg[dst] = ReadHalfRotate(address);
   } else if (opcode == 1) {
-    std::uint32_t value = state.reg[dst];
+    u32 value = state.reg[dst];
 
     if (dst == 15) {
       value += 4;
@@ -510,8 +510,8 @@ void ARM_SingleHalfwordDoubleTransfer(std::uint32_t instruction) {
 }
 
 template <bool link>
-void ARM_BranchAndLink(std::uint32_t instruction) {
-  std::uint32_t offset = instruction & 0xFFFFFF;
+void ARM_BranchAndLink(u32 instruction) {
+  u32 offset = instruction & 0xFFFFFF;
 
   if (offset & 0x800000) {
     offset |= 0xFF000000;
@@ -525,8 +525,8 @@ void ARM_BranchAndLink(std::uint32_t instruction) {
   ReloadPipeline32();
 }
 
-void ARM_BranchLinkExchangeImm(std::uint32_t instruction) {
-  std::uint32_t offset = instruction & 0xFFFFFF;
+void ARM_BranchLinkExchangeImm(u32 instruction) {
+  u32 offset = instruction & 0xFFFFFF;
 
   if (offset & 0x800000) {
     offset |= 0xFF000000;
@@ -541,13 +541,13 @@ void ARM_BranchLinkExchangeImm(std::uint32_t instruction) {
 }
 
 template <bool immediate, bool pre, bool add, bool byte, bool writeback, bool load>
-void ARM_SingleDataTransfer(std::uint32_t instruction) {
+void ARM_SingleDataTransfer(u32 instruction) {
   Mode mode;
-  std::uint32_t offset;
+  u32 offset;
 
   int dst  = (instruction >> 12) & 0xF;
   int base = (instruction >> 16) & 0xF;
-  std::uint32_t address = state.reg[base];
+  u32 address = state.reg[base];
 
   /* Post-indexing implicitly write back to the base register.
    * In that case user mode registers will be used if the W-bit is set.
@@ -582,13 +582,13 @@ void ARM_SingleDataTransfer(std::uint32_t instruction) {
       state.reg[dst] = ReadWordRotate(address);
     }
   } else {
-    std::uint32_t value = state.reg[dst];
+    u32 value = state.reg[dst];
 
     /* r15 is $+12 now due to internal prefetch cycle. */
     if (dst == 15) value += 4;
 
     if (byte) {
-      WriteByte(address, (std::uint8_t)value);
+      WriteByte(address, (u8)value);
     } else {
       WriteWord(address, value);
     }
@@ -625,7 +625,7 @@ void ARM_SingleDataTransfer(std::uint32_t instruction) {
 }
 
 template <bool _pre, bool add, bool user_mode, bool _writeback, bool load>
-void ARM_BlockDataTransfer(std::uint32_t instruction) {
+void ARM_BlockDataTransfer(u32 instruction) {
   bool pre = _pre;
   bool writeback = _writeback;
 
@@ -648,8 +648,8 @@ void ARM_BlockDataTransfer(std::uint32_t instruction) {
     }
   }
   
-  std::uint32_t base_new;
-  std::uint32_t address = state.reg[base];
+  u32 base_new;
+  u32 address = state.reg[base];
   
   if (switch_mode) {
     mode = state.cpsr.f.mode;
@@ -722,7 +722,7 @@ void ARM_BlockDataTransfer(std::uint32_t instruction) {
   }
 }
 
-void ARM_Undefined(std::uint32_t instruction) {
+void ARM_Undefined(u32 instruction) {
   LOG_ERROR("Undefined ARM instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
   hit_unimplemented_or_undefined = true;
 
@@ -739,7 +739,7 @@ void ARM_Undefined(std::uint32_t instruction) {
   ReloadPipeline32();
 }
 
-void ARM_SWI(std::uint32_t instruction) {
+void ARM_SWI(u32 instruction) {
   /* Save return address and program status. */
   state.bank[BANK_SVC][BANK_R14] = state.r15 - 4;
   state.spsr[BANK_SVC].v = state.cpsr.v;
@@ -753,11 +753,11 @@ void ARM_SWI(std::uint32_t instruction) {
   ReloadPipeline32();
 }
 
-void ARM_CountLeadingZeros(std::uint32_t instruction) {
+void ARM_CountLeadingZeros(u32 instruction) {
   int dst = (instruction >> 12) & 0xF;
   int src =  instruction & 0xF;
   
-  std::uint32_t value = state.reg[src];
+  u32 value = state.reg[src];
   
   if (value == 0) {
     state.reg[dst] = 32;
@@ -765,7 +765,7 @@ void ARM_CountLeadingZeros(std::uint32_t instruction) {
     return;
   }
   
-  const std::uint32_t mask[] = {
+  const u32 mask[] = {
     0xFFFF0000,
     0xFF000000,
     0xF0000000,
@@ -787,11 +787,11 @@ void ARM_CountLeadingZeros(std::uint32_t instruction) {
 }
 
 template <int opcode>
-void ARM_SaturatingAddSubtract(std::uint32_t instruction) {
+void ARM_SaturatingAddSubtract(u32 instruction) {
   int src1 =  instruction & 0xF;
   int src2 = (instruction >> 16) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
-  std::uint32_t op2 = state.reg[src2];
+  u32 op2 = state.reg[src2];
 
   if ((opcode & 0b1001) != 0) {
     ARM_Undefined(instruction);
@@ -802,7 +802,7 @@ void ARM_SaturatingAddSubtract(std::uint32_t instruction) {
   bool double_op2 = opcode & 4;
 
   if (double_op2) {
-    std::uint32_t result = op2 + op2;
+    u32 result = op2 + op2;
     
     if ((op2 ^ result) >> 31) {
       state.cpsr.f.q = 1;
@@ -821,8 +821,8 @@ void ARM_SaturatingAddSubtract(std::uint32_t instruction) {
   state.r15 += 4;
 }
 
-void ARM_Hint(std::uint32_t instruction) {
-  std::uint8_t opcode = instruction & 0xFF;
+void ARM_Hint(u32 instruction) {
+  u8 opcode = instruction & 0xFF;
 
   if (opcode == 3) {
     LOG_INFO("Core #{0} is waiting for an IRQ.", core);
@@ -839,7 +839,7 @@ void ARM_Hint(std::uint32_t instruction) {
   state.r15 += 4;
 }
 
-void ARM_CoprocessorRegisterTransfer(std::uint32_t instruction) {
+void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   auto dst = (instruction >> 12) & 0xF;
   auto cp_rm = instruction & 0xF;
   auto cp_rn = (instruction >> 16) & 0xF;
@@ -879,7 +879,7 @@ void ARM_CoprocessorRegisterTransfer(std::uint32_t instruction) {
   state.r15 += 4;
 }
 
-void ARM_Unimplemented(std::uint32_t instruction) {
+void ARM_Unimplemented(u32 instruction) {
   LOG_ERROR("Unimplemented ARM instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
   hit_unimplemented_or_undefined = true;
   state.r15 += 4;

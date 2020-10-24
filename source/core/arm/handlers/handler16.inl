@@ -25,13 +25,13 @@ enum class ThumbDataOp {
 };
 
 template <int op, int imm>
-void Thumb_MoveShiftedRegister(std::uint16_t instruction) {
+void Thumb_MoveShiftedRegister(u16 instruction) {
   // THUMB.1 Move shifted register
   int dst   = (instruction >> 0) & 7;
   int src   = (instruction >> 3) & 7;
   int carry = state.cpsr.f.c;
 
-  std::uint32_t result = state.reg[src];
+  u32 result = state.reg[src];
 
   DoShift(op, result, imm, carry, true);
 
@@ -45,10 +45,10 @@ void Thumb_MoveShiftedRegister(std::uint16_t instruction) {
 }
 
 template <bool immediate, bool subtract, int field3>
-void Thumb_AddSub(std::uint16_t instruction) {
+void Thumb_AddSub(u16 instruction) {
   int dst = (instruction >> 0) & 7;
   int src = (instruction >> 3) & 7;
-  std::uint32_t operand = immediate ? field3 : state.reg[field3];
+  u32 operand = immediate ? field3 : state.reg[field3];
 
   if (subtract) {
     state.reg[dst] = SUB(state.reg[src], operand, true);
@@ -60,9 +60,9 @@ void Thumb_AddSub(std::uint16_t instruction) {
 }
 
 template <int op, int dst>
-void Thumb_Op3(std::uint16_t instruction) {
+void Thumb_Op3(u16 instruction) {
   // THUMB.3 Move/compare/add/subtract immediate
-  std::uint32_t imm = instruction & 0xFF;
+  u32 imm = instruction & 0xFF;
 
   switch (op) {
   case 0b00:
@@ -89,7 +89,7 @@ void Thumb_Op3(std::uint16_t instruction) {
 }
 
 template <int op>
-void Thumb_ALU(std::uint16_t instruction) {
+void Thumb_ALU(u16 instruction) {
   int dst = (instruction >> 0) & 7;
   int src = (instruction >> 3) & 7;
 
@@ -118,7 +118,7 @@ void Thumb_ALU(std::uint16_t instruction) {
     SetZeroAndSignFlag(state.reg[dst]);
     break;
   case ThumbDataOp::TST: {
-    std::uint32_t result = state.reg[dst] & state.reg[src];
+    u32 result = state.reg[dst] & state.reg[src];
     SetZeroAndSignFlag(result);
     break;
   }
@@ -180,7 +180,7 @@ void Thumb_ALU(std::uint16_t instruction) {
 }
 
 template <int op, bool high1, bool high2>
-void Thumb_HighRegisterOps_BX(std::uint16_t instruction) {
+void Thumb_HighRegisterOps_BX(u16 instruction) {
   // THUMB.5 Hi register operations/branch exchange
   int dst = (instruction >> 0) & 7;
   int src = (instruction >> 3) & 7;
@@ -190,7 +190,7 @@ void Thumb_HighRegisterOps_BX(std::uint16_t instruction) {
   if (high1) dst |= 8;
   if (high2) src |= 8;
 
-  std::uint32_t operand = state.reg[src];
+  u32 operand = state.reg[src];
 
   if (src == 15) operand &= ~1;
 
@@ -229,27 +229,27 @@ void Thumb_HighRegisterOps_BX(std::uint16_t instruction) {
 }
 
 template <int dst>
-void Thumb_LoadStoreRelativePC(std::uint16_t instruction) {
-  std::uint32_t offset  = instruction & 0xFF;
-  std::uint32_t address = (state.r15 & ~2) + (offset << 2);
+void Thumb_LoadStoreRelativePC(u16 instruction) {
+  u32 offset  = instruction & 0xFF;
+  u32 address = (state.r15 & ~2) + (offset << 2);
 
   state.reg[dst] = ReadWord(address);
   state.r15 += 2;
 }
 
 template <int op, int off>
-void Thumb_LoadStoreOffsetReg(std::uint16_t instruction) {
+void Thumb_LoadStoreOffsetReg(u16 instruction) {
   int dst  = (instruction >> 0) & 7;
   int base = (instruction >> 3) & 7;
 
-  std::uint32_t address = state.reg[base] + state.reg[off];
+  u32 address = state.reg[base] + state.reg[off];
 
   switch (op) {
   case 0b00: // STR
     WriteWord(address, state.reg[dst]);
     break;
   case 0b01: // STRB
-    WriteByte(address, (std::uint8_t)state.reg[dst]);
+    WriteByte(address, (u8)state.reg[dst]);
     break;
   case 0b10: // LDR
     state.reg[dst] = ReadWordRotate(address);
@@ -263,11 +263,11 @@ void Thumb_LoadStoreOffsetReg(std::uint16_t instruction) {
 }
 
 template <int op, int off>
-void Thumb_LoadStoreSigned(std::uint16_t instruction) {
+void Thumb_LoadStoreSigned(u16 instruction) {
   int dst  = (instruction >> 0) & 7;
   int base = (instruction >> 3) & 7;
 
-  std::uint32_t address = state.reg[base] + state.reg[off];
+  u32 address = state.reg[base] + state.reg[off];
 
   switch (op) {
   case 0b00:
@@ -292,7 +292,7 @@ void Thumb_LoadStoreSigned(std::uint16_t instruction) {
 }
 
 template <int op, int imm>
-void Thumb_LoadStoreOffsetImm(std::uint16_t instruction) {
+void Thumb_LoadStoreOffsetImm(u16 instruction) {
   int dst  = (instruction >> 0) & 7;
   int base = (instruction >> 3) & 7;
 
@@ -319,11 +319,11 @@ void Thumb_LoadStoreOffsetImm(std::uint16_t instruction) {
 }
 
 template <bool load, int imm>
-void Thumb_LoadStoreHword(std::uint16_t instruction) {
+void Thumb_LoadStoreHword(u16 instruction) {
   int dst  = (instruction >> 0) & 7;
   int base = (instruction >> 3) & 7;
 
-  std::uint32_t address = state.reg[base] + imm * 2;
+  u32 address = state.reg[base] + imm * 2;
 
   if (load) {
     state.reg[dst] = ReadHalfRotate(address);
@@ -335,9 +335,9 @@ void Thumb_LoadStoreHword(std::uint16_t instruction) {
 }
 
 template <bool load, int dst>
-void Thumb_LoadStoreRelativeToSP(std::uint16_t instruction) {
-  std::uint32_t offset  = instruction & 0xFF;
-  std::uint32_t address = state.reg[13] + offset * 4;
+void Thumb_LoadStoreRelativeToSP(u16 instruction) {
+  u32 offset  = instruction & 0xFF;
+  u32 address = state.reg[13] + offset * 4;
 
   if (load) {
     state.reg[dst] = ReadWordRotate(address);
@@ -349,8 +349,8 @@ void Thumb_LoadStoreRelativeToSP(std::uint16_t instruction) {
 }
 
 template <bool stackptr, int dst>
-void Thumb_LoadAddress(std::uint16_t instruction) {
-  std::uint32_t offset = (instruction  & 0xFF) << 2;
+void Thumb_LoadAddress(u16 instruction) {
+  u32 offset = (instruction  & 0xFF) << 2;
 
   if (stackptr) {
     state.reg[dst] = state.r13 + offset;
@@ -362,16 +362,16 @@ void Thumb_LoadAddress(std::uint16_t instruction) {
 }
 
 template <bool sub>
-void Thumb_AddOffsetToSP(std::uint16_t instruction) {
-  std::uint32_t offset = (instruction  & 0x7F) * 4;
+void Thumb_AddOffsetToSP(u16 instruction) {
+  u32 offset = (instruction  & 0x7F) * 4;
 
   state.r13 += sub ? -offset : offset;
   state.r15 += 2;
 }
 
 template <bool pop, bool rbit>
-void Thumb_PushPop(std::uint16_t instruction) {
-  std::uint32_t address = state.r13;
+void Thumb_PushPop(u16 instruction) {
+  u32 address = state.r13;
 
   if (pop) {
     for (int reg = 0; reg <= 7; reg++) {
@@ -421,12 +421,12 @@ void Thumb_PushPop(std::uint16_t instruction) {
   state.r15 += 2;
 }
 
-void Thumb_ReverseBytes(std::uint16_t instruction) {
+void Thumb_ReverseBytes(u16 instruction) {
   int dst = (instruction >> 0) & 7;
   int src = (instruction >> 3) & 7;
   int opcode = (instruction >> 6) & 3;
 
-  std::uint32_t result = state.reg[src];
+  u32 result = state.reg[src];
 
   // TODO: could make 'opcode' a template parameter.
   // Also verify that these instructions work the way they're supposed to.
@@ -461,8 +461,8 @@ void Thumb_ReverseBytes(std::uint16_t instruction) {
 }
 
 template <bool load, int base>
-void Thumb_LoadStoreMultiple(std::uint16_t instruction) {
-  std::uint32_t address = state.reg[base];
+void Thumb_LoadStoreMultiple(u16 instruction) {
+  u32 address = state.reg[base];
 
   // TODO: I don't know if this behaves the same way in ARMv5TE and ARMv6K.
   // Eventhough ARM LDM/STM on ARMv6K seem to roughly work like this,
@@ -496,9 +496,9 @@ void Thumb_LoadStoreMultiple(std::uint16_t instruction) {
 }
 
 template <int cond>
-void Thumb_ConditionalBranch(std::uint16_t instruction) {
+void Thumb_ConditionalBranch(u16 instruction) {
   if (CheckCondition(static_cast<Condition>(cond))) {
-    std::uint32_t imm = instruction & 0xFF;
+    u32 imm = instruction & 0xFF;
 
     /* Sign-extend immediate value. */
     if (imm & 0x80) {
@@ -512,7 +512,7 @@ void Thumb_ConditionalBranch(std::uint16_t instruction) {
   }
 }
 
-void Thumb_SWI(std::uint16_t instruction) {
+void Thumb_SWI(u16 instruction) {
   /* Save return address and program status. */
   state.bank[BANK_SVC][BANK_R14] = state.r15 - 2;
   state.spsr[BANK_SVC].v = state.cpsr.v;
@@ -527,8 +527,8 @@ void Thumb_SWI(std::uint16_t instruction) {
   ReloadPipeline32();
 }
 
-void Thumb_UnconditionalBranch(std::uint16_t instruction) {
-  std::uint32_t imm = (instruction & 0x3FF) * 2;
+void Thumb_UnconditionalBranch(u16 instruction) {
+  u32 imm = (instruction & 0x3FF) * 2;
 
   /* Sign-extend immediate value. */
   if (instruction & 0x400) {
@@ -539,8 +539,8 @@ void Thumb_UnconditionalBranch(std::uint16_t instruction) {
   ReloadPipeline16();
 }
 
-void Thumb_LongBranchLinkPrefix(std::uint16_t instruction) {
-  std::uint32_t imm = (instruction & 0x7FF) << 12;
+void Thumb_LongBranchLinkPrefix(u16 instruction) {
+  u32 imm = (instruction & 0x7FF) << 12;
 
   if (imm & 0x400000) {
     imm |= 0xFF800000;
@@ -551,9 +551,9 @@ void Thumb_LongBranchLinkPrefix(std::uint16_t instruction) {
 }
 
 template <bool exchange>
-void Thumb_LongBranchLinkSuffix(std::uint16_t instruction) {
-  std::uint32_t imm  = instruction & 0x7FF;
-  std::uint32_t temp = state.r15 - 2;
+void Thumb_LongBranchLinkSuffix(u16 instruction) {
+  u32 imm  = instruction & 0x7FF;
+  u32 temp = state.r15 - 2;
 
   state.r15 = (state.r14 & ~1) + imm * 2;
   state.r14 = temp | 1;
@@ -567,7 +567,7 @@ void Thumb_LongBranchLinkSuffix(std::uint16_t instruction) {
 }
 
 template <int opcode>
-void Thumb_SignOrZeroExtend(std::uint16_t instruction) {
+void Thumb_SignOrZeroExtend(u16 instruction) {
   int dst =  instruction & 7;
   int src = (instruction >> 3) & 7;
   
@@ -603,7 +603,7 @@ void Thumb_SignOrZeroExtend(std::uint16_t instruction) {
   state.r15 += 2;
 }
 
-void Thumb_Unimplemented(std::uint16_t instruction) {
+void Thumb_Unimplemented(u16 instruction) {
   LOG_ERROR("Unimplemented Thumb instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
   hit_unimplemented_or_undefined = true;
   state.r15 += 2;

@@ -22,7 +22,7 @@ enum class SignedMultiplyOpcode {
   SMULxy  = 0b1011
 };
 
-template <std::uint32_t instruction>
+template <u32 instruction>
 static constexpr auto GenerateHandlerARM() -> Handler32 {
   const bool pre  = instruction & (1 << 24);
   const bool add  = instruction & (1 << 23);
