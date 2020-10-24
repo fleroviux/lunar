@@ -33,7 +33,6 @@ struct VideoUnit {
       }
 
       UNREACHABLE;
-      return 0;
     }
 
     void WriteByte(uint offset, u8 value) {

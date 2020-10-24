@@ -97,7 +97,7 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
         int key = -1;
         bool pressed = event.type == SDL_KEYDOWN;
 
-        /*auto& keyinput = interconnect->keyinput;
+        auto& keyinput = interconnect->keyinput;
 
         switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
           case SDLK_a: keyinput.a = pressed; break;
@@ -110,7 +110,7 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
           case SDLK_DOWN: keyinput.down = pressed; break;
           case SDLK_d: keyinput.l = pressed; break;
           case SDLK_f: keyinput.r = pressed; break;
-        }*/
+        }
       }
     }
   }

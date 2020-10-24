@@ -5,6 +5,7 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <common/log.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
 
@@ -69,22 +70,9 @@ struct Interconnect {
   private:
     int value = 0;
     SWRAM& swram;
-  } wramcnt;
+  } wramcnt;*/
 
-  // TODO: this needs to be heavily refactored...
-  struct FakeDISPSTAT : RegisterHalf {
-    int vblank_flag = 0;
-
-    auto Read(uint offset) -> u8 override {
-      if (offset == 0)
-        return (vblank_flag ^= 1);
-      return 0;
-    }
-
-    void Write(uint offset, u8 value) {}
-  } fake_dispstat = {};
-
-  struct KeyInput : RegisterHalf {
+  struct KeyInput {
     bool a = false;
     bool b = false;
     bool select = false;
@@ -96,19 +84,25 @@ struct Interconnect {
     bool r = false;
     bool l = false;
 
-    auto Read(uint offset) -> u8 override {
-      return (a      ? 0 :   1) |
-             (b      ? 0 :   2) |
-             (select ? 0 :   4) |
-             (start  ? 0 :   8) |
-             (right  ? 0 :  16) |
-             (left   ? 0 :  32) |
-             (up     ? 0 :  64) |
-             (down   ? 0 : 128) |
-             (r      ? 0 : 256) |
-             (l      ? 0 : 512);
+    auto ReadByte(uint offset) -> u8 {
+      switch (offset) {
+        case 0:
+          return (a      ? 0 :   1) |
+                 (b      ? 0 :   2) |
+                 (select ? 0 :   4) |
+                 (start  ? 0 :   8) |
+                 (right  ? 0 :  16) |
+                 (left   ? 0 :  32) |
+                 (up     ? 0 :  64) |
+                 (down   ? 0 : 128);
+        case 1:
+          return (r ? 0 : 1) |
+                 (l ? 0 : 2);
+      }
+
+      UNREACHABLE;
     }
-  } keyinput = {};*/
+  } keyinput = {};
 };
 
 } // namespace fauxDS::core

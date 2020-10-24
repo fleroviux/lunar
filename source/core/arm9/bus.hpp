@@ -66,7 +66,8 @@ private:
 
   Interconnect::SWRAM::Alloc const& swram;
 
-  VideoUnit* video_unit;
+  VideoUnit& video_unit;
+  Interconnect::KeyInput& keyinput;
 };
 
 } // namespace fauxDS::core
