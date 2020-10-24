@@ -66,6 +66,8 @@ private:
 
   Interconnect::SWRAM::Alloc const& swram;
 
+  u8 bios[0x8000] {0};
+
   VideoUnit& video_unit;
   Interconnect::KeyInput& keyinput;
 };

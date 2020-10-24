@@ -4,6 +4,7 @@
 
 #include <common/bit.hpp>
 #include <common/log.hpp>
+#include <fstream>
 #include <type_traits>
 
 #include "bus.hpp"
@@ -15,6 +16,10 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     , swram(interconnect->swram.arm9)
     , video_unit(interconnect->video_unit)
     , keyinput(interconnect->keyinput) {
+  std::ifstream file { "bios9.bin", std::ios::in | std::ios::binary };
+  ASSERT(file.good(), "ARM9: failed to open bios9.bin");
+  file.read(reinterpret_cast<char*>(bios), 4096);
+  ASSERT(file.good(), "ARM9: failed to read 4096 bytes from bios9.bin");
 }
 
 template <typename T>
@@ -53,6 +58,10 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
         return ReadByteIO(address);
       }
       return 0;
+    case 0xFF:
+      // TODO: clean up address decoding and figure out out-of-bounds reads.
+      if ((address & 0xFFFF0000) == 0xFFFF0000)
+        return bios[address & 0x7FFF];
     default:
       ASSERT(false, "ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
