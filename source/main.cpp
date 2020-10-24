@@ -65,6 +65,9 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
 
   auto& scheduler = interconnect->scheduler;
 
+  int frames = 0;
+  auto t0 = SDL_GetTicks();
+
   for (;;) {
     // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
     static constexpr int kCyclesPerFrame = 560190;
@@ -80,6 +83,14 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
       }
 
       scheduler.Step();
+    }
+
+    auto t1 = SDL_GetTicks();
+    frames++;
+    if ((t1 - t0) >= 1000) {
+      LOG_INFO("framerate: {0} fps", frames);
+      frames = 0;
+      t0 = SDL_GetTicks();
     }
 
     //auto t1 = SDL_GetTicks();
