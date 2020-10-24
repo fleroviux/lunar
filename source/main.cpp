@@ -71,8 +71,7 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
   for (;;) {
     // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
     static constexpr int kCyclesPerFrame = 560190;
-
-    //auto t0 = SDL_GetTicks();
+    
     auto frame_target = scheduler.GetTimestampNow() + kCyclesPerFrame;
 
     while (scheduler.GetTimestampNow() < frame_target) {
@@ -92,9 +91,6 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
       frames = 0;
       t0 = SDL_GetTicks();
     }
-
-    //auto t1 = SDL_GetTicks();
-    //fmt::print("frame time: {0} ms\n", t1 - t0); 
 
     SDL_UpdateTexture(tex_top, nullptr, vram, sizeof(u16) * 256);
     SDL_RenderClear(renderer);
