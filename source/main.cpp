@@ -1,4 +1,4 @@
-
+#include <algorithm>
 #include <fstream>
 #include <memory>
 #include <stdio.h>
@@ -38,7 +38,7 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
-void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* vram) {
+void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* interconnect, u8* vram) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
@@ -63,11 +63,27 @@ void loop(CPUCoreBase* arm7, CPUCoreBase* arm9, Interconnect* interconnect, u8* 
 
   SDL_Event event;
 
+  auto& scheduler = interconnect->scheduler;
+
   for (;;) {
-    for (int i = 0; i < 1024 * 512; i++) {
-      arm7->Run(1);
-      arm9->Run(2);
+    // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
+    static constexpr int kCyclesPerFrame = 560190;
+
+    //auto t0 = SDL_GetTicks();
+    auto frame_target = scheduler.GetTimestampNow() + kCyclesPerFrame;
+
+    while (scheduler.GetTimestampNow() < frame_target) {
+      while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
+        arm9->Run(2);
+        arm7->Run(1);
+        scheduler.AddCycles(1);
+      }
+
+      scheduler.Step();
     }
+
+    //auto t1 = SDL_GetTicks();
+    //fmt::print("frame time: {0} ms\n", t1 - t0); 
 
     SDL_UpdateTexture(tex_top, nullptr, vram, sizeof(u16) * 256);
     SDL_RenderClear(renderer);

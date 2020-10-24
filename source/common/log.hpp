@@ -47,6 +47,6 @@ void append(Level level,
 
 #define ASSERT(condition, message, ...) if (!(condition)) { LOG_ERROR(message, ## __VA_ARGS__); std::exit(-1); }
 
-#define ASSERT_UNREACHABLE ASSERT(false, "reached supposedly unreachable code.");
+#define UNREACHABLE ASSERT(false, "reached supposedly unreachable code.");
 
 } // namespace common::logger

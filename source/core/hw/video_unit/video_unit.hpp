@@ -32,7 +32,8 @@ struct VideoUnit {
           return vcount_setting & 0xFF;
       }
 
-      ASSERT_UNREACHABLE;
+      UNREACHABLE;
+      return 0;
     }
 
     void WriteByte(uint offset, u8 value) {
@@ -48,7 +49,7 @@ struct VideoUnit {
           break;
       }
 
-      ASSERT_UNREACHABLE;
+      UNREACHABLE;
     }
 
   private:
@@ -63,7 +64,7 @@ struct VideoUnit {
   } dispstat;
 
   /// Currently rendered scanline.
-  /// NOTE: this register reportedly is writable.
+  /// TODO: "VCOUNT register is write-able, allowing to synchronize linked DS consoles."
   struct VCOUNT {
     auto ReadByte(uint offset) -> u8 {
       switch (offset) {
@@ -73,7 +74,7 @@ struct VideoUnit {
           return (value >> 8) & 1;
       }
 
-      ASSERT_UNREACHABLE;
+      UNREACHABLE;
     }
 
   private:
@@ -82,8 +83,11 @@ struct VideoUnit {
   } vcount;
 
 private:
+  void OnHdrawBegin();
+  void OnHblankBegin();
+  void OnHblankFlagSet();
+
   Scheduler* scheduler;
-  Scheduler::Event* state_event = nullptr;
 };
 
 } // namespace fauxDS::core

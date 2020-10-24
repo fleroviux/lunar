@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 #include <functional>
+#include <limits>
 
 namespace fauxDS::core {
 
@@ -28,7 +29,9 @@ struct Scheduler {
   }
 
   auto GetTimestampTarget() const -> u64 {
-    ASSERT(heap_size != 0, "cannot calculate target when scheduler is empty.");
+    if (heap_size == 0) {
+      return std::numeric_limits<u64>::max();
+    }
     return heap[0]->timestamp;
   }
 
