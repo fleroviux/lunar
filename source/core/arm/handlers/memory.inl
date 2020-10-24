@@ -7,36 +7,28 @@
 
 using Bus = MemoryBase::Bus;
 
-// TODO: for now we allow all memory accesses to be unaligned.
-// This does not appear to be true in all cases and definitely
-// is not true in the case of the ARM9 (ARMv5TE) processor.
-// Also ReadWordRotate/ReadHalfRotate aren't really accurate names
-// when we allow the accesses to be unaligned which ARMv6K does support.
-// We should probably rename both methods to something that describes
-// what kind/class of read access this is instead.
-
 auto ReadByte(u32 address) -> u32 {
-  return memory->ReadByte(address, Bus::Data, core);
+  return memory->ReadByte(address, Bus::Data);
 }
 
 auto ReadHalf(u32 address) -> u32 {
-  return memory->ReadHalf(address & ~1, Bus::Data, core);
+  return memory->ReadHalf(address & ~1, Bus::Data);
 }
 
 auto ReadWord(u32 address) -> u32 {
-  return memory->ReadWord(address & ~3, Bus::Data, core);
+  return memory->ReadWord(address & ~3, Bus::Data);
 }
 
 auto ReadHalfCode(u32 address) -> u32 {
-  return memory->ReadHalf(address & ~1, Bus::Code, core);
+  return memory->ReadHalf(address & ~1, Bus::Code);
 }
 
 auto ReadWordCode(u32 address) -> u32 {
-  return memory->ReadWord(address & ~3, Bus::Code, core);
+  return memory->ReadWord(address & ~3, Bus::Code);
 }
 
 auto ReadByteSigned(u32 address) -> u32 {
-  u32 value = memory->ReadByte(address, Bus::Data, core);
+  u32 value = memory->ReadByte(address, Bus::Data);
 
   if (value & 0x80) {
     value |= 0xFFFFFF00;
@@ -46,7 +38,7 @@ auto ReadByteSigned(u32 address) -> u32 {
 }
 
 auto ReadHalfRotate(u32 address) -> u32 {
-  u32 value = memory->ReadHalf(address & ~1, Bus::Data, core);
+  u32 value = memory->ReadHalf(address & ~1, Bus::Data);
   
   if (address & 1) {
     value = (value >> 8) | (value << 24);
@@ -56,7 +48,7 @@ auto ReadHalfRotate(u32 address) -> u32 {
 }
 
 auto ReadHalfSigned(u32 address) -> u32 {
-  u32 value = memory->ReadHalf(address & ~1, Bus::Data, core);
+  u32 value = memory->ReadHalf(address & ~1, Bus::Data);
 
   if (value & 0x8000) {
     value |= 0xFFFF0000;
@@ -66,20 +58,20 @@ auto ReadHalfSigned(u32 address) -> u32 {
 }
 
 auto ReadWordRotate(u32 address) -> u32 {
-  auto value = memory->ReadWord(address & ~3, Bus::Data, core);
+  auto value = memory->ReadWord(address & ~3, Bus::Data);
   auto shift = (address & 3) * 8;
   
   return (value >> shift) | (value << (32 - shift));
 }
 
 void WriteByte(u32 address, u8  value) {
-  memory->WriteByte(address, value, core);
+  memory->WriteByte(address, value);
 }
 
 void WriteHalf(u32 address, u16 value) {
-  memory->WriteHalf(address & ~1, value, core);
+  memory->WriteHalf(address & ~1, value);
 }
 
 void WriteWord(u32 address, u32 value) {
-  memory->WriteWord(address & ~3, value, core);
+  memory->WriteWord(address & ~3, value);
 }

@@ -159,8 +159,8 @@ auto main(int argc, const char** argv) -> int {
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
   auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
-  auto arm7 = std::make_unique<ARM>(0, ARM::Architecture::ARMv5TE, arm7_mem.get());
-  auto arm9 = std::make_unique<ARM>(0, ARM::Architecture::ARMv5TE, arm9_mem.get());
+  auto arm7 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm7_mem.get());
+  auto arm9 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm9_mem.get());
   
   {
     u8 data;
@@ -172,7 +172,7 @@ auto main(int argc, const char** argv) -> int {
         puts("failed to read ARM7 binary from ROM into ARM7 memory");
         return -3;
       }
-      arm7_mem->WriteByte(dst++, data, 0);
+      arm7_mem->WriteByte(dst++, data);
     }
 
     arm7->ExceptionBase(0);
@@ -190,7 +190,7 @@ auto main(int argc, const char** argv) -> int {
         puts("failed to read ARM9 binary from ROM into ARM9 memory");
         return -3;
       }
-      arm9_mem->WriteByte(dst++, data, 0);
+      arm9_mem->WriteByte(dst++, data);
     }
 
     arm9->ExceptionBase(0xFFFF0000);

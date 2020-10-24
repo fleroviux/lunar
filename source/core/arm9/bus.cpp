@@ -23,7 +23,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
 }
 
 template <typename T>
-auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
+auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
   // TODO: fix this god-damn-fucking-awful formatting.
@@ -70,7 +70,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus, int core) -> T {
 }
 
 template<typename T>
-void ARM9MemoryBus::Write(u32 address, T value, int core) {
+void ARM9MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
 
   // TODO: fix this god-damn-fucking-awful formatting.
@@ -119,28 +119,28 @@ void ARM9MemoryBus::Write(u32 address, T value, int core) {
   }
 }
 
-auto ARM9MemoryBus::ReadByte(u32 address, Bus bus, int core) -> u8 {
-  return Read<u8>(address, bus, core);
+auto ARM9MemoryBus::ReadByte(u32 address, Bus bus) -> u8 {
+  return Read<u8>(address, bus);
 }
   
-auto ARM9MemoryBus::ReadHalf(u32 address, Bus bus, int core) -> u16 {
-  return Read<u16>(address, bus, core);
+auto ARM9MemoryBus::ReadHalf(u32 address, Bus bus) -> u16 {
+  return Read<u16>(address, bus);
 }
   
-auto ARM9MemoryBus::ReadWord(u32 address, Bus bus, int core) -> u32 {
-  return Read<u32>(address, bus, core);
+auto ARM9MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
+  return Read<u32>(address, bus);
 }
   
-void ARM9MemoryBus::WriteByte(u32 address, u8 value, int core) {
-  Write<u8>(address, value, core);
+void ARM9MemoryBus::WriteByte(u32 address, u8 value) {
+  Write<u8>(address, value);
 }
   
-void ARM9MemoryBus::WriteHalf(u32 address, u16 value, int core) {
-  Write<u16>(address, value, core);
+void ARM9MemoryBus::WriteHalf(u32 address, u16 value) {
+  Write<u16>(address, value);
 }
 
-void ARM9MemoryBus::WriteWord(u32 address, u32 value, int core) {
-  Write<u32>(address, value, core);
+void ARM9MemoryBus::WriteWord(u32 address, u32 value) {
+  Write<u32>(address, value);
 }
 
 } // namespace fauxDS::core

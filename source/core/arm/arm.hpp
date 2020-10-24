@@ -22,16 +22,8 @@ struct ARM {
     ARMv6K
   };
 
-  /**
-    * Constructor
-    *
-    * @param  core    CPU core id
-    * @param  arch    ARM architecture revision
-    * @param  memory  Memory system
-    */
-  ARM(int core, Architecture arch, MemoryBase* memory)
-      : core(core)
-      , cp15(core, memory)
+  ARM(Architecture arch, MemoryBase* memory)
+      : cp15(0, memory)
       , arch(arch)
       , memory(memory) {
     BuildConditionTable();
@@ -85,7 +77,6 @@ private:
   // TODO: store exception base configuration in CP15.
   u32 exception_base = 0;
 
-  int core;
   CP15 cp15;
   Architecture arch;
   State state;
