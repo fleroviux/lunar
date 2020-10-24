@@ -1,7 +1,7 @@
 set(SOURCES
-  arm/interpreter/cp15.cpp
-  arm/interpreter/arm.cpp
-  arm/interpreter/tablegen/tablegen.cpp
+  arm/cp15.cpp
+  arm/arm.cpp
+  arm/tablegen/tablegen.cpp
   arm7/bus.cpp
   arm7/bus_mmio.cpp
   arm9/bus.cpp
@@ -11,15 +11,15 @@ set(SOURCES
   scheduler.cpp)
 
 set(HEADERS
-  arm/interpreter/handlers/arithmetic.inl
-  arm/interpreter/handlers/handler16.inl
-  arm/interpreter/handlers/handler32.inl
-  arm/interpreter/handlers/memory.inl
-  arm/interpreter/tablegen/gen_arm.hpp
-  arm/interpreter/tablegen/gen_thumb.hpp
-  arm/interpreter/cp15.hpp
-  arm/interpreter/arm.hpp
-  arm/interpreter/state.hpp
+  arm/handlers/arithmetic.inl
+  arm/handlers/handler16.inl
+  arm/handlers/handler32.inl
+  arm/handlers/memory.inl
+  arm/tablegen/gen_arm.hpp
+  arm/tablegen/gen_thumb.hpp
+  arm/cp15.hpp
+  arm/arm.hpp
+  arm/state.hpp
   arm/cpu_core.hpp
   arm/decoder.hpp
   arm/memory.hpp

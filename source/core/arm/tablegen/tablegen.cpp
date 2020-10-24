@@ -8,7 +8,7 @@
 #include <common/static_for.hpp>
 
 #include "../arm.hpp"
-#include "../../decoder.hpp"
+#include "../decoder.hpp"
 
 namespace fauxDS::core::arm {
 

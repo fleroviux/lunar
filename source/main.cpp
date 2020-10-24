@@ -5,8 +5,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
-#include <core/arm/cpu_core.hpp>
-#include <core/arm/interpreter/arm.hpp>
+#include <core/arm/arm.hpp>
 #include <core/interconnect.hpp>
 #include <core/arm7/bus.hpp>
 #include <core/arm9/bus.hpp>

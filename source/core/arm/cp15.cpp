@@ -5,9 +5,9 @@
  * Refer to the included LICENSE file.
  */
 
-#include "cp15.hpp"
-
 #include <functional>
+
+#include "cp15.hpp"
 
 using namespace fauxDS::core::arm;
 

@@ -9,10 +9,10 @@
 
 #include <array>
 #include <third_party/fmtlib/include/fmt/format.h>
+
 #include "cp15.hpp"
 #include "state.hpp"
-#include "../cpu_core.hpp"
-#include "../memory.hpp"
+#include "memory.hpp"
 
 namespace fauxDS::core::arm {
 
