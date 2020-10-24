@@ -9,7 +9,7 @@
 
 #include <cstdlib>
 #include <string>
-#include <third_party/fmtlib/include/fmt/format.h>
+#include <fmt/format.h>
 
 namespace common::logger {
 

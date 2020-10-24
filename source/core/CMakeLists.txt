@@ -20,7 +20,6 @@ set(HEADERS
   arm/cp15.hpp
   arm/arm.hpp
   arm/state.hpp
-  arm/cpu_core.hpp
   arm/decoder.hpp
   arm/memory.hpp
   arm7/bus.hpp

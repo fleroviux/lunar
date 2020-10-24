@@ -155,8 +155,7 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
       return BANK_UND;
   }
 
-  LOG_ERROR("Mode number 0x{0:X} is not valid.", mode);
-  return BANK_UND;
+  UNREACHABLE;
 }
 
 void ARM::SwitchMode(Mode new_mode) {

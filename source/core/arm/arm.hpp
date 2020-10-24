@@ -8,7 +8,7 @@
 #pragma once
 
 #include <array>
-#include <third_party/fmtlib/include/fmt/format.h>
+#include <fmt/format.h>
 
 #include "cp15.hpp"
 #include "state.hpp"
@@ -30,11 +30,10 @@ struct ARM {
     * @param  memory  Memory system
     */
   ARM(int core, Architecture arch, MemoryBase* memory)
-    : core(core)
-    , cp15(core, memory)
-    , arch(arch)
-    , memory(memory)
-  {
+      : core(core)
+      , cp15(core, memory)
+      , arch(arch)
+      , memory(memory) {
     BuildConditionTable();
     Reset();
   }
@@ -66,7 +65,6 @@ struct ARM {
   typedef void (ARM::*Handler16)(u16);
   typedef void (ARM::*Handler32)(u32);
 private:
-  friend struct MemoryBase;
   friend struct TableGen;
   
   static auto GetRegisterBankByMode(Mode mode) -> Bank;
