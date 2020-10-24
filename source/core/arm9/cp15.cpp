@@ -6,7 +6,7 @@
 
 #include "cp15.hpp"
 
-using namespace fauxDS::core;
+namespace fauxDS::core {
 
 CP15::CP15(ARM9MemoryBus* bus) : bus(bus) {
   for (int i = 0; i <= 0x7FF; i++) {
@@ -111,3 +111,4 @@ void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
   bus->SetITCM(itcm.base, itcm.limit);
 }
 
+} // namespace fauxDS::core

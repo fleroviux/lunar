@@ -68,8 +68,6 @@ private:
   #include "handlers/handler32.inl"
   #include "handlers/memory.inl"
 
-  bool waiting_for_irq;
-  
   // TODO: store exception base configuration in CP15.
   u32 exception_base = 0;
 

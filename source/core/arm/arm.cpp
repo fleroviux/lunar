@@ -4,7 +4,7 @@
 
 #include "arm.hpp"
 
-using namespace fauxDS::core::arm;
+namespace fauxDS::core::arm {
 
 void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
@@ -14,7 +14,6 @@ void ARM::Reset() {
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = ExceptionBase();
-  waiting_for_irq = false;
 
   for (auto coprocessor : coprocessors)
     if (coprocessor != nullptr)
@@ -25,10 +24,6 @@ void ARM::Reset() {
 
 void ARM::Run(int instructions) {
   while (instructions-- > 0) {
-    if (waiting_for_irq) {
-      return;
-    }
-    
     auto instruction = opcode[0];
 
     if (state.cpsr.f.thumb) {
@@ -67,8 +62,6 @@ void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
 }
 
 void ARM::SignalIRQ() {
-  waiting_for_irq = false;
-
   if (state.cpsr.f.mask_irq) {
     return;
   }
@@ -189,3 +182,5 @@ void ARM::SwitchMode(Mode new_mode) {
     state.r14 = state.bank[new_bank][6];
   }
 }
+
+} // namespace fauxDS::core::arm

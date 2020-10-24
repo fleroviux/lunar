@@ -823,7 +823,7 @@ void ARM_Hint(u32 instruction) {
 
   if (opcode == 3) {
     //LOG_INFO("Core #{0} is waiting for an IRQ.", core);
-    waiting_for_irq = true;
+    //waiting_for_irq = true;
     state.r15 += 4;
     return;
   }
