@@ -6,11 +6,12 @@
  */
 
 #include <common/log.hpp>
-#include "interpreter.hpp"
+
+#include "arm.hpp"
 
 using namespace fauxDS::core::arm;
 
-void CPUCoreInterpreter::Reset() {
+void ARM::Reset() {
   constexpr std::uint32_t nop = 0xE320F000;
 
   state.Reset();
@@ -24,7 +25,7 @@ void CPUCoreInterpreter::Reset() {
   hit_unimplemented_or_undefined = false;
 }
 
-void CPUCoreInterpreter::Run(int instructions) {
+void ARM::Run(int instructions) {
   while (instructions-- > 0) {
     if (waiting_for_irq) {
       return;
@@ -61,7 +62,7 @@ void CPUCoreInterpreter::Run(int instructions) {
   }
 }
 
-void CPUCoreInterpreter::SignalIRQ() {
+void ARM::SignalIRQ() {
   waiting_for_irq = false;
 
   if (state.cpsr.f.mask_irq) {
@@ -92,19 +93,19 @@ void CPUCoreInterpreter::SignalIRQ() {
   ReloadPipeline32();
 }
 
-void CPUCoreInterpreter::ReloadPipeline32() {
+void ARM::ReloadPipeline32() {
   opcode[0] = ReadWordCode(state.r15);
   opcode[1] = ReadWordCode(state.r15 + 4);
   state.r15 += 8;
 }
 
-void CPUCoreInterpreter::ReloadPipeline16() {
+void ARM::ReloadPipeline16() {
   opcode[0] = ReadHalfCode(state.r15);
   opcode[1] = ReadHalfCode(state.r15 + 2);
   state.r15 += 4;
 }
 
-void CPUCoreInterpreter::BuildConditionTable() {
+void ARM::BuildConditionTable() {
   for (int flags = 0; flags < 16; flags++) {
     bool n = flags & 8;
     bool z = flags & 4;
@@ -130,14 +131,14 @@ void CPUCoreInterpreter::BuildConditionTable() {
   }
 }
 
-bool CPUCoreInterpreter::CheckCondition(Condition condition) {
+bool ARM::CheckCondition(Condition condition) {
   if (condition == COND_AL) {
     return true;
   }
   return condition_table[condition][state.cpsr.v >> 28];
 }
 
-auto CPUCoreInterpreter::GetRegisterBankByMode(Mode mode) -> Bank {
+auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
   switch (mode) {
     case MODE_USR:
     case MODE_SYS:
@@ -158,7 +159,7 @@ auto CPUCoreInterpreter::GetRegisterBankByMode(Mode mode) -> Bank {
   return BANK_UND;
 }
 
-void CPUCoreInterpreter::SwitchMode(Mode new_mode) {
+void ARM::SwitchMode(Mode new_mode) {
   auto old_bank = GetRegisterBankByMode(state.cpsr.f.mode);
   auto new_bank = GetRegisterBankByMode(new_mode);
 

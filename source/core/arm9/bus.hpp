@@ -14,10 +14,6 @@ namespace fauxDS::core {
 struct ARM9MemoryBus final : arm::MemoryBase {
   ARM9MemoryBus(Interconnect* interconnect);
 
-  auto GetMemoryModel() const -> MemoryModel override {
-    return MemoryModel::ProtectionUnit;
-  }
-
   void SetDTCM(u32 base, u32 limit) override {
     dtcm_base  = base;
     dtcm_limit = limit;

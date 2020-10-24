@@ -7,44 +7,22 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
-
-#include "cpu_core.hpp"
 
 namespace fauxDS::core::arm {
 
 /** Base class that memory systems must implement
   * in order to be connected to an ARM core.
   * Provides an uniform interface for ARM cores to
-  * access memory and for the memory system to generate
-  * prefetch or data aborts on offending cores.
+  * access memory.
   */
-class MemoryBase {
-public:
-  /// Maximum number of attachable CPU cores.
-  /// TODO(fleroviux): get rid of this artificial limitation?
-  static constexpr int kMaxCores = 4;
-
+struct MemoryBase {
   enum class Bus : int {
     Code,
     Data
   };
 
-  enum class MemoryModel {
-    Unprotected,
-    ProtectionUnit,
-    ManagementUnit
-  };
-
-  void RegisterCore(int id, CPUCoreBase* core) {
-    cores[id] = core;
-  }
-
-  virtual auto GetMemoryModel() const -> MemoryModel = 0;
-
   virtual void SetDTCM(std::uint32_t base, std::uint32_t limit) {}
-
   virtual void SetITCM(std::uint32_t base, std::uint32_t limit) {}
 
   virtual auto ReadByte(std::uint32_t address,
@@ -70,20 +48,6 @@ public:
   virtual void WriteWord(std::uint32_t address,
                          std::uint32_t value,
                          int core) = 0;
-
-protected:
-  /**
-    * Generate an abort exception on a connected CPU core.
-    *
-    * @param  id       CPU core id
-    * @param  address  Address that caused the fault
-    * @param  bus      Whether code or data was accessed.
-    * @param  write    Whether a write caused the abort. May only be set if bus=Data. 
-    */
-  void SignalFault(int id, std::uint32_t address, Bus bus, bool write) {
-  }
-
-  std::array<CPUCoreBase*, kMaxCores> cores;
 };
 
 } // namespace fauxDS::core::arm

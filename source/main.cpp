@@ -6,7 +6,7 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 #include <core/arm/cpu_core.hpp>
-#include <core/arm/interpreter/interpreter.hpp>
+#include <core/arm/interpreter/arm.hpp>
 #include <core/interconnect.hpp>
 #include <core/arm7/bus.hpp>
 #include <core/arm9/bus.hpp>
@@ -38,7 +38,7 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
-void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* interconnect, u8* vram) {
+void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
@@ -71,7 +71,7 @@ void loop(CPUCoreInterpreter* arm7, CPUCoreInterpreter* arm9, Interconnect* inte
   for (;;) {
     // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
     static constexpr int kCyclesPerFrame = 560190;
-    
+
     auto frame_target = scheduler.GetTimestampNow() + kCyclesPerFrame;
 
     while (scheduler.GetTimestampNow() < frame_target) {
@@ -160,8 +160,8 @@ auto main(int argc, const char** argv) -> int {
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
   auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
-  auto arm7 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm7_mem.get());
-  auto arm9 = std::make_unique<CPUCoreInterpreter>(0, CPUCoreBase::Architecture::ARMv5TE, arm9_mem.get());
+  auto arm7 = std::make_unique<ARM>(0, ARM::Architecture::ARMv5TE, arm7_mem.get());
+  auto arm9 = std::make_unique<ARM>(0, ARM::Architecture::ARMv5TE, arm9_mem.get());
   
   {
     u8 data;

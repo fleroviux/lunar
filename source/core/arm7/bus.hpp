@@ -13,10 +13,6 @@ namespace fauxDS::core {
 struct ARM7MemoryBus final : arm::MemoryBase {
   ARM7MemoryBus(Interconnect* interconnect);
 
-  auto GetMemoryModel() const -> MemoryModel override {
-    return MemoryModel::Unprotected;
-  }
-
   auto ReadByte(u32 address, Bus bus, int core) -> u8 override;
   auto ReadHalf(u32 address, Bus bus, int core) -> u16 override;
   auto ReadWord(u32 address, Bus bus, int core) -> u32 override;

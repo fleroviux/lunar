@@ -16,8 +16,12 @@
 
 namespace fauxDS::core::arm {
 
-class CPUCoreInterpreter final : public CPUCoreBase {
-public:
+struct ARM {
+  enum class Architecture {
+    ARMv5TE,
+    ARMv6K
+  };
+
   /**
     * Constructor
     *
@@ -25,30 +29,32 @@ public:
     * @param  arch    ARM architecture revision
     * @param  memory  Memory system
     */
-  CPUCoreInterpreter(int core, Architecture arch, MemoryBase* memory)
+  ARM(int core, Architecture arch, MemoryBase* memory)
     : core(core)
     , cp15(core, memory)
     , arch(arch)
     , memory(memory)
   {
-    memory->RegisterCore(core, this);
     BuildConditionTable();
     Reset();
   }
 
-  void Reset() override;
-  void Run(int instructions) override;
+  void Reset();
+  void Run(int instructions);
+
+  auto ExceptionBase() -> std::uint32_t const { return exception_base; }
+  void ExceptionBase(std::uint32_t base) { exception_base = base; } 
 
   // TODO(fleroviux): Hold exception raised state,
   // in case that an exception cannot be served immediately?
   // Also implement other exception signals like prefetch/data abort.
-  void SignalIRQ() override;
+  void SignalIRQ();
 
-  auto GetPC() -> std::uint32_t override {
+  auto GetPC() -> std::uint32_t {
     return state.r15 - (state.cpsr.f.thumb ? 4 : 8);
   }
 
-  void SetPC(std::uint32_t value) override {
+  void SetPC(std::uint32_t value) {
     state.r15 = value;
     if (state.cpsr.f.thumb) {
       ReloadPipeline16();
@@ -57,14 +63,13 @@ public:
     }
   }
 
-  bool IsInPrivilegedMode() override {
-    // TODO: confirm that the exception modes are privileged.
-    return state.cpsr.f.mode != MODE_USR;
-  }
+  // TODO: remove this hack.
+  bool hit_unimplemented_or_undefined = false;
 
-  typedef void (CPUCoreInterpreter::*Handler16)(std::uint16_t);
-  typedef void (CPUCoreInterpreter::*Handler32)(std::uint32_t);
+  typedef void (ARM::*Handler16)(std::uint16_t);
+  typedef void (ARM::*Handler32)(std::uint32_t);
 private:
+  friend struct MemoryBase;
   friend struct TableGen;
   
   static auto GetRegisterBankByMode(Mode mode) -> Bank;
@@ -81,6 +86,9 @@ private:
   #include "handlers/memory.inl"
 
   bool waiting_for_irq;
+  
+  // TODO: store exception base configuration in CP15.
+  std::uint32_t exception_base = 0;
 
   int core;
   CP15 cp15;

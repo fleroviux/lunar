@@ -34,32 +34,32 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const bool immediate = instruction & (1 << 22);
       const auto opcode = (instruction >> 5) & 3;
       
-      return &CPUCoreInterpreter::ARM_SingleHalfwordDoubleTransfer<pre, add, immediate, wb, load, opcode>;
+      return &ARM::ARM_SingleHalfwordDoubleTransfer<pre, add, immediate, wb, load, opcode>;
     }
     case ARMInstrType::Multiply: {
       const bool set_flags = instruction & (1 << 20);
 
       switch (static_cast<MultiplyOpcode>((instruction >> 21) & 0xF)) {
         case MultiplyOpcode::MUL: {
-          return &CPUCoreInterpreter::ARM_Multiply<false, set_flags>;
+          return &ARM::ARM_Multiply<false, set_flags>;
         }
         case MultiplyOpcode::MLA: {
-          return &CPUCoreInterpreter::ARM_Multiply<true, set_flags>;
+          return &ARM::ARM_Multiply<true, set_flags>;
         }
         case MultiplyOpcode::UMAAL: {
-          return &CPUCoreInterpreter::ARM_UnsignedMultiplyLongAccumulateAccumulate;
+          return &ARM::ARM_UnsignedMultiplyLongAccumulateAccumulate;
         }
         case MultiplyOpcode::UMULL: {
-          return &CPUCoreInterpreter::ARM_MultiplyLong<false, false, set_flags>;
+          return &ARM::ARM_MultiplyLong<false, false, set_flags>;
         }
         case MultiplyOpcode::UMLAL: {
-          return &CPUCoreInterpreter::ARM_MultiplyLong<false, true, set_flags>;
+          return &ARM::ARM_MultiplyLong<false, true, set_flags>;
         }
         case MultiplyOpcode::SMULL: {
-          return &CPUCoreInterpreter::ARM_MultiplyLong<true, false, set_flags>;
+          return &ARM::ARM_MultiplyLong<true, false, set_flags>;
         }
         case MultiplyOpcode::SMLAL: {
-          return &CPUCoreInterpreter::ARM_MultiplyLong<true, true, set_flags>;
+          return &ARM::ARM_MultiplyLong<true, true, set_flags>;
         }
       }
       
@@ -68,37 +68,37 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
     case ARMInstrType::SingleDataSwap: {
       const bool byte = instruction & (1 << 22);
       
-      return &CPUCoreInterpreter::ARM_SingleDataSwap<byte>;
+      return &ARM::ARM_SingleDataSwap<byte>;
     }
     case ARMInstrType::LoadStoreExclusive: {
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
     case ARMInstrType::StatusTransfer: {
       const bool immediate = instruction & (1 << 25);
       const bool use_spsr  = instruction & (1 << 22);
       const bool to_status = instruction & (1 << 21);
 
-      return &CPUCoreInterpreter::ARM_StatusTransfer<immediate, use_spsr, to_status>;
+      return &ARM::ARM_StatusTransfer<immediate, use_spsr, to_status>;
     }
     case ARMInstrType::BranchAndExchange: {
-      return &CPUCoreInterpreter::ARM_BranchAndExchangeMaybeLink<false>;
+      return &ARM::ARM_BranchAndExchangeMaybeLink<false>;
     }
     case ARMInstrType::BranchAndExchangeJazelle: {
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
     case ARMInstrType::CountLeadingZeros: {
-      return &CPUCoreInterpreter::ARM_CountLeadingZeros;
+      return &ARM::ARM_CountLeadingZeros;
     }
     case ARMInstrType::BranchLinkExchange: {
-      return &CPUCoreInterpreter::ARM_BranchAndExchangeMaybeLink<true>;
+      return &ARM::ARM_BranchAndExchangeMaybeLink<true>;
     }
     case ARMInstrType::SaturatingAddSubtract: {
       const int opcode = (instruction >> 20) & 0xF;
       
-      return &CPUCoreInterpreter::ARM_SaturatingAddSubtract<opcode>;
+      return &ARM::ARM_SaturatingAddSubtract<opcode>;
     }
     case ARMInstrType::Breakpoint: {
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
     case ARMInstrType::SignedMultiplies: {
       const bool x = instruction & (1 << 5);
@@ -106,17 +106,17 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
   
       switch (static_cast<SignedMultiplyOpcode>((instruction >> 21) & 0xF)) {
         case SignedMultiplyOpcode::SMLAxy: {
-          return &CPUCoreInterpreter::ARM_SignedHalfwordMultiply<true, x, y>;
+          return &ARM::ARM_SignedHalfwordMultiply<true, x, y>;
         }
         case SignedMultiplyOpcode::SM__Wy: {
           /* NOTE: "x" in this case encodes "NOT accumulate". */
-          return &CPUCoreInterpreter::ARM_SignedWordHalfwordMultiply<!x, y>;
+          return &ARM::ARM_SignedWordHalfwordMultiply<!x, y>;
         }
         case SignedMultiplyOpcode::SMLALxy: {
-          return &CPUCoreInterpreter::ARM_SignedHalfwordMultiplyLongAccumulate<x, y>;
+          return &ARM::ARM_SignedHalfwordMultiplyLongAccumulate<x, y>;
         }
         case SignedMultiplyOpcode::SMULxy: {
-          return &CPUCoreInterpreter::ARM_SignedHalfwordMultiply<false, x, y>;
+          return &ARM::ARM_SignedHalfwordMultiply<false, x, y>;
         }
       }
       
@@ -128,7 +128,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const auto opcode = (instruction >> 21) & 0xF;
       const auto field4 = (instruction >>  4) & 0xF;
 
-      return &CPUCoreInterpreter::ARM_DataProcessing<immediate, opcode, set_flags, field4>;
+      return &ARM::ARM_DataProcessing<immediate, opcode, set_flags, field4>;
     }
     case ARMInstrType::Hint: {
       // We cannot discern "hint" instructions from "status transfer" 
@@ -142,36 +142,36 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const bool immediate = ~instruction & (1 << 25);
       const bool byte = instruction & (1 << 22);
       
-      return &CPUCoreInterpreter::ARM_SingleDataTransfer<immediate, pre, add, byte, wb, load>;
+      return &ARM::ARM_SingleDataTransfer<immediate, pre, add, byte, wb, load>;
     }
     case ARMInstrType::Media: {
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
     case ARMInstrType::BlockDataTransfer: {
       const bool user_mode = instruction & (1 << 22);
             
-      return &CPUCoreInterpreter::ARM_BlockDataTransfer<pre, add, user_mode, wb, load>;
+      return &ARM::ARM_BlockDataTransfer<pre, add, user_mode, wb, load>;
     }
     case ARMInstrType::BranchAndLink: {
-      return &CPUCoreInterpreter::ARM_BranchAndLink<(instruction >> 24) & 1>;
+      return &ARM::ARM_BranchAndLink<(instruction >> 24) & 1>;
     }
     case ARMInstrType::CoprocessorLoadStoreAndDoubleRegXfer:
     case ARMInstrType::CoprocessorDataProcessing: {
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
     case ARMInstrType::CoprocessorRegisterXfer: {
-      return &CPUCoreInterpreter::ARM_CoprocessorRegisterTransfer;
+      return &ARM::ARM_CoprocessorRegisterTransfer;
     }
     case ARMInstrType::SoftwareInterrupt: {
-      return &CPUCoreInterpreter::ARM_SWI;
+      return &ARM::ARM_SWI;
     }
     case ARMInstrType::BranchLinkExchangeImm: {
-      return &CPUCoreInterpreter::ARM_BranchLinkExchangeImm;
+      return &ARM::ARM_BranchLinkExchangeImm;
     }
     case ARMInstrType::Unconditional: { // placeholder
-      return &CPUCoreInterpreter::ARM_Unimplemented;
+      return &ARM::ARM_Unimplemented;
     }
   }
 
-  return &CPUCoreInterpreter::ARM_Undefined;
+  return &ARM::ARM_Undefined;
 }

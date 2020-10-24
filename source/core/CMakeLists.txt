@@ -1,6 +1,6 @@
 set(SOURCES
   arm/interpreter/cp15.cpp
-  arm/interpreter/interpreter.cpp
+  arm/interpreter/arm.cpp
   arm/interpreter/tablegen/tablegen.cpp
   arm7/bus.cpp
   arm7/bus_mmio.cpp
@@ -18,7 +18,7 @@ set(HEADERS
   arm/interpreter/tablegen/gen_arm.hpp
   arm/interpreter/tablegen/gen_thumb.hpp
   arm/interpreter/cp15.hpp
-  arm/interpreter/interpreter.hpp
+  arm/interpreter/arm.hpp
   arm/interpreter/state.hpp
   arm/cpu_core.hpp
   arm/decoder.hpp
