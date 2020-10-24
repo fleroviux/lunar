@@ -1,14 +1,11 @@
 /*
  * Copyright (C) 2020 fleroviux
- *
- * Licensed under GPLv3 or any later version.
- * Refer to the included LICENSE file.
  */
 
 #include <common/static_for.hpp>
 
 #include "../arm.hpp"
-#include "../decoder.hpp"
+#include "decoder.hpp"
 
 namespace fauxDS::core::arm {
 
