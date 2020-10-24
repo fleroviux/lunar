@@ -5,9 +5,9 @@
 #pragma once
 
 #include <array>
-#include <fmt/format.h>
+#include <common/log.hpp>
 
-#include "cp15.hpp"
+#include "coprocessor.hpp"
 #include "state.hpp"
 #include "memory.hpp"
 
@@ -20,19 +20,18 @@ struct ARM {
   };
 
   ARM(Architecture arch, MemoryBase* memory)
-      : cp15(0, memory)
-      , arch(arch)
+      : arch(arch)
       , memory(memory) {
     BuildConditionTable();
     Reset();
   }
 
-  void Reset();
-  void Run(int instructions);
-
   auto ExceptionBase() -> u32 const { return exception_base; }
   void ExceptionBase(u32 base) { exception_base = base; } 
 
+  void Reset();
+  void Run(int instructions);
+  void AttachCoprocessor(uint id, Coprocessor* coprocessor);
   void SignalIRQ();
 
   auto GetPC() -> u32 {
@@ -74,11 +73,11 @@ private:
   // TODO: store exception base configuration in CP15.
   u32 exception_base = 0;
 
-  CP15 cp15;
   Architecture arch;
   State state;
   State::StatusRegister* p_spsr;
   MemoryBase* memory;
+  Coprocessor* coprocessors[16] { nullptr };
   u32 opcode[2];
 
   bool condition_table[16][16];

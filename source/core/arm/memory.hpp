@@ -19,9 +19,6 @@ struct MemoryBase {
     Data
   };
 
-  virtual void SetDTCM(u32 base, u32 limit) {}
-  virtual void SetITCM(u32 base, u32 limit) {}
-
   virtual auto ReadByte(u32 address, Bus bus) ->  u8 = 0;
   virtual auto ReadHalf(u32 address, Bus bus) -> u16 = 0;
   virtual auto ReadWord(u32 address, Bus bus) -> u32 = 0;

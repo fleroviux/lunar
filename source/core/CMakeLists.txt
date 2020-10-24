@@ -1,11 +1,11 @@
 set(SOURCES
-  arm/cp15.cpp
   arm/arm.cpp
   arm/tablegen/tablegen.cpp
   arm7/bus.cpp
   arm7/bus_mmio.cpp
   arm9/bus.cpp
   arm9/bus_mmio.cpp
+  arm9/cp15.cpp
   hw/video_unit/video_unit.cpp
   core.cpp
   scheduler.cpp)
@@ -15,15 +15,16 @@ set(HEADERS
   arm/handlers/handler16.inl
   arm/handlers/handler32.inl
   arm/handlers/memory.inl
+  arm/tablegen/decoder.hpp
   arm/tablegen/gen_arm.hpp
   arm/tablegen/gen_thumb.hpp
-  arm/cp15.hpp
   arm/arm.hpp
+  arm/coprocessor.hpp
   arm/state.hpp
-  arm/decoder.hpp
   arm/memory.hpp
   arm7/bus.hpp
   arm9/bus.hpp
+  arm9/cp15.hpp
   hw/video_unit/video_unit.hpp
   core.hpp
   interconnect.hpp

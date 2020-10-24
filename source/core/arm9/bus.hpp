@@ -14,12 +14,12 @@ namespace fauxDS::core {
 struct ARM9MemoryBus final : arm::MemoryBase {
   ARM9MemoryBus(Interconnect* interconnect);
 
-  void SetDTCM(u32 base, u32 limit) override {
+  void SetDTCM(u32 base, u32 limit) {
     dtcm_base  = base;
     dtcm_limit = limit;
   }
 
-  void SetITCM(u32 base, u32 limit) override {
+  void SetITCM(u32 base, u32 limit) {
     itcm_base  = base;
     itcm_limit = limit;
   }

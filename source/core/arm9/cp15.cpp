@@ -6,9 +6,9 @@
 
 #include "cp15.hpp"
 
-using namespace fauxDS::core::arm;
+using namespace fauxDS::core;
 
-CP15::CP15(int core, MemoryBase* memory) : cpu_id(core), memory(memory) {
+CP15::CP15(ARM9MemoryBus* bus) : bus(bus) {
   for (int i = 0; i <= 0x7FF; i++) {
     handler_rd[i] = &CP15::DefaultRead;
     handler_wr[i] = &CP15::DefaultWrite;
@@ -87,7 +87,7 @@ void CP15::WriteDTCMConfig(int cn, int cm, int opcode, u32 value) {
     LOG_ERROR("CP15: DTCM limit is lower than base address!");
   }
   LOG_INFO("CP15: DTCM mapped @ 0x{0:08X} - 0x{1:08X}", dtcm.base, dtcm.limit);
-  memory->SetDTCM(dtcm.base, dtcm.limit);
+  bus->SetDTCM(dtcm.base, dtcm.limit);
 }
 
 void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
@@ -108,6 +108,6 @@ void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
     LOG_ERROR("CP15: ITCM limit is lower than base address!");
   }
   LOG_INFO("CP15: ITCM mapped @ 0x{0:08X} - 0x{1:08X}", itcm.base, itcm.limit);
-  memory->SetITCM(itcm.base, itcm.limit);
+  bus->SetITCM(itcm.base, itcm.limit);
 }
 

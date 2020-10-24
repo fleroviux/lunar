@@ -788,7 +788,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
   int src1 =  instruction & 0xF;
   int src2 = (instruction >> 16) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
-  u32 op2 = state.reg[src2];
+  u32 op2  = state.reg[src2];
 
   if ((opcode & 0b1001) != 0) {
     ARM_Undefined(instruction);
@@ -845,32 +845,17 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   auto cp_num  = (instruction >>  8) & 0xF;
 
   if (instruction & (1 << 20)) {
-    if (cp_num == 15) {
-      state.reg[dst] = cp15.Read(opcode1, cp_rn, cp_rm, opcode2);
-    } else {
-      LOG_ERROR("mrc p{0}, #{1}, r{2}, C{3}, C{4}, #{5}",
-                cp_num,
-                opcode1,
-                dst,
-                cp_rn,
-                cp_rm,
-                opcode2);
-      hit_unimplemented_or_undefined = true;
-    }
+    ASSERT(coprocessors[cp_num] != nullptr,
+      "unhandled: mrc p{0}, #{1}, r{2}, C{3}, C{4}, #{5}",
+      cp_num, opcode1, dst, cp_rn, cp_rm, opcode2);
+
+    state.reg[dst] = coprocessors[cp_num]->Read(opcode1, cp_rn, cp_rm, opcode2);
   } else {
-    if (cp_num == 15) {
-      cp15.Write(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
-    } else {
-      LOG_ERROR("mcr p{0}, #{1}, r{2}, C{3}, C{4}, #{5} (rD = 0x{6:08X})",
-                cp_num,
-                opcode1,
-                dst,
-                cp_rn,
-                cp_rm,
-                opcode2,
-                state.reg[dst]);
-      hit_unimplemented_or_undefined = true;
-    }
+    ASSERT(coprocessors[cp_num] != nullptr,
+      "unhandled: mcr p{0}, #{1}, r{2}, C{3}, C{4}, #{5} (rD = 0x{6:08X})",
+      cp_num, opcode1, dst, cp_rn, cp_rm, opcode2, state.reg[dst]);
+
+    coprocessors[cp_num]->Write(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
   }
 
   state.r15 += 4;

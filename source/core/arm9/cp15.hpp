@@ -6,20 +6,21 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
-#include <core/arm/memory.hpp>
+#include <core/arm/coprocessor.hpp>
 
-namespace fauxDS::core::arm {
+#include "bus.hpp"
+
+namespace fauxDS::core {
 
 /** This class emulates the System Control Coprocessor (CP15).
   * It is responsable for various things, such as configuration
   * of the MPU/MMU, alignment and endianness modes,
   * cache control and various other things.
   */
-class CP15 {
-public:
-  CP15(int core, MemoryBase* memory);
+struct CP15 : arm::Coprocessor {
+  CP15(ARM9MemoryBus* bus);
 
-  void Reset();
+  void Reset() override;
 
   /**
     * Read coprocessor register.
@@ -31,7 +32,7 @@ public:
     *
     * @returns the value contained in the coprocessor register.
     */
-  auto Read(int opcode1, int cn, int cm, int opcode2) -> u32;
+  auto Read(int opcode1, int cn, int cm, int opcode2) -> u32 override;
 
   /**
     * Write to coprocessor register.
@@ -42,7 +43,7 @@ public:
     * @param  opcode2  Opcode #2
     * @param  value    Word to write
     */
-  void Write(int opcode1, int cn, int cm, int opcode2, u32 value);
+  void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override;
 
 private:
   auto Index(int cn, int cm, int opcode) -> int {
@@ -88,19 +89,13 @@ private:
   void WriteDTCMConfig(int cn, int cm, int opcode, u32 value);
   void WriteITCMConfig(int cn, int cm, int opcode, u32 value);
 
-  int cpu_id;
-
   struct TCMConfig {
     u32 value;
     u32 base;
     u32 limit;
   } dtcm, itcm;
 
-  /** The memory implementation of this CPU core.
-    * CP15 forwards information about memory configuration to the
-    * memory system. Examples are: translation tables, PU regions.
-    */
-  MemoryBase* memory;
+  ARM9MemoryBus* bus;
 
   /** List of register read handlers.
     * The array is indexed like this:
@@ -116,4 +111,4 @@ private:
   WriteHandler handler_wr[0x800];
 };
 
-} // namespace fauxDS::core::arm
+} // namespace fauxDS::core

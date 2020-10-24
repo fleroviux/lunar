@@ -2,8 +2,6 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/log.hpp>
-
 #include "arm.hpp"
 
 using namespace fauxDS::core::arm;
@@ -16,8 +14,11 @@ void ARM::Reset() {
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = ExceptionBase();
-  cp15.Reset();
   waiting_for_irq = false;
+
+  for (auto coprocessor : coprocessors)
+    if (coprocessor != nullptr)
+      coprocessor->Reset();
 
   hit_unimplemented_or_undefined = false;
 }
@@ -57,6 +58,12 @@ void ARM::Run(int instructions) {
       }
     }
   }
+}
+
+
+void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
+  ASSERT(id <= 15, "Coprocessor ID must be lower or equal to 15");
+  coprocessors[id] = coprocessor;
 }
 
 void ARM::SignalIRQ() {
