@@ -2,6 +2,8 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#include <stdexcept>
+
 #include "arm.hpp"
 
 namespace fauxDS::core::arm {
@@ -52,7 +54,10 @@ void ARM::Run(int instructions) {
 
 
 void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
-  ASSERT(id <= 15, "Coprocessor ID must be lower or equal to 15");
+  if (id >= 16) { 
+    throw std::runtime_error{"Coprocessor ID must be lower or equal to 15"};
+  }
+  
   coprocessors[id] = coprocessor;
 }
 
