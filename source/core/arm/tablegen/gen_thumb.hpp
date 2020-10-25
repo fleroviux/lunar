@@ -82,19 +82,11 @@ static constexpr auto GenerateHandlerThumb() -> Handler16 {
 
       return &ARM::Thumb_AddOffsetToSP<subtract>;
     }
-    case ThumbInstrType::SignOrZeroExtend: {
-      const auto opcode = (instruction >> 6) & 3;
-
-      return &ARM::Thumb_SignOrZeroExtend<opcode>;
-    }
     case ThumbInstrType::PushPop: {
       const bool load  = (instruction >> 11) & 1;
       const bool pc_lr = (instruction >>  8) & 1;
 
       return &ARM::Thumb_PushPop<load, pc_lr>;
-    }
-    case ThumbInstrType::ReverseBytes: {
-      return &ARM::Thumb_ReverseBytes;
     }
     case ThumbInstrType::LoadStoreMultiple: {
       const bool load = (instruction >> 11) & 1;

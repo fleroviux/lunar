@@ -418,45 +418,6 @@ void Thumb_PushPop(u16 instruction) {
   state.r15 += 2;
 }
 
-void Thumb_ReverseBytes(u16 instruction) {
-  int dst = (instruction >> 0) & 7;
-  int src = (instruction >> 3) & 7;
-  int opcode = (instruction >> 6) & 3;
-
-  u32 result = state.reg[src];
-
-  // TODO: could make 'opcode' a template parameter.
-  // Also verify that these instructions work the way they're supposed to.
-  switch (opcode) {
-  case 0: {
-    // REV
-    result = (result << 16) | (result >> 16);
-    result = ((result & 0xFF00FF00) >> 8) | ((result & 0x00FF00FF) << 8);
-    break;
-  }
-  case 1: {
-    // REV16
-    result = ((result & 0xFF00FF00) >> 8) | ((result & 0x00FF00FF) << 8);
-    break;
-  }
-  case 3: {
-    // REVSH
-    result = ((result & 0xFF00) >> 8) | ((result & 0x00FF) << 8);
-    if (result & 0x80) {
-      result |= 0xFFFF0000;
-    }
-    break;
-  }
-  default: {
-    Thumb_Unimplemented(instruction);
-    return;
-  }
-  }
-
-  state.reg[dst] = result;
-  state.r15 += 2;
-}
-
 template <bool load, int base>
 void Thumb_LoadStoreMultiple(u16 instruction) {
   u32 address = state.reg[base];
@@ -561,43 +522,6 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   } else {
     ReloadPipeline16();
   }
-}
-
-template <int opcode>
-void Thumb_SignOrZeroExtend(u16 instruction) {
-  int dst =  instruction & 7;
-  int src = (instruction >> 3) & 7;
-  
-  switch (opcode) {
-    case 0b00: {
-      /* SXTH - signed extend half word */
-      state.reg[dst] = state.reg[src] & 0xFFFF;
-      if (state.reg[dst] & 0x8000) {
-        state.reg[dst] |= 0xFFFF0000;
-      }
-      break;
-    }
-    case 0b01: {
-      /* SXTB - signed extend byte */
-      state.reg[dst] = state.reg[src] & 0xFF;
-      if (state.reg[dst] & 0x80) {
-        state.reg[dst] |= 0xFFFFFF00;
-      }
-      break;
-    }
-    case 0b10: {
-      /* UXTH - unsigned extend half word */
-      state.reg[dst] = state.reg[src] & 0xFFFF;
-      break;
-    }
-    case 0b11: {
-      /* UXTB - unsigned extend byte */
-      state.reg[dst] = state.reg[src] & 0xFF;
-      break;
-    }
-  }
-
-  state.r15 += 2;
 }
 
 void Thumb_Unimplemented(u16 instruction) {

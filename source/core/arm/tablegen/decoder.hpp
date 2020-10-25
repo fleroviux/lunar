@@ -8,6 +8,9 @@
 
 namespace fauxDS::core::arm {
 
+// NOTE: we currently can discern all ARM and Thumb instruction types up to ARMv6K,
+// except for ARMv6K Hint instructions and most unconditional instructions.
+
 enum class ARMInstrType {
   HalfwordSignedTransfer,
   Multiply,
@@ -221,6 +224,9 @@ constexpr auto GetARMInstructionType(u32 instruction) -> ARMInstrType {
 }
 
 constexpr auto GetThumbInstructionType(u16 instruction) -> ThumbInstrType {
+  // TODO: do not use "smaller than" comparisons, since they
+  // depend on the order of the if-statements.
+
   if ((instruction & 0xF800) <  0x1800) return ThumbInstrType::MoveShiftedRegister;
   if ((instruction & 0xF800) == 0x1800) return ThumbInstrType::AddSub;
   if ((instruction & 0xE000) == 0x2000) return ThumbInstrType::MoveCompareAddSubImm;
