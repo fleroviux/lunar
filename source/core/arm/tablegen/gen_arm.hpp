@@ -36,24 +36,12 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const bool set_flags = instruction & (1 << 20);
 
       switch (static_cast<MultiplyOpcode>((instruction >> 21) & 0xF)) {
-        case MultiplyOpcode::MUL: {
-          return &ARM::ARM_Multiply<false, set_flags>;
-        }
-        case MultiplyOpcode::MLA: {
-          return &ARM::ARM_Multiply<true, set_flags>;
-        }
-        case MultiplyOpcode::UMULL: {
-          return &ARM::ARM_MultiplyLong<false, false, set_flags>;
-        }
-        case MultiplyOpcode::UMLAL: {
-          return &ARM::ARM_MultiplyLong<false, true, set_flags>;
-        }
-        case MultiplyOpcode::SMULL: {
-          return &ARM::ARM_MultiplyLong<true, false, set_flags>;
-        }
-        case MultiplyOpcode::SMLAL: {
-          return &ARM::ARM_MultiplyLong<true, true, set_flags>;
-        }
+        case MultiplyOpcode::MUL:   return &ARM::ARM_Multiply<false, set_flags>;
+        case MultiplyOpcode::MLA:   return &ARM::ARM_Multiply<true, set_flags>;
+        case MultiplyOpcode::UMULL: return &ARM::ARM_MultiplyLong<false, false, set_flags>;
+        case MultiplyOpcode::UMLAL: return &ARM::ARM_MultiplyLong<false, true, set_flags>;
+        case MultiplyOpcode::SMULL: return &ARM::ARM_MultiplyLong<true, false, set_flags>;
+        case MultiplyOpcode::SMLAL: return &ARM::ARM_MultiplyLong<true, true, set_flags>;
       }
       
       break;
@@ -63,9 +51,6 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       
       return &ARM::ARM_SingleDataSwap<byte>;
     }
-    case ARMInstrType::LoadStoreExclusive: {
-      return &ARM::ARM_Unimplemented;
-    }
     case ARMInstrType::StatusTransfer: {
       const bool immediate = instruction & (1 << 25);
       const bool use_spsr  = instruction & (1 << 22);
@@ -73,44 +58,23 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
 
       return &ARM::ARM_StatusTransfer<immediate, use_spsr, to_status>;
     }
-    case ARMInstrType::BranchAndExchange: {
-      return &ARM::ARM_BranchAndExchangeMaybeLink<false>;
-    }
-    case ARMInstrType::BranchAndExchangeJazelle: {
-      return &ARM::ARM_Unimplemented;
-    }
-    case ARMInstrType::CountLeadingZeros: {
-      return &ARM::ARM_CountLeadingZeros;
-    }
-    case ARMInstrType::BranchLinkExchange: {
-      return &ARM::ARM_BranchAndExchangeMaybeLink<true>;
-    }
+    case ARMInstrType::BranchAndExchange:  return &ARM::ARM_BranchAndExchangeMaybeLink<false>;
+    case ARMInstrType::CountLeadingZeros:  return &ARM::ARM_CountLeadingZeros;
+    case ARMInstrType::BranchLinkExchange: return &ARM::ARM_BranchAndExchangeMaybeLink<true>;
     case ARMInstrType::SaturatingAddSubtract: {
       const int opcode = (instruction >> 20) & 0xF;
       
       return &ARM::ARM_SaturatingAddSubtract<opcode>;
     }
-    case ARMInstrType::Breakpoint: {
-      return &ARM::ARM_Unimplemented;
-    }
-    case ARMInstrType::SignedMultiplies: {
+    case ARMInstrType::SignedHalfwordMultiply: {
       const bool x = instruction & (1 << 5);
       const bool y = instruction & (1 << 6);
   
       switch (static_cast<SignedMultiplyOpcode>((instruction >> 21) & 0xF)) {
-        case SignedMultiplyOpcode::SMLAxy: {
-          return &ARM::ARM_SignedHalfwordMultiply<true, x, y>;
-        }
-        case SignedMultiplyOpcode::SM__Wy: {
-          // NOTE: "x" in this case encodes "NOT accumulate".
-          return &ARM::ARM_SignedWordHalfwordMultiply<!x, y>;
-        }
-        case SignedMultiplyOpcode::SMLALxy: {
-          return &ARM::ARM_SignedHalfwordMultiplyLongAccumulate<x, y>;
-        }
-        case SignedMultiplyOpcode::SMULxy: {
-          return &ARM::ARM_SignedHalfwordMultiply<false, x, y>;
-        }
+        case SignedMultiplyOpcode::SMLAxy:  return &ARM::ARM_SignedHalfwordMultiply<true, x, y>;
+        case SignedMultiplyOpcode::SM__Wy:  return &ARM::ARM_SignedWordHalfwordMultiply<!x, y>;
+        case SignedMultiplyOpcode::SMLALxy: return &ARM::ARM_SignedHalfwordMultiplyLongAccumulate<x, y>;
+        case SignedMultiplyOpcode::SMULxy:  return &ARM::ARM_SignedHalfwordMultiply<false, x, y>;
       }
       
       break;
@@ -129,30 +93,15 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       
       return &ARM::ARM_SingleDataTransfer<immediate, pre, add, byte, wb, load>;
     }
-    case ARMInstrType::Media: {
-      return &ARM::ARM_Unimplemented;
-    }
     case ARMInstrType::BlockDataTransfer: {
       const bool user_mode = instruction & (1 << 22);
             
       return &ARM::ARM_BlockDataTransfer<pre, add, user_mode, wb, load>;
     }
-    case ARMInstrType::BranchAndLink: {
-      return &ARM::ARM_BranchAndLink<(instruction >> 24) & 1>;
-    }
-    case ARMInstrType::CoprocessorLoadStoreAndDoubleRegXfer:
-    case ARMInstrType::CoprocessorDataProcessing: {
-      return &ARM::ARM_Unimplemented;
-    }
-    case ARMInstrType::CoprocessorRegisterXfer: {
-      return &ARM::ARM_CoprocessorRegisterTransfer;
-    }
-    case ARMInstrType::SoftwareInterrupt: {
-      return &ARM::ARM_SWI;
-    }
-    case ARMInstrType::BranchLinkExchangeImm: {
-      return &ARM::ARM_BranchLinkExchangeImm;
-    }
+    case ARMInstrType::BranchAndLink: return &ARM::ARM_BranchAndLink<(instruction >> 24) & 1>;
+    case ARMInstrType::CoprocessorRegisterXfer: return &ARM::ARM_CoprocessorRegisterTransfer;
+    case ARMInstrType::SoftwareInterrupt: return &ARM::ARM_SWI;
+    case ARMInstrType::BranchLinkExchangeImm: return &ARM::ARM_BranchLinkExchangeImm;
   }
 
   return &ARM::ARM_Undefined;

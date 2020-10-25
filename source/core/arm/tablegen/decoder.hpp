@@ -20,7 +20,7 @@ enum class ARMInstrType {
   BranchLinkExchange,
   SaturatingAddSubtract,
   Breakpoint,
-  SignedMultiplies,
+  SignedHalfwordMultiply,
   DataProcessing,
   Hint,
   SingleDataTransfer,
@@ -137,8 +137,7 @@ constexpr auto GetARMInstructionTypeConditional(u32 instruction) -> ARMInstrType
         if ((opcode & 0x90) == 0x80) {
           // Signed halfword multiply (ARMv5 upwards): 
           // SMLAxy, SMLAWy, SMULWy, SMLALxy, SMULxy
-          // TODO: rename "SignedMultiplies" to "SignedHalfwordMultiply".
-          return ARMInstrType::SignedMultiplies;
+          return ARMInstrType::SignedHalfwordMultiply;
         }
       }
       
