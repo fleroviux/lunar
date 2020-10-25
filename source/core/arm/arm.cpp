@@ -39,8 +39,6 @@ void ARM::Run(int instructions) {
       if (CheckCondition(condition)) {
         int hash = ((instruction >> 16) & 0xFF0) |
                    ((instruction >>  4) & 0x00F);
-        // TODO: since we only have one unconditional instruction in ARM9,
-        // it is a colossal waste of space to handle it like this.
         if (condition == COND_NV) {
           hash |= 4096;
         }
