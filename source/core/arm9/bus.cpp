@@ -61,7 +61,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
-        return bios[address & 0x7FFF];
+        return *reinterpret_cast<T*>(&bios[address & 0x7FFF]);
     default:
       ASSERT(false, "ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
