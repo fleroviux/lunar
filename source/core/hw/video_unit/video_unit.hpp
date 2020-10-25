@@ -46,9 +46,9 @@ struct VideoUnit {
         case 1:
           vcount_setting = (vcount_setting & 0x100) | value;
           break;
+        default:
+          UNREACHABLE;
       }
-
-      UNREACHABLE;
     }
 
   private:
