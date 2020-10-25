@@ -181,6 +181,9 @@ auto main(int argc, const char** argv) -> int {
 
     arm7->ExceptionBase(0);
     arm7->Reset();
+    arm7->GetState().r13 = 0x0380FD80;
+    arm7->GetState().bank[BANK_IRQ][BANK_R13] = 0x0380FF80;
+    arm7->GetState().bank[BANK_SVC][BANK_R13] = 0x0380FFC0;
     arm7->SetPC(header->arm7.entrypoint);
   }
 
@@ -199,6 +202,11 @@ auto main(int argc, const char** argv) -> int {
 
     arm9->ExceptionBase(0xFFFF0000);
     arm9->Reset();
+    // TODO: ARM9 stack is in shared WRAM by default,
+    // but afaik at cartridge boot time all of SWRAM is mapped to NDS7?
+    arm9->GetState().r13 = 0x03002F7C;
+    arm9->GetState().bank[BANK_IRQ][BANK_R13] = 0x03003F80;
+    arm9->GetState().bank[BANK_SVC][BANK_R13] = 0x03003FC0;
     arm9->SetPC(header->arm9.entrypoint);
   }
 
