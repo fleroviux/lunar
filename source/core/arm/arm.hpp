@@ -34,10 +34,8 @@ struct ARM {
   void AttachCoprocessor(uint id, Coprocessor* coprocessor);
   void SignalIRQ();
 
-  auto GetPC() -> u32 {
-    return state.r15 - (state.cpsr.f.thumb ? 4 : 8);
-  }
-
+  // TODO: implement a cleaner interface to modify the execution state.
+  auto GetState() -> State& { return state; }
   void SetPC(u32 value) {
     state.r15 = value;
     if (state.cpsr.f.thumb) {
@@ -65,17 +63,18 @@ private:
   #include "handlers/handler32.inl"
   #include "handlers/memory.inl"
 
-  u32 exception_base = 0;
-
   Architecture arch;
-  State state;
-  State::StatusRegister* p_spsr;
+  u32 exception_base = 0;
   MemoryBase* memory;
   Coprocessor* coprocessors[16] { nullptr };
+
+  State state;
+  State::StatusRegister* p_spsr;
+
   u32 opcode[2];
 
   bool condition_table[16][16];
-
+  
   static std::array<Handler16, 2048> s_opcode_lut_16;
   static std::array<Handler32, 8192> s_opcode_lut_32;
 };
