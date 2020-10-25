@@ -153,10 +153,6 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
     case ARMInstrType::BranchLinkExchangeImm: {
       return &ARM::ARM_BranchLinkExchangeImm;
     }
-    case ARMInstrType::Unconditional: {
-      // This is a placeholder for any unconditional instructions which are currently unimplemented.
-      return &ARM::ARM_Unimplemented;
-    }
   }
 
   return &ARM::ARM_Undefined;

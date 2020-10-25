@@ -32,7 +32,6 @@ enum class ARMInstrType {
   CoprocessorRegisterXfer,
   SoftwareInterrupt,
   Undefined,
-  Unconditional, // placeholder
   BranchLinkExchangeImm
 };
 
@@ -68,12 +67,11 @@ enum class ThumbInstrType {
 
 constexpr auto GetARMInstructionTypeUnconditional(u32 instruction) -> ARMInstrType {
   // TODO: properly decode the unconditional instructions.
-  // Missing instructions: PLD, MCR2, MRC2
-  // Did I miss any other instructions?
+  // Missing instructions: PLD, MCR2, MRC2 ...
   if (((instruction >> 25) & 7) == 5) {
     return ARMInstrType::BranchLinkExchangeImm;
   }
-  return ARMInstrType::Unconditional;
+  return ARMInstrType::Undefined;
 }
 
 constexpr auto GetARMInstructionTypeConditional(u32 instruction) -> ARMInstrType {
