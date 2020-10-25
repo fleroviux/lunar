@@ -601,7 +601,5 @@ void Thumb_SignOrZeroExtend(u16 instruction) {
 }
 
 void Thumb_Unimplemented(u16 instruction) {
-  LOG_ERROR("Unimplemented Thumb instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
-  hit_unimplemented_or_undefined = true;
-  state.r15 += 2;
+  ASSERT(false, "unimplemented instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
 }

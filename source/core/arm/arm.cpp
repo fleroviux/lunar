@@ -18,8 +18,6 @@ void ARM::Reset() {
   for (auto coprocessor : coprocessors)
     if (coprocessor != nullptr)
       coprocessor->Reset();
-
-  hit_unimplemented_or_undefined = false;
 }
 
 void ARM::Run(int instructions) {
@@ -41,11 +39,10 @@ void ARM::Run(int instructions) {
       if (CheckCondition(condition)) {
         int hash = ((instruction >> 16) & 0xFF0) |
                    ((instruction >>  4) & 0x00F);
-        /* Handle unconditional instructions.
-         * Is there a way that we can speed this up?
-         */
+        // TODO: since we only have one unconditional instruction in ARM9,
+        // it is a colossal waste of space to handle it like this.
         if (condition == COND_NV) {
-          hash += 4096;
+          hash |= 4096;
         }
         (this->*s_opcode_lut_32[hash])(instruction);
       } else {

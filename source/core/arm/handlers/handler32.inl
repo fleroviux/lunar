@@ -720,8 +720,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 }
 
 void ARM_Undefined(u32 instruction) {
-  LOG_ERROR("Undefined ARM instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
-  hit_unimplemented_or_undefined = true;
+  LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 
   /* Save return address and program status. */
   state.bank[BANK_UND][BANK_R14] = state.r15 - 4;
@@ -862,7 +861,5 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
 }
 
 void ARM_Unimplemented(u32 instruction) {
-  LOG_ERROR("Unimplemented ARM instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
-  hit_unimplemented_or_undefined = true;
-  state.r15 += 4;
+  ASSERT(false, "unimplemented instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 }

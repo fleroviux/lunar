@@ -47,9 +47,6 @@ struct ARM {
     }
   }
 
-  // TODO: remove this hack.
-  bool hit_unimplemented_or_undefined = false;
-
   typedef void (ARM::*Handler16)(u16);
   typedef void (ARM::*Handler32)(u32);
 private:
@@ -68,7 +65,6 @@ private:
   #include "handlers/handler32.inl"
   #include "handlers/memory.inl"
 
-  // TODO: store exception base configuration in CP15.
   u32 exception_base = 0;
 
   Architecture arch;
