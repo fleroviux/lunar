@@ -168,18 +168,11 @@ void ARM_DataProcessing(u32 instruction) {
 
 template <bool immediate, bool use_spsr, bool to_status>
 void ARM_StatusTransfer(u32 instruction) {
+  // TODO: handle changing the CPSR.T thumb bit.
   if (to_status) {
     u32 op;
     u32 mask = 0;
     u8  fsxc = (instruction >> 16) & 0xF;
-
-    if (immediate && fsxc == 0) {
-      /* Hint instructions are implemented as move immediate to
-       * status register instructions with zero mask.
-       */
-      ARM_Hint(instruction);
-      return; 
-    }
 
     /* Create mask based on fsxc-bits. */
     if (fsxc & 1) mask |= 0x000000FF;
@@ -207,8 +200,6 @@ void ARM_StatusTransfer(u32 instruction) {
     } else {
       p_spsr->v = (p_spsr->v & ~mask) | value;
     }
-
-    /* TODO: Handle case where Thumb-bit was set. */
   } else {
     int dst = (instruction >> 12) & 0xF;
 
@@ -294,25 +285,6 @@ void ARM_MultiplyLong(u32 instruction) {
   state.r15 += 4;
 }
 
-void ARM_UnsignedMultiplyLongAccumulateAccumulate(u32 instruction) {
-  int op1 = (instruction >> 0) & 0xF;
-  int op2 = (instruction >> 8) & 0xF;
-  int dst_lo = (instruction >> 12) & 0xF;
-  int dst_hi = (instruction >> 16) & 0xF;
-  
-  LOG_WARN("Hit UMAAL instruction - implementation is experimental. @ r15 = 0x{0:08X}", state.r15);
-
-  u64 result = (u64)state.reg[op1] * (u64)state.reg[op2];
-  
-  result += state.reg[dst_lo];
-  result += state.reg[dst_hi];
-  
-  state.reg[dst_lo] = result & 0xFFFFFFFF;
-  state.reg[dst_hi] = result >> 32;
-
-  state.r15 += 4;
-}
-
 template <bool accumulate, bool x, bool y>
 void ARM_SignedHalfwordMultiply(u32 instruction) {
   int op1 = (instruction >>  0) & 0xF;
@@ -338,9 +310,8 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
   state.reg[dst] = u32(value1 * value2);
 
   if (accumulate) {
-    /* Set sticky overflow on accumulation overflow,
-     * but do not saturate the result.
-     */
+    // Update sticky-flag without saturating the result.
+    // TODO: make helper method to detect overflow instead.
     state.reg[dst] = QADD(state.reg[dst], state.reg[op3], false);
   }
   
@@ -349,7 +320,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
 template <bool accumulate, bool y>
 void ARM_SignedWordHalfwordMultiply(u32 instruction) {
-  /* NOTE: this is probably used as fixed point fractional multiply. */
+  // NOTE: this is probably used as fixed point fractional multiply.
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
   int op3 = (instruction >> 12) & 0xF;
@@ -367,9 +338,8 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
   state.reg[dst] = u32((value1 * value2) >> 16);
 
   if (accumulate) {
-    /* Set sticky overflow on accumulation overflow,
-     * but do not saturate the result.
-     */
+    // Update sticky-flag without saturating the result.
+    // TODO: make helper method to detect overflow instead.
     state.reg[dst] = QADD(state.reg[dst], state.reg[op3], false);
   }
 
@@ -812,24 +782,6 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
     state.reg[dst] = QSUB(state.reg[src1], op2);  
   } else {
     state.reg[dst] = QADD(state.reg[src1], op2);
-  }
-
-  state.r15 += 4;
-}
-
-void ARM_Hint(u32 instruction) {
-  u8 opcode = instruction & 0xFF;
-
-  if (opcode == 3) {
-    //LOG_INFO("Core #{0} is waiting for an IRQ.", core);
-    //waiting_for_irq = true;
-    state.r15 += 4;
-    return;
-  }
-
-  if (opcode != 0) {
-    ARM_Unimplemented(instruction);
-    return;
   }
 
   state.r15 += 4;

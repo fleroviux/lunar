@@ -5,7 +5,6 @@
 enum class MultiplyOpcode {
   MUL   = 0b000,
   MLA   = 0b001,
-  UMAAL = 0b010,
   UMULL = 0b100,
   UMLAL = 0b101,
   SMULL = 0b110,
@@ -42,9 +41,6 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
         }
         case MultiplyOpcode::MLA: {
           return &ARM::ARM_Multiply<true, set_flags>;
-        }
-        case MultiplyOpcode::UMAAL: {
-          return &ARM::ARM_UnsignedMultiplyLongAccumulateAccumulate;
         }
         case MultiplyOpcode::UMULL: {
           return &ARM::ARM_MultiplyLong<false, false, set_flags>;
@@ -106,7 +102,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
           return &ARM::ARM_SignedHalfwordMultiply<true, x, y>;
         }
         case SignedMultiplyOpcode::SM__Wy: {
-          /* NOTE: "x" in this case encodes "NOT accumulate". */
+          // NOTE: "x" in this case encodes "NOT accumulate".
           return &ARM::ARM_SignedWordHalfwordMultiply<!x, y>;
         }
         case SignedMultiplyOpcode::SMLALxy: {
@@ -126,14 +122,6 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const auto field4 = (instruction >>  4) & 0xF;
 
       return &ARM::ARM_DataProcessing<immediate, opcode, set_flags, field4>;
-    }
-    case ARMInstrType::Hint: {
-      // We cannot discern "hint" instructions from "status transfer" 
-      // instructions, as the relevant bits are not included in the index
-      // to the opcode table. Doubling the table's size for one instruction
-      // seems a bit unreasonable. Therefore the hint instructions are handled 
-      // separately in the "ARM_StatusTransfer" method.
-      break;
     }
     case ARMInstrType::SingleDataTransfer: {
       const bool immediate = ~instruction & (1 << 25);
@@ -165,7 +153,8 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
     case ARMInstrType::BranchLinkExchangeImm: {
       return &ARM::ARM_BranchLinkExchangeImm;
     }
-    case ARMInstrType::Unconditional: { // placeholder
+    case ARMInstrType::Unconditional: {
+      // This is a placeholder for any unconditional instructions which are currently unimplemented.
       return &ARM::ARM_Unimplemented;
     }
   }

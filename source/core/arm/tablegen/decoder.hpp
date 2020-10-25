@@ -67,7 +67,9 @@ enum class ThumbInstrType {
 };
 
 constexpr auto GetARMInstructionTypeUnconditional(u32 instruction) -> ARMInstrType {
-  /* TODO: properly decode the unconditional instructions. */
+  // TODO: properly decode the unconditional instructions.
+  // Missing instructions: PLD, MCR2, MRC2
+  // Did I miss any other instructions?
   if (((instruction >> 25) & 7) == 5) {
     return ARMInstrType::BranchLinkExchangeImm;
   }
@@ -160,10 +162,6 @@ constexpr auto GetARMInstructionTypeConditional(u32 instruction) -> ARMInstrType
           case 0b1010:
             return ARMInstrType::Undefined;
           case 0b1001:
-            if ((opcode & 0xF0000) == 0) {
-              return ARMInstrType::Hint;
-            }
-            [[fallthrough]];
           case 0b1011:
             return ARMInstrType::StatusTransfer;
         }
@@ -195,6 +193,7 @@ constexpr auto GetARMInstructionTypeConditional(u32 instruction) -> ARMInstrType
     }
     case 0b110: {
       // Coprocessor load/store and double register transfers
+      // TODO: differentiate between load/store and double reg transfer instructions.
       return ARMInstrType::CoprocessorLoadStoreAndDoubleRegXfer;
     }
     case 0b111: {

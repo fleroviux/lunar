@@ -44,21 +44,16 @@ struct TableGen {
 
     // Conditional instructions
     common::static_for<std::size_t, 0, 4096>([&](auto i) {
-      // HACK: set bits 16-19 all to one, so that
-      // no "status transfer" instructions will be decoded as "hint" 
-      // instructions.
       lut[i] = GenerateHandlerARM<
         ((i & 0xFF0) << 16) | 
-        ((i & 0xF) << 4) | 
-        0xF0000>();
+        ((i & 0xF) << 4)>();
     });
 
     // Unconditional instructions
     common::static_for<std::size_t, 0, 4096>([&](auto i) {
       lut[4096 + i] = GenerateHandlerARM<
         ((i & 0xFF0) << 16) |
-        ((i & 0xF) << 4) |
-        0xF0000000>();
+        ((i & 0xF) << 4) | 0xF0000000>();
     });
 
     return lut;
