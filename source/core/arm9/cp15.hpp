@@ -84,6 +84,7 @@ private:
 
   auto ReadMainID(int cn, int cm, int opcode) -> u32;
   auto ReadCacheType(int cn, int cm, int opcode) -> u32;
+  void WriteWaitForIRQ(int cn, int cm, int opcode, u32 value);
   auto ReadDTCMConfig(int cn, int cm, int opcode) -> u32;
   auto ReadITCMConfig(int cn, int cm, int opcode) -> u32;
   void WriteDTCMConfig(int cn, int cm, int opcode, u32 value);

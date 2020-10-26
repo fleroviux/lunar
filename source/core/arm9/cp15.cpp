@@ -16,6 +16,8 @@ CP15::CP15(ARM9MemoryBus* bus) : bus(bus) {
 
   RegisterHandler(0, 0, 0, &CP15::ReadMainID);
   RegisterHandler(0, 0, 1, &CP15::ReadCacheType);
+  RegisterHandler(7, 0, 4, &CP15::WriteWaitForIRQ);
+  RegisterHandler(7, 8, 2, &CP15::WriteWaitForIRQ);
   RegisterHandler(9, 1, 0, &CP15::ReadDTCMConfig);
   RegisterHandler(9, 1, 1, &CP15::ReadITCMConfig);
   RegisterHandler(9, 1, 0, &CP15::WriteDTCMConfig);
@@ -64,6 +66,10 @@ auto CP15::ReadMainID(int cn, int cm, int opcode) -> u32 {
 
 auto CP15::ReadCacheType(int cn, int cm, int opcode) -> u32 {
   return 0x0F0D2112;
+}
+
+void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
+  LOG_ERROR("CP15: unhandled wait for interrupt!");
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {
