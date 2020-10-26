@@ -41,6 +41,9 @@ private:
   // TODO: merge IWRAM with SWRAM?
   u8 iwram[0x10000];
   Interconnect::SWRAM::Alloc const& swram;
+
+  VideoUnit& video_unit;
+  Interconnect::KeyInput& keyinput;
 };
 
 } // namespace fauxDS::core

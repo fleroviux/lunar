@@ -12,7 +12,9 @@ namespace fauxDS::core {
 
 ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) 
     : ewram(interconnect->ewram)
-    , swram(interconnect->swram.arm7) {
+    , swram(interconnect->swram.arm7)
+    , video_unit(interconnect->video_unit)
+    , keyinput(interconnect->keyinput) {
   memset(iwram, 0, sizeof(iwram));
 }
 
