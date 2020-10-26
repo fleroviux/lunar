@@ -9,13 +9,19 @@
 namespace fauxDS::core {
 
 enum Registers {
+  // PPU engine A
   REG_DISPSTAT = 0x0400'0004,
   REG_VCOUNT = 0x0400'0006,
-  REG_KEYINPUT = 0x0400'0130
+
+  REG_KEYINPUT = 0x0400'0130,
+
+  // IPC
+  REG_IPCSYNC = 0x0400'0180
 };
 
 auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
   switch (address) {
+    // PPU engine A
     case REG_DISPSTAT|0:
       return video_unit.dispstat.ReadByte(0);
     case REG_DISPSTAT|1:
@@ -29,6 +35,12 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return keyinput.ReadByte(0);
     case REG_KEYINPUT|1:
       return keyinput.ReadByte(1);
+
+    // IPC
+    case REG_IPCSYNC|0:
+      return ipc.ipcsync.ReadByte(IPC::Client::ARM7, 0);
+    case REG_IPCSYNC|1:
+      return ipc.ipcsync.ReadByte(IPC::Client::ARM7, 1);
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
@@ -51,12 +63,22 @@ auto ARM7MemoryBus::ReadWordIO(u32 address) -> u32 {
 
 void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
   switch (address) {
+    // PPU engine A
     case REG_DISPSTAT|0:
       video_unit.dispstat.WriteByte(0, value);
       break;
     case REG_DISPSTAT|1:
       video_unit.dispstat.WriteByte(1, value);
       break;
+
+    // IPC
+    case REG_IPCSYNC|0:
+      ipc.ipcsync.WriteByte(IPC::Client::ARM7, 0, value);
+      break;
+    case REG_IPCSYNC|1:
+      ipc.ipcsync.WriteByte(IPC::Client::ARM7, 1, value);
+      break;
+
     default:
       LOG_WARN("ARM7: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
   }

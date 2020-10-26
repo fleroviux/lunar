@@ -42,6 +42,7 @@ private:
   u8 iwram[0x10000];
   Interconnect::SWRAM::Alloc const& swram;
 
+  IPC& ipc;
   VideoUnit& video_unit;
   Interconnect::KeyInput& keyinput;
 };
