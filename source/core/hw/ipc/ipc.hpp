@@ -24,7 +24,6 @@ struct IPC {
   };
 
   IPC();
-
   void Reset();
 
   struct IPCSYNC {
