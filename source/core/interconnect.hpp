@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/hw/ipc/ipc.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
 
@@ -19,6 +20,8 @@ struct Interconnect {
   void Reset() {
     memset(ewram, 0, sizeof(ewram));
     memset(swram.data, 0, sizeof(swram));
+    scheduler.Reset();
+    ipc.Reset();
     video_unit.Reset();
     // For direct boot only - map all of SWRAM to the ARM7.
     //wramcnt.Write(0, 3);
@@ -36,6 +39,7 @@ struct Interconnect {
   } swram;
 
   Scheduler scheduler;
+  IPC ipc;
   VideoUnit video_unit;
 
   /*struct WRAMCNT : RegisterByte {
