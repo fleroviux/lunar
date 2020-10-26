@@ -64,6 +64,7 @@ private:
 
   u8 bios[0x8000] {0};
 
+  IPC& ipc;
   VideoUnit& video_unit;
   Interconnect::KeyInput& keyinput;
 };
