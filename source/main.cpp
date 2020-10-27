@@ -84,7 +84,6 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
         }
         arm9->Run(2);
         arm7->Run(1);
-        //LOG_INFO("ARM7 r15 = 0x{0:08X}", arm7->GetState().r15);
         scheduler.AddCycles(1);
       }
 

@@ -70,8 +70,8 @@ void IRQ::IE::WriteByte(uint offset, u8 value) {
     UNREACHABLE;
   }
 
-  value &= ~(0xFF << (offset * 8));
-  value |= value << (offset * 8);
+  this->value &= ~(0xFF << (offset * 8));
+  this->value |= value << (offset * 8);
 }
 
 auto IRQ::IF::ReadByte(uint offset) -> u8 {
@@ -87,7 +87,7 @@ void IRQ::IF::WriteByte(uint offset, u8 value) {
     UNREACHABLE;
   }
 
-  value &= ~(value << (offset * 8));
+  this->value &= ~(value << (offset * 8));
 }
 
 
