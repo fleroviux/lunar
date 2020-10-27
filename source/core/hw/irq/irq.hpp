@@ -10,9 +10,18 @@ namespace fauxDS::core {
 
 /// ARM7 and ARM9 interrupt controller.
 struct IRQ {
+  enum class Source : u32 {
+    VBlank = 1 << 0,
+    HBlank = 1 << 1,
+    VCount = 1 << 2
+  };
+
   IRQ();
 
   void Reset();
+  void Raise(Source source);
+  bool IsEnabled();
+  bool HasPendingIRQ();
 
   /// Interrupt Master Enable
   struct IME {
@@ -20,10 +29,10 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend class fauxDS::core::IRQ;
+    friend struct fauxDS::core::IRQ;
 
-    u32 value = 0;
-  } ime = {};
+    bool enabled = false;
+  } ime;
 
   /// Interrupt Enable
   struct IE {
@@ -31,10 +40,10 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend class fauxDS::core::IRQ;
+    friend struct fauxDS::core::IRQ;
 
     u32 value = 0;
-  } ie = {};
+  } ie;
 
   /// Interrupt Flag / Acknowledge
   struct IF {
@@ -42,10 +51,10 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend class fauxDS::core::IRQ;
+    friend struct fauxDS::core::IRQ;
 
     u32 value = 0;
-  } _if = {};
+  } _if;
 };
 
 } // namespace fauxDS::core
