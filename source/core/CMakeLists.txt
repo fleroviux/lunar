@@ -7,6 +7,7 @@ set(SOURCES
   arm9/bus_mmio.cpp
   arm9/cp15.cpp
   hw/ipc/ipc.cpp
+  hw/irq/irq.cpp
   hw/video_unit/video_unit.cpp
   core.cpp
   scheduler.cpp)
@@ -27,6 +28,7 @@ set(HEADERS
   arm9/bus.hpp
   arm9/cp15.hpp
   hw/ipc/ipc.hpp
+  hw/irq/irq.hpp
   hw/video_unit/video_unit.hpp
   core.hpp
   interconnect.hpp
