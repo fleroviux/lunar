@@ -16,7 +16,12 @@ enum Registers {
   REG_KEYINPUT = 0x0400'0130,
 
   // IPC
-  REG_IPCSYNC = 0x0400'0180
+  REG_IPCSYNC = 0x0400'0180,
+
+  // IRQ
+  REG_IME = 0x0400'0208,
+  REG_IE  = 0x0400'0210,
+  REG_IF  = 0x0400'0214
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -41,6 +46,32 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcsync.ReadByte(IPC::Client::ARM9, 0);
     case REG_IPCSYNC|1:
       return ipc.ipcsync.ReadByte(IPC::Client::ARM9, 1);
+
+    // IRQ
+    case REG_IME|0:
+      return irq9.ime.ReadByte(0);
+    case REG_IME|1:
+      return irq9.ime.ReadByte(1);
+    case REG_IME|2:
+      return irq9.ime.ReadByte(2);
+    case REG_IME|3:
+      return irq9.ime.ReadByte(3);
+    case REG_IE|0:
+      return irq9.ie.ReadByte(0);
+    case REG_IE|1:
+      return irq9.ie.ReadByte(1);
+    case REG_IE|2:
+      return irq9.ie.ReadByte(2);
+    case REG_IE|3:
+      return irq9.ie.ReadByte(3);
+    case REG_IF|0:
+      return irq9._if.ReadByte(0);
+    case REG_IF|1:
+      return irq9._if.ReadByte(1);
+    case REG_IF|2:
+      return irq9._if.ReadByte(2);
+    case REG_IF|3:
+      return irq9._if.ReadByte(3);
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -77,6 +108,44 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_IPCSYNC|1:
       ipc.ipcsync.WriteByte(IPC::Client::ARM9, 1, value);
+      break;
+
+    // IRQ
+    case REG_IME|0:
+      irq9.ime.WriteByte(0, value);
+      break;
+    case REG_IME|1:
+      irq9.ime.WriteByte(1, value);
+      break;
+    case REG_IME|2:
+      irq9.ime.WriteByte(2, value);
+      break;
+    case REG_IME|3:
+      irq9.ime.WriteByte(3, value);
+      break;
+    case REG_IE|0:
+      irq9.ie.WriteByte(0, value);
+      break;
+    case REG_IE|1:
+      irq9.ie.WriteByte(1, value);
+      break;
+    case REG_IE|2:
+      irq9.ie.WriteByte(2, value);
+      break;
+    case REG_IE|3:
+      irq9.ie.WriteByte(3, value);
+      break;
+    case REG_IF|0:
+      irq9._if.WriteByte(0, value);
+      break;
+    case REG_IF|1:
+      irq9._if.WriteByte(1, value);
+      break;
+    case REG_IF|2:
+      irq9._if.WriteByte(2, value);
+      break;
+    case REG_IF|3:
+      irq9._if.WriteByte(3, value);
       break;
 
     default:

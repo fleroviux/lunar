@@ -15,6 +15,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     : ewram(interconnect->ewram)
     , swram(interconnect->swram.arm9)
     , ipc(interconnect->ipc)
+    , irq9(interconnect->irq9)
     , video_unit(interconnect->video_unit)
     , keyinput(interconnect->keyinput) {
   std::ifstream file { "bios9.bin", std::ios::in | std::ios::binary };

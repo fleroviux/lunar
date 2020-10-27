@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 #include <core/hw/ipc/ipc.hpp>
+#include <core/hw/irq/irq.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
 
@@ -42,6 +43,8 @@ struct Interconnect {
 
   Scheduler scheduler;
   IPC ipc;
+  IRQ irq7;
+  IRQ irq9;
   VideoUnit video_unit;
 
   /*struct WRAMCNT : RegisterByte {
