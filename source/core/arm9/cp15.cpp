@@ -69,7 +69,7 @@ auto CP15::ReadCacheType(int cn, int cm, int opcode) -> u32 {
 }
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
-  LOG_ERROR("CP15: unhandled wait for interrupt!");
+  //LOG_ERROR("CP15: unhandled wait for interrupt!");
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {

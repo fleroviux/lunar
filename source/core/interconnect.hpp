@@ -16,7 +16,7 @@
 namespace fauxDS::core {
 
 struct Interconnect {
-  Interconnect() : video_unit(&scheduler) { Reset(); }
+  Interconnect() : video_unit(&scheduler, irq7, irq9) { Reset(); }
 
   void Reset() {
     memset(ewram, 0, sizeof(ewram));

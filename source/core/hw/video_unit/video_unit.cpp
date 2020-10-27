@@ -6,8 +6,10 @@
 
 namespace fauxDS::core {
 
-VideoUnit::VideoUnit(Scheduler* scheduler)
-    : scheduler(scheduler) {
+VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
+    : scheduler(scheduler)
+    , irq7(irq7)
+    , irq9(irq9) {
   Reset();
 }
 
@@ -33,6 +35,8 @@ void VideoUnit::OnHdrawBegin() {
   if (vcount.value == 192) {
     // TODO: request V-blank DMA and IRQ
     if (dispstat.vblank.enable_irq) {
+      irq7.Raise(IRQ::Source::VBlank);
+      irq9.Raise(IRQ::Source::VBlank);
     }
     dispstat.vblank.flag = true;
   }

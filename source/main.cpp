@@ -64,6 +64,8 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
   SDL_Event event;
 
   auto& scheduler = interconnect->scheduler;
+  auto& irq7 = interconnect->irq7;
+  auto& irq9 = interconnect->irq9;
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
@@ -76,6 +78,10 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
 
     while (scheduler.GetTimestampNow() < frame_target) {
       while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
+        // TODO: ARM7 IRQ handling.
+        if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
+          arm9->SignalIRQ();
+        }
         arm9->Run(2);
         arm7->Run(1);
         //LOG_INFO("ARM7 r15 = 0x{0:08X}", arm7->GetState().r15);
