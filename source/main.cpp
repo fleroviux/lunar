@@ -78,6 +78,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
       while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
         arm9->Run(2);
         arm7->Run(1);
+        //LOG_INFO("ARM7 r15 = 0x{0:08X}", arm7->GetState().r15);
         scheduler.AddCycles(1);
       }
 
@@ -151,11 +152,11 @@ auto main(int argc, const char** argv) -> int {
     return -2;
   }
 
-  printf("ARM9 load_address=0x%08X size=0x%08X file_address=0x%08X\n",
-    header->arm9.load_address, header->arm9.size, header->arm9.file_address);
+  printf("ARM9 load_address=0x%08X size=0x%08X file_address=0x%08X entrypoint=0x%08X\n",
+    header->arm9.load_address, header->arm9.size, header->arm9.file_address, header->arm9.entrypoint);
 
-  printf("ARM7 load_address=0x%08X size=0x%08X file_address=0x%08X\n",
-    header->arm7.load_address, header->arm7.size, header->arm7.file_address);
+  printf("ARM7 load_address=0x%08X size=0x%08X file_address=0x%08X entrypoint=0x%08X\n",
+    header->arm7.load_address, header->arm7.size, header->arm7.file_address, header->arm7.entrypoint);
 
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
