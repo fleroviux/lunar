@@ -48,13 +48,17 @@ struct IPC {
     void WriteByte(Client client,  u8 value);
     void WriteHalf(Client client, u16 value);
     void WriteWord(Client client, u32 value);
-    
+
   private:
     IPC& ipc;
   } ipcfifosend {*this};
 
   struct IPCFIFORECV {
     IPCFIFORECV(IPC& ipc) : ipc(ipc) {}
+
+    auto ReadByte(Client client, uint offset) ->  u8;
+    auto ReadHalf(Client client, uint offset) -> u16;
+    auto ReadWord(Client client) -> u32;
 
   private:
     IPC& ipc;

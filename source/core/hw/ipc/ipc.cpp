@@ -114,18 +114,54 @@ void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
   auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
   
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted write to a disabled FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted write to disabled FIFO.", client);
     return;
   }
   
   if (fifo_tx.send.IsFull()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to write to a full FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted to write to full FIFO.", client);
     return;
   }
 
   fifo_tx.send.Write(value);
 }
-    
+
+
+auto IPC::IPCFIFORECV::ReadByte(Client client, uint offset) -> u8 {
+  if (offset >= 4) {
+    UNREACHABLE;
+  }
+
+  return ReadWord(client) >> (offset * 8);
+}
+
+auto IPC::IPCFIFORECV::ReadHalf(Client client, uint offset) -> u16 {
+  if (offset >= 4) {
+    UNREACHABLE;
+  }
+
+  return ReadWord(client) >> (offset * 8);
+}
+
+auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
+  auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
+  auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
+
+  // TODO: which FIFOCNT register applies here? are there actually two enable flags?
+  if (!fifo_tx.enable) {
+    // TODO: this error message might not be completely accurate.
+    LOG_ERROR("IPC[{0}]: attempted to read disabled FIFO.", client);
+    return fifo_rx.send.Peek();
+  }
+
+  if (fifo_rx.send.IsEmpty()) {
+    fifo_tx.error = true;
+    LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", client);
+    return fifo_rx.send.Peek();
+  }
+
+  return fifo_rx.send.Read();
+}
 
 } // namespace fauxDS::core

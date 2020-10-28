@@ -19,6 +19,7 @@ enum Registers {
   REG_IPCSYNC = 0x0400'0180,
   REG_IPCFIFOCNT = 0x0400'0184,
   REG_IPCFIFOSEND = 0x0400'0188,
+  REG_IPCFIFORECV = 0x0410'0000,
 
   // IRQ
   REG_IME = 0x0400'0208,
@@ -52,6 +53,14 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfifocnt.ReadByte(IPC::Client::ARM7, 0);
     case REG_IPCFIFOCNT|1:
       return ipc.ipcfifocnt.ReadByte(IPC::Client::ARM7, 1);
+    case REG_IPCFIFORECV|0:
+      return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 0);
+    case REG_IPCFIFORECV|1:
+      return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 1);
+    case REG_IPCFIFORECV|2:
+      return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 2);
+    case REG_IPCFIFORECV|3:
+      return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 3);
 
     // IRQ
     case REG_IME|0:
@@ -87,11 +96,23 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
 }
 
 auto ARM7MemoryBus::ReadHalfIO(u32 address) -> u16 {
+  switch (address) {
+    case REG_IPCFIFORECV|0:
+      return ipc.ipcfiforecv.ReadHalf(IPC::Client::ARM7, 0);
+    case REG_IPCFIFORECV|2:
+      return ipc.ipcfiforecv.ReadHalf(IPC::Client::ARM7, 2);
+  }
+
   return (ReadByteIO(address | 0) << 0) |
          (ReadByteIO(address | 1) << 8);
 }
 
 auto ARM7MemoryBus::ReadWordIO(u32 address) -> u32 {
+  switch (address) {
+    case REG_IPCFIFORECV:
+      return ipc.ipcfiforecv.ReadWord(IPC::Client::ARM7);
+  }
+
   return (ReadByteIO(address | 0) <<  0) |
          (ReadByteIO(address | 1) <<  8) |
          (ReadByteIO(address | 2) << 16) |
