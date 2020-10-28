@@ -6,6 +6,7 @@
 
 #include <common/fifo.hpp>
 #include <common/integer.hpp>
+#include <core/hw/irq/irq.hpp>
 
 namespace fauxDS::core {
 
@@ -17,13 +18,7 @@ struct IPC {
     ARM9 = 1
   };
 
-  enum class IRQ {
-    SYNC,
-    SEND_Empty,
-    RECV_NotEmpty
-  };
-
-  IPC();
+  IPC(IRQ& irq7, IRQ& irq9);
   void Reset();
 
   struct IPCSYNC {
@@ -45,12 +40,14 @@ private:
     return Client::ARM9;
   }
 
-  void RequestIRQ(Client client, IRQ reason);
+  void RequestIRQ(Client client, IRQ::Source reason);
 
   struct {
     u8 send = 0;
     bool enable_remote_irq = false;
   } sync[2];
+
+  IRQ* irq[2];
 };
 
 } // namespace fauxDS::core

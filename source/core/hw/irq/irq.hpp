@@ -13,7 +13,10 @@ struct IRQ {
   enum class Source : u32 {
     VBlank = 1 << 0,
     HBlank = 1 << 1,
-    VCount = 1 << 2
+    VCount = 1 << 2,
+    IPC_Sync = 1 << 16,
+    IPC_SendEmpty = 1 << 17,
+    IPC_ReceiveNotEmpty = 1 << 18
   };
 
   IRQ();

@@ -8,7 +8,9 @@
 
 namespace fauxDS::core {
 
-IPC::IPC() {
+IPC::IPC(IRQ& irq7, IRQ& irq9) {
+  irq[static_cast<uint>(Client::ARM7)] = &irq7;
+  irq[static_cast<uint>(Client::ARM9)] = &irq9;
   Reset();
 }
 
@@ -17,8 +19,8 @@ void IPC::Reset() {
   sync[static_cast<uint>(Client::ARM9)] = {};
 }
 
-void IPC::RequestIRQ(Client client, IRQ reason) {
-  ASSERT(false, "IPC: requested IRQ but this is unimplemented.");
+void IPC::RequestIRQ(Client client, IRQ::Source reason) {
+  irq[static_cast<uint>(client)]->Raise(reason);
 }
 
 auto IPC::IPCSYNC::ReadByte(Client client, uint offset) -> u8 {
@@ -47,7 +49,7 @@ void IPC::IPCSYNC::WriteByte(Client client, uint offset, u8 value) {
       sync_tx.send = value & 0xF;
       sync_tx.enable_remote_irq = value & 64;
       if ((value & 32) && sync_rx.enable_remote_irq) {
-        ipc.RequestIRQ(GetRemote(client), IRQ::SYNC);
+        ipc.RequestIRQ(GetRemote(client), IRQ::Source::IPC_Sync);
       }
       break;
     default:
