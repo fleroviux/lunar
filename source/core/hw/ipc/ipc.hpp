@@ -19,6 +19,7 @@ struct IPC {
   };
 
   IPC(IRQ& irq7, IRQ& irq9);
+
   void Reset();
 
   struct IPCSYNC {
@@ -31,8 +32,35 @@ struct IPC {
     IPC& ipc;
   } ipcsync {*this};
 
+  struct IPCFIFOCNT {
+    IPCFIFOCNT(IPC& ipc) : ipc(ipc) {}
+
+    auto ReadByte (Client client, uint offset) -> u8;
+    void WriteByte(Client client, uint offset, u8 value);
+
+  private:
+    IPC& ipc;
+  } ipcfifocnt {*this};
+
+  struct IPCFIFOSEND {
+    IPCFIFOSEND(IPC& ipc) : ipc(ipc) {}
+
+  private:
+    IPC& ipc;
+  } ipcfifosend {*this};
+
+  struct IPCFIFORECV {
+    IPCFIFORECV(IPC& ipc) : ipc(ipc) {}
+
+  private:
+    IPC& ipc;
+  } ipcfiforecv {*this};
+
 private:
   friend struct IPCSYNC;
+  friend struct IPCFIFOCNT;
+  friend struct IPCFIFOSEND;
+  friend struct IPCFIFORECV;
 
   static constexpr auto GetRemote(Client client) {
     if (client == Client::ARM9)
@@ -46,6 +74,14 @@ private:
     u8 send = 0;
     bool enable_remote_irq = false;
   } sync[2];
+
+  struct {
+    common::FIFO<u32, 16> send;
+    bool enable_send_irq = false;
+    bool enable_recv_irq = false;
+    bool error = false;
+    bool enable = false;
+  } fifo[2];
 
   IRQ* irq[2];
 };

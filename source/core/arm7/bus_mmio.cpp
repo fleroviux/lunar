@@ -17,6 +17,7 @@ enum Registers {
 
   // IPC
   REG_IPCSYNC = 0x0400'0180,
+  REG_IPCFIFOCNT = 0x0400'0184,
 
   // IRQ
   REG_IME = 0x0400'0208,
@@ -46,6 +47,10 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcsync.ReadByte(IPC::Client::ARM7, 0);
     case REG_IPCSYNC|1:
       return ipc.ipcsync.ReadByte(IPC::Client::ARM7, 1);
+    case REG_IPCFIFOCNT|0:
+      return ipc.ipcfifocnt.ReadByte(IPC::Client::ARM7, 0);
+    case REG_IPCFIFOCNT|1:
+      return ipc.ipcfifocnt.ReadByte(IPC::Client::ARM7, 1);
 
     // IRQ
     case REG_IME|0:
@@ -108,6 +113,12 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_IPCSYNC|1:
       ipc.ipcsync.WriteByte(IPC::Client::ARM7, 1, value);
+      break;
+    case REG_IPCFIFOCNT|0:
+      ipc.ipcfifocnt.WriteByte(IPC::Client::ARM7, 0, value);
+      break;
+    case REG_IPCFIFOCNT|1:
+      ipc.ipcfifocnt.WriteByte(IPC::Client::ARM7, 1, value);
       break;
 
     // IRQ
