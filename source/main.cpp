@@ -78,7 +78,9 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
 
     while (scheduler.GetTimestampNow() < frame_target) {
       while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
-        // TODO: ARM7 IRQ handling.
+        if (irq7.IsEnabled() && irq7.HasPendingIRQ()) {
+          arm7->SignalIRQ();
+        }
         if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
           arm9->SignalIRQ();
         }

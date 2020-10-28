@@ -43,6 +43,7 @@ private:
   Interconnect::SWRAM::Alloc const& swram;
 
   IPC& ipc;
+  IRQ& irq7;
   VideoUnit& video_unit;
   Interconnect::KeyInput& keyinput;
 };
