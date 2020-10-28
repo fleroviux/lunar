@@ -29,11 +29,12 @@ void VideoUnit::OnHdrawBegin() {
 
   dispstat.vcount.flag = vcount.value == dispstat.vcount_setting;
 
-  if (dispstat.vcount.enable_irq) {
+  if (dispstat.vcount.enable_irq && dispstat.vcount.flag) {
+    irq7.Raise(IRQ::Source::VCount);
+    irq9.Raise(IRQ::Source::VCount);
   }
 
   if (vcount.value == 192) {
-    // TODO: request V-blank DMA and IRQ
     if (dispstat.vblank.enable_irq) {
       irq7.Raise(IRQ::Source::VBlank);
       irq9.Raise(IRQ::Source::VBlank);
@@ -53,8 +54,9 @@ void VideoUnit::OnHdrawBegin() {
 }
 
 void VideoUnit::OnHblankBegin() {
-  // TODO: request H-blank DMA and IRQ
   if (dispstat.hblank.enable_irq) {
+    irq7.Raise(IRQ::Source::HBlank);
+    irq9.Raise(IRQ::Source::HBlank);
   }
 
   // TODO: according to GBATEK the H-blank flag toggle is slightly delay on NDS7.
