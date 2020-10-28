@@ -36,6 +36,8 @@ private:
   void WriteHalfIO(u32 address, u16 value);
   void WriteWordIO(u32 address, u32 value);
 
+  u8 bios[0x4000] {0};
+
   u8* ewram;
 
   // TODO: merge IWRAM with SWRAM?

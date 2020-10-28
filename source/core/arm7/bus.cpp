@@ -4,6 +4,7 @@
 
 #include <common/bit.hpp>
 #include <common/log.hpp>
+#include <fstream>
 #include <string.h>
 
 #include "bus.hpp"
@@ -17,6 +18,11 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , irq7(interconnect->irq7)
     , video_unit(interconnect->video_unit)
     , keyinput(interconnect->keyinput) {
+  std::ifstream file { "bios7.bin", std::ios::in | std::ios::binary };
+  ASSERT(file.good(), "ARM7: failed to open bios7.bin");
+  file.read(reinterpret_cast<char*>(bios), 16384);
+  ASSERT(file.good(), "ARM7: failed to read 16384 bytes from bios7.bin");
+
   memset(iwram, 0, sizeof(iwram));
 }
 
@@ -31,6 +37,9 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
     std::is_same<T, u8>::value, "T must be u32, u16 or u8");
 
   switch (address >> 24) {
+    case 0x00:
+      // TODO: figure out how out-of-bounds reads are supposed to work.
+      return *reinterpret_cast<T*>(&bios[address & 0x3FFF]);
     case 0x02:
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
     case 0x03:
