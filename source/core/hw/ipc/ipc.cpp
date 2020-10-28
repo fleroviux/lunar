@@ -102,5 +102,30 @@ void IPC::IPCFIFOCNT::WriteByte(Client client, uint offset, u8 value) {
   }
 }
 
+void IPC::IPCFIFOSEND::WriteByte(Client client, u8 value) {
+  WriteWord(client, value * 0x01010101);
+}
+
+void IPC::IPCFIFOSEND::WriteHalf(Client client, u16 value) {
+  WriteWord(client, value * 0x00010001);
+}
+
+void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
+  auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
+  
+  if (!fifo_tx.enable) {
+    LOG_ERROR("IPC[{0}]: attempted write to a disabled FIFO.", client);
+    return;
+  }
+  
+  if (fifo_tx.send.IsFull()) {
+    fifo_tx.error = true;
+    LOG_ERROR("IPC[{0}]: attempted to write to a full FIFO.", client);
+    return;
+  }
+
+  fifo_tx.send.Write(value);
+}
+    
 
 } // namespace fauxDS::core

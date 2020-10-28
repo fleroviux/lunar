@@ -18,6 +18,7 @@ enum Registers {
   // IPC
   REG_IPCSYNC = 0x0400'0180,
   REG_IPCFIFOCNT = 0x0400'0184,
+  REG_IPCFIFOSEND = 0x0400'0188,
 
   // IRQ
   REG_IME = 0x0400'0208,
@@ -120,6 +121,12 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_IPCFIFOCNT|1:
       ipc.ipcfifocnt.WriteByte(IPC::Client::ARM9, 1, value);
       break;
+    case REG_IPCFIFOSEND|0:
+    case REG_IPCFIFOSEND|1:
+    case REG_IPCFIFOSEND|2:
+    case REG_IPCFIFOSEND|3:
+      ipc.ipcfifosend.WriteByte(IPC::Client::ARM9, value);
+      break;
 
     // IRQ
     case REG_IME|0:
@@ -165,11 +172,24 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
 }
 
 void ARM9MemoryBus::WriteHalfIO(u32 address, u16 value) {
+  switch (address) {
+    case REG_IPCFIFOSEND|0:
+    case REG_IPCFIFOSEND|2:
+      ipc.ipcfifosend.WriteHalf(IPC::Client::ARM9, value);
+      break;
+  }
+
   WriteByteIO(address | 0, value & 0xFF);
   WriteByteIO(address | 1, value >> 8);
 }
 
 void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
+  switch (address) {
+    case REG_IPCFIFOSEND:
+      ipc.ipcfifosend.WriteWord(IPC::Client::ARM9, value);
+      break;
+  }
+
   WriteByteIO(address | 0, u8(value >>  0));
   WriteByteIO(address | 1, u8(value >>  8));
   WriteByteIO(address | 2, u8(value >> 16));

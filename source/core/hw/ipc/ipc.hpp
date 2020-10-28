@@ -45,6 +45,10 @@ struct IPC {
   struct IPCFIFOSEND {
     IPCFIFOSEND(IPC& ipc) : ipc(ipc) {}
 
+    void WriteByte(Client client,  u8 value);
+    void WriteHalf(Client client, u16 value);
+    void WriteWord(Client client, u32 value);
+    
   private:
     IPC& ipc;
   } ipcfifosend {*this};
