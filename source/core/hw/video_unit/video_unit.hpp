@@ -8,6 +8,7 @@
 #include <common/log.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/scheduler.hpp>
+#include <functional>
 
 namespace fauxDS::core {
 
@@ -83,9 +84,9 @@ struct VideoUnit {
   } vcount;
 
 private:
-  void OnHdrawBegin();
-  void OnHblankBegin();
-  void OnHblankFlagSet();
+  void OnHdrawBegin(int late);
+  void OnHblankBegin(int late);
+  void OnHblankFlagSet(int late);
 
   Scheduler* scheduler;
   IRQ& irq7;

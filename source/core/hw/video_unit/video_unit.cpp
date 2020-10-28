@@ -6,6 +6,10 @@
 
 namespace fauxDS::core {
 
+static constexpr int kDrawingLines = 192;
+static constexpr int kBlankingLines = 71;
+static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
+
 VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
     : scheduler(scheduler)
     , irq7(irq7)
@@ -19,11 +23,11 @@ void VideoUnit::Reset() {
 
   // HACK: make the VCOUNT value start at zero for the first scanline.
   vcount.value = 0xFFFF;
-  OnHdrawBegin();
+  OnHdrawBegin(0);
 }
 
-void VideoUnit::OnHdrawBegin() {
-  if (++vcount.value == 263) {
+void VideoUnit::OnHdrawBegin(int late) {
+  if (++vcount.value == kTotalLines) {
     vcount.value = 0;
   }
 
@@ -34,7 +38,7 @@ void VideoUnit::OnHdrawBegin() {
     irq9.Raise(IRQ::Source::VCount);
   }
 
-  if (vcount.value == 192) {
+  if (vcount.value == kDrawingLines) {
     if (dispstat.vblank.enable_irq) {
       irq7.Raise(IRQ::Source::VBlank);
       irq9.Raise(IRQ::Source::VBlank);
@@ -42,36 +46,34 @@ void VideoUnit::OnHdrawBegin() {
     dispstat.vblank.flag = true;
   }
   
-  if (vcount.value == 261) {
+  if (vcount.value == kTotalLines - 1) {
     dispstat.vblank.flag = false;
   }
 
   dispstat.hblank.flag = false;
 
-  scheduler->Add(1536, [this](int late) {
-    this->OnHblankBegin();
+  scheduler->Add(1536 - late, [this](int late) {
+    this->OnHblankBegin(late);
   });
 }
 
-void VideoUnit::OnHblankBegin() {
+void VideoUnit::OnHblankBegin(int late) {
   if (dispstat.hblank.enable_irq) {
     irq7.Raise(IRQ::Source::HBlank);
     irq9.Raise(IRQ::Source::HBlank);
   }
 
-  // TODO: according to GBATEK the H-blank flag toggle is slightly delay on NDS7.
-  scheduler->Add(70, [this](int late) {
-    this->OnHblankFlagSet();
+  scheduler->Add(70 - late, [this](int late) {
+    this->OnHblankFlagSet(late);
   });
 }
 
-void VideoUnit::OnHblankFlagSet() {
+void VideoUnit::OnHblankFlagSet(int late) {
   dispstat.hblank.flag = true;
 
-  scheduler->Add(594, [this](int late) {
-    this->OnHdrawBegin();
+  scheduler->Add(594 - late, [this](int late) {
+    this->OnHdrawBegin(late);
   });
 }
-  
 
 } // namespace fauxDS::core
