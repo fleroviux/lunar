@@ -116,8 +116,11 @@ void ARM9MemoryBus::Write(u32 address, T value) {
     case 0x06:
       *reinterpret_cast<T*>(&vram[address & 0x1FFFFF]) = value;
       break;
-    //default:
-      //ASSERT(false, "ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
+    default:
+      // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.
+      if (address == 0x08005500 && value == 0x08005500)
+        break;
+      ASSERT(false, "ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
   }
 }
 
