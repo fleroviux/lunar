@@ -198,10 +198,11 @@ void ARM9MemoryBus::WriteHalfIO(u32 address, u16 value) {
     case REG_IPCFIFOSEND|2:
       ipc.ipcfifosend.WriteHalf(IPC::Client::ARM9, value);
       break;
+    default:
+      WriteByteIO(address | 0, value & 0xFF);
+      WriteByteIO(address | 1, value >> 8);
+      break;
   }
-
-  WriteByteIO(address | 0, value & 0xFF);
-  WriteByteIO(address | 1, value >> 8);
 }
 
 void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
@@ -209,12 +210,13 @@ void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
     case REG_IPCFIFOSEND:
       ipc.ipcfifosend.WriteWord(IPC::Client::ARM9, value);
       break;
+    default:
+      WriteByteIO(address | 0, u8(value >>  0));
+      WriteByteIO(address | 1, u8(value >>  8));
+      WriteByteIO(address | 2, u8(value >> 16));
+      WriteByteIO(address | 3, u8(value >> 24));
+      break;
   }
-
-  WriteByteIO(address | 0, u8(value >>  0));
-  WriteByteIO(address | 1, u8(value >>  8));
-  WriteByteIO(address | 2, u8(value >> 16));
-  WriteByteIO(address | 3, u8(value >> 24));
 }
 
 } // namespace fauxDS::core
