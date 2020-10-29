@@ -47,12 +47,16 @@ struct CP15 : arm::Coprocessor {
   void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override;
 
 private:
+  // Unfortunately we cannot invoke "Index" from here.
+  // Calculation: Index(15, 15, 7) + 1
+  static constexpr int kLUTSize = 0x800;
+
   static constexpr auto Index(int cn, int cm, int opcode) -> int {
     return (cn << 7) | (cm << 3) | opcode;
   }
 
-  typedef auto (CP15::*ReadHandler )(int cn, int cm, int opcode) -> u32;
-  typedef void (CP15::*WriteHandler)(int cn, int cm, int opcode, u32 value);
+  using ReadHandler  = auto (CP15::*)(int cn, int cm, int opcode) -> u32;
+  using WriteHandler = void (CP15::*)(int cn, int cm, int opcode, u32 value);
 
   /** 
     * Register a register read handler.
@@ -99,19 +103,8 @@ private:
 
   arm::ARM* core;
   ARM9MemoryBus* bus;
-
-  /** List of register read handlers.
-    * The array is indexed like this:
-    * bits 0- 2: opcode2
-    * bits 3- 6: cm
-    * bits 7-10: cn
-    */
-  ReadHandler handler_rd[0x800];
-  
-  /** List of register write handlers.
-    * Indexing works the same as for read handlers.
-    */
-  WriteHandler handler_wr[0x800];
+  ReadHandler  handler_rd[kLUTSize];
+  WriteHandler handler_wr[kLUTSize];
 };
 
 } // namespace fauxDS::core

@@ -11,7 +11,7 @@ namespace fauxDS::core {
 CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
     : core(core)
     , bus(bus) {
-  for (int i = 0; i <= 0x7FF; i++) {
+  for (int i = 0; i < kLUTSize; i++) {
     handler_rd[i] = &CP15::DefaultRead;
     handler_wr[i] = &CP15::DefaultWrite;
   }
@@ -41,10 +41,7 @@ void CP15::RegisterHandler(int cn, int cm, int opcode, WriteHandler handler) {
   handler_wr[Index(cn, cm, opcode)] = handler;
 }
 
-auto CP15::Read(int opcode1,
-                int cn,
-                int cm,
-                int opcode2) -> u32 {
+auto CP15::Read(int opcode1, int cn, int cm, int opcode2) -> u32 {
   if (opcode1 == 0) {
     return std::invoke(handler_rd[Index(cn, cm, opcode2)], this, cn, cm, opcode2);
   }
@@ -52,11 +49,7 @@ auto CP15::Read(int opcode1,
   return 0;
 }
 
-void CP15::Write(int opcode1,
-                 int cn,
-                 int cm,
-                 int opcode2,
-                 u32 value) {
+void CP15::Write(int opcode1, int cn, int cm, int opcode2, u32 value) {
   if (opcode1 == 0) {
     std::invoke(handler_wr[Index(cn, cm, opcode2)], this, cn, cm, opcode2, value);
   }
