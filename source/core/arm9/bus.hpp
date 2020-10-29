@@ -67,6 +67,7 @@ private:
   IPC& ipc;
   IRQ& irq9;
   VideoUnit& video_unit;
+  Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
 };
 

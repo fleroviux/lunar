@@ -17,6 +17,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     , ipc(interconnect->ipc)
     , irq9(interconnect->irq9)
     , video_unit(interconnect->video_unit)
+    , wramcnt(interconnect->wramcnt)
     , keyinput(interconnect->keyinput) {
   std::ifstream file { "bios9.bin", std::ios::in | std::ios::binary };
   ASSERT(file.good(), "ARM9: failed to open bios9.bin");

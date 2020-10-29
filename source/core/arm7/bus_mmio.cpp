@@ -24,7 +24,9 @@ enum Registers {
   // IRQ
   REG_IME = 0x0400'0208,
   REG_IE  = 0x0400'0210,
-  REG_IF  = 0x0400'0214
+  REG_IF  = 0x0400'0214,
+
+  REG_WRAMSTAT = 0x0400'0241
 };
 
 auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -87,6 +89,9 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return irq7._if.ReadByte(2);
     case REG_IF|3:
       return irq7._if.ReadByte(3);
+
+    case REG_WRAMSTAT:
+      return wramcnt.ReadByte();
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);

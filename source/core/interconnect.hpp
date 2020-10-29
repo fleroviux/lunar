@@ -18,7 +18,8 @@ namespace fauxDS::core {
 struct Interconnect {
   Interconnect() 
       : ipc(irq7, irq9)
-      , video_unit(&scheduler, irq7, irq9) {
+      , video_unit(&scheduler, irq7, irq9)
+      , wramcnt(swram) {
     Reset();
   }
 
@@ -51,14 +52,14 @@ struct Interconnect {
   IPC ipc;
   VideoUnit video_unit;
 
-  /*struct WRAMCNT : RegisterByte {
+  struct WRAMCNT {
     WRAMCNT(SWRAM& swram) : swram(swram) {}
 
-    auto Read(uint offset) -> u8 override {
+    auto ReadByte() -> u8 {
       return value;
     }
 
-    void Write(uint offset, u8 value) override {
+    void WriteByte(u8 value) {
       this->value = value & 3;
       switch (this->value) {
         case 0:
@@ -83,7 +84,7 @@ struct Interconnect {
   private:
     int value = 0;
     SWRAM& swram;
-  } wramcnt;*/
+  } wramcnt;
 
   struct KeyInput {
     bool a = false;
