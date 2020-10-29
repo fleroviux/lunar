@@ -83,15 +83,24 @@ void IPC::IPCFIFOCNT::WriteByte(Client client, uint offset, u8 value) {
   auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
+  bool enable_send_irq_old = fifo_tx.enable_send_irq;
+  bool enable_recv_irq_old = fifo_tx.enable_recv_irq;
+
   switch (offset) {
     case 0:
       fifo_tx.enable_send_irq = value & 4;
+      if (!enable_send_irq_old && fifo_tx.enable_send_irq && fifo_tx.send.IsEmpty()) {
+        ipc.RequestIRQ(client, IRQ::Source::IPC_SendEmpty);
+      }
       if (value & 8) {
         fifo_tx.send.Reset();
       }
       break;
     case 1:
       fifo_tx.enable_recv_irq = value & 4;
+      if (!enable_recv_irq_old && fifo_tx.enable_recv_irq && !fifo_rx.send.IsEmpty()) {
+        ipc.RequestIRQ(client, IRQ::Source::IPC_ReceiveNotEmpty);
+      }
       if (value & 64) {
         fifo_tx.error = false;
       }
@@ -112,16 +121,21 @@ void IPC::IPCFIFOSEND::WriteHalf(Client client, u16 value) {
 
 void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
   auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
-  
+  auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
+
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted write to disabled FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted write FIFO but FIFOs are disabled.", client);
     return;
   }
   
   if (fifo_tx.send.IsFull()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to write to full FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted to write to already full FIFO.", client);
     return;
+  }
+
+  if (fifo_rx.enable_recv_irq && fifo_tx.send.IsEmpty()) {
+    ipc.RequestIRQ(GetRemote(client), IRQ::Source::IPC_ReceiveNotEmpty);
   }
 
   fifo_tx.send.Write(value);
@@ -148,10 +162,8 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
   auto& fifo_tx = ipc.fifo[static_cast<uint>(client)];
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
-  // TODO: which FIFOCNT register applies here? are there actually two enable flags?
   if (!fifo_tx.enable) {
-    // TODO: this error message might not be completely accurate.
-    LOG_ERROR("IPC[{0}]: attempted to read disabled FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", client);
     return fifo_rx.send.Peek();
   }
 
@@ -159,6 +171,10 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
     fifo_tx.error = true;
     LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", client);
     return fifo_rx.send.Peek();
+  }
+
+  if (fifo_rx.enable_send_irq && fifo_rx.send.Count() == 1) {
+    ipc.RequestIRQ(GetRemote(client), IRQ::Source::IPC_SendEmpty);
   }
 
   return fifo_rx.send.Read();
