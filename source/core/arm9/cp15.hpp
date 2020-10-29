@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/arm/arm.hpp>
 #include <core/arm/coprocessor.hpp>
 
 #include "bus.hpp"
@@ -14,11 +15,11 @@ namespace fauxDS::core {
 
 /** This class emulates the System Control Coprocessor (CP15).
   * It is responsable for various things, such as configuration
-  * of the MPU/MMU, alignment and endianness modes,
-  * cache control and various other things.
+  * of the MPU, TCM and cache, alignment and endianness modes,
+  * and various other things.
   */
 struct CP15 : arm::Coprocessor {
-  CP15(ARM9MemoryBus* bus);
+  CP15(arm::ARM* core, ARM9MemoryBus* bus);
 
   void Reset() override;
 
@@ -46,7 +47,7 @@ struct CP15 : arm::Coprocessor {
   void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override;
 
 private:
-  auto Index(int cn, int cm, int opcode) -> int {
+  static constexpr auto Index(int cn, int cm, int opcode) -> int {
     return (cn << 7) | (cm << 3) | opcode;
   }
 
@@ -96,6 +97,7 @@ private:
     u32 limit;
   } dtcm, itcm;
 
+  arm::ARM* core;
   ARM9MemoryBus* bus;
 
   /** List of register read handlers.

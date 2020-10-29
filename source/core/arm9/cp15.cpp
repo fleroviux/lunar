@@ -8,7 +8,9 @@
 
 namespace fauxDS::core {
 
-CP15::CP15(ARM9MemoryBus* bus) : bus(bus) {
+CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
+    : core(core)
+    , bus(bus) {
   for (int i = 0; i <= 0x7FF; i++) {
     handler_rd[i] = &CP15::DefaultRead;
     handler_wr[i] = &CP15::DefaultWrite;

@@ -168,10 +168,10 @@ auto main(int argc, const char** argv) -> int {
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
   auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
-  auto arm9_cp15 = std::make_unique<CP15>(arm9_mem.get());
   auto arm7 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm7_mem.get());
   auto arm9 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm9_mem.get());
-  
+  auto arm9_cp15 = std::make_unique<CP15>(arm9.get(), arm9_mem.get());
+
   arm9->AttachCoprocessor(15, arm9_cp15.get());
 
   {
