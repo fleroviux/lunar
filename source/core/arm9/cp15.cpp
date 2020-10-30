@@ -55,6 +55,15 @@ void CP15::Write(int opcode1, int cn, int cm, int opcode2, u32 value) {
   }
 }
 
+auto CP15::DefaultRead(int cn, int cm, int opcode) -> u32 {
+  LOG_WARN("CP15: unknown read c{0} c{1} #{2}", cn, cm, opcode);
+  return 0;
+}
+
+void CP15::DefaultWrite(int cn, int cm, int opcode, u32 value) {
+  LOG_WARN("CP15: unknown write c{0} c{1} #{2} = 0x{3:08X}", cn, cm, opcode, value);
+}
+
 auto CP15::ReadMainID(int cn, int cm, int opcode) -> u32 {
   return 0x41059461;
 }
