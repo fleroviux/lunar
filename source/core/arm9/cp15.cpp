@@ -32,7 +32,7 @@ CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
 void CP15::Reset() {
   // TODO: research what values these registers should really have upon boot.
 
-  // Reset control register (enables DTCM and ITCM)
+  // Reset control register (enable DTCM and ITCM, exception base = 0xFFFF0000)
   Write(0, 1, 0, 0, 0x00052000);
 
   // Reset DTCM and ITCM configuration

@@ -795,17 +795,14 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   auto opcode2 = (instruction >>  5) & 7;
   auto cp_num  = (instruction >>  8) & 0xF;
 
-  if (instruction & (1 << 20)) {
-    ASSERT(coprocessors[cp_num] != nullptr,
-      "unhandled: mrc p{0}, #{1}, r{2}, C{3}, C{4}, #{5}",
-      cp_num, opcode1, dst, cp_rn, cp_rm, opcode2);
+  if (coprocessors[cp_num] == nullptr) {
+    ARM_Undefined(instruction);
+    return;
+  }
 
+  if (instruction & (1 << 20)) {
     state.reg[dst] = coprocessors[cp_num]->Read(opcode1, cp_rn, cp_rm, opcode2);
   } else {
-    ASSERT(coprocessors[cp_num] != nullptr,
-      "unhandled: mcr p{0}, #{1}, r{2}, C{3}, C{4}, #{5} (rD = 0x{6:08X})",
-      cp_num, opcode1, dst, cp_rn, cp_rm, opcode2, state.reg[dst]);
-
     coprocessors[cp_num]->Write(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
   }
 

@@ -14,9 +14,10 @@
 namespace fauxDS::core::arm {
 
 struct ARM {
+  // TODO: it would be more appropriate to have this be the processor model.
   enum class Architecture {
-    ARMv5TE,
-    ARMv6K
+    ARMv4T,
+    ARMv5TE
   };
 
   ARM(Architecture arch, MemoryBase* memory)

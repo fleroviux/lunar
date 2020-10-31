@@ -135,7 +135,14 @@ cleanup:
   SDL_DestroyTexture(tex_bottom);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
-} 
+}
+
+/// No-operation stub for the CP14 coprocessor
+struct CP14Stub : arm::Coprocessor {
+  void Reset() override {}
+  auto Read(int opcode1, int cn, int cm, int opcode2) -> u32 override { return 0; }
+  void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override {}
+};
 
 auto main(int argc, const char** argv) -> int {
   const char* rom_path;
@@ -168,10 +175,12 @@ auto main(int argc, const char** argv) -> int {
   auto interconnect = std::make_unique<Interconnect>();
   auto arm7_mem = std::make_unique<ARM7MemoryBus>(interconnect.get());
   auto arm9_mem = std::make_unique<ARM9MemoryBus>(interconnect.get());
-  auto arm7 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm7_mem.get());
+  auto arm7 = std::make_unique<ARM>(ARM::Architecture::ARMv4T, arm7_mem.get());
   auto arm9 = std::make_unique<ARM>(ARM::Architecture::ARMv5TE, arm9_mem.get());
+  auto arm7_cp14 = std::make_unique<CP14Stub>();
   auto arm9_cp15 = std::make_unique<CP15>(arm9.get(), arm9_mem.get());
 
+  arm7->AttachCoprocessor(14, arm7_cp14.get());
   arm9->AttachCoprocessor(15, arm9_cp15.get());
 
   {
