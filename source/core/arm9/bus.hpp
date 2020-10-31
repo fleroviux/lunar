@@ -12,17 +12,17 @@
 namespace fauxDS::core {
 
 struct ARM9MemoryBus final : arm::MemoryBase {
+  struct TCMConfig {
+    bool enable = false;
+    bool enable_read = false;
+    u32 base  = 0;
+    u32 limit = 0;
+  };
+
   ARM9MemoryBus(Interconnect* interconnect);
 
-  void SetDTCM(u32 base, u32 limit) {
-    dtcm_base  = base;
-    dtcm_limit = limit;
-  }
-
-  void SetITCM(u32 base, u32 limit) {
-    itcm_base  = base;
-    itcm_limit = limit;
-  }
+  void SetDTCM(TCMConfig& config) { dtcm_config = config; }
+  void SetITCM(TCMConfig& config) { itcm_config = config; }
 
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
@@ -32,7 +32,6 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
 
-  // TODO: this is completely stupid and inaccurate as hell.
   u8 vram[0x200000];
 
 private:
@@ -50,20 +49,20 @@ private:
   void WriteHalfIO(u32 address, u16 value);
   void WriteWordIO(u32 address, u32 value);
 
-  u32 dtcm_base  = 0;
-  u32 dtcm_limit = 0;
+  /// ARM9 internal memory
+  u8 bios[0x8000] {0};
   u8 dtcm[0x4000] {0};
-
-  u32 itcm_base  = 0;
-  u32 itcm_limit = 0;
   u8 itcm[0x8000] {0};
 
-  u8* ewram;
+  /// ITCM and DTCM configuration
+  TCMConfig dtcm_config;
+  TCMConfig itcm_config;
 
+  /// ARM7 and ARM9 shared memory
+  u8* ewram;
   Interconnect::SWRAM::Alloc const& swram;
 
-  u8 bios[0x8000] {0};
-
+  /// HW components and I/O registers
   IPC& ipc;
   IRQ& irq9;
   VideoUnit& video_unit;

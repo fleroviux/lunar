@@ -51,14 +51,14 @@ private:
   void WriteDTCMConfig(int cn, int cm, int opcode, u32 value);
   void WriteITCMConfig(int cn, int cm, int opcode, u32 value);
 
-  struct TCMConfig {
-    u32 value;
-    u32 base;
-    u32 limit;
-  } dtcm, itcm;
+  u32 reg_control;
+  u32 reg_dtcm;
+  u32 reg_itcm;
 
   arm::ARM* core;
   ARM9MemoryBus* bus;
+  ARM9MemoryBus::TCMConfig dtcm_config;
+  ARM9MemoryBus::TCMConfig itcm_config;
   ReadHandler  handler_rd[kLUTSize];
   WriteHandler handler_wr[kLUTSize];
 };

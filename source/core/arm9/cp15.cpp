@@ -77,48 +77,51 @@ void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {
-  return dtcm.value;
+  return reg_dtcm;
 }
 
 auto CP15::ReadITCMConfig(int cn, int cm, int opcode) -> u32 {
-  return itcm.value;
+  return reg_itcm;
 }
 
 void CP15::WriteDTCMConfig(int cn, int cm, int opcode, u32 value) {
-  auto base = value & 0xFFFFF000;
   auto size = (value >> 1) & 0x1F;
   if (size < 3 || size > 23) {
     LOG_ERROR("CP15: DTCM virtual size must be between 4 KiB (3) and 4 GiB (23)");
   }
-  dtcm.value = value;
-  dtcm.base = base;
-  dtcm.limit = base + (512 << size) - 1;
-  if (dtcm.limit < dtcm.base) {
+
+  auto base = value & 0xFFFFF000;
+  reg_dtcm = value;
+  dtcm_config.base = base;
+  dtcm_config.limit = base + (512 << size) - 1;
+  if (dtcm_config.limit < dtcm_config.base) {
     LOG_ERROR("CP15: DTCM limit is lower than base address!");
   }
-  LOG_INFO("CP15: DTCM mapped @ 0x{0:08X} - 0x{1:08X}", dtcm.base, dtcm.limit);
-  bus->SetDTCM(dtcm.base, dtcm.limit);
+  bus->SetDTCM(dtcm_config);
+
+  LOG_INFO("CP15: DTCM mapped @ 0x{0:08X} - 0x{1:08X}", dtcm_config.base, dtcm_config.limit);
 }
 
-void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
-  auto base = value & 0xFFFFF000;
-  if (base != 0) {
-    base = 0;
-    value &= 0xFFF;
-    LOG_ERROR("CP15: ITCM base address is not writable on the Nintendo DS!");
-  }
+void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {  
   auto size = (value >> 1) & 0x1F;
   if (size < 3 || size > 23) {
     LOG_ERROR("CP15: ITCM virtual size must be between 4 KiB (3) and 4 GiB (23)");
   }
-  itcm.value = value;
-  itcm.base = 0;
-  itcm.limit = base + (512 << size) - 1;
-  if (itcm.limit < itcm.base) {
+
+  auto base = value & 0xFFFFF000;
+  if (base != 0) {
+    value &= 0xFFF;
+    LOG_ERROR("CP15: ITCM base address cannot be changed on the Nintendo DS!");
+  }
+  reg_itcm = value & 0x00000FFF;
+  itcm_config.base = 0;
+  itcm_config.limit = base + (512 << size) - 1;
+  if (itcm_config.limit < itcm_config.base) {
     LOG_ERROR("CP15: ITCM limit is lower than base address!");
   }
-  LOG_INFO("CP15: ITCM mapped @ 0x{0:08X} - 0x{1:08X}", itcm.base, itcm.limit);
-  bus->SetITCM(itcm.base, itcm.limit);
+  bus->SetITCM(itcm_config);
+
+  LOG_INFO("CP15: ITCM mapped @ 0x{0:08X} - 0x{1:08X}", itcm_config.base, itcm_config.limit);
 }
 
 } // namespace fauxDS::core

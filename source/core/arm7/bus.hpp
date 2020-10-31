@@ -36,14 +36,15 @@ private:
   void WriteHalfIO(u32 address, u16 value);
   void WriteWordIO(u32 address, u32 value);
 
+  /// ARM7 internal memory
   u8 bios[0x4000] {0};
-
-  u8* ewram;
-
-  // TODO: merge IWRAM with SWRAM?
   u8 iwram[0x10000];
+
+  /// ARM7 and ARM9 shared memory
+  u8* ewram;
   Interconnect::SWRAM::Alloc const& swram;
 
+  /// HW components and I/O registers
   IPC& ipc;
   IRQ& irq7;
   VideoUnit& video_unit;
