@@ -458,7 +458,7 @@ void ARM_SingleHalfwordDoubleTransfer(u32 instruction) {
   switch (opcode) {
     case 1: {
       if (load) {
-        state.reg[dst] = ReadHalfRotate(address);
+        state.reg[dst] = ReadHalfMaybeRotate(address);
       } else {
         WriteHalf(address, state.reg[dst]);
       }

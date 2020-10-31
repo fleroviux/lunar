@@ -277,7 +277,7 @@ void Thumb_LoadStoreSigned(u16 instruction) {
     break;
   case 0b10:
     /* LDRH rD, [rB, rO] */
-    state.reg[dst] = ReadHalfRotate(address);
+    state.reg[dst] = ReadHalfMaybeRotate(address);
     break;
   case 0b11:
     /* LDSH rD, [rB, rO] */
@@ -323,7 +323,7 @@ void Thumb_LoadStoreHword(u16 instruction) {
   u32 address = state.reg[base] + imm * 2;
 
   if (load) {
-    state.reg[dst] = ReadHalfRotate(address);
+    state.reg[dst] = ReadHalfMaybeRotate(address);
   } else {
     WriteHalf(address, state.reg[dst]);
   }

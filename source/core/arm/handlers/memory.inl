@@ -34,10 +34,10 @@ auto ReadByteSigned(u32 address) -> u32 {
   return value;
 }
 
-auto ReadHalfRotate(u32 address) -> u32 {
+auto ReadHalfMaybeRotate(u32 address) -> u32 {
   u32 value = memory->ReadHalf(address & ~1, Bus::Data);
   
-  if (address & 1) {
+  if ((address & 1) && arch == Architecture::ARMv4T) {
     value = (value >> 8) | (value << 24);
   }
   
@@ -45,12 +45,14 @@ auto ReadHalfRotate(u32 address) -> u32 {
 }
 
 auto ReadHalfSigned(u32 address) -> u32 {
-  u32 value = memory->ReadHalf(address & ~1, Bus::Data);
-
-  if (value & 0x8000) {
-    value |= 0xFFFF0000;
+  if ((address & 1) && arch == Architecture::ARMv4T) {
+    return ReadByteSigned(address);
   }
 
+  u32 value = memory->ReadHalf(address & ~1, Bus::Data);
+  if (value & 0x8000) {
+    return value | 0xFFFF0000;
+  }
   return value;
 }
 
