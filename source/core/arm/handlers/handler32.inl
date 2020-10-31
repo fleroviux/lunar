@@ -287,6 +287,11 @@ void ARM_MultiplyLong(u32 instruction) {
 
 template <bool accumulate, bool x, bool y>
 void ARM_SignedHalfwordMultiply(u32 instruction) {
+  if (arch == Architecture::ARMv4T) {
+    ARM_Undefined(instruction);
+    return;
+  }
+
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
   int op3 = (instruction >> 12) & 0xF;
@@ -320,7 +325,11 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
 template <bool accumulate, bool y>
 void ARM_SignedWordHalfwordMultiply(u32 instruction) {
-  // NOTE: this is probably used as fixed point fractional multiply.
+  if (arch == Architecture::ARMv4T) {
+    ARM_Undefined(instruction);
+    return;
+  }
+
   int op1 = (instruction >>  0) & 0xF;
   int op2 = (instruction >>  8) & 0xF;
   int op3 = (instruction >> 12) & 0xF;
@@ -348,6 +357,11 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
 template <bool x, bool y>
 void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
+  if (arch == Architecture::ARMv4T) {
+    ARM_Undefined(instruction);
+    return;
+  }
+
   int op1 = (instruction >> 0) & 0xF;
   int op2 = (instruction >> 8) & 0xF;
   int dst_lo = (instruction >> 12) & 0xF;
@@ -404,6 +418,10 @@ void ARM_BranchAndExchangeMaybeLink(u32 instruction) {
   u32 address = state.reg[instruction & 0xF];
 
   if (link) {
+    if (arch == Architecture::ARMv4T) {
+      ARM_Undefined(instruction);
+      return;
+    }
     state.r14 = state.r15 - 4;
   }
 
@@ -431,39 +449,47 @@ void ARM_SingleHalfwordDoubleTransfer(u32 instruction) {
     offset = state.reg[instruction & 0xF];
   }
 
+  state.r15 += 4;
+
   if (pre) {
     address += add ? offset : -offset;
   }
 
-  /* TODO: figure out alignment constraints for LDRD/STRD. */
-  if (opcode == 1 && load) {
-    state.reg[dst] = ReadHalfRotate(address);
-  } else if (opcode == 1) {
-    u32 value = state.reg[dst];
-
-    if (dst == 15) {
-      value += 4;
+  switch (opcode) {
+    case 1: {
+      if (load) {
+        state.reg[dst] = ReadHalfRotate(address);
+      } else {
+        WriteHalf(address, state.reg[dst]);
+      }
+      break;
     }
+    case 2: {
+      if (load) {
+        state.reg[dst] = ReadByteSigned(address);
+      } else if (arch == Architecture::ARMv5TE) {
+        ASSERT((dst & 1) == 0, "ARM: LDRD: using an odd numbered destination register is undefined.");
+        ASSERT(dst != 14, "ARM: LDRD: loading r14 and r15 is unpredictable.");
+        ASSERT(dst != base && (dst + 1) != base, "ARM: LDRD: using the base register as a destination is unpredictable");
 
-    WriteHalf(address, value);
-  } else if (opcode == 2 && load) {
-    state.reg[dst] = ReadByteSigned(address);
-  } else if (opcode == 3 && load) {
-    state.reg[dst] = ReadHalfSigned(address);
-  } else if (opcode == 2) {
-    /* TODO: check if loading r15 must clear the pipeline. */
-    state.reg[dst + 0] = ReadWord(address + 0);
-    state.reg[dst + 1] = ReadWord(address + 4);
-    
-    /* Disable writeback if base is second destination register. */
-    if (base == (dst + 1)) {
-      state.r15 += 4;
-      return;
+        state.reg[dst + 0] = ReadWord(address + 0);
+        state.reg[dst + 1] = ReadWord(address + 4);
+      }
+      break;
     }
-  } else if (opcode == 3) {
-    /* TODO: likely r15 will be advanced before the second write. */
-    WriteWord(address + 0, state.reg[dst + 0]);
-    WriteWord(address + 4, state.reg[dst + 1]);
+    case 3: {
+      if (load) {
+        state.reg[dst] = ReadHalfSigned(address);
+      } else if (arch == Architecture::ARMv5TE) {
+        ASSERT((dst & 1) == 0, "ARM: STRD: using an odd numbered destination register is undefined.");
+
+        WriteWord(address + 0, state.reg[dst + 0]);
+        WriteWord(address + 4, state.reg[dst + 1]);
+      }
+      break;
+    }
+    default:
+      UNREACHABLE;
   }
 
   if ((writeback || !pre) && (!load || base != dst)) {
@@ -472,8 +498,6 @@ void ARM_SingleHalfwordDoubleTransfer(u32 instruction) {
     }
     state.reg[base] = address;
   }
-
-  state.r15 += 4;
 }
 
 template <bool link>
@@ -720,6 +744,11 @@ void ARM_SWI(u32 instruction) {
 }
 
 void ARM_CountLeadingZeros(u32 instruction) {
+  if (arch == Architecture::ARMv4T) {
+    ARM_Undefined(instruction);
+    return;
+  }
+
   int dst = (instruction >> 12) & 0xF;
   int src =  instruction & 0xF;
   
@@ -754,6 +783,11 @@ void ARM_CountLeadingZeros(u32 instruction) {
 
 template <int opcode>
 void ARM_SaturatingAddSubtract(u32 instruction) {
+  if (arch == Architecture::ARMv4T) {
+    ARM_Undefined(instruction);
+    return;
+  }
+  
   int src1 =  instruction & 0xF;
   int src2 = (instruction >> 16) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
