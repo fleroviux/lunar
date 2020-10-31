@@ -562,6 +562,8 @@ void ARM_SingleDataTransfer(u32 instruction) {
     DoShift(opcode, offset, amount, carry, true);
   }
 
+  state.r15 += 4;
+
   if (pre) {
     address += add ? offset : -offset;
   }
@@ -573,15 +575,10 @@ void ARM_SingleDataTransfer(u32 instruction) {
       state.reg[dst] = ReadWordRotate(address);
     }
   } else {
-    u32 value = state.reg[dst];
-
-    /* r15 is $+12 now due to internal prefetch cycle. */
-    if (dst == 15) value += 4;
-
     if (byte) {
-      WriteByte(address, (u8)value);
+      WriteByte(address, (u8)state.reg[dst]);
     } else {
-      WriteWord(address, value);
+      WriteWord(address, state.reg[dst]);
     }
   }
 
@@ -603,15 +600,13 @@ void ARM_SingleDataTransfer(u32 instruction) {
 
   if (load && dst == 15) {
     /* NOTE: ldrb(t) and ldrt to r15 are unpredictable. */
-    if ((state.r15 & 1) && !byte && !user_mode) {
+    if ((state.r15 & 1) && !byte && !user_mode && arch != Architecture::ARMv4T) {
       state.cpsr.f.thumb = 1;
       state.r15 &= ~1;
       ReloadPipeline16();
     } else {
       ReloadPipeline32();
     }
-  } else {
-    state.r15 += 4;
   }
 }
 
@@ -700,7 +695,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
   }
 
   if (load && transfer_pc) {
-    if ((state.r15 & 1) && !user_mode) {
+    if ((state.r15 & 1) && !user_mode && arch != Architecture::ARMv4T) {
       state.cpsr.f.thumb = 1;
       state.r15 &= ~1;
     }
@@ -787,7 +782,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
     ARM_Undefined(instruction);
     return;
   }
-  
+
   int src1 =  instruction & 0xF;
   int src2 = (instruction >> 16) & 0xF;
   int dst  = (instruction >> 12) & 0xF;
