@@ -45,6 +45,8 @@ private:
   void DefaultWrite(int cn, int cm, int opcode, u32 value);
   auto ReadMainID(int cn, int cm, int opcode) -> u32;
   auto ReadCacheType(int cn, int cm, int opcode) -> u32;
+  auto ReadControlRegister(int cn, int cm, int opcode) -> u32;
+  void WriteControlRegister(int cn, int cm, int opcode, u32 value);
   void WriteWaitForIRQ(int cn, int cm, int opcode, u32 value);
   auto ReadDTCMConfig(int cn, int cm, int opcode) -> u32;
   auto ReadITCMConfig(int cn, int cm, int opcode) -> u32;

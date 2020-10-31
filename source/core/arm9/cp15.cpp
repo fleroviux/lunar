@@ -18,17 +18,24 @@ CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
 
   RegisterHandler(0, 0, 0, &CP15::ReadMainID);
   RegisterHandler(0, 0, 1, &CP15::ReadCacheType);
-  RegisterHandler(7, 0, 4, &CP15::WriteWaitForIRQ);
-  RegisterHandler(7, 8, 2, &CP15::WriteWaitForIRQ);
+  RegisterHandler(1, 0, 0, &CP15::ReadControlRegister);
   RegisterHandler(9, 1, 0, &CP15::ReadDTCMConfig);
   RegisterHandler(9, 1, 1, &CP15::ReadITCMConfig);
+
+  RegisterHandler(1, 0, 0, &CP15::WriteControlRegister);
+  RegisterHandler(7, 0, 4, &CP15::WriteWaitForIRQ);
+  RegisterHandler(7, 8, 2, &CP15::WriteWaitForIRQ);
   RegisterHandler(9, 1, 0, &CP15::WriteDTCMConfig);
   RegisterHandler(9, 1, 1, &CP15::WriteITCMConfig);
 }
 
 void CP15::Reset() {
-  // Reset DTCM and ITCM configuration.
-  // TODO: what are the actual values upon boot?
+  // TODO: research what values these registers should really have upon boot.
+
+  // Reset control register (enables DTCM and ITCM)
+  Write(0, 1, 0, 0, 0x00052000);
+
+  // Reset DTCM and ITCM configuration
   Write(0, 9, 1, 0, 0x0080000A);
   Write(0, 9, 1, 1, 0x0000000C);
 }
@@ -70,6 +77,30 @@ auto CP15::ReadMainID(int cn, int cm, int opcode) -> u32 {
 
 auto CP15::ReadCacheType(int cn, int cm, int opcode) -> u32 {
   return 0x0F0D2112;
+}
+
+auto CP15::ReadControlRegister(int cn, int cm, int opcode) -> u32 {
+  return reg_control;
+}
+
+void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
+  // On NDS ARM9:
+  // - bits 0, 2, 7 and 12 - 19 are read- and writeable
+  // - bits 3 - 6 always are set
+  reg_control = (value & 0x000FF085) | 0x78;
+
+  core->ExceptionBase((value & 0x2000) == 0 ? 0x00000000 : 0xFFFF0000);
+  
+  dtcm_config.enable = value & 0x10000;
+  dtcm_config.enable_read = dtcm_config.enable && (value & 0x20000) == 0;
+  bus->SetDTCM(dtcm_config);
+  
+  itcm_config.enable = value & 0x40000;
+  itcm_config.enable_read = itcm_config.enable && (value & 0x80000) == 0;
+  bus->SetITCM(itcm_config);
+
+  ASSERT((value & 0x80) == 0, "CP15: enabled unsupported big-endian mode!");
+  ASSERT((value & 0x8000) == 0, "CP15: enabled unsupported Pre-ARMv5 mode!");
 }
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {

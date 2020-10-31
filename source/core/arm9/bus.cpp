@@ -35,11 +35,11 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     std::is_same<T, u16>::value ||
     std::is_same<T, u8>::value, "T must be u32, u16 or u8");
 
-  if (address >= itcm_config.base && address <= itcm_config.limit) {
+  if (itcm_config.enable_read && address >= itcm_config.base && address <= itcm_config.limit) {
     return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
   }
 
-  if (bus == Bus::Data && address >= dtcm_config.base && address <= dtcm_config.limit) {
+  if (dtcm_config.enable_read && bus == Bus::Data && address >= dtcm_config.base && address <= dtcm_config.limit) {
     return *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]);
   }
 
@@ -84,12 +84,12 @@ void ARM9MemoryBus::Write(u32 address, T value) {
     std::is_same<T, u16>::value ||
     std::is_same<T, u8>::value, "T must be u32, u16 or u8");
 
-  if (address >= itcm_config.base && address <= itcm_config.limit) {
+  if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
     *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
     return;
   }
 
-  if (address >= dtcm_config.base && address <= dtcm_config.limit) {
+  if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
     *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]) = value;
     return;
   }
