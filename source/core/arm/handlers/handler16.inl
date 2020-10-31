@@ -516,6 +516,8 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   state.r15 = (state.r14 & ~1) + imm * 2;
   state.r14 = temp | 1;
   if (exchange) {
+    // Not a valid opcode in ARMv4T, but we don't know what it is would do.
+    ASSERT(arch != Architecture::ARMv4T, "blx cannot be used on ARMv4T CPUs");
     state.r15 &= ~3;
     state.cpsr.f.thumb = 0;
     ReloadPipeline32();
