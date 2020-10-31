@@ -624,8 +624,6 @@ void ARM_BlockDataTransfer(u32 instruction) {
   Mode mode;
   bool transfer_pc = list & (1 << 15);
   bool switch_mode = user_mode && (!load || !transfer_pc);
-
-  state.r15 += 4;
   
   for (int i = 0; i <= 15; i++) {
     if (list & (1 << i)) {
@@ -649,6 +647,8 @@ void ARM_BlockDataTransfer(u32 instruction) {
   } else {
     base_new = address + bytes;
   }
+
+  state.r15 += 4;
 
   // TODO: Handle case on the ARM11 where STM w/ writeback
   // and w/ base register in the list apparently stores
