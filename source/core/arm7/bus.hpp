@@ -13,11 +13,11 @@ namespace fauxDS::core {
 struct ARM7MemoryBus final : arm::MemoryBase {
   ARM7MemoryBus(Interconnect* interconnect);
 
-  auto ReadByte(u32 address, Bus bus) -> u8 override;
+  auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
 
-  void WriteByte(u32 address, u8 value) override;
+  void WriteByte(u32 address,  u8 value) override;
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
 
