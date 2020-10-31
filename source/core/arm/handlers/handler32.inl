@@ -748,12 +748,17 @@ void ARM_CountLeadingZeros(u32 instruction) {
   int src =  instruction & 0xF;
   
   u32 value = state.reg[src];
-  
+
   if (value == 0) {
     state.reg[dst] = 32;
     state.r15 += 4;
     return;
   }
+
+#if defined(__has_builtin) && __has_builtin(__builtin_clz)
+  state.reg[dst] = __builtin_clz(value);
+#else
+  u32 result = 0;
   
   const u32 mask[] = {
     0xFFFF0000,
@@ -763,16 +768,16 @@ void ARM_CountLeadingZeros(u32 instruction) {
     0x80000000 };
   const int shift[] = { 16, 8, 4, 2, 1 };
   
-  int result = 0;
-  
   for (int i = 0; i < 5; i++) {
     if ((value & mask[i]) == 0) {
       result |= shift[i];
       value <<= shift[i];
     }
   }
-  
+
   state.reg[dst] = result;
+#endif
+
   state.r15 += 4;
 }
 
