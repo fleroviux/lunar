@@ -21,10 +21,8 @@ enum class DataOp {
   MVN = 15
 };
 
-template <bool immediate, int opcode, bool _set_flags, int field4>
+template <bool immediate, int opcode, bool set_flags, int field4>
 void ARM_DataProcessing(u32 instruction) {
-  bool set_flags = _set_flags;
-
   int reg_dst = (instruction >> 12) & 0xF;
   int reg_op1 = (instruction >> 16) & 0xF;
   int reg_op2 = (instruction >>  0) & 0xF;
@@ -34,7 +32,7 @@ void ARM_DataProcessing(u32 instruction) {
 
   int carry = state.cpsr.f.c;
 
-  if (immediate) {
+  if constexpr (immediate) {
     int value = instruction & 0xFF;
     int shift = ((instruction >> 8) & 0xF) * 2;
 
@@ -45,13 +43,14 @@ void ARM_DataProcessing(u32 instruction) {
       op2 = value;
     }
   } else {
+    constexpr int  shift_type = ( field4 >> 1) & 3;
+    constexpr bool shift_imm  = (~field4 >> 0) & 1;
+
     u32 shift;
-    int  shift_type = ( field4 >> 1) & 3;
-    bool shift_imm  = (~field4 >> 0) & 1;
 
     op2 = state.reg[reg_op2];
 
-    if (shift_imm) {
+    if constexpr (shift_imm) {
       shift = (instruction >> 7) & 0x1F;
     } else {
       shift = state.reg[(instruction >> 8) & 0xF];
@@ -62,29 +61,21 @@ void ARM_DataProcessing(u32 instruction) {
 
     DoShift(shift_type, op2, shift, carry, shift_imm);
   }
-
-  if (reg_dst == 15 && set_flags) {
-    auto spsr = *p_spsr;
-
-    SwitchMode(spsr.f.mode);
-    state.cpsr.v = spsr.v;
-    set_flags = false;
-  }
-
+ 
   auto& cpsr = state.cpsr;
   auto& result = state.reg[reg_dst];
 
   switch (static_cast<DataOp>(opcode)) {
     case DataOp::AND:
       result = op1 & op2;
-      if (set_flags) {
+      if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
     case DataOp::EOR:
       result = op1 ^ op2;
-      if (set_flags) {
+      if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
@@ -111,19 +102,25 @@ void ARM_DataProcessing(u32 instruction) {
       u32 result = op1 & op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
+      // TODO: should be zero according to the manual but we don't really
+      // know how the CPU behaves if reg_dst happens to be non-zero.
+      reg_dst = 0;
       break;
     }
     case DataOp::TEQ: {
       u32 result = op1 ^ op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
+      reg_dst = 0;
       break;
     }
     case DataOp::CMP:
       SUB(op1, op2, true);
+      reg_dst = 0;
       break;
     case DataOp::CMN:
       ADD(op1, op2, true);
+      reg_dst = 0;
       break;
     case DataOp::ORR:
       result = op1 | op2;
@@ -134,25 +131,34 @@ void ARM_DataProcessing(u32 instruction) {
       break;
     case DataOp::MOV:
       result = op2;
-      if (set_flags) {
+      if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
     case DataOp::BIC:
       result = op1 & ~op2;
-      if (set_flags) {
+      if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
     case DataOp::MVN:
       result = ~op2;
-      if (set_flags) {
+      if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
+  }
+
+  if constexpr (set_flags) {
+    if (reg_dst == 15) {
+      auto spsr = *p_spsr;
+
+      SwitchMode(spsr.f.mode);
+      state.cpsr.v = spsr.v;
+    }
   }
 
   if (reg_dst == 15) {
@@ -625,27 +631,27 @@ void ARM_BlockDataTransfer(u32 instruction) {
   bool base_is_last = false;
 
   if (list != 0) {
-#if defined(__has_builtin) && __has_builtin(__builtin_popcount)
-    bytes = __builtin_popcount(list) * sizeof(u32);
-#else
-    bytes = 0;
-    for (int i = 0; i <= 15; i++) {
-     if (list & (1 << i))
-       bytes += sizeof(u32);
-    }
-#endif
+    #if defined(__has_builtin) && __has_builtin(__builtin_popcount)
+      bytes = __builtin_popcount(list) * sizeof(u32);
+    #else
+      bytes = 0;
+      for (int i = 0; i <= 15; i++) {
+        if (list & (1 << i))
+          bytes += sizeof(u32);
+      }
+    #endif
 
-#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
-    base_is_first = __builtin_ctz(list) == base;
-#else
-    base_is_first = (list & ((1 << base) - 1)) == 0;
-#endif
+    #if defined(__has_builtin) && __has_builtin(__builtin_ctz)
+      base_is_first = __builtin_ctz(list) == base;
+    #else
+      base_is_first = (list & ((1 << base) - 1)) == 0;
+    #endif
 
-#if defined(__has_builtin) && __has_builtin(__builtin_clz)
-    base_is_last = (31 - __builtin_clz(list)) == base;
-#else
-    base_is_last = (list >> base) == 1;
-#endif
+    #if defined(__has_builtin) && __has_builtin(__builtin_clz)
+      base_is_last = (31 - __builtin_clz(list)) == base;
+    #else
+      base_is_last = (list >> base) == 1;
+    #endif
   } else {
     bytes = 16 * sizeof(u32);
     if (arch == Architecture::ARMv4T) {
@@ -682,12 +688,11 @@ void ARM_BlockDataTransfer(u32 instruction) {
   u32 remaining = list;
 
   while (remaining != 0) {
-
-#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
-    i = __builtin_ctz(remaining);
-#else
-    while ((remaining & (1 << i)) == 0) i++;
-#endif 
+    #if defined(__has_builtin) && __has_builtin(__builtin_ctz)
+      i = __builtin_ctz(remaining);
+    #else
+      while ((remaining & (1 << i)) == 0) i++;
+    #endif 
 
     if constexpr (pre == add) {
       address += 4;
@@ -802,28 +807,28 @@ void ARM_CountLeadingZeros(u32 instruction) {
     return;
   }
 
-#if defined(__has_builtin) && __has_builtin(__builtin_clz)
-  state.reg[dst] = __builtin_clz(value);
-#else
-  u32 result = 0;
+  #if defined(__has_builtin) && __has_builtin(__builtin_clz)
+    state.reg[dst] = __builtin_clz(value);
+  #else
+    u32 result = 0;
   
-  const u32 mask[] = {
-    0xFFFF0000,
-    0xFF000000,
-    0xF0000000,
-    0xC0000000,
-    0x80000000 };
-  const int shift[] = { 16, 8, 4, 2, 1 };
+    const u32 mask[] = {
+      0xFFFF0000,
+      0xFF000000,
+      0xF0000000,
+      0xC0000000,
+      0x80000000 };
+    const int shift[] = { 16, 8, 4, 2, 1 };
   
-  for (int i = 0; i < 5; i++) {
-    if ((value & mask[i]) == 0) {
-      result |= shift[i];
-      value <<= shift[i];
+    for (int i = 0; i < 5; i++) {
+      if ((value & mask[i]) == 0) {
+        result |= shift[i];
+        value <<= shift[i];
+      }
     }
-  }
 
-  state.reg[dst] = result;
-#endif
+    state.reg[dst] = result;
+  #endif
 
   state.r15 += 4;
 }
