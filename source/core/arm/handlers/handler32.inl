@@ -610,100 +610,147 @@ void ARM_SingleDataTransfer(u32 instruction) {
   }
 }
 
-template <bool _pre, bool add, bool user_mode, bool _writeback, bool load>
+template <bool pre, bool add, bool user_mode, bool writeback, bool load>
 void ARM_BlockDataTransfer(u32 instruction) {
-  bool pre = _pre;
-  bool writeback = _writeback;
-
-  int base = (instruction >> 16) & 0xF;
-
-  int bytes = 0;
-  int last = 0;
   int list = instruction & 0xFFFF;
+  int base = (instruction >> 16) & 0xF;
 
   Mode mode;
   bool transfer_pc = list & (1 << 15);
-  bool switch_mode = user_mode && (!load || !transfer_pc);
-  
-  for (int i = 0; i <= 15; i++) {
-    if (list & (1 << i)) {
-      last = i;
-      bytes += 4;
-    }
-  }
-  
+
+  int bytes;
   u32 base_new;
   u32 address = state.reg[base];
-  
-  if (switch_mode) {
-    mode = state.cpsr.f.mode;
-    SwitchMode(MODE_USR);
+  bool base_is_first = false;
+  bool base_is_last = false;
+
+  if (list != 0) {
+#if defined(__has_builtin) && __has_builtin(__builtin_popcount)
+    bytes = __builtin_popcount(list) * sizeof(u32);
+#else
+    bytes = 0;
+    for (int i = 0; i <= 15; i++) {
+     if (list & (1 << i))
+       bytes += sizeof(u32);
+    }
+#endif
+
+#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
+    base_is_first = __builtin_ctz(list) == base;
+#else
+    base_is_first = (list & ((1 << base) - 1)) == 0;
+#endif
+
+#if defined(__has_builtin) && __has_builtin(__builtin_clz)
+    base_is_last = (31 - __builtin_clz(list)) == base;
+#else
+    base_is_last = (list >> base) == 1;
+#endif
+  } else {
+    bytes = 16 * sizeof(u32);
+    if (arch == Architecture::ARMv4T) {
+      list = 1 << 15;
+      transfer_pc = true;
+    }
   }
 
-  if (!add) {
+  if constexpr (!add) {
     address -= bytes;
     base_new = address;
-    pre = !pre;
   } else {
     base_new = address + bytes;
   }
 
   state.r15 += 4;
 
-  // TODO: Handle case on the ARM11 where STM w/ writeback
-  // and w/ base register in the list apparently stores
-  // the final base address unless the base register is
-  // the first or second register in the list.
-  for (int i = 0; i <= last; i++) {
-    if (~list & (1 << i)) {
-      continue;
+  // STM ARMv4: store new base if base is not the first register and old base otherwise.
+  // STM ARMv5: always store old base.
+  if constexpr (writeback && !load) {
+    if (arch == Architecture::ARMv4T && !base_is_first) {
+      state.reg[base] = base_new;
     }
-    
-    if (pre) {
+  }
+
+  if constexpr (user_mode) {
+    if (!load || !transfer_pc) {
+      mode = state.cpsr.f.mode;
+      SwitchMode(MODE_USR);  
+    }
+  }
+
+  int i = 0;
+  u32 remaining = list;
+
+  while (remaining != 0) {
+
+#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
+    i = __builtin_ctz(remaining);
+#else
+    while ((remaining & (1 << i)) == 0) i++;
+#endif 
+
+    if constexpr (pre == add) {
       address += 4;
     }
     
-    if (load) {
+    if constexpr (load) {
       state.reg[i] = ReadWord(address);
-      if (i == 15 && user_mode) {
-        auto& spsr = *p_spsr;
+      if constexpr (user_mode) {
+        if (i == 15) {
+          auto& spsr = *p_spsr;
 
-        SwitchMode(spsr.f.mode);
-        state.cpsr.v = spsr.v;
+          SwitchMode(spsr.f.mode);
+          state.cpsr.v = spsr.v;
+        }
       }
     } else {
       WriteWord(address, state.reg[i]);
     }
     
-    if (!pre) {
+    if constexpr (pre != add) {
       address += 4;
     }
+
+    remaining &= ~(1 << i);
   }
   
-  if (switch_mode) {
-    SwitchMode(mode);
-  }
-
-  if (writeback && load) {
-    // LDM ARMv5: writeback if base is the only register or not the last register.
-    // LDM ARMv6: writeback if base in not in the register list.  
-    writeback &= (arch == Architecture::ARMv5TE) ? (last != base || list == (1 << base)) : !(list & (1 << base));
-  }
-
-  if (writeback) {
-    state.reg[base] = base_new;
-  }
-
-  if (load && transfer_pc) {
-    if ((state.r15 & 1) && !user_mode && arch != Architecture::ARMv4T) {
-      state.cpsr.f.thumb = 1;
-      state.r15 &= ~1;
+  if constexpr (user_mode) {
+    if (!load || !transfer_pc) {
+      SwitchMode(mode);
     }
+  }
 
-    if (state.cpsr.f.thumb) {
-      ReloadPipeline16();
+  if constexpr (writeback) {
+    if constexpr (load) {
+      switch (arch) {
+        case Architecture::ARMv5TE:
+          // LDM ARMv5: writeback if base is the only register or not the last register.
+          if (!base_is_last || list == (1 << base))
+            state.reg[base] = base_new;
+          break;
+        case Architecture::ARMv4T:
+          // LDM ARMv4: writeback if base in not in the register list.
+          if (!(list & (1 << base)))
+            state.reg[base] = base_new;
+          break;
+      }
     } else {
-      ReloadPipeline32();
+      state.reg[base] = base_new;  
+    }
+  }
+
+  if constexpr (load) {
+    if (transfer_pc) {
+      if ((state.r15 & 1) && !user_mode && arch != Architecture::ARMv4T) {
+        state.cpsr.f.thumb = 1;
+        state.r15 &= ~1;
+      }
+
+      if (state.cpsr.f.thumb) {
+        ReloadPipeline16();
+      } else {
+        ReloadPipeline32();
+      }
     }
   }
 }
