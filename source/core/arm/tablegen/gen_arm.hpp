@@ -30,7 +30,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const bool immediate = instruction & (1 << 22);
       const auto opcode = (instruction >> 5) & 3;
       
-      return &ARM::ARM_SingleHalfwordDoubleTransfer<pre, add, immediate, wb, load, opcode>;
+      return &ARM::ARM_HalfDoubleAndSignedTransfer<pre, add, immediate, wb, load, opcode>;
     }
     case ARMInstrType::Multiply: {
       const bool set_flags = instruction & (1 << 20);
