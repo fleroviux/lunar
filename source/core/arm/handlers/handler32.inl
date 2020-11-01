@@ -697,14 +697,6 @@ void ARM_BlockDataTransfer(u32 instruction) {
     
     if constexpr (load) {
       state.reg[i] = ReadWord(address);
-      if constexpr (user_mode) {
-        if (i == 15) {
-          auto& spsr = *p_spsr;
-
-          SwitchMode(spsr.f.mode);
-          state.cpsr.v = spsr.v;
-        }
-      }
     } else {
       WriteWord(address, state.reg[i]);
     }
@@ -717,7 +709,12 @@ void ARM_BlockDataTransfer(u32 instruction) {
   }
   
   if constexpr (user_mode) {
-    if (!load || !transfer_pc) {
+    if (load && transfer_pc) {
+      auto& spsr = *p_spsr;
+
+      SwitchMode(spsr.f.mode);
+      state.cpsr.v = spsr.v;
+    } else {
       SwitchMode(mode);
     }
   }
