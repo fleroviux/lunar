@@ -152,16 +152,14 @@ void ARM_DataProcessing(u32 instruction) {
       break;
   }
 
-  if constexpr (set_flags) {
-    if (reg_dst == 15) {
+  if (reg_dst == 15) {
+    if constexpr (set_flags) {
       auto spsr = *p_spsr;
 
       SwitchMode(spsr.f.mode);
       state.cpsr.v = spsr.v;
     }
-  }
 
-  if (reg_dst == 15) {
     if (state.cpsr.f.thumb) {
       ReloadPipeline16();
     } else {
