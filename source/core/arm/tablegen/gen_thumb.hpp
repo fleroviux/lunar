@@ -22,17 +22,17 @@ static constexpr auto GenerateHandlerThumb() -> Handler16 {
       const auto opcode = (instruction >> 11) & 3;
       const auto rD = (instruction >> 8) & 7;
 
-      return &ARM::Thumb_Op3<opcode, rD>;
+      return &ARM::Thumb_MoveCompareAddSubImm<opcode, rD>;
     }
     case ThumbInstrType::ALU: {
-      const auto opcode = (instruction >> 6) & 0xF;
+      const auto opcode = static_cast<ARM::ThumbDataOp>((instruction >> 6) & 0xF);
 
       return &ARM::Thumb_ALU<opcode>;
     }
     case ThumbInstrType::HighRegisterOps: {
-      const auto opcode = (instruction >> 8) & 3;
-      const bool high1  = (instruction >> 7) & 1;
-      const bool high2  = (instruction >> 6) & 1;
+      const auto opcode = static_cast<ARM::ThumbHighRegOp>((instruction >> 8) & 3);
+      const bool high1 = (instruction >> 7) & 1;
+      const bool high2 = (instruction >> 6) & 1;
 
       return &ARM::Thumb_HighRegisterOps_BX<opcode, high1, high2>;
     }

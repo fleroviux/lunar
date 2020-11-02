@@ -2,7 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-enum class DataOp {
+enum class ARMDataOp {
   AND = 0,
   EOR = 1,
   SUB = 2,
@@ -21,7 +21,7 @@ enum class DataOp {
   MVN = 15
 };
 
-template <bool immediate, int opcode, bool set_flags, int field4>
+template <bool immediate, ARMDataOp opcode, bool set_flags, int field4>
 void ARM_DataProcessing(u32 instruction) {
   int reg_dst = (instruction >> 12) & 0xF;
   int reg_op1 = (instruction >> 16) & 0xF;
@@ -65,40 +65,40 @@ void ARM_DataProcessing(u32 instruction) {
   auto& cpsr = state.cpsr;
   auto& result = state.reg[reg_dst];
 
-  switch (static_cast<DataOp>(opcode)) {
-    case DataOp::AND:
+  switch (opcode) {
+    case ARMDataOp::AND:
       result = op1 & op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
-    case DataOp::EOR:
+    case ARMDataOp::EOR:
       result = op1 ^ op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
-    case DataOp::SUB:
+    case ARMDataOp::SUB:
       result = SUB(op1, op2, set_flags);
       break;
-    case DataOp::RSB:
+    case ARMDataOp::RSB:
       result = SUB(op2, op1, set_flags);
       break;
-    case DataOp::ADD:
+    case ARMDataOp::ADD:
       result = ADD(op1, op2, set_flags);
       break;
-    case DataOp::ADC:
+    case ARMDataOp::ADC:
       result = ADC(op1, op2, set_flags);
       break;
-    case DataOp::SBC:
+    case ARMDataOp::SBC:
       result = SBC(op1, op2, set_flags);
       break;
-    case DataOp::RSC:
+    case ARMDataOp::RSC:
       result = SBC(op2, op1, set_flags);
       break;
-    case DataOp::TST: {
+    case ARMDataOp::TST: {
       u32 result = op1 & op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
@@ -107,43 +107,43 @@ void ARM_DataProcessing(u32 instruction) {
       reg_dst = 0;
       break;
     }
-    case DataOp::TEQ: {
+    case ARMDataOp::TEQ: {
       u32 result = op1 ^ op2;
       SetZeroAndSignFlag(result);
       cpsr.f.c = carry;
       reg_dst = 0;
       break;
     }
-    case DataOp::CMP:
+    case ARMDataOp::CMP:
       SUB(op1, op2, true);
       reg_dst = 0;
       break;
-    case DataOp::CMN:
+    case ARMDataOp::CMN:
       ADD(op1, op2, true);
       reg_dst = 0;
       break;
-    case DataOp::ORR:
+    case ARMDataOp::ORR:
       result = op1 | op2;
       if (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
-    case DataOp::MOV:
+    case ARMDataOp::MOV:
       result = op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
-    case DataOp::BIC:
+    case ARMDataOp::BIC:
       result = op1 & ~op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.f.c = carry;
       }
       break;
-    case DataOp::MVN:
+    case ARMDataOp::MVN:
       result = ~op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
@@ -252,7 +252,7 @@ void ARM_MultiplyLong(u32 instruction) {
     s64 a = state.reg[op1];
     s64 b = state.reg[op2];
 
-    /* Sign-extend operands */
+    // Sign-extend operands 
     if (a & 0x80000000) a |= 0xFFFFFFFF00000000;
     if (b & 0x80000000) b |= 0xFFFFFFFF00000000;
 
@@ -266,7 +266,7 @@ void ARM_MultiplyLong(u32 instruction) {
   if constexpr (accumulate) {
     s64 value = state.reg[dst_hi];
 
-    /* Workaround x86 shift limitations. */
+    // TODO: in theory we should be able to shift by 32 because value in 64-bit.
     value <<= 16;
     value <<= 16;
     value  |= state.reg[dst_lo];
@@ -553,7 +553,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
     SwitchMode(MODE_USR);
   }
 
-  /* Calculate offset relative to base register. */
+  // Calculate offset relative to base register.
   if constexpr (immediate) {
     offset = instruction & 0xFFF;
   } else {
@@ -585,7 +585,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
     }
   }
 
-  /* Writeback final address to the base register */
+  // Writeback final address to the base register.
   if (!load || base != dst) {
     if constexpr (!pre) {
       state.reg[base] += add ? offset : -offset;
@@ -594,7 +594,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
     }
   }
 
-  /* Restore original mode (if it was changed) */
+  // Restore original mode (if it was changed).
   if constexpr (user_mode) {
     SwitchMode(mode);
   }
@@ -757,29 +757,29 @@ void ARM_BlockDataTransfer(u32 instruction) {
 void ARM_Undefined(u32 instruction) {
   LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 
-  /* Save return address and program status. */
+  // Save return address and program status.
   state.bank[BANK_UND][BANK_R14] = state.r15 - 4;
   state.spsr[BANK_UND].v = state.cpsr.v;
 
-  /* Switch to UND mode and disable interrupts. */
+  // Switch to UND mode and disable interrupts.
   SwitchMode(MODE_UND);
   state.cpsr.f.mask_irq = 1;
 
-  /* Jump to execution vector */
+  // Jump to execution vector.
   state.r15 = ExceptionBase() + 0x04;
   ReloadPipeline32();
 }
 
 void ARM_SWI(u32 instruction) {
-  /* Save return address and program status. */
+  // Save return address and program status.
   state.bank[BANK_SVC][BANK_R14] = state.r15 - 4;
   state.spsr[BANK_SVC].v = state.cpsr.v;
 
-  /* Switch to SVC mode and disable interrupts. */
+  // Switch to SVC mode and disable interrupts.
   SwitchMode(MODE_SVC);
   state.cpsr.f.mask_irq = 1;
 
-  /* Jump to execution vector */
+  // Jump to execution vector.
   state.r15 = ExceptionBase() + 0x08;
   ReloadPipeline32();
 }

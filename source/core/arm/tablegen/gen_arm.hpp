@@ -82,8 +82,8 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
     case ARMInstrType::DataProcessing: {
       const bool immediate = instruction & (1 << 25);
       const bool set_flags = instruction & (1 << 20);
-      const auto opcode = (instruction >> 21) & 0xF;
-      const auto field4 = (instruction >>  4) & 0xF;
+      const auto opcode = static_cast<ARM::ARMDataOp>((instruction >> 21) & 0xF);
+      const auto field4 = (instruction >> 4) & 0xF;
 
       return &ARM::ARM_DataProcessing<immediate, opcode, set_flags, field4>;
     }
