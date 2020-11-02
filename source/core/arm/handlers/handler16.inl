@@ -67,17 +67,21 @@ void Thumb_MoveCompareAddSubImm(u16 instruction) {
 
   switch (op) {
     case 0b00:
+      // MOV
       state.reg[dst] = imm;
       state.cpsr.f.n = 0;
       state.cpsr.f.z = imm == 0;
       break;
     case 0b01:
+      // CMP
       SUB(state.reg[dst], imm, true);
       break;
     case 0b10:
+      // ADD
       state.reg[dst] = ADD(state.reg[dst], imm, true);
       break;
     case 0b11:
+      // SUB
       state.reg[dst] = SUB(state.reg[dst], imm, true);
       break;
   }
@@ -255,16 +259,20 @@ void Thumb_LoadStoreOffsetReg(u16 instruction) {
   u32 address = state.reg[base] + state.reg[off];
 
   switch (op) {
-    case 0b00: // STR
+    case 0b00:
+      // STR rD, [rB, rO]
       WriteWord(address, state.reg[dst]);
       break;
-    case 0b01: // STRB
+    case 0b01:
+      // STRB rD, [rB, rO]
       WriteByte(address, (u8)state.reg[dst]);
       break;
-    case 0b10: // LDR
+    case 0b10:
+      // LDR rD, [rB, rO]
       state.reg[dst] = ReadWordRotate(address);
       break;
-    case 0b11: // LDRB
+    case 0b11:
+      // LDRB rD, [rB, rO]
       state.reg[dst] = ReadByte(address);
       break;
   }
