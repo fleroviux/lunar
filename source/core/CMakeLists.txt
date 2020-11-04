@@ -9,6 +9,7 @@ set(SOURCES
   hw/ipc/ipc.cpp
   hw/irq/irq.cpp
   hw/video_unit/video_unit.cpp
+  hw/video_unit/vram.cpp
   core.cpp
   scheduler.cpp)
 
@@ -30,6 +31,7 @@ set(HEADERS
   hw/ipc/ipc.hpp
   hw/irq/irq.hpp
   hw/video_unit/video_unit.hpp
+  hw/video_unit/vram.hpp
   core.hpp
   interconnect.hpp
   scheduler.hpp)

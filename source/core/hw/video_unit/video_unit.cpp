@@ -18,6 +18,7 @@ VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
 }
 
 void VideoUnit::Reset() {
+  vram.Reset();
   dispstat = {};
   vcount = {};
 

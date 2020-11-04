@@ -63,6 +63,8 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
         return ReadByteIO(address);
       }
       return 0;
+    case 0x06:
+      return video_unit.vram.Read<T>(address);
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
@@ -117,6 +119,7 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       }
       break;
     case 0x06:
+      video_unit.vram.Write<T>(address, value);
       *reinterpret_cast<T*>(&vram[address & 0x1FFFFF]) = value;
       break;
     default:

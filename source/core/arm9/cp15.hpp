@@ -14,7 +14,7 @@
 namespace fauxDS::core {
 
 /** This class emulates the System Control Coprocessor (CP15).
-  * It is responsable for various things, such as configuration
+  * It is responsible for various things, such as configuration
   * of the MPU, TCM and cache, alignment and endianness modes,
   * and various other things.
   */

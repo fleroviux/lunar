@@ -26,7 +26,17 @@ enum Registers {
   REG_IE  = 0x0400'0210,
   REG_IF  = 0x0400'0214,
 
-  REG_WRAMCNT = 0x0400'0247
+  // Memory control
+  REG_VRAMCNT_A = 0x0400'0240,
+  REG_VRAMCNT_B = 0x0400'0241,
+  REG_VRAMCNT_C = 0x0400'0242,
+  REG_VRAMCNT_D = 0x0400'0243,
+  REG_VRAMCNT_E = 0x0400'0244,
+  REG_VRAMCNT_F = 0x0400'0245,
+  REG_VRAMCNT_G = 0x0400'0246,
+  REG_WRAMCNT   = 0x0400'0247,
+  REG_VRAMCNT_H = 0x0400'0248,
+  REG_VRAMCNT_I = 0x0400'0249
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -192,8 +202,36 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       irq9._if.WriteByte(3, value);
       break;
 
+    // Memory control
+    case REG_VRAMCNT_A:
+      video_unit.vram.WriteVRAMCNT(0, value);
+      break;
+    case REG_VRAMCNT_B:
+      video_unit.vram.WriteVRAMCNT(1, value);
+      break;
+    case REG_VRAMCNT_C:
+      video_unit.vram.WriteVRAMCNT(2, value);
+      break;
+    case REG_VRAMCNT_D:
+      video_unit.vram.WriteVRAMCNT(3, value);
+      break;
+    case REG_VRAMCNT_E:
+      video_unit.vram.WriteVRAMCNT(4, value);
+      break;
+    case REG_VRAMCNT_F:
+      video_unit.vram.WriteVRAMCNT(5, value);
+      break;
+    case REG_VRAMCNT_G:
+      video_unit.vram.WriteVRAMCNT(6, value);
+      break;
     case REG_WRAMCNT:
       wramcnt.WriteByte(value);
+      break;
+    case REG_VRAMCNT_H:
+      video_unit.vram.WriteVRAMCNT(7, value);
+      break;
+    case REG_VRAMCNT_I:
+      video_unit.vram.WriteVRAMCNT(8, value);
       break;
 
     default:

@@ -10,6 +10,8 @@
 #include <core/scheduler.hpp>
 #include <functional>
 
+#include "vram.hpp"
+
 namespace fauxDS::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
@@ -17,6 +19,8 @@ struct VideoUnit {
   VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9);
 
   void Reset();
+
+  VRAM vram;
 
   /// Graphics status and IRQ control.
   struct DISPSTAT {
