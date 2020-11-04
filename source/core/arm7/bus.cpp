@@ -59,6 +59,8 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
         return ReadByteIO(address);
       }
       return 0;
+    case 0x06:
+      return video_unit.vram.Read7<T>(address);
     default:
       ASSERT(false, "ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
@@ -97,6 +99,9 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       if constexpr (std::is_same<T, u8>::value) {
         WriteByteIO(address, value);
       }
+      break;
+    case 0x06:
+      video_unit.vram.Write7<T>(address, value);
       break;
     default:
       ASSERT(false, "ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);

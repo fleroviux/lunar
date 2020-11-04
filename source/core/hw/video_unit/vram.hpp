@@ -127,15 +127,65 @@ struct VRAM {
       }
     }
   }
-  
+
+  template<typename T>
+  auto Read7(u32 address) -> T {
+    // TODO: confirm actual out-of-bounds behavior.
+    address &= 0x3FFFF;
+
+    switch (address) {
+      case 0x00000 ... 0x1FFFF: {
+        if (region_arm7[0] != nullptr) {
+          return *reinterpret_cast<T*>(&region_arm7[0][address & 0x1FFFF]);
+        }
+        return 0;
+      }
+      case 0x20000 ... 0x3FFFF: {
+        if (region_arm7[1] != nullptr) {
+          return *reinterpret_cast<T*>(&region_arm7[1][address & 0x1FFFF]);
+        }
+        return 0;
+      }
+    }
+
+    return 0;
+  }
+
+  template<typename T>
+  void Write7(u32 address, T value) {
+    // TODO: confirm actual out-of-bounds behavior.
+    address &= 0x3FFFF;
+    
+    switch (address) {
+      case 0x00000 ... 0x1FFFF: {
+        if (region_arm7[0] != nullptr) {
+          *reinterpret_cast<T*>(&region_arm7[0][address & 0x1FFFFF]) = value;
+        }
+        break;
+      }
+      case 0x20000 ... 0x3FFFF: {
+        if (region_arm7[1] != nullptr) {
+          *reinterpret_cast<T*>(&region_arm7[1][address & 0x1FFFFF]) = value;
+        }
+        break;
+      }
+    }
+  }
+
+
+  auto ReadVRAMSTAT() -> u8;
   void WriteVRAMCNT(int bank, u8 value);
 
 private:
+  /// LCDC and PPU A / B VRAM mapping (16 KiB pages)
   u8* region_ppu_a_bg[32] {nullptr};
   u8* region_ppu_b_bg[8] {nullptr};
   u8* region_ppu_a_obj[16] {nullptr};
   u8* region_ppu_b_obj[8] {nullptr};
   u8* region_lcdc[41] {nullptr};
+
+  /// ARM7 bank C / D mapping
+  u8* region_arm7[2] {nullptr};
 
   // TODO: fix this absolutely ugly madness.
   bool enable[9] { false };

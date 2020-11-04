@@ -28,6 +28,11 @@ void VRAM::Reset() {
     WriteVRAMCNT(i, 0);
 }
 
+auto VRAM::ReadVRAMSTAT() -> u8 {
+  return (enable[2] && mst[2] == 2 ? 1 : 0) |
+         (enable[3] && mst[3] == 2 ? 2 : 0);
+}
+
 void VRAM::WriteVRAMCNT(int bank, u8 value) {
   // unmap
   if (enable[bank]) {
@@ -74,6 +79,9 @@ void VRAM::WriteVRAMCNT(int bank, u8 value) {
             for (int i = 0; i < 8; i++)
               region_ppu_a_bg[8 * offset[bank] + i] = nullptr;
             break;
+          case 2:
+            region_arm7[offset[bank] & 1] = nullptr;
+            break;
           case 4:
             for (int i = 0; i < 8; i++)
               region_ppu_b_bg[i] = nullptr;
@@ -89,6 +97,9 @@ void VRAM::WriteVRAMCNT(int bank, u8 value) {
           case 1:
             for (int i = 0; i < 8; i++)
               region_ppu_a_bg[8 * offset[bank] + i] = nullptr;
+            break;
+          case 2:
+            region_arm7[offset[bank] & 1] = nullptr;
             break;
           case 4:
             for (int i = 0; i < 8; i++)
@@ -219,6 +230,9 @@ void VRAM::WriteVRAMCNT(int bank, u8 value) {
             for (int i = 0; i < 8; i++)
               region_ppu_a_bg[8 * offset[bank] + i] = &bank_c[i * 0x4000];
             break;
+          case 2:
+            region_arm7[offset[bank] & 1] = &bank_c[0];
+            break;
           case 4:
             for (int i = 0; i < 8; i++)
               region_ppu_b_bg[i] = &bank_c[i * 0x4000];
@@ -236,6 +250,9 @@ void VRAM::WriteVRAMCNT(int bank, u8 value) {
           case 1:
             for (int i = 0; i < 8; i++)
               region_ppu_a_bg[8 * offset[bank] + i] = &bank_d[i * 0x4000];
+            break;
+          case 2:
+            region_arm7[offset[bank] & 1] = &bank_d[0];
             break;
           case 4:
             for (int i = 0; i < 8; i++)
