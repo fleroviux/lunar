@@ -90,7 +90,7 @@ void VRAM::UnmapBank(Bank bank) {
           region_ppu_a_bg.Unmap(0x20000 * vramcnt_c.offset, bank_c);
           break;
         case 2:
-          region_arm7[vramcnt_c.offset & 1] = &bank_c[0];
+          region_arm7_wram.Unmap(0x20000 * (vramcnt_c.offset & 1), bank_c);
           break;
         case 4:
           region_ppu_b_bg.Unmap(0x00000, bank_c);
@@ -106,7 +106,7 @@ void VRAM::UnmapBank(Bank bank) {
           region_ppu_a_bg.Unmap(0x20000 * vramcnt_d.offset, bank_d);
           break;
         case 2:
-          region_arm7[vramcnt_d.offset & 1] = &bank_d[0];
+          region_arm7_wram.Unmap(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
         case 4:
           region_ppu_b_obj.Unmap(0x00000, bank_d);
@@ -215,7 +215,7 @@ void VRAM::MapBank(Bank bank) {
           region_ppu_a_bg.Map(0x20000 * vramcnt_c.offset, bank_c);
           break;
         case 2:
-          region_arm7[vramcnt_c.offset & 1] = &bank_c[0];
+          region_arm7_wram.Map(0x20000 * (vramcnt_c.offset & 1), bank_c);
           break;
         case 4:
           region_ppu_b_bg.Map(0x00000, bank_c);
@@ -231,7 +231,7 @@ void VRAM::MapBank(Bank bank) {
           region_ppu_a_bg.Map(0x20000 * vramcnt_d.offset, bank_d);
           break;
         case 2:
-          region_arm7[vramcnt_d.offset & 1] = &bank_d[0];
+          region_arm7_wram.Map(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
         case 4:
           region_ppu_b_obj.Map(0x00000, bank_d);

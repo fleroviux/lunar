@@ -13,7 +13,15 @@ namespace fauxDS::core {
 
 struct VRAM {
   enum class Bank {
-    A, B, C, D, E, F, G, H, I
+    A = 0,
+    B = 1,
+    C = 2,
+    D = 3,
+    E = 4,
+    F = 5,
+    G = 6,
+    H = 7,
+    I = 8
   };
 
   VRAM();
@@ -93,46 +101,12 @@ struct VRAM {
 
   template<typename T>
   auto Read7(u32 address) -> T {
-    // TODO: confirm actual out-of-bounds behavior.
-    address &= 0x3FFFF;
-
-    switch (address) {
-      case 0x00000 ... 0x1FFFF: {
-        if (likely(region_arm7[0] != nullptr)) {
-          return *reinterpret_cast<T*>(&region_arm7[0][address & 0x1FFFF]);
-        }
-        return 0;
-      }
-      case 0x20000 ... 0x3FFFF: {
-        if (likely(region_arm7[1] != nullptr)) {
-          return *reinterpret_cast<T*>(&region_arm7[1][address & 0x1FFFF]);
-        }
-        return 0;
-      }
-    }
-
-    return 0;
+    return region_arm7_wram.Read<T>(address);
   }
 
   template<typename T>
   void Write7(u32 address, T value) {
-    // TODO: confirm actual out-of-bounds behavior.
-    address &= 0x3FFFF;
-    
-    switch (address) {
-      case 0x00000 ... 0x1FFFF: {
-        if (likely(region_arm7[0] != nullptr)) {
-          *reinterpret_cast<T*>(&region_arm7[0][address & 0x1FFFFF]) = value;
-        }
-        break;
-      }
-      case 0x20000 ... 0x3FFFF: {
-        if (likely(region_arm7[1] != nullptr)) {
-          *reinterpret_cast<T*>(&region_arm7[1][address & 0x1FFFFF]) = value;
-        }
-        break;
-      }
-    }
+    region_arm7_wram.Write<T>(address, value);
   }
 
   struct VRAMCNT {
@@ -181,12 +155,12 @@ private:
   Region<32> region_ppu_b_bg  {  7 };
   Region<16> region_ppu_a_obj { 15 };
   Region<16> region_ppu_b_obj {  7 };
-  Region<41> region_lcdc { 63 }; // ???
+  Region<41> region_lcdc { 63 };
 
   /// ARM7 bank C / D mapping
-  u8* region_arm7[2] {nullptr};
+  Region<16> region_arm7_wram { 15 };
 
-  /// VRAM banks A-I (total: 656 KiB)
+  /// VRAM banks A - I (total: 656 KiB)
   std::array<u8, 0x20000> bank_a; // 128 KiB
   std::array<u8, 0x20000> bank_b; // 128 KiB
   std::array<u8, 0x20000> bank_c; // 128 KiB
