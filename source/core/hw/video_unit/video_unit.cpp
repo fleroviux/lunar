@@ -61,6 +61,11 @@ void VideoUnit::OnHdrawBegin(int late) {
 
   dispstat.hblank.flag = false;
 
+  if (vcount.value < kDrawingLines) {
+    ppu_a.RenderScanline(vcount.value);
+    ppu_b.RenderScanline(vcount.value);
+  }
+
   scheduler->Add(1536 - late, [this](int late) {
     this->OnHblankBegin(late);
   });

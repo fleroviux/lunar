@@ -80,7 +80,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
           return vram.region_ppu_a_obj.Read<T>(address & 0x1FFFFF);
 
         /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:
+        case 6:                                                                                                                                                          
         case 7:
           return vram.region_ppu_b_obj.Read<T>(address & 0x1FFFFF);
 
@@ -172,8 +172,6 @@ void ARM9MemoryBus::Write(u32 address, T value) {
           vram.region_lcdc.Write<T>(address & 0xFFFFF, value);
           break;
       }
-
-      *reinterpret_cast<T*>(&fake_vram[address & 0x1FFFFF]) = value;
       break;
     default:
       // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.

@@ -13,8 +13,12 @@ struct PPU {
   PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram);
 
   void Reset();
+  auto GetFramebuffer() -> u32* { return &framebuffer[0]; }
+  void RenderScanline(u16 vcount);
 
 private:
+  u32 framebuffer[256 * 192];
+
   /// Background tile and map data
   Region<32> const& vram_bg;
 

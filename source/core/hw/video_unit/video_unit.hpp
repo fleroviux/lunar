@@ -25,6 +25,9 @@ struct VideoUnit {
 
   u8 pram[0x800];
 
+  PPU ppu_a;
+  PPU ppu_b;
+
   /// Graphics status and IRQ control.
   struct DISPSTAT {
     auto ReadByte(uint offset) -> u8 {
@@ -94,9 +97,6 @@ private:
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);
   void OnHblankFlagSet(int late);
-
-  PPU ppu_a;
-  PPU ppu_b;
 
   Scheduler* scheduler;
   IRQ& irq7;

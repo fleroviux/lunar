@@ -38,7 +38,7 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
-void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
+void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
@@ -49,12 +49,23 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
     384 * 2,
     SDL_WINDOW_ALLOW_HIGHDPI);
   auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
-  auto tex_top = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, 256, 192);
-  auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, 256, 192);
+  auto tex_top = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
+  auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
+
+  // TODO: handle screen swapping
+  u32* framebuffer_top = interconnect->video_unit.ppu_a.GetFramebuffer();
+  u32* framebuffer_bottom = interconnect->video_unit.ppu_b.GetFramebuffer();
 
   SDL_Rect dest_top {
     .x = 0,
     .y = 0,
+    .w = 256,
+    .h = 192
+  };
+
+  SDL_Rect dest_bottom {
+    .x = 0,
+    .y = 192,
     .w = 256,
     .h = 192
   };
@@ -100,9 +111,11 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, u8* vram) {
       t0 = SDL_GetTicks();
     }
 
-    SDL_UpdateTexture(tex_top, nullptr, vram, sizeof(u16) * 256);
+    SDL_UpdateTexture(tex_top, nullptr, framebuffer_top, sizeof(u32) * 256);
+    SDL_UpdateTexture(tex_bottom, nullptr, framebuffer_bottom, sizeof(u32) * 256);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, tex_top, nullptr, &dest_top);
+    SDL_RenderCopy(renderer, tex_bottom, nullptr, &dest_bottom);
     SDL_RenderPresent(renderer);
 
     while (SDL_PollEvent(&event)) {
@@ -227,6 +240,6 @@ auto main(int argc, const char** argv) -> int {
     arm9->SetPC(header->arm9.entrypoint);
   }
 
-  loop(arm7.get(), arm9.get(), interconnect.get(), arm9_mem->fake_vram);
+  loop(arm7.get(), arm9.get(), interconnect.get());
   return 0;
 } 

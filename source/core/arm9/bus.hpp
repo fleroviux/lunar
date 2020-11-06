@@ -32,8 +32,6 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
 
-  u8 fake_vram[0x200000];
-
 private:
   template<typename T>
   auto Read(u32 address, Bus bus) -> T;
