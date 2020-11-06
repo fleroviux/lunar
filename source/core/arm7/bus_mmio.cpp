@@ -92,7 +92,7 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return irq7._if.ReadByte(3);
 
     case REG_VRAMSTAT:
-      return video_unit.vram.vramstat.ReadByte();
+      return vram.vramstat.ReadByte();
     case REG_WRAMSTAT:
       return wramcnt.ReadByte();
 

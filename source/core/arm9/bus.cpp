@@ -17,6 +17,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     , ipc(interconnect->ipc)
     , irq9(interconnect->irq9)
     , video_unit(interconnect->video_unit)
+    , vram(interconnect->video_unit.vram)
     , wramcnt(interconnect->wramcnt)
     , keyinput(interconnect->keyinput) {
   std::ifstream file { "bios9.bin", std::ios::in | std::ios::binary };
@@ -60,7 +61,32 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       }
       return 0;
     case 0x06:
-      return video_unit.vram.Read<T>(address);
+      switch ((address >> 20) & 15) {
+        /// PPU A - BG VRAM (max 512 KiB)
+        case 0:
+        case 1:
+          return vram.region_ppu_a_bg.Read<T>(address & 0x1FFFFF);
+
+        /// PPU B - BG VRAM (max 512 KiB)
+        case 2:
+        case 3:
+          return vram.region_ppu_b_bg.Read<T>(address & 0x1FFFFF);
+
+        /// PPU A - OBJ VRAM (max 256 KiB)
+        case 4:
+        case 5:
+          return vram.region_ppu_a_obj.Read<T>(address & 0x1FFFFF);
+
+        /// PPU B - OBJ VRAM (max 128 KiB)
+        case 6:
+        case 7:
+          return vram.region_ppu_b_obj.Read<T>(address & 0x1FFFFF);
+
+        /// LCDC (max 656 KiB)
+        default:
+          return vram.region_lcdc.Read<T>(address & 0xFFFFF);
+      }
+      return 0;
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
@@ -111,8 +137,38 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       }
       break;
     case 0x06:
-      video_unit.vram.Write<T>(address, value);
-      *reinterpret_cast<T*>(&vram[address & 0x1FFFFF]) = value;
+      switch ((address >> 20) & 15) {
+        /// PPU A - BG VRAM (max 512 KiB)
+        case 0:
+        case 1:
+          vram.region_ppu_a_bg.Write<T>(address & 0x1FFFFF, value);
+          break;
+
+        /// PPU B - BG VRAM (max 512 KiB)
+        case 2:
+        case 3:
+          vram.region_ppu_b_bg.Write<T>(address & 0x1FFFFF, value);
+          break;
+
+        /// PPU A - OBJ VRAM (max 256 KiB)
+        case 4:
+        case 5:
+          vram.region_ppu_a_obj.Write<T>(address & 0x1FFFFF, value);
+          break;
+
+        /// PPU B - OBJ VRAM (max 128 KiB)
+        case 6:
+        case 7:
+          vram.region_ppu_b_obj.Write<T>(address & 0x1FFFFF, value);
+          break;
+
+        /// LCDC (max 656 KiB)
+        default:
+          vram.region_lcdc.Write<T>(address & 0xFFFFF, value);
+          break;
+      }
+
+      *reinterpret_cast<T*>(&fake_vram[address & 0x1FFFFF]) = value;
       break;
     default:
       // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.

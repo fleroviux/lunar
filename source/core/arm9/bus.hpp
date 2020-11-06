@@ -32,7 +32,7 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
 
-  u8 vram[0x200000];
+  u8 fake_vram[0x200000];
 
 private:
   template<typename T>
@@ -66,6 +66,7 @@ private:
   IPC& ipc;
   IRQ& irq9;
   VideoUnit& video_unit;
+  VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
 };

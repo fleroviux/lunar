@@ -32,6 +32,7 @@ set(HEADERS
   hw/irq/irq.hpp
   hw/video_unit/video_unit.hpp
   hw/video_unit/vram.hpp
+  hw/video_unit/vram_region.hpp
   core.hpp
   interconnect.hpp
   scheduler.hpp)

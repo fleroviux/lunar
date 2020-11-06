@@ -17,6 +17,7 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , ipc(interconnect->ipc)
     , irq7(interconnect->irq7)
     , video_unit(interconnect->video_unit)
+    , vram(interconnect->video_unit.vram)
     , wramcnt(interconnect->wramcnt)
     , keyinput(interconnect->keyinput) {
   std::ifstream file { "bios7.bin", std::ios::in | std::ios::binary };
@@ -56,7 +57,7 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
       }
       return 0;
     case 0x06:
-      return video_unit.vram.Read7<T>(address);
+      return vram.region_arm7_wram.Read<T>(address);
     default:
       ASSERT(false, "ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
@@ -93,7 +94,7 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       }
       break;
     case 0x06:
-      video_unit.vram.Write7<T>(address, value);
+      vram.region_arm7_wram.Write<T>(address, value);
       break;
     default:
       ASSERT(false, "ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
