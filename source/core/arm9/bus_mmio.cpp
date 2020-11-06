@@ -204,34 +204,34 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
 
     // Memory control
     case REG_VRAMCNT_A:
-      video_unit.vram.WriteVRAMCNT(0, value);
+      vram.vramcnt_a.WriteByte(value);
       break;
     case REG_VRAMCNT_B:
-      video_unit.vram.WriteVRAMCNT(1, value);
+      vram.vramcnt_b.WriteByte(value);
       break;
     case REG_VRAMCNT_C:
-      video_unit.vram.WriteVRAMCNT(2, value);
+      vram.vramcnt_c.WriteByte(value);
       break;
     case REG_VRAMCNT_D:
-      video_unit.vram.WriteVRAMCNT(3, value);
+      vram.vramcnt_d.WriteByte(value);
       break;
     case REG_VRAMCNT_E:
-      video_unit.vram.WriteVRAMCNT(4, value);
+      vram.vramcnt_e.WriteByte(value);
       break;
     case REG_VRAMCNT_F:
-      video_unit.vram.WriteVRAMCNT(5, value);
+      vram.vramcnt_f.WriteByte(value);
       break;
     case REG_VRAMCNT_G:
-      video_unit.vram.WriteVRAMCNT(6, value);
+      vram.vramcnt_g.WriteByte(value);
       break;
     case REG_WRAMCNT:
       wramcnt.WriteByte(value);
       break;
     case REG_VRAMCNT_H:
-      video_unit.vram.WriteVRAMCNT(7, value);
+      vram.vramcnt_h.WriteByte(value);
       break;
     case REG_VRAMCNT_I:
-      video_unit.vram.WriteVRAMCNT(8, value);
+      vram.vramcnt_i.WriteByte(value);
       break;
 
     default:

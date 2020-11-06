@@ -227,6 +227,6 @@ auto main(int argc, const char** argv) -> int {
     arm9->SetPC(header->arm9.entrypoint);
   }
 
-  loop(arm7.get(), arm9.get(), interconnect.get(), arm9_mem->vram);
+  loop(arm7.get(), arm9.get(), interconnect.get(), arm9_mem->fake_vram);
   return 0;
 } 
