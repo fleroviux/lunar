@@ -11,6 +11,7 @@
 
 namespace fauxDS::core {
 
+/// Holds VRAM bank data and takes care of allocating VRAM banks to uses regions (uses).
 struct VRAM {
   enum class Bank {
     A = 0,
@@ -38,6 +39,7 @@ struct VRAM {
   /// ARM7 bank C / D mapping
   Region<16> region_arm7_wram { 15 };
 
+  /// VRAM bank control register
   struct VRAMCNT {
     VRAMCNT(VRAM& vram, Bank bank) : vram(vram), bank(bank) {}
 
@@ -45,8 +47,14 @@ struct VRAM {
   private:
     friend struct VRAM;
 
+    /// Denotes the target address space / VRAM usage.
+    /// I'm not sure why GBATEK calls it "mst".
     int mst = 0;
+
+    /// Where to map the bank in the target address space.
     int offset = 0;
+
+    /// Is the VRAM bank mapped at all?
     bool enable = false;
 
     VRAM& vram;
@@ -63,6 +71,8 @@ struct VRAM {
   VRAMCNT vramcnt_h { *this, Bank::H };
   VRAMCNT vramcnt_i { *this, Bank::I };
 
+  /// VRAM status register.
+  /// Denotes whether bank C and D are mapped to the ARM7 core.
   struct VRAMSTAT {
     VRAMSTAT(VRAMCNT const& vramcnt_c, VRAMCNT const& vramcnt_d)
         : vramcnt_c(vramcnt_c), vramcnt_d(vramcnt_d) {}
@@ -76,8 +86,11 @@ struct VRAM {
 private:
   friend struct VRAMCNT;
 
-  void UnmapBank(Bank bank);
-  void MapBank(Bank bank);
+  /// Unmap VRAM bank from where it is currently mapped.
+  void UnmapFromCurrent(Bank bank);
+
+  /// Map VRAM bank according to its current configuration.
+  void MapToCurrent(Bank bank);
 
   /// VRAM banks A - I (total: 656 KiB)
   std::array<u8, 0x20000> bank_a; // 128 KiB

@@ -36,7 +36,7 @@ void VRAM::Reset() {
 
 void VRAM::VRAMCNT::WriteByte(u8 value) {
   if (enable) {
-    vram.UnmapBank(bank);
+    vram.UnmapFromCurrent(bank);
   }
 
   mst = value & 7;
@@ -44,7 +44,7 @@ void VRAM::VRAMCNT::WriteByte(u8 value) {
   enable = value & 0x80;
 
   if (enable) {
-    vram.MapBank(bank);
+    vram.MapToCurrent(bank);
   }
 }
 
@@ -53,7 +53,7 @@ auto VRAM::VRAMSTAT::ReadByte() -> u8 {
          (vramcnt_d.enable && vramcnt_d.mst == 2 ? 2 : 0);
 }
 
-void VRAM::UnmapBank(Bank bank) {
+void VRAM::UnmapFromCurrent(Bank bank) {
   switch (bank) {
     case Bank::A:
       switch (vramcnt_a.mst) {
@@ -178,7 +178,7 @@ void VRAM::UnmapBank(Bank bank) {
   }
 }
 
-void VRAM::MapBank(Bank bank) {
+void VRAM::MapToCurrent(Bank bank) {
   switch (bank) {
     case Bank::A:
       switch (vramcnt_a.mst) {
@@ -191,6 +191,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_a_obj.Map(0x20000 * (vramcnt_a.offset & 1), bank_a);
           break;
+        default:
+          LOG_ERROR("VRAM bank A: unsupported configuration: mst={0} offset={1}", vramcnt_a.mst, vramcnt_a.offset);
       }
       break;
     case Bank::B:
@@ -204,6 +206,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_a_obj.Map(0x20000 * (vramcnt_b.offset & 1), bank_b);
           break;
+        default:
+          LOG_ERROR("VRAM bank B: unsupported configuration: mst={0} offset={1}", vramcnt_b.mst, vramcnt_b.offset);
       }
       break;
     case Bank::C:
@@ -220,6 +224,8 @@ void VRAM::MapBank(Bank bank) {
         case 4:
           region_ppu_b_bg.Map(0x00000, bank_c);
           break;
+        default:
+          LOG_ERROR("VRAM bank C: unsupported configuration: mst={0} offset={1}", vramcnt_c.mst, vramcnt_c.offset);
       }
       break;
     case Bank::D:
@@ -236,6 +242,8 @@ void VRAM::MapBank(Bank bank) {
         case 4:
           region_ppu_b_obj.Map(0x00000, bank_d);
           break;
+        default:
+          LOG_ERROR("VRAM bank D: unsupported configuration: mst={0} offset={1}", vramcnt_d.mst, vramcnt_d.offset);
       }
       break;
     case Bank::E:
@@ -249,6 +257,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_a_obj.Map(0x00000, bank_e);
           break;
+        default:
+          LOG_ERROR("VRAM bank E: unsupported configuration: mst={0} offset={1}", vramcnt_e.mst, vramcnt_e.offset);
       }
       break;
     case Bank::F:
@@ -262,6 +272,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_a_obj.Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
+        default:
+          LOG_ERROR("VRAM bank F: unsupported configuration: mst={0} offset={1}", vramcnt_f.mst, vramcnt_f.offset);
       }
       break;
     case Bank::G:
@@ -275,6 +287,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_a_obj.Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
+        default:
+          LOG_ERROR("VRAM bank G: unsupported configuration: mst={0} offset={1}", vramcnt_g.mst, vramcnt_g.offset);
       }
       break;
     case Bank::H:
@@ -285,6 +299,8 @@ void VRAM::MapBank(Bank bank) {
         case 1:
           region_ppu_b_bg.Map(0x00000, bank_h);
           break;
+        default:
+          LOG_ERROR("VRAM bank H: unsupported configuration: mst={0} offset={1}", vramcnt_h.mst, vramcnt_h.offset);
       }
       break;
     case Bank::I:
@@ -298,6 +314,8 @@ void VRAM::MapBank(Bank bank) {
         case 2:
           region_ppu_b_obj.Map(0x00000, bank_i);
           break;
+        default:
+          LOG_ERROR("VRAM bank I: unsupported configuration: mst={0} offset={1}", vramcnt_i.mst, vramcnt_i.offset);
       }
       break;
   }
