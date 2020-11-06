@@ -20,7 +20,7 @@ struct Region {
   Region(size_t mask) : mask(mask) {}
 
   template<typename T>
-  auto Read(u32 offset) -> T {
+  auto Read(u32 offset) const -> T {
     static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
 
     auto const& desc = pages[(offset >> 14) & mask];

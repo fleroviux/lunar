@@ -24,15 +24,14 @@ VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
 void VideoUnit::Reset() {
   memset(pram, 0, sizeof(pram));
   vram.Reset();
-  dispstat = {};
+  dispstat7 = {};
+  dispstat9 = {};
   vcount = {};
-
-  // HACK: make the VCOUNT value start at zero for the first scanline.
-  vcount.value = 0xFFFF;
-  OnHdrawBegin(0);
 
   ppu_a.Reset();
   ppu_b.Reset();
+
+  OnHdrawBegin(0);
 }
 
 void VideoUnit::OnHdrawBegin(int late) {
@@ -40,26 +39,35 @@ void VideoUnit::OnHdrawBegin(int late) {
     vcount.value = 0;
   }
 
-  dispstat.vcount.flag = vcount.value == dispstat.vcount_setting;
+  dispstat7.vcount.flag = vcount.value == dispstat7.vcount_setting;
+  dispstat9.vcount.flag = vcount.value == dispstat9.vcount_setting;
 
-  if (dispstat.vcount.enable_irq && dispstat.vcount.flag) {
+  if (dispstat7.vcount.enable_irq && dispstat7.vcount.flag) {
     irq7.Raise(IRQ::Source::VCount);
+  }
+
+  if (dispstat9.vcount.enable_irq && dispstat9.vcount.flag) {
     irq9.Raise(IRQ::Source::VCount);
   }
 
   if (vcount.value == kDrawingLines) {
-    if (dispstat.vblank.enable_irq) {
+    if (dispstat7.vblank.enable_irq) {
       irq7.Raise(IRQ::Source::VBlank);
+    }
+    if (dispstat9.vblank.enable_irq) {
       irq9.Raise(IRQ::Source::VBlank);
     }
-    dispstat.vblank.flag = true;
+    dispstat7.vblank.flag = true;
+    dispstat9.vblank.flag = true;
   }
   
   if (vcount.value == kTotalLines - 1) {
-    dispstat.vblank.flag = false;
+    dispstat7.vblank.flag = false;
+    dispstat9.vblank.flag = false;
   }
 
-  dispstat.hblank.flag = false;
+  dispstat7.hblank.flag = false;
+  dispstat9.hblank.flag = false;
 
   if (vcount.value < kDrawingLines) {
     ppu_a.RenderScanline(vcount.value);
@@ -72,8 +80,11 @@ void VideoUnit::OnHdrawBegin(int late) {
 }
 
 void VideoUnit::OnHblankBegin(int late) {
-  if (dispstat.hblank.enable_irq) {
+  if (dispstat7.hblank.enable_irq) {
     irq7.Raise(IRQ::Source::HBlank);
+  }
+
+  if (dispstat9.hblank.enable_irq) {
     irq9.Raise(IRQ::Source::HBlank);
   }
 
@@ -83,11 +94,56 @@ void VideoUnit::OnHblankBegin(int late) {
 }
 
 void VideoUnit::OnHblankFlagSet(int late) {
-  dispstat.hblank.flag = true;
+  dispstat7.hblank.flag = true;
+  dispstat9.hblank.flag = true;
 
   scheduler->Add(594 - late, [this](int late) {
     this->OnHdrawBegin(late);
   });
+}
+
+auto VideoUnit::DISPSTAT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return (vblank.flag ? 1 : 0) |
+             (hblank.flag ? 2 : 0) |
+             (vcount.flag ? 4 : 0) |
+             (vblank.enable_irq ?  8 : 0) |
+             (hblank.enable_irq ? 16 : 0) |
+             (vcount.enable_irq ? 32 : 0) |
+             ((vcount_setting >> 1) & 128);
+    case 1:
+      return vcount_setting & 0xFF;
+  }
+ 
+  UNREACHABLE;
+}
+
+void VideoUnit::DISPSTAT::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      vblank.enable_irq = value &  8;
+      hblank.enable_irq = value & 16;
+      vcount.enable_irq = value & 32;
+      vcount_setting = (vcount_setting & 0xFF) | ((value << 1) & 0x100);
+      break;
+    case 1:
+      vcount_setting = (vcount_setting & 0x100) | value;
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+auto VideoUnit::VCOUNT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return value & 0xFF;
+    case 1:
+      return (value >> 8) & 1;
+  }
+
+  UNREACHABLE;
 }
 
 } // namespace fauxDS::core

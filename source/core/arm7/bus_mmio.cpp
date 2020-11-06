@@ -34,9 +34,9 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
   switch (address) {
     // PPU engine A
     case REG_DISPSTAT|0:
-      return video_unit.dispstat.ReadByte(0);
+      return video_unit.dispstat7.ReadByte(0);
     case REG_DISPSTAT|1:
-      return video_unit.dispstat.ReadByte(1);
+      return video_unit.dispstat7.ReadByte(1);
     case REG_VCOUNT|0:
       return video_unit.vcount.ReadByte(0);
     case REG_VCOUNT|1:
@@ -131,10 +131,10 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
   switch (address) {
     // PPU engine A
     case REG_DISPSTAT|0:
-      video_unit.dispstat.WriteByte(0, value);
+      video_unit.dispstat7.WriteByte(0, value);
       break;
     case REG_DISPSTAT|1:
-      video_unit.dispstat.WriteByte(1, value);
+      video_unit.dispstat7.WriteByte(1, value);
       break;
 
     // IPC

@@ -23,7 +23,7 @@ void PPU::RenderScanline(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
   for (int x = 0; x < 256; x++) {
-    line[x] = 0xFFFF0000;
+    line[x] = 0xFFFF0000 | vcount;
   }
 }
 

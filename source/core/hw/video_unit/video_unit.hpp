@@ -21,47 +21,10 @@ struct VideoUnit {
 
   void Reset();
 
-  VRAM vram;
-
-  u8 pram[0x800];
-
-  PPU ppu_a;
-  PPU ppu_b;
-
   /// Graphics status and IRQ control.
   struct DISPSTAT {
-    auto ReadByte(uint offset) -> u8 {
-      switch (offset) {
-        case 0:
-          return (vblank.flag ? 1 : 0) |
-                 (hblank.flag ? 2 : 0) |
-                 (vcount.flag ? 4 : 0) |
-                 (vblank.enable_irq ?  8 : 0) |
-                 (hblank.enable_irq ? 16 : 0) |
-                 (vcount.enable_irq ? 32 : 0) |
-                 ((vcount_setting >> 1) & 128);
-        case 1:
-          return vcount_setting & 0xFF;
-      }
-
-      UNREACHABLE;
-    }
-
-    void WriteByte(uint offset, u8 value) {
-      switch (offset) {
-        case 0:
-          vblank.enable_irq = value &  8;
-          hblank.enable_irq = value & 16;
-          vcount.enable_irq = value & 32;
-          vcount_setting = (vcount_setting & 0xFF) | ((value << 1) & 0x100);
-          break;
-        case 1:
-          vcount_setting = (vcount_setting & 0x100) | value;
-          break;
-        default:
-          UNREACHABLE;
-      }
-    }
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
 
   private:
     friend struct fauxDS::core::VideoUnit;
@@ -72,26 +35,22 @@ struct VideoUnit {
     } vblank = {}, hblank = {}, vcount = {};
 
     u16 vcount_setting = 0;
-  } dispstat;
+  } dispstat7, dispstat9;
 
   /// Currently rendered scanline.
   /// TODO: "VCOUNT register is write-able, allowing to synchronize linked DS consoles."
   struct VCOUNT {
-    auto ReadByte(uint offset) -> u8 {
-      switch (offset) {
-        case 0:
-          return value & 0xFF;
-        case 1:
-          return (value >> 8) & 1;
-      }
-
-      UNREACHABLE;
-    }
+    auto ReadByte(uint offset) -> u8;
 
   private:
     friend struct fauxDS::core::VideoUnit;
-    u16 value = 0;
+    u16 value = 0xFFFF;
   } vcount;
+
+  u8 pram[0x800];
+  VRAM vram;
+  PPU ppu_a;
+  PPU ppu_b;
 
 private:
   void OnHdrawBegin(int late);
