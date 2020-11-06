@@ -4,8 +4,8 @@
 
 #include <common/bit.hpp>
 #include <common/log.hpp>
+#include <common/meta.hpp>
 #include <fstream>
-#include <type_traits>
 
 #include "bus.hpp"
 
@@ -29,11 +29,7 @@ template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
-  // TODO: fix this god-damn-fucking-awful formatting.
-  static_assert(
-    std::is_same<T, u32>::value ||
-    std::is_same<T, u16>::value ||
-    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
 
   if (itcm_config.enable_read && address >= itcm_config.base && address <= itcm_config.limit) {
     return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
@@ -80,11 +76,7 @@ template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
 
-  // TODO: fix this god-damn-fucking-awful formatting.
-  static_assert(
-    std::is_same<T, u32>::value ||
-    std::is_same<T, u16>::value ||
-    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
 
   if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
     *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;

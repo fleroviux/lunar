@@ -2,7 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/static_for.hpp>
+#include <common/meta.hpp>
 
 #include "../arm.hpp"
 #include "decoder.hpp"

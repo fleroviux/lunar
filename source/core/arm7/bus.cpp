@@ -31,11 +31,7 @@ template<typename T>
 auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
-  // TODO: fix this god-damn-fucking-awful formatting.
-  static_assert(
-    std::is_same<T, u32>::value ||
-    std::is_same<T, u16>::value ||
-    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
 
   switch (address >> 24) {
     case 0x00:
@@ -72,11 +68,7 @@ template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
   
-  // TODO: fix this god-damn-fucking-awful formatting.
-  static_assert(
-    std::is_same<T, u32>::value ||
-    std::is_same<T, u16>::value ||
-    std::is_same<T, u8>::value, "T must be u32, u16 or u8");
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
 
   switch (address >> 24) {
     case 0x02:
