@@ -61,7 +61,7 @@ void ARM_DataProcessing(u32 instruction) {
 
     DoShift(shift_type, op2, shift, carry, shift_imm);
   }
- 
+
   auto& cpsr = state.cpsr;
   auto& result = state.reg[reg_dst];
 
@@ -98,29 +98,19 @@ void ARM_DataProcessing(u32 instruction) {
     case ARMDataOp::RSC:
       result = SBC(op2, op1, set_flags);
       break;
-    case ARMDataOp::TST: {
-      u32 result = op1 & op2;
-      SetZeroAndSignFlag(result);
+    case ARMDataOp::TST:
+      SetZeroAndSignFlag(op1 & op2);
       cpsr.f.c = carry;
-      // TODO: should be zero according to the manual but we don't really
-      // know how the CPU behaves if reg_dst happens to be non-zero.
-      reg_dst = 0;
       break;
-    }
-    case ARMDataOp::TEQ: {
-      u32 result = op1 ^ op2;
-      SetZeroAndSignFlag(result);
+    case ARMDataOp::TEQ:
+      SetZeroAndSignFlag(op1 ^ op2);
       cpsr.f.c = carry;
-      reg_dst = 0;
       break;
-    }
     case ARMDataOp::CMP:
       SUB(op1, op2, true);
-      reg_dst = 0;
       break;
     case ARMDataOp::CMN:
       ADD(op1, op2, true);
-      reg_dst = 0;
       break;
     case ARMDataOp::ORR:
       result = op1 | op2;
@@ -160,10 +150,15 @@ void ARM_DataProcessing(u32 instruction) {
       state.cpsr.v = spsr.v;
     }
 
-    if (state.cpsr.f.thumb) {
-      ReloadPipeline16();
-    } else {
-      ReloadPipeline32();
+    if constexpr (opcode != ARMDataOp::TST &&
+                  opcode != ARMDataOp::TEQ &&
+                  opcode != ARMDataOp::CMP &&
+                  opcode != ARMDataOp::CMN) {
+      if (state.cpsr.f.thumb) {
+        ReloadPipeline16();
+      } else {
+        ReloadPipeline32();
+      }
     }
   } else {
     state.r15 += 4;
@@ -252,7 +247,7 @@ void ARM_MultiplyLong(u32 instruction) {
     s64 a = state.reg[op1];
     s64 b = state.reg[op2];
 
-    // Sign-extend operands 
+    // Sign-extend operands
     if (a & 0x80000000) a |= 0xFFFFFFFF00000000;
     if (b & 0x80000000) b |= 0xFFFFFFFF00000000;
 
@@ -307,13 +302,13 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
   } else {
     value1 = s16(state.reg[op1] & 0xFFFF);
   }
-  
+
   if constexpr (y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
   }
-  
+
   state.reg[dst] = u32(value1 * value2);
 
   if constexpr (accumulate) {
@@ -321,7 +316,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
     // TODO: make helper method to detect overflow instead.
     state.reg[dst] = QADD(state.reg[dst], state.reg[op3], false);
   }
-  
+
   state.r15 += 4;
 }
 
@@ -339,13 +334,13 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
   s32 value1 = s32(state.reg[op1]);
   s16 value2;
-  
+
   if constexpr (y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
   }
-  
+
   state.reg[dst] = u32((value1 * value2) >> 16);
 
   if constexpr (accumulate) {
@@ -371,27 +366,27 @@ void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
 
   s16 value1;
   s16 value2;
-  
+
   if constexpr (x) {
     value1 = s16(state.reg[op1] >> 16);
   } else {
     value1 = s16(state.reg[op1] & 0xFFFF);
   }
-  
+
   if constexpr (y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
   }
-  
+
   u64 result = value1 * value2;
-  
+
   result += state.reg[dst_lo];
   result += u64(state.reg[dst_hi]) << 32;
-  
+
   state.reg[dst_lo] = result & 0xFFFFFFFF;
   state.reg[dst_hi] = result >> 32;
-  
+
   state.r15 += 4;
 }
 
@@ -677,7 +672,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
   if constexpr (user_mode) {
     if (!load || !transfer_pc) {
       mode = state.cpsr.f.mode;
-      SwitchMode(MODE_USR);  
+      SwitchMode(MODE_USR);
     }
   }
 
@@ -689,25 +684,25 @@ void ARM_BlockDataTransfer(u32 instruction) {
       i = __builtin_ctz(remaining);
     #else
       while ((remaining & (1 << i)) == 0) i++;
-    #endif 
+    #endif
 
     if constexpr (pre == add) {
       address += 4;
     }
-    
+
     if constexpr (load) {
       state.reg[i] = ReadWord(address);
     } else {
       WriteWord(address, state.reg[i]);
     }
-    
+
     if constexpr (pre != add) {
       address += 4;
     }
 
     remaining &= ~(1 << i);
   }
-  
+
   if constexpr (user_mode) {
     if (load && transfer_pc) {
       auto& spsr = *p_spsr;
@@ -734,7 +729,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
           break;
       }
     } else {
-      state.reg[base] = base_new;  
+      state.reg[base] = base_new;
     }
   }
 
@@ -792,7 +787,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
 
   int dst = (instruction >> 12) & 0xF;
   int src =  instruction & 0xF;
-  
+
   u32 value = state.reg[src];
 
   if (value == 0) {
@@ -805,7 +800,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
     state.reg[dst] = __builtin_clz(value);
   #else
     u32 result = 0;
-  
+
     const u32 mask[] = {
       0xFFFF0000,
       0xFF000000,
@@ -813,7 +808,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
       0xC0000000,
       0x80000000 };
     const int shift[] = { 16, 8, 4, 2, 1 };
-  
+
     for (int i = 0; i < 5; i++) {
       if ((value & mask[i]) == 0) {
         result |= shift[i];
@@ -849,7 +844,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
 
   if (double_op2) {
     u32 result = op2 + op2;
-    
+
     if ((op2 ^ result) >> 31) {
       state.cpsr.f.q = 1;
       result = 0x80000000 - (result >> 31);
@@ -859,7 +854,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
   }
 
   if (subtract) {
-    state.reg[dst] = QSUB(state.reg[src1], op2);  
+    state.reg[dst] = QSUB(state.reg[src1], op2);
   } else {
     state.reg[dst] = QADD(state.reg[src1], op2);
   }
