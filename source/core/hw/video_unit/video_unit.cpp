@@ -2,6 +2,8 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#include <string.h>
+
 #include "video_unit.hpp"
 
 namespace fauxDS::core {
@@ -11,13 +13,16 @@ static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
-    : scheduler(scheduler)
+    : ppu_a(vram.region_ppu_a_bg, vram.region_ppu_a_obj, &pram[0x000])
+    , ppu_b(vram.region_ppu_b_bg, vram.region_ppu_b_obj, &pram[0x400]) 
+    , scheduler(scheduler)
     , irq7(irq7)
     , irq9(irq9) {
   Reset();
 }
 
 void VideoUnit::Reset() {
+  memset(pram, 0, sizeof(pram));
   vram.Reset();
   dispstat = {};
   vcount = {};
@@ -25,6 +30,9 @@ void VideoUnit::Reset() {
   // HACK: make the VCOUNT value start at zero for the first scanline.
   vcount.value = 0xFFFF;
   OnHdrawBegin(0);
+
+  ppu_a.Reset();
+  ppu_b.Reset();
 }
 
 void VideoUnit::OnHdrawBegin(int late) {

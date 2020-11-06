@@ -11,7 +11,7 @@
 
 namespace fauxDS::core {
 
-/// Holds VRAM bank data and takes care of allocating VRAM banks to uses regions (uses).
+/// Holds VRAM bank data and takes care of allocating VRAM banks to regions (uses).
 struct VRAM {
   enum class Bank {
     A = 0,

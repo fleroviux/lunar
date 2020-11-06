@@ -60,6 +60,8 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
         return ReadByteIO(address);
       }
       return 0;
+    case 0x05:
+      return *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]);
     case 0x06:
       switch ((address >> 20) & 15) {
         /// PPU A - BG VRAM (max 512 KiB)
@@ -135,6 +137,9 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       if constexpr (std::is_same<T, u8>::value) {
         WriteByteIO(address, value);
       }
+      break;
+    case 0x05:
+      *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]) = value;
       break;
     case 0x06:
       switch ((address >> 20) & 15) {

@@ -2,8 +2,6 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <string.h>
-
 #include "vram.hpp"
 
 namespace fauxDS::core {

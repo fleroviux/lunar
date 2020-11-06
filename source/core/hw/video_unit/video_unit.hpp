@@ -10,6 +10,7 @@
 #include <core/scheduler.hpp>
 #include <functional>
 
+#include "ppu/ppu.hpp"
 #include "vram.hpp"
 
 namespace fauxDS::core {
@@ -21,6 +22,8 @@ struct VideoUnit {
   void Reset();
 
   VRAM vram;
+
+  u8 pram[0x800];
 
   /// Graphics status and IRQ control.
   struct DISPSTAT {
@@ -91,6 +94,9 @@ private:
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);
   void OnHblankFlagSet(int late);
+
+  PPU ppu_a;
+  PPU ppu_b;
 
   Scheduler* scheduler;
   IRQ& irq7;
