@@ -27,8 +27,12 @@ enum Registers {
   REG_IF  = 0x0400'0214,
 
   REG_VRAMSTAT = 0x0400'0240,
-  REG_WRAMSTAT = 0x0400'0241
+  REG_WRAMSTAT = 0x0400'0241,
+
+  REG_HALTCNT = 0x0400'0301
 };
+
+static bool gIssuedHaltcntWarning = false;
 
 auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
   switch (address) {
@@ -193,6 +197,12 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_IF|3:
       irq7._if.WriteByte(3, value);
+      break;
+
+    case REG_HALTCNT:
+      if (!gIssuedHaltcntWarning)
+        LOG_WARN("ARM7: MMIO: unhandled write to HALTCNT. will not report about this again.");
+      gIssuedHaltcntWarning = true;
       break;
 
     default:
