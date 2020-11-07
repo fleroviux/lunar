@@ -22,7 +22,7 @@ struct VideoUnit {
   void Reset();
 
   /// Graphics status and IRQ control.
-  struct DISPSTAT {
+  struct DisplayStatus {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
 

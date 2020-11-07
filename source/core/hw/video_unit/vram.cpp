@@ -11,15 +11,15 @@ VRAM::VRAM() {
 }
 
 void VRAM::Reset() {
-  bank_a = {};
-  bank_b = {};
-  bank_c = {};
-  bank_d = {};
-  bank_e = {};
-  bank_f = {};
-  bank_g = {};
-  bank_h = {};
-  bank_i = {};
+  memset(bank_a.data(), 0, bank_a.size());
+  memset(bank_b.data(), 0, bank_b.size());
+  memset(bank_c.data(), 0, bank_c.size());
+  memset(bank_d.data(), 0, bank_d.size());
+  memset(bank_e.data(), 0, bank_e.size());
+  memset(bank_f.data(), 0, bank_f.size());
+  memset(bank_g.data(), 0, bank_g.size());
+  memset(bank_h.data(), 0, bank_h.size());
+  memset(bank_i.data(), 0, bank_i.size());
 
   vramcnt_a.WriteByte(0);
   vramcnt_b.WriteByte(0);

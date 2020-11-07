@@ -102,7 +102,7 @@ void VideoUnit::OnHblankFlagSet(int late) {
   });
 }
 
-auto VideoUnit::DISPSTAT::ReadByte(uint offset) -> u8 {
+auto VideoUnit::DisplayStatus::ReadByte(uint offset) -> u8 {
   switch (offset) {
     case 0:
       return (vblank.flag ? 1 : 0) |
@@ -119,7 +119,7 @@ auto VideoUnit::DISPSTAT::ReadByte(uint offset) -> u8 {
   UNREACHABLE;
 }
 
-void VideoUnit::DISPSTAT::WriteByte(uint offset, u8 value) {
+void VideoUnit::DisplayStatus::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0:
       vblank.enable_irq = value &  8;
