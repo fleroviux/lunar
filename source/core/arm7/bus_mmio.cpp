@@ -21,6 +21,10 @@ enum Registers {
   REG_IPCFIFOSEND = 0x0400'0188,
   REG_IPCFIFORECV = 0x0410'0000,
 
+  // SPI
+  REG_SPICNT = 0x0400'01C0,
+  REG_SPIDATA = 0x0400'01C2,
+
   // IRQ
   REG_IME = 0x0400'0208,
   REG_IE  = 0x0400'0210,
@@ -68,6 +72,17 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 2);
     case REG_IPCFIFORECV|3:
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 3);
+
+    // SPI
+    case REG_SPICNT|0:
+      return spi.spicnt.ReadByte(0);
+    case REG_SPICNT|1:
+      return spi.spicnt.ReadByte(1);
+    case REG_SPIDATA|0:
+      return spi.spidata.ReadByte();
+    case REG_SPIDATA|1:
+      // not functional/used but accessed anyways.
+      return 0;
 
     // IRQ
     case REG_IME|0:
@@ -159,6 +174,20 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_IPCFIFOSEND|2:
     case REG_IPCFIFOSEND|3:
       ipc.ipcfifosend.WriteByte(IPC::Client::ARM7, value);
+      break;
+
+    // SPI
+    case REG_SPICNT|0:
+      spi.spicnt.WriteByte(0, value);
+      break;
+    case REG_SPICNT|1:
+      spi.spicnt.WriteByte(1, value);
+      break;
+    case REG_SPIDATA|0:
+      spi.spidata.WriteByte(value);
+      break;
+    case REG_SPIDATA|1:
+      // not functional/used but accessed anyways.
       break;
 
     // IRQ

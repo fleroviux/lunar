@@ -8,6 +8,7 @@
 #include <common/log.hpp>
 #include <core/hw/ipc/ipc.hpp>
 #include <core/hw/irq/irq.hpp>
+#include <core/hw/spi/spi.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
 
@@ -50,6 +51,7 @@ struct Interconnect {
   IRQ irq7;
   IRQ irq9;
   IPC ipc;
+  SPI spi;
   VideoUnit video_unit;
 
   struct WRAMCNT {

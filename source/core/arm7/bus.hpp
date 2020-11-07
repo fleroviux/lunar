@@ -47,6 +47,7 @@ private:
   /// HW components and I/O registers
   IPC& ipc;
   IRQ& irq7;
+  SPI& spi;
   VideoUnit& video_unit;
   VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;
