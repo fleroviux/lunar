@@ -7,14 +7,14 @@
 namespace fauxDS::core {
 
 struct BackgroundControl {
-  int priority;
-  int tile_block;
+  int  priority;
+  int  tile_block;
   bool enable_mosaic;
   bool full_palette;
-  int map_block;
+  int  map_block;
   bool wraparound = false;
-  int ext_palette_slot = 0;
-  int size;
+  int  ext_palette_slot = 0;
+  int  size;
 
   BackgroundControl(int id) : id(id) {}
 

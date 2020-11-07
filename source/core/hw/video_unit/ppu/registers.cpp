@@ -52,7 +52,6 @@ void BackgroundControl::WriteByte(uint offset, u8 value) {
   }
 }
 
-
 void BackgroundOffset::Reset() {
   WriteByte(0, 0);
   WriteByte(1, 0);

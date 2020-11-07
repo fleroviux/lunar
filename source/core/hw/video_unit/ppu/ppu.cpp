@@ -23,33 +23,115 @@ void PPU::Reset() {
 void PPU::RenderScanline(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
-  for (int x = 0; x < 256; x++) {
-    auto block_x = x / 8;
-    auto block_y = vcount / 8;
-    auto tile_x = x % 8;
-    auto tile_y = vcount % 8;
+  RenderLayerText(0, vcount);
 
-    u16 encoder = vram_bg.Read<u16>(22 * 2048 + block_y * 64 + block_x * 2);
+  for (uint x = 0; x < 256; x++) {
+    u16 color = buffer_bg[0][x];
 
-    u16 tile = encoder & 0x3FF;//block_y * 32 + block_x;
-    u16 const* palette = (const u16*)&pram[(encoder >> 12) * 32];
-
-    u32 offset = 16384 * 3 + tile * 32 + tile_y * 4 + tile_x / 2;
-    u8 value = vram_bg.Read<u8>(offset);
-
-    if (x & 1)
-      value >>= 4;
-    else 
-      value &= 15;
-
-    u16 color = palette[value];
     line[x] = (((color >>  0) & 0x1F) << 19) |
               (((color >>  5) & 0x1F) << 11) |
               (((color >> 10) & 0x1F) <<  3) |
               0xFF000000;
-
-    //line[x] = 0xFFFF0000 | vcount;
   }
+}
+
+void PPU::RenderLayerText(uint id, u16 vcount) {
+  auto const& bgcnt  = mmio.bgcnt[id];
+
+  u32 tile_base = bgcnt.tile_block * 16384;
+   
+  int line = mmio.bgvofs[id].value + vcount;
+
+  int draw_x = -(mmio.bghofs[id].value % 8);
+  int grid_x =   mmio.bghofs[id].value / 8;
+  int grid_y = line / 8;
+  int tile_y = line % 8;
+  
+  int screen_x = (grid_x / 32) % 2;
+  int screen_y = (grid_y / 32) % 2;
+
+  u16 tile[8];
+  u32 base = (bgcnt.map_block * 2048) + ((grid_y % 32) * 64);
+
+  u16* buffer = buffer_bg[id];
+  s32  last_encoder = -1;
+  u16  encoder;
+  
+  grid_x %= 32;
+  
+  u32 base_adjust;
+  
+  switch (bgcnt.size) {
+    case 0:
+      base_adjust = 0;
+      break;
+    case 1: 
+      base += screen_x * 2048;
+      base_adjust = 2048;
+      break;
+    case 2:
+      base += screen_y * 2048;
+      base_adjust = 0;
+      break;
+    case 3:
+      base += (screen_x * 2048) + (screen_y * 4096);
+      base_adjust = 2048;
+      break;
+  }
+  
+  if (screen_x == 1) {
+    base_adjust *= -1;
+  }
+  
+  do {
+    do {      
+      encoder = vram_bg.Read<u16>(base + grid_x++ * 2);
+
+      // TODO: speed tile decoding itself up.
+      if (encoder != last_encoder) {
+        int number  = encoder & 0x3FF;
+        int palette = encoder >> 12;
+        bool flip_x = encoder & (1 << 10);
+        bool flip_y = encoder & (1 << 11);
+        int _tile_y = flip_y ? (tile_y ^ 7) : tile_y;
+
+        if (!bgcnt.full_palette) {
+          DecodeTileLine4BPP(tile, tile_base, palette, number, _tile_y, flip_x);
+        } else {
+          DecodeTileLine8BPP(tile, tile_base, number, _tile_y, flip_x);
+        }
+
+        last_encoder = encoder;
+      }
+
+      if (draw_x >= 0 && draw_x <= 248) {
+        for (int x = 0; x < 8; x++) {
+          buffer[draw_x++] = tile[x];
+        }
+      } else {
+        int x = 0;
+        int max = 8;
+
+        if (draw_x < 0) {
+          x = -draw_x;
+          draw_x = 0;
+          for (; x < max; x++) {
+            buffer[draw_x++] = tile[x];
+          }
+        } else if (draw_x > 248) {
+          max -= draw_x - 248;
+          for (; x < max; x++) {
+            buffer[draw_x++] = tile[x];
+          }
+          break;
+        }
+      }
+    } while (grid_x < 32);
+    
+    base += base_adjust;
+    base_adjust *= -1;
+    grid_x = 0;
+  } while (draw_x < 256);
 }
 
 } // namespace fauxDS::core
