@@ -81,7 +81,7 @@ void SPI::SPIDATA::WriteByte(u8 value) {
     return;
   }
 
-  value = spi.devices[spi.spicnt.device]->Transfer(value);
+  this->value = spi.devices[spi.spicnt.device]->Transfer(value);
 }
 
 } // namespace fauxDS::core
