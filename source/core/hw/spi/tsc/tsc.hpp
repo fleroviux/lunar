@@ -18,17 +18,7 @@ struct TSC : SPIDevice {
   auto Transfer(u8 data) -> u8 override;
 
 private:
-  enum class State {
-    ReceiveCommand,
-    Send_8bit,
-    Send_12bit_hi,
-    Send_12bit_lo
-  } state;
-
   u16 data_reg;
-
-  //u16 position_x = 0;
-  //u16 position_y = 0;
 };
 
 } // namespace fauxDS::core
