@@ -16,6 +16,7 @@ void SPI::Reset() {
   // TODO: reset SPICNT and SPIDATA registers
   //spicnt = { *this );
   //spidata = { *this }
+  firmware.Reset();
   tsc.Reset();
 }
 
@@ -50,7 +51,7 @@ void SPI::SPICNT::WriteByte(uint offset, u8 value) {
       enable_irq = value & 64;
       enable = value & 128;
       if ((enable_old && !enable) || (enable && device != device_old)) {
-        if (spi.devices[device_old] != nullptr)  
+        if (spi.devices[device_old] != nullptr)
           spi.devices[device_old]->Deselect();
       }
       if ((!enable_old && enable) || (enable && device != device_old)) {

@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 
 #include "tsc/tsc.hpp"
+#include "firmware/firmware.hpp"
 
 namespace fauxDS::core {
 
@@ -27,7 +28,6 @@ struct SPI {
 
     int  baudrate = 0;
     bool busy = false;
-    //Device device = Device::Powerman;
     int  device = 3;
     bool bugged_hword_mode = false;
     bool chipselect_hold = false;
@@ -50,9 +50,10 @@ struct SPI {
   } spidata { *this };
 
 private:
+  Firmware firmware;
   TSC tsc;
 
-  SPIDevice* devices[4] { nullptr, nullptr, &tsc, nullptr };
+  SPIDevice* devices[4] { nullptr, &firmware, &tsc, nullptr };
 };
 
 } // namespace fauxDS::core

@@ -18,7 +18,7 @@ void TSC::Deselect() {
 }
 
 auto TSC::Transfer(u8 data) -> u8 {
-  LOG_INFO("SPI: TSC: received byte 0x{0:02X}", data);
+  //LOG_INFO("SPI: TSC: received byte 0x{0:02X}", data);
   ASSERT(data == 0 || (data & 128) != 0, "SPI: TSC: expected command but start bit is not set!");
 
   //bool mode_8bit = (data >> 3) & 1;

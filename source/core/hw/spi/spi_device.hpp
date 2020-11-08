@@ -2,6 +2,8 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#pragma once
+
 #include <common/integer.hpp>
 
 namespace fauxDS::core {
