@@ -8,6 +8,7 @@ set(SOURCES
   arm9/cp15.cpp
   hw/ipc/ipc.cpp
   hw/irq/irq.cpp
+  hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
   hw/video_unit/ppu/ppu.cpp
   hw/video_unit/ppu/registers.cpp
@@ -33,7 +34,9 @@ set(HEADERS
   arm9/cp15.hpp
   hw/ipc/ipc.hpp
   hw/irq/irq.hpp
+  hw/spi/tsc/tsc.hpp
   hw/spi/spi.hpp
+  hw/spi/spi_device.hpp
   hw/video_unit/ppu/ppu.hpp
   hw/video_unit/ppu/registers.hpp
   hw/video_unit/video_unit.hpp

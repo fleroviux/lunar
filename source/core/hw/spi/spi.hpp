@@ -6,17 +6,12 @@
 
 #include <common/integer.hpp>
 
+#include "tsc/tsc.hpp"
+
 namespace fauxDS::core {
 
 /// Serial Peripheral Interface
 struct SPI {
-  enum class Device : uint {
-    Powerman = 0,
-    Firmware = 1,
-    Touchscreen = 2,
-    Reserved = 3
-  };
-
   SPI();
 
   void Reset();
@@ -32,7 +27,8 @@ struct SPI {
 
     int  baudrate = 0;
     bool busy = false;
-    Device device = Device::Powerman;
+    //Device device = Device::Powerman;
+    int  device = 3;
     bool bugged_hword_mode = false;
     bool chipselect_hold = false;
     bool enable_irq = false;
@@ -54,7 +50,9 @@ struct SPI {
   } spidata { *this };
 
 private:
+  TSC tsc;
 
+  SPIDevice* devices[4] { nullptr, nullptr, &tsc, nullptr };
 };
 
 } // namespace fauxDS::core
