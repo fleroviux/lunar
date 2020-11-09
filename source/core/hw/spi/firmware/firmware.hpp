@@ -12,6 +12,7 @@ namespace fauxDS::core {
 /// SPI firmware flash
 struct Firmware : SPIDevice {
   void Reset();
+
   void Select() override;
   void Deselect() override;
   auto Transfer(u8 data) -> u8 override;

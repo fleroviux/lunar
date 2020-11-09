@@ -17,7 +17,7 @@ using namespace fauxDS::core;
 using namespace fauxDS::core::arm;
 
 struct NDSHeader {
-  // TODO: add remaining header fields. 
+  // TODO: add remaining header fields.
   // This should be enough for basic direct boot for now though.
   // http://problemkaputt.de/gbatek.htm#dscartridgeheader
   u8 game_title[12];
@@ -77,6 +77,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   auto& scheduler = interconnect->scheduler;
   auto& irq7 = interconnect->irq7;
   auto& irq9 = interconnect->irq9;
+  auto& tsc = interconnect->spi.tsc;
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
@@ -139,6 +140,12 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
           case SDLK_d: keyinput.l = pressed; break;
           case SDLK_f: keyinput.r = pressed; break;
         }
+      }
+      if (event.type == SDL_MOUSEMOTION) {
+        auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
+        s32 x = mouse_event->x;
+        s32 y = mouse_event->y - 192;
+        tsc.SetTouchState((mouse_event->state & SDL_BUTTON_LMASK) && y >= 0, x, y);
       }
     }
   }
@@ -242,4 +249,4 @@ auto main(int argc, const char** argv) -> int {
 
   loop(arm7.get(), arm9.get(), interconnect.get());
   return 0;
-} 
+}

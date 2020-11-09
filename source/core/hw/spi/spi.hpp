@@ -17,6 +17,9 @@ struct SPI {
 
   void Reset();
 
+  Firmware firmware;
+  TSC tsc;
+
   struct SPICNT {
     SPICNT(SPI& spi) : spi(spi) {}
 
@@ -50,9 +53,6 @@ struct SPI {
   } spidata { *this };
 
 private:
-  Firmware firmware;
-  TSC tsc;
-
   SPIDevice* devices[4] { nullptr, &firmware, &tsc, nullptr };
 };
 
