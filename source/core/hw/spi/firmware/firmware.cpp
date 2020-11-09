@@ -9,6 +9,9 @@
 namespace fauxDS::core {
 
 void Firmware::Reset() {
+  if (file.is_open()) {
+    file.close();
+  }
   file.open("firmware.bin", std::ios::in | std::ios::out | std::ios::binary);
   ASSERT(file.good(), "Firmware: failed to open firmware.bin");
   state = State::Deselected;

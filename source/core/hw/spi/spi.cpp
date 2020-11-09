@@ -17,7 +17,7 @@ void SPI::Reset() {
   //spicnt = { *this );
   //spidata = { *this }
   firmware.Reset();
-  tsc.Reset();
+  tsc.Reset(firmware);
 }
 
 auto SPI::SPICNT::ReadByte(uint offset) -> u8 {

@@ -8,22 +8,49 @@
 
 namespace fauxDS::core {
 
-void TSC::Reset() {
+void TSC::Reset(Firmware& firmware) {
   data_reg = 0;
+
+  // Read touchscreen calibration data from firmware.
+  u32 userdata_offset;
+
+  // cmd = READ, address = 0x000020
+  firmware.Select();
+  firmware.Transfer(0x03);
+  firmware.Transfer(0x00);
+  firmware.Transfer(0x00);
+  firmware.Transfer(0x20);
+  userdata_offset  = firmware.Transfer(0) << 0;
+  userdata_offset |= firmware.Transfer(0) << 8;
+  firmware.Deselect();
+
+  // get TSC calibration data address from userdata offset.
+  userdata_offset *= 8;
+  userdata_offset += 0x58;
+
+  // cmd = READ, address = TSC calibration data offset
+  firmware.Select();
+  firmware.Transfer(0x03);
+  firmware.Transfer((userdata_offset >> 16) & 0xFF);
+  firmware.Transfer((userdata_offset >>  8) & 0xFF);
+  firmware.Transfer((userdata_offset >>  0) & 0xFF);
+  adc_x1  = firmware.Transfer(0) << 0;
+  adc_x1 |= firmware.Transfer(0) << 8;
+  adc_y1  = firmware.Transfer(0) << 0;
+  adc_y1 |= firmware.Transfer(0) << 8;
+  scr_x1  = firmware.Transfer(0);
+  scr_y1  = firmware.Transfer(0);
+  adc_x2  = firmware.Transfer(0) << 0;
+  adc_x2 |= firmware.Transfer(0) << 8;
+  adc_y2  = firmware.Transfer(0) << 0;
+  adc_y2 |= firmware.Transfer(0) << 8;
+  scr_x2  = firmware.Transfer(0);
+  scr_y2  = firmware.Transfer(0);
+  firmware.Deselect();
 }
 
 void TSC::SetTouchState(bool pressed, int x, int y) {
   if (pressed) {
-    // TODO: read this information from the firmware.bin file.
-    u16 adc_x1 = 0;
-    u16 adc_y1 = 0;
-    u16 scr_x1 = 0;
-    u16 scr_y1 = 0;
-    u16 adc_x2 = 0xFF0;
-    u16 adc_y2 = 0xBF0;
-    u16 scr_x2 = 255;
-    u16 scr_y2 = 191;
-
     position_x = (x - scr_x1 + 1) * (adc_x2 - adc_x1) / (scr_x2 - scr_x1) + adc_x1;
     position_y = (y - scr_y1 + 1) * (adc_y2 - adc_y1) / (scr_y2 - scr_y1) + adc_y1;
 } else {
@@ -36,7 +63,6 @@ auto TSC::Transfer(u8 data) -> u8 {
   ASSERT(data == 0 || (data & 128) != 0, "SPI: TSC: unhandled attempt to start command mid-byte.");
 
   u8 out = data_reg >> 8;
-
   data_reg <<= 8;
 
   if (data & 128) {
@@ -56,7 +82,7 @@ auto TSC::Transfer(u8 data) -> u8 {
         break;
 
       default:
-        data_reg = 0xFFF << 3;
+        data_reg = 0x7FF8;
         break;
     }
   }
