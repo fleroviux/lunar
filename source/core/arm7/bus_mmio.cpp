@@ -115,9 +115,6 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_WRAMSTAT:
       return wramcnt.ReadByte();
 
-    //case 0x0400'0136:
-    //  return 0x7F ^ 64;
-
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
   }
