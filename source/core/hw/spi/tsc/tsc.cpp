@@ -26,10 +26,7 @@ void TSC::SetTouchState(bool pressed, int x, int y) {
 
     position_x = (x - scr_x1 + 1) * (adc_x2 - adc_x1) / (scr_x2 - scr_x1) + adc_x1;
     position_y = (y - scr_y1 + 1) * (adc_y2 - adc_y1) / (scr_y2 - scr_y1) + adc_y1;
-
-    LOG_INFO("debug x_in={0} x_out={1:X}", x, position_x);
-    LOG_INFO("debug y_in={0} y_out={1:X}", y, position_y);
-  } else {
+} else {
     position_x = 0;
     position_y = 0;
   }
@@ -38,10 +35,9 @@ void TSC::SetTouchState(bool pressed, int x, int y) {
 auto TSC::Transfer(u8 data) -> u8 {
   ASSERT(data == 0 || (data & 128) != 0, "SPI: TSC: unhandled attempt to start command mid-byte.");
 
-  u8 out = (data_reg >> 5) & 0xFF;
+  u8 out = data_reg >> 8;
 
   data_reg <<= 8;
-  data_reg &= 0xFFF;
 
   if (data & 128) {
     auto channel = (data >> 4) & 7;
@@ -51,16 +47,16 @@ auto TSC::Transfer(u8 data) -> u8 {
     switch (channel) {
       /// Y position
       case 1:
-        data_reg = position_y;
+        data_reg = position_y << 3;
         break;
 
       /// X position
       case 5:
-        data_reg = position_x;
+        data_reg = position_x << 3;
         break;
 
       default:
-        data_reg = 0xFFF;
+        data_reg = 0xFFF << 3;
         break;
     }
   }
