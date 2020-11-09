@@ -16,7 +16,8 @@ struct IRQ {
     VCount = 1 << 2,
     IPC_Sync = 1 << 16,
     IPC_SendEmpty = 1 << 17,
-    IPC_ReceiveNotEmpty = 1 << 18
+    IPC_ReceiveNotEmpty = 1 << 18,
+    SPI = 1 << 23
   };
 
   IRQ();
@@ -41,7 +42,7 @@ struct IRQ {
   struct IE {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
-    
+
   private:
     friend struct fauxDS::core::IRQ;
 
@@ -52,7 +53,7 @@ struct IRQ {
   struct IF {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
-    
+
   private:
     friend struct fauxDS::core::IRQ;
 

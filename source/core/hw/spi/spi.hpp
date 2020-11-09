@@ -5,6 +5,7 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <core/hw/irq/irq.hpp>
 
 #include "tsc/tsc.hpp"
 #include "firmware/firmware.hpp"
@@ -13,7 +14,7 @@ namespace fauxDS::core {
 
 /// Serial Peripheral Interface
 struct SPI {
-  SPI();
+  SPI(IRQ& irq7);
 
   void Reset();
 
@@ -53,6 +54,7 @@ struct SPI {
   } spidata { *this };
 
 private:
+  IRQ& irq7;
   SPIDevice* devices[4] { nullptr, &firmware, &tsc, nullptr };
 };
 

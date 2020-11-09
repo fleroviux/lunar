@@ -8,7 +8,7 @@
 
 namespace fauxDS::core {
 
-SPI::SPI() {
+SPI::SPI(IRQ& irq7) : irq7(irq7) {
   Reset();
 }
 
@@ -82,6 +82,10 @@ void SPI::SPIDATA::WriteByte(u8 value) {
   }
 
   this->value = spi.devices[spi.spicnt.device]->Transfer(value);
+
+  if (spi.spicnt.enable_irq) {
+    spi.irq7.Raise(IRQ::Source::SPI);
+  }
 }
 
 } // namespace fauxDS::core

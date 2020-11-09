@@ -17,8 +17,9 @@
 namespace fauxDS::core {
 
 struct Interconnect {
-  Interconnect() 
+  Interconnect()
       : ipc(irq7, irq9)
+      , spi(irq7)
       , video_unit(&scheduler, irq7, irq9)
       , wramcnt(swram) {
     Reset();
