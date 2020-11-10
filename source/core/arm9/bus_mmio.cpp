@@ -46,6 +46,7 @@ enum Registers {
   REG_IPCFIFORECV = 0x0410'0000,
 
   // Cartridge interface
+  REG_ROMCTRL = 0x0400'01A4,
   REG_CARDCMD = 0x0400'01A8,
 
   // IRQ
@@ -137,6 +138,14 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM9, 3);
 
     // Cartridge interface
+    case REG_ROMCTRL|0:
+      return cart.romctrl.ReadByte(0);
+    case REG_ROMCTRL|1:
+      return cart.romctrl.ReadByte(1);
+    case REG_ROMCTRL|2:
+      return cart.romctrl.ReadByte(2);
+    case REG_ROMCTRL|3:
+      return cart.romctrl.ReadByte(3);
     case REG_CARDCMD|0:
       return cart.cardcmd.ReadByte(0);
     case REG_CARDCMD|1:
@@ -392,6 +401,18 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     // Cartridge interface
+    case REG_ROMCTRL|0:
+      cart.romctrl.WriteByte(0, value);
+      break;
+    case REG_ROMCTRL|1:
+      cart.romctrl.WriteByte(1, value);
+      break;
+    case REG_ROMCTRL|2:
+      cart.romctrl.WriteByte(2, value);
+      break;
+    case REG_ROMCTRL|3:
+      cart.romctrl.WriteByte(3, value);
+      break;
     case REG_CARDCMD|0:
       cart.cardcmd.WriteByte(0, value);
       break;
