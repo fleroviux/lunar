@@ -27,7 +27,7 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
-  
+
   void WriteByte(u32 address,  u8 value) override;
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
@@ -61,6 +61,7 @@ private:
   Interconnect::SWRAM::Alloc const& swram;
 
   /// HW components and I/O registers
+  Cartridge& cart;
   IPC& ipc;
   IRQ& irq9;
   VideoUnit& video_unit;

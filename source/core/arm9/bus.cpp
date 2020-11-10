@@ -14,6 +14,7 @@ namespace fauxDS::core {
 ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     : ewram(interconnect->ewram)
     , swram(interconnect->swram.arm9)
+    , cart(interconnect->cart)
     , ipc(interconnect->ipc)
     , irq9(interconnect->irq9)
     , video_unit(interconnect->video_unit)

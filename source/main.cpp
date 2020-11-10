@@ -261,6 +261,9 @@ auto main(int argc, const char** argv) -> int {
 
   rom.close();
 
+  // Load cartridge ROM into Slot 1
+  interconnect->cart.Load(rom_path);
+
   loop(arm7.get(), arm9.get(), interconnect.get());
   return 0;
 }

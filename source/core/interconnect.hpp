@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/hw/cart/cart.hpp>
 #include <core/hw/ipc/ipc.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/spi/spi.hpp>
@@ -49,6 +50,7 @@ struct Interconnect {
   } swram;
 
   Scheduler scheduler;
+  Cartridge cart;
   IRQ irq7;
   IRQ irq9;
   IPC ipc;

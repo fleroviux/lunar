@@ -37,7 +37,6 @@ enum Registers {
   REG_BG3VOFS_A = 0x0400'001E,
   REG_BG3VOFS_B = 0x0400'101E,
 
-
   REG_KEYINPUT = 0x0400'0130,
 
   // IPC
@@ -45,6 +44,9 @@ enum Registers {
   REG_IPCFIFOCNT = 0x0400'0184,
   REG_IPCFIFOSEND = 0x0400'0188,
   REG_IPCFIFORECV = 0x0410'0000,
+
+  // Cartridge interface
+  REG_CARDCMD = 0x0400'01A8,
 
   // IRQ
   REG_IME = 0x0400'0208,
@@ -79,7 +81,7 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_VCOUNT|1:
       return video_unit.vcount.ReadByte(1);
     case REG_BG0CNT_A|0:
-      return ppu_io_a.bgcnt[0].ReadByte(0);  
+      return ppu_io_a.bgcnt[0].ReadByte(0);
     case REG_BG0CNT_A|1:
       return ppu_io_a.bgcnt[0].ReadByte(1);
     case REG_BG0CNT_B|0:
@@ -133,6 +135,24 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM9, 2);
     case REG_IPCFIFORECV|3:
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM9, 3);
+
+    // Cartridge interface
+    case REG_CARDCMD|0:
+      return cart.cardcmd.ReadByte(0);
+    case REG_CARDCMD|1:
+      return cart.cardcmd.ReadByte(1);
+    case REG_CARDCMD|2:
+      return cart.cardcmd.ReadByte(2);
+    case REG_CARDCMD|3:
+      return cart.cardcmd.ReadByte(3);
+    case REG_CARDCMD|4:
+      return cart.cardcmd.ReadByte(4);
+    case REG_CARDCMD|5:
+      return cart.cardcmd.ReadByte(5);
+    case REG_CARDCMD|6:
+      return cart.cardcmd.ReadByte(6);
+    case REG_CARDCMD|7:
+      return cart.cardcmd.ReadByte(7);
 
     // IRQ
     case REG_IME|0:
@@ -369,6 +389,32 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_IPCFIFOSEND|2:
     case REG_IPCFIFOSEND|3:
       ipc.ipcfifosend.WriteByte(IPC::Client::ARM9, value);
+      break;
+
+    // Cartridge interface
+    case REG_CARDCMD|0:
+      cart.cardcmd.WriteByte(0, value);
+      break;
+    case REG_CARDCMD|1:
+      cart.cardcmd.WriteByte(1, value);
+      break;
+    case REG_CARDCMD|2:
+      cart.cardcmd.WriteByte(2, value);
+      break;
+    case REG_CARDCMD|3:
+      cart.cardcmd.WriteByte(3, value);
+      break;
+    case REG_CARDCMD|4:
+      cart.cardcmd.WriteByte(4, value);
+      break;
+    case REG_CARDCMD|5:
+      cart.cardcmd.WriteByte(5, value);
+      break;
+    case REG_CARDCMD|6:
+      cart.cardcmd.WriteByte(6, value);
+      break;
+    case REG_CARDCMD|7:
+      cart.cardcmd.WriteByte(7, value);
       break;
 
     // IRQ

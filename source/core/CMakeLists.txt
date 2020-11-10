@@ -6,6 +6,7 @@ set(SOURCES
   arm9/bus.cpp
   arm9/bus_mmio.cpp
   arm9/cp15.cpp
+  hw/cart/cart.cpp
   hw/ipc/ipc.cpp
   hw/irq/irq.cpp
   hw/spi/firmware/firmware.cpp
@@ -33,6 +34,7 @@ set(HEADERS
   arm7/bus.hpp
   arm9/bus.hpp
   arm9/cp15.hpp
+  hw/cart/cart.hpp
   hw/ipc/ipc.hpp
   hw/irq/irq.hpp
   hw/spi/firmware/firmware.hpp
