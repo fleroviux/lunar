@@ -15,6 +15,7 @@ struct Cartridge {
 
   void Reset();
   void Load(std::string const& path);
+  auto ReadData() -> u32;
 
   struct ROMCTRL {
     ROMCTRL(Cartridge& cart) : cart(cart) {}
@@ -26,6 +27,7 @@ struct Cartridge {
     friend struct fauxDS::core::Cartridge;
 
     // TODO: implement the remaining data fields.
+    // TODO: at the moment data_ready is kind of redundant.
     // http://problemkaputt.de/gbatek.htm#dscartridgeioports
     bool data_ready = false;
     int  data_block_size = 0;
@@ -49,6 +51,10 @@ private:
 
   bool loaded = false;
   std::fstream file;
+
+  // TODO: make this less sucky
+  u32 address;
+  u32 remaining = 0;
 };
 
 } // namespace fauxDS::core

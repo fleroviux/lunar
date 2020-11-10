@@ -177,6 +177,8 @@ void ARM9MemoryBus::Write(u32 address, T value) {
           break;
       }
       break;
+    case 0x07:
+      break;
     default:
       // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.
       if (address == 0x08005500 && value == 0x08005500)

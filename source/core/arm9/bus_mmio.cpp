@@ -48,6 +48,7 @@ enum Registers {
   // Cartridge interface
   REG_ROMCTRL = 0x0400'01A4,
   REG_CARDCMD = 0x0400'01A8,
+  REG_CARDDATA = 0x0410'0010,
 
   // IRQ
   REG_IME = 0x0400'0208,
@@ -162,6 +163,12 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return cart.cardcmd.ReadByte(6);
     case REG_CARDCMD|7:
       return cart.cardcmd.ReadByte(7);
+    case REG_CARDDATA|0:
+    case REG_CARDDATA|1:
+    case REG_CARDDATA|2:
+    case REG_CARDDATA|3:
+      ASSERT(false, "ARM9: unhandled byte read from REG_CARDDATA");
+      return 0;
 
     // IRQ
     case REG_IME|0:
@@ -215,6 +222,8 @@ auto ARM9MemoryBus::ReadWordIO(u32 address) -> u32 {
   switch (address) {
     case REG_IPCFIFORECV:
       return ipc.ipcfiforecv.ReadWord(IPC::Client::ARM9);
+    case REG_CARDDATA:
+      return cart.ReadData();
   }
 
   return (ReadByteIO(address | 0) <<  0) |
