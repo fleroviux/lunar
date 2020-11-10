@@ -247,6 +247,20 @@ auto main(int argc, const char** argv) -> int {
     arm9->SetPC(header->arm9.entrypoint);
   }
 
+  u8 data;
+  u32 dst = 0x02FFFE00;
+  rom.seekg(0);
+  for (u32 i = 0; i < 0x170; i++) {
+    rom.read((char*)&data, 1);
+    if (!rom.good()) {
+      puts("failed to load cartridge header into memory");
+      return -4;
+    }
+    arm9_mem->WriteByte(dst++, data);
+  }
+
+  rom.close();
+
   loop(arm7.get(), arm9.get(), interconnect.get());
   return 0;
 }

@@ -30,7 +30,7 @@ template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
 
   if (itcm_config.enable_read && address >= itcm_config.base && address <= itcm_config.limit) {
     return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
@@ -80,7 +80,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
           return vram.region_ppu_a_obj.Read<T>(address & 0x1FFFFF);
 
         /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:                                                                                                                                                          
+        case 6:
         case 7:
           return vram.region_ppu_b_obj.Read<T>(address & 0x1FFFFF);
 
@@ -89,6 +89,9 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
           return vram.region_lcdc.Read<T>(address & 0xFFFFF);
       }
       return 0;
+    case 0x08:
+      LOG_WARN("ARM9: unhandled ROM read!");
+      return 0xFF;
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
@@ -104,7 +107,7 @@ template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
 
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
+  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
 
   if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
     *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
@@ -184,19 +187,19 @@ void ARM9MemoryBus::Write(u32 address, T value) {
 auto ARM9MemoryBus::ReadByte(u32 address, Bus bus) -> u8 {
   return Read<u8>(address, bus);
 }
-  
+
 auto ARM9MemoryBus::ReadHalf(u32 address, Bus bus) -> u16 {
   return Read<u16>(address, bus);
 }
-  
+
 auto ARM9MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
   return Read<u32>(address, bus);
 }
-  
+
 void ARM9MemoryBus::WriteByte(u32 address, u8 value) {
   Write<u8>(address, value);
 }
-  
+
 void ARM9MemoryBus::WriteHalf(u32 address, u16 value) {
   Write<u16>(address, value);
 }
