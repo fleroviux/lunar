@@ -10,6 +10,7 @@
 #include <core/hw/ipc/ipc.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/spi/spi.hpp>
+#include <core/hw/timer/timer.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
 #include <string.h>
 
@@ -19,8 +20,11 @@ namespace fauxDS::core {
 
 struct Interconnect {
   Interconnect()
-      : ipc(irq7, irq9)
+      : cart(irq7, irq9)
+      , ipc(irq7, irq9)
       , spi(irq7)
+      , timer7(scheduler, irq7)
+      , timer9(scheduler, irq9)
       , video_unit(&scheduler, irq7, irq9)
       , wramcnt(swram) {
     Reset();
@@ -29,8 +33,15 @@ struct Interconnect {
   void Reset() {
     memset(ewram, 0, sizeof(ewram));
     memset(swram.data, 0, sizeof(swram));
+    
     scheduler.Reset();
+    cart.Reset();
+    irq7.Reset();
+    irq9.Reset();
     ipc.Reset();
+    spi.Reset();
+    timer7.Reset();
+    timer9.Reset();
     video_unit.Reset();
 
     // TODO: this is just a stub!
@@ -55,6 +66,8 @@ struct Interconnect {
   IRQ irq9;
   IPC ipc;
   SPI spi;
+  Timer timer7;
+  Timer timer9;
   VideoUnit video_unit;
 
   struct WRAMCNT {

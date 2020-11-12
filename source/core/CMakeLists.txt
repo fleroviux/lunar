@@ -12,6 +12,7 @@ set(SOURCES
   hw/spi/firmware/firmware.cpp
   hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
+  hw/timer/timer.cpp
   hw/video_unit/ppu/ppu.cpp
   hw/video_unit/ppu/registers.cpp
   hw/video_unit/video_unit.cpp
@@ -41,6 +42,7 @@ set(HEADERS
   hw/spi/tsc/tsc.hpp
   hw/spi/spi.hpp
   hw/spi/spi_device.hpp
+  hw/timer/timer.cpp
   hw/video_unit/ppu/ppu.hpp
   hw/video_unit/ppu/registers.hpp
   hw/video_unit/video_unit.hpp

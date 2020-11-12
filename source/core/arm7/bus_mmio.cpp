@@ -13,6 +13,17 @@ enum Registers {
   REG_DISPSTAT = 0x0400'0004,
   REG_VCOUNT = 0x0400'0006,
 
+  // Timers
+  REG_TM0CNT_L = 0x0400'0100,
+  REG_TM0CNT_H = 0x0400'0102,
+  REG_TM1CNT_L = 0x0400'0104,
+  REG_TM1CNT_H = 0x0400'0106,
+  REG_TM2CNT_L = 0x0400'0108,
+  REG_TM2CNT_H = 0x0400'010A,
+  REG_TM3CNT_L = 0x0400'010C,
+  REG_TM3CNT_H = 0x0400'010E,
+
+  // Input
   REG_KEYINPUT = 0x0400'0130,
 
   // IPC
@@ -50,6 +61,41 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_VCOUNT|1:
       return video_unit.vcount.ReadByte(1);
 
+    // Timers
+    case REG_TM0CNT_L|0:
+      return timer.Read(0, 0);
+    case REG_TM0CNT_L|1:
+      return timer.Read(0, 1);
+    case REG_TM0CNT_H|0:
+      return timer.Read(0, 2);
+    case REG_TM0CNT_H|1:
+      return timer.Read(0, 3);
+    case REG_TM1CNT_L|0:
+      return timer.Read(1, 0);
+    case REG_TM1CNT_L|1:
+      return timer.Read(1, 1);
+    case REG_TM1CNT_H|0:
+      return timer.Read(1, 2);
+    case REG_TM1CNT_H|1:
+      return timer.Read(1, 3);
+    case REG_TM2CNT_L|0:
+      return timer.Read(2, 0);
+    case REG_TM2CNT_L|1:
+      return timer.Read(2, 1);
+    case REG_TM2CNT_H|0:
+      return timer.Read(2, 2);
+    case REG_TM2CNT_H|1:
+      return timer.Read(2, 3);
+    case REG_TM3CNT_L|0:
+      return timer.Read(3, 0);
+    case REG_TM3CNT_L|1:
+      return timer.Read(3, 1);
+    case REG_TM3CNT_H|0:
+      return timer.Read(3, 2);
+    case REG_TM3CNT_H|1:
+      return timer.Read(3, 3);
+
+    // Input
     case REG_KEYINPUT|0:
       return keyinput.ReadByte(0);
     case REG_KEYINPUT|1:
@@ -154,6 +200,56 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_DISPSTAT|1:
       video_unit.dispstat7.WriteByte(1, value);
+      break;
+
+    // Timers
+    case REG_TM0CNT_L|0:
+      timer.Write(0, 0, value);
+      break;
+    case REG_TM0CNT_L|1:
+      timer.Write(0, 1, value);
+      break;
+    case REG_TM0CNT_H|0:
+      timer.Write(0, 2, value);
+      break;
+    case REG_TM0CNT_H|1:
+      timer.Write(0, 3, value);
+      break;
+    case REG_TM1CNT_L|0:
+      timer.Write(1, 0, value);
+      break;
+    case REG_TM1CNT_L|1:
+      timer.Write(1, 1, value);
+      break;
+    case REG_TM1CNT_H|0:
+      timer.Write(1, 2, value);
+      break;
+    case REG_TM1CNT_H|1:
+      timer.Write(1, 3, value);
+      break;
+    case REG_TM2CNT_L|0:
+      timer.Write(2, 0, value);
+      break;
+    case REG_TM2CNT_L|1:
+      timer.Write(2, 1, value);
+      break;
+    case REG_TM2CNT_H|0:
+      timer.Write(2, 2, value);
+      break;
+    case REG_TM2CNT_H|1:
+      timer.Write(2, 3, value);
+      break;
+    case REG_TM3CNT_L|0:
+      timer.Write(3, 0, value);
+      break;
+    case REG_TM3CNT_L|1:
+      timer.Write(3, 1, value);
+      break;
+    case REG_TM3CNT_H|0:
+      timer.Write(3, 2, value);
+      break;
+    case REG_TM3CNT_H|1:
+      timer.Write(3, 3, value);
       break;
 
     // IPC

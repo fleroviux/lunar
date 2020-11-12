@@ -64,6 +64,7 @@ private:
   Cartridge& cart;
   IPC& ipc;
   IRQ& irq9;
+  Timer& timer;
   VideoUnit& video_unit;
   VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;
