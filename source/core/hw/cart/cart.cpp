@@ -29,6 +29,8 @@ void Cartridge::Load(std::string const& path) {
 void Cartridge::OnCommandStart() {
   // TODO: come up with a better pattern to decode commands.
   switch (cardcmd.buffer[0]) {
+    case 0xB8: // hack
+    
     /// Encrypted Data Read
     case 0xB7:
       address  = cardcmd.buffer[1] << 24;
