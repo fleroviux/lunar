@@ -9,6 +9,10 @@
 namespace fauxDS::core {
 
 void DisplayControl::Reset() {
+  WriteByte(0, 0);
+  WriteByte(1, 0);
+  WriteByte(2, 0);
+  WriteByte(3, 0);
 }
 
 auto DisplayControl::ReadByte(uint offset) -> u8 {
