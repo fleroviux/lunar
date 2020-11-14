@@ -90,8 +90,6 @@ void Cartridge::OnCommandStart() {
       } else {
         file.read((char*)transfer.data, byte_len);
       }
-
-      romctrl.data_ready = true;
       break;
     }
 
@@ -100,7 +98,6 @@ void Cartridge::OnCommandStart() {
       // TODO: use a plausible chip ID based on the ROM size.
       transfer.data[0] = 0x1FC2;
       transfer.data_count = 1;
-      romctrl.data_ready = true;
       break;
     }
 
@@ -122,20 +119,22 @@ auto Cartridge::ReadData() -> u32 {
   if (transfer.index == transfer.count) {
     transfer.index = 0;
     transfer.count = 0;
-    romctrl.busy = false;
-    romctrl.data_ready = false;
   }
 
   return data;
 }
 
 auto Cartridge::ROMCTRL::ReadByte (uint offset) -> u8 {
+  bool busy = cart.transfer.count != 0;
+
   switch (offset) {
     case 0:
     case 1:
       return 0;
     case 2:
-      return data_ready ? 0x80 : 0;
+      // NOTE: this actually is "data ready", but we don't emulate delays at the moment.
+      // Therefore data is always available as long as the transfer is in progress.
+      return busy ? 0x80 : 0;
     case 3:
       return data_block_size | (busy ? 0x80 : 0);
   }
@@ -152,8 +151,7 @@ void Cartridge::ROMCTRL::WriteByte(uint offset, u8 value) {
     case 3:
       data_block_size = value & 7;
       if (value & 0x80) {
-        ASSERT(!busy, "Cartridge: attempted to engage transfer while interface is busy.");
-        busy = true;
+        ASSERT(cart.transfer.count == 0, "Cartridge: attempted to engage transfer while interface is busy.");
         cart.OnCommandStart();
       }
       break;

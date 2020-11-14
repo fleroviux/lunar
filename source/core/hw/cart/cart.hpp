@@ -27,11 +27,8 @@ struct Cartridge {
     friend struct fauxDS::core::Cartridge;
 
     // TODO: implement the remaining data fields.
-    // TODO: at the moment data_ready is kind of redundant.
     // http://problemkaputt.de/gbatek.htm#dscartridgeioports
-    bool data_ready = false;
-    int  data_block_size = 0;
-    bool busy = false;
+    int data_block_size = 0;
 
     Cartridge& cart;
   } romctrl { *this };
@@ -55,9 +52,16 @@ private:
   u32 file_mask = 0;
 
   struct {
+    /// Current index into the data buffer (before modulo data_count)
     int index = 0;
+
+    /// Number of requested words
     int count = 0;
+
+    /// Number of available words
     int data_count = 0;
+
+    /// Underlying transfer buffer
     u32 data[0x1000] {0};
   } transfer;
 };
