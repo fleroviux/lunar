@@ -104,7 +104,7 @@ void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
 }
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
-  //LOG_ERROR("CP15: unhandled wait for interrupt!");
+  core->WaitForIRQ();
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {

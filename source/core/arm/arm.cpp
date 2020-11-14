@@ -16,6 +16,7 @@ void ARM::Reset() {
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = ExceptionBase();
+  wait_for_irq = false;
 
   for (auto coprocessor : coprocessors)
     if (coprocessor != nullptr)
@@ -23,6 +24,10 @@ void ARM::Reset() {
 }
 
 void ARM::Run(int instructions) {
+  if (wait_for_irq) {
+    return;
+  }
+
   while (instructions-- > 0) {
     auto instruction = opcode[0];
 
@@ -45,6 +50,13 @@ void ARM::Run(int instructions) {
           hash |= 4096;
         }
         (this->*s_opcode_lut_32[hash])(instruction);
+
+        // Since "wait for interrupt" is initiated via CP15,
+        // it can only be initiated from ARM mode.
+        // Therefore we don't have to check this flag in Thumb mode.
+        if (wait_for_irq) {
+          return;
+        }
       } else {
         state.r15 += 4;
       }
@@ -62,6 +74,8 @@ void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
 }
 
 void ARM::SignalIRQ() {
+  wait_for_irq = false;
+
   if (state.cpsr.f.mask_irq) {
     return;
   }

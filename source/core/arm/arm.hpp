@@ -34,6 +34,7 @@ struct ARM {
   void Run(int instructions);
   void AttachCoprocessor(uint id, Coprocessor* coprocessor);
   void SignalIRQ();
+  void WaitForIRQ() { wait_for_irq = true; }
 
   // TODO: implement a cleaner interface to modify the execution state.
   auto GetState() -> State& { return state; }
@@ -66,6 +67,7 @@ private:
 
   Architecture arch;
   u32 exception_base = 0;
+  bool wait_for_irq = false;
   MemoryBase* memory;
   Coprocessor* coprocessors[16] { nullptr };
 
