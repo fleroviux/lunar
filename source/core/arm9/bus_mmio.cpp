@@ -10,6 +10,8 @@ namespace fauxDS::core {
 
 enum Registers {
   // PPU
+  REG_DISPCNT_A = 0x0400'0000,
+  REG_DISPCNT_B = 0x0400'1000,
   REG_DISPSTAT = 0x0400'0004,
   REG_VCOUNT = 0x0400'0006,
   REG_BG0CNT_A = 0x0400'0008,
@@ -85,6 +87,22 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
 
   switch (address) {
     // PPU engine A / B
+    case REG_DISPCNT_A|0:
+      return ppu_io_a.dispcnt.ReadByte(0);
+    case REG_DISPCNT_A|1:
+      return ppu_io_a.dispcnt.ReadByte(1);
+    case REG_DISPCNT_A|2:
+      return ppu_io_a.dispcnt.ReadByte(2);
+    case REG_DISPCNT_A|3:
+      return ppu_io_a.dispcnt.ReadByte(3);
+    case REG_DISPCNT_B|0:
+      return ppu_io_b.dispcnt.ReadByte(0);
+    case REG_DISPCNT_B|1:
+      return ppu_io_b.dispcnt.ReadByte(1);
+    case REG_DISPCNT_B|2:
+      return ppu_io_b.dispcnt.ReadByte(2);
+    case REG_DISPCNT_B|3:
+      return ppu_io_b.dispcnt.ReadByte(3);
     case REG_DISPSTAT|0:
       return video_unit.dispstat9.ReadByte(0);
     case REG_DISPSTAT|1:
@@ -284,6 +302,31 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
 
   switch (address) {
     // PPU engine A / B
+    case REG_DISPCNT_A|0:
+      ppu_io_a.dispcnt.WriteByte(0, value);
+      break;
+    case REG_DISPCNT_A|1:
+      ppu_io_a.dispcnt.WriteByte(1, value);
+      break;
+    case REG_DISPCNT_A|2:
+      ppu_io_a.dispcnt.WriteByte(2, value);
+      break;
+    case REG_DISPCNT_A|3:
+      ppu_io_a.dispcnt.WriteByte(3, value);
+      break;
+    case REG_DISPCNT_B|0:
+      ppu_io_b.dispcnt.WriteByte(0, value);
+      break;
+    case REG_DISPCNT_B|1:
+      ppu_io_b.dispcnt.WriteByte(1, value);
+      break;
+    case REG_DISPCNT_B|2:
+      ppu_io_b.dispcnt.WriteByte(2, value);
+      break;
+    case REG_DISPCNT_B|3:
+      ppu_io_b.dispcnt.WriteByte(3, value);
+      break;
+
     case REG_DISPSTAT|0:
       video_unit.dispstat9.WriteByte(0, value);
       break;

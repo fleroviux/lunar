@@ -17,8 +17,8 @@ struct PPU {
   PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram);
 
   struct MMIO {
+    DisplayControl dispcnt;
     BackgroundControl bgcnt[4] { 0, 1, 2, 3 };
-
     BackgroundOffset bghofs[4] {};
     BackgroundOffset bgvofs[4] {};
   } mmio;

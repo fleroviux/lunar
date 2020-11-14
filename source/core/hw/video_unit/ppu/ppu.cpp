@@ -17,6 +17,7 @@ PPU::PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram)
 
 void PPU::Reset() {
   memset(framebuffer, 0, sizeof(framebuffer));
+  mmio.dispcnt.Reset();
   for (int i = 0; i < 4; i++) {
     mmio.bgcnt[i].Reset();
     mmio.bghofs[i].Reset();
@@ -33,7 +34,7 @@ void PPU::RenderScanline(u16 vcount) {
   RenderLayerText(3, vcount);
 
   for (uint x = 0; x < 256; x++) {
-    u16 color = buffer_bg[2][x];
+    u16 color = buffer_bg[x & 3][x];
 
     line[x] = (((color >>  0) & 0x1F) << 19) |
               (((color >>  5) & 0x1F) << 11) |
@@ -43,9 +44,9 @@ void PPU::RenderScanline(u16 vcount) {
 }
 
 void PPU::RenderLayerText(uint id, u16 vcount) {
-  auto const& bgcnt  = mmio.bgcnt[id];
+  auto const& bgcnt = mmio.bgcnt[id];
 
-  u32 tile_base = bgcnt.tile_block * 16384;
+  u32 tile_base = mmio.dispcnt.tile_block * 65536 + bgcnt.tile_block * 16384;
    
   int line = mmio.bgvofs[id].value + vcount;
 
@@ -58,7 +59,7 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
   int screen_y = (grid_y / 32) % 2;
 
   u16 tile[8];
-  u32 base = (bgcnt.map_block * 2048) + ((grid_y % 32) * 64);
+  u32 base = mmio.dispcnt.map_block * 65536 + bgcnt.map_block * 2048 + (grid_y % 32) * 64;
 
   u16* buffer = buffer_bg[id];
   s32  last_encoder = -1;
