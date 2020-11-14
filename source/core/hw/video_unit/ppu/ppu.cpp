@@ -33,7 +33,11 @@ void PPU::RenderScanline(u16 vcount) {
   RenderLayerText(3, vcount);
 
   for (uint x = 0; x < 256; x++) {
-    u16 color = buffer_bg[2][x];
+    u16 color = buffer_bg[0][x];
+
+    if (color == 0x8000) {
+      color = ReadPalette(0, 0);
+    }
 
     line[x] = (((color >>  0) & 0x1F) << 19) |
               (((color >>  5) & 0x1F) << 11) |
