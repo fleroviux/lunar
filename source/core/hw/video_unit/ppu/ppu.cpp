@@ -28,16 +28,20 @@ void PPU::Reset() {
 void PPU::RenderScanline(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
-  RenderLayerText(0, vcount);
-  RenderLayerText(1, vcount);
-  RenderLayerText(2, vcount);
-  RenderLayerText(3, vcount);
+  for (int i = 0; i < 4; i++) {
+    if (mmio.dispcnt.enable[i])
+      RenderLayerText(i, vcount);
+  }
 
-  for (uint x = 0; x < 256; x++) {
-    u16 color = buffer_bg[x & 3][x];
+  for (int x = 0; x < 256; x++) {
+    u16 color = ReadPalette(0, 0);
 
-    if (color == 0x8000) {
-      color = ReadPalette(0, 0);
+    for (int prio = 3; prio >= 0; prio--) {
+      for (int bg = 3; bg >= 0; bg--) {
+        if (mmio.dispcnt.enable[bg] && mmio.bgcnt[bg].priority == prio && buffer_bg[bg][x] != 0x8000) {
+          color = buffer_bg[bg][x];
+        }
+      }
     }
 
     line[x] = (((color >>  0) & 0x1F) << 19) |
