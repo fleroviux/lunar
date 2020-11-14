@@ -2,6 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
+#include <algorithm>
 #include <common/log.hpp>
 
 #include "cart.hpp"
@@ -18,58 +19,109 @@ void Cartridge::Reset() {
 }
 
 void Cartridge::Load(std::string const& path) {
+  u32 file_size;
+
   if (file.is_open())
     file.close();
   loaded = false;
+
   file.open(path, std::ios::in | std::ios::binary);
   ASSERT(file.good(), "Cartridge: failed to load ROM: {0}", path);
   loaded = true;
+  file.seekg(0, std::ios::end);
+  file_size = file.tellg();
+  file.seekg(0);
+
+  // Generate power-of-two mask for ROM mirroring.
+  for (int i = 0; i < 32; i++) {
+    if (file_size <= (1 << i)) {
+      file_mask = (1 << i) - 1;
+      break;
+    }
+  }
 }
 
 void Cartridge::OnCommandStart() {
-  // TODO: come up with a better pattern to decode commands.
+  transfer.index = 0;
+  transfer.data_count = 0;
+
+  if (romctrl.data_block_size == 0) {
+    transfer.count = 0;
+  } else if (romctrl.data_block_size == 7) {
+    transfer.count = 1;
+  } else {
+    transfer.count = 0x40 << romctrl.data_block_size;
+  }
+
   switch (cardcmd.buffer[0]) {
-    case 0xB8: // hack
-    
-    /// Encrypted Data Read
-    case 0xB7:
+    /// Get Data 
+    case 0xB7: {
+      u32 address;
+
       address  = cardcmd.buffer[1] << 24;
       address |= cardcmd.buffer[2] << 16;
       address |= cardcmd.buffer[3] <<  8;
       address |= cardcmd.buffer[4] <<  0;
-      if (romctrl.data_block_size == 0) {
-        LOG_WARN("Cartridge: Encrypted Data Read with zero block size.");
-        romctrl.data_ready = false;
-        romctrl.busy = false;
-        return;
+      
+      address &= file_mask;
+
+      if (address <= 0x7FFF) {
+        address = 0x8000 + (address & 0x1FF);
+        LOG_WARN("Cartridge: attempted to read protected region.");
       }
-      if (romctrl.data_block_size == 7) {
-        remaining = 1;
+
+      ASSERT(transfer.count <= 0x80, "Cartridge: command 0xB7: size greater than 0x200 is untested.");
+      ASSERT((address & 0x1FF) == 0, "Cartridge: command 0xB7: address unaligned to 0x200 is untested.");
+
+      transfer.data_count = std::min(0x80, transfer.count);
+
+      u32 byte_len = transfer.data_count * sizeof(u32);
+      u32 sector_a = address >> 12;
+      u32 sector_b = (address + byte_len - 1) >> 12;
+
+      file.seekg(address);
+
+      if (sector_a != sector_b) {
+        u32 size_a = 0x1000 - (address & 0xFFF);
+        u32 size_b = byte_len - size_a;
+        file.read((char*)transfer.data, size_a);
+        file.seekg(address & ~0xFFF);
+        file.read((char*)transfer.data + size_a, size_b);
       } else {
-        remaining = 0x40 << romctrl.data_block_size;
+        file.read((char*)transfer.data, byte_len);
       }
+
       romctrl.data_ready = true;
-      //ASSERT(false, "Cartridge: Encrypted Data Read with address = 0x{0:08X}", address);
       break;
-    default:
+    }
+
+    /// 3rd Get ROM Chip ID
+    case 0xB8: {
+      // TODO: use a plausible chip ID based on the ROM size.
+      transfer.data[0] = 0x1FC2;
+      transfer.data_count = 1;
+      romctrl.data_ready = true;
+      break;
+    }
+
+    default: {
       ASSERT(false, "Cartridge: unhandled command 0x{0:02X}", cardcmd.buffer[0]);
+    }
   }
 }
 
 auto Cartridge::ReadData() -> u32 {
-  ASSERT(romctrl.busy && remaining != 0, "Cartridge: attempted to read data outside of a transfer.");
+  ASSERT(transfer.index < transfer.count, "Cartridge: attempted to read data outside of a transfer.");
 
-  u32 data;
-  file.seekg(address);
-  file.read((char*)&data, sizeof(u32));
-  ASSERT(file.good(), "Cartridge: failed to read data from ROM.");
+  u32 data = 0xFFFFFFFF;
 
-  LOG_INFO("Cartridge: read word 0x{0:08X}", data);
+  if (transfer.data_count != 0) {
+    data = transfer.data[transfer.index++ % transfer.data_count];
+  }
 
-  // TODO: handle sector wraparound...
-  address += 4;
-
-  if (--remaining == 0) {
+  if (transfer.index == transfer.count) {
+    transfer.index = 0;
+    transfer.count = 0;
     romctrl.busy = false;
     romctrl.data_ready = false;
   }

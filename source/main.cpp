@@ -265,13 +265,13 @@ auto main(int argc, const char** argv) -> int {
   interconnect->cart.Load(rom_path);
 
   // Huge thanks to Hydr8gon for pointing this out:
-  arm9_mem->WriteWord(0x027FF800, 0x454B4F50);////0x1FC2); // Chip ID 1
-  arm9_mem->WriteWord(0x027FF804, 0x454B4F50);//0x1FC2); // Chip ID 2
+  arm9_mem->WriteWord(0x027FF800, 0x1FC2); // Chip ID 1
+  arm9_mem->WriteWord(0x027FF804, 0x1FC2); // Chip ID 2
   arm9_mem->WriteHalf(0x027FF850, 0x5835); // ARM7 BIOS CRC
   arm9_mem->WriteHalf(0x027FF880, 0x0007); // Message from ARM9 to ARM7
   arm9_mem->WriteHalf(0x027FF884, 0x0006); // ARM7 boot task
-  arm9_mem->WriteWord(0x027FFC00, 0x454B4F50);//0x1FC2); // Copy of chip ID 1
-  arm9_mem->WriteWord(0x027FFC04, 0x454B4F50);//0x1FC2); // Copy of chip ID 2
+  arm9_mem->WriteWord(0x027FFC00, 0x1FC2); // Copy of chip ID 1
+  arm9_mem->WriteWord(0x027FFC04, 0x1FC2); // Copy of chip ID 2
   arm9_mem->WriteHalf(0x027FFC10, 0x5835); // Copy of ARM7 BIOS CRC
   arm9_mem->WriteHalf(0x027FFC40, 0x0001); // Boot indicator
 

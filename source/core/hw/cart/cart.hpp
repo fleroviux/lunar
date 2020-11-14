@@ -49,12 +49,17 @@ struct Cartridge {
 private:
   void OnCommandStart();
 
+  // TODO: abstract the cartridge file away.
   bool loaded = false;
   std::fstream file;
+  u32 file_mask = 0;
 
-  // TODO: make this less sucky
-  u32 address;
-  u32 remaining = 0;
+  struct {
+    int index = 0;
+    int count = 0;
+    int data_count = 0;
+    u32 data[0x1000] {0};
+  } transfer;
 };
 
 } // namespace fauxDS::core
