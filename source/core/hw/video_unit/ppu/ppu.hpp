@@ -45,7 +45,7 @@ private:
 
   inline void DecodeTileLine8BPP(u16* buffer, u32 base, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
-    u32  data  = vram_bg.Read<u64>(base + number * 64 + y * 8);
+    u64  data  = vram_bg.Read<u64>(base + number * 64 + y * 8);
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 0xFF;
