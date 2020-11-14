@@ -17,16 +17,23 @@ PPU::PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram)
 
 void PPU::Reset() {
   memset(framebuffer, 0, sizeof(framebuffer));
-  mmio = {};
+  for (int i = 0; i < 4; i++) {
+    mmio.bgcnt[i].Reset();
+    mmio.bghofs[i].Reset();
+    mmio.bgvofs[i].Reset();
+  }
 }
 
 void PPU::RenderScanline(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
   RenderLayerText(0, vcount);
+  RenderLayerText(1, vcount);
+  RenderLayerText(2, vcount);
+  RenderLayerText(3, vcount);
 
   for (uint x = 0; x < 256; x++) {
-    u16 color = buffer_bg[0][x];
+    u16 color = buffer_bg[2][x];
 
     line[x] = (((color >>  0) & 0x1F) << 19) |
               (((color >>  5) & 0x1F) << 11) |
