@@ -108,7 +108,7 @@ void Cartridge::OnCommandStart() {
 }
 
 auto Cartridge::ReadData() -> u32 {
-  ASSERT(transfer.index < transfer.count, "Cartridge: attempted to read data outside of a transfer.");
+  ASSERT(transfer.count != 0, "Cartridge: attempted to read data outside of a transfer.");
 
   u32 data = 0xFFFFFFFF;
 
@@ -124,7 +124,7 @@ auto Cartridge::ReadData() -> u32 {
   return data;
 }
 
-auto Cartridge::ROMCTRL::ReadByte (uint offset) -> u8 {
+auto Cartridge::ROMCTRL::ReadByte(uint offset) -> u8 {
   bool busy = cart.transfer.count != 0;
 
   switch (offset) {

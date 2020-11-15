@@ -309,12 +309,14 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
     value2 = s16(state.reg[op2] & 0xFFFF);
   }
 
-  state.reg[dst] = u32(value1 * value2);
+  u32 result = u32(value1 * value2);
 
   if constexpr (accumulate) {
     // Update sticky-flag without saturating the result.
     // TODO: make helper method to detect overflow instead.
-    state.reg[dst] = QADD(state.reg[dst], state.reg[op3], false);
+    state.reg[dst] = QADD(result, state.reg[op3], false);
+  } else {
+    state.reg[dst] = result;
   }
 
   state.r15 += 4;
@@ -341,12 +343,14 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
     value2 = s16(state.reg[op2] & 0xFFFF);
   }
 
-  state.reg[dst] = u32((value1 * value2) >> 16);
+  u32 result = u32((value1 * value2) >> 16);
 
   if constexpr (accumulate) {
     // Update sticky-flag without saturating the result.
     // TODO: make helper method to detect overflow instead.
-    state.reg[dst] = QADD(state.reg[dst], state.reg[op3], false);
+    state.reg[dst] = QADD(result, state.reg[op3], false);
+  } else {
+    state.reg[dst] = result;
   }
 
   state.r15 += 4;
