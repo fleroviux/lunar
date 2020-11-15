@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 #include <core/hw/cart/cart.hpp>
+#include <core/hw/dma/dma.hpp>
 #include <core/hw/ipc/ipc.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/spi/spi.hpp>
@@ -24,6 +25,8 @@ struct Interconnect {
       , spi(irq7)
       , timer7(scheduler, irq7)
       , timer9(scheduler, irq9)
+      , dma7(irq7)
+      , dma9(irq9)
       , video_unit(&scheduler, irq7, irq9)
       , wramcnt(swram) {
     Reset();
@@ -41,6 +44,8 @@ struct Interconnect {
     spi.Reset();
     timer7.Reset();
     timer9.Reset();
+    dma7.Reset();
+    dma9.Reset();
     video_unit.Reset();
 
     // TODO: this is just a stub!
@@ -67,6 +72,8 @@ struct Interconnect {
   SPI spi;
   Timer timer7;
   Timer timer9;
+  DMA dma7;
+  DMA dma9;
   VideoUnit video_unit;
 
   struct WRAMCNT {

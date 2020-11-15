@@ -203,6 +203,9 @@ auto main(int argc, const char** argv) -> int {
   arm7->AttachCoprocessor(14, arm7_cp14.get());
   arm9->AttachCoprocessor(15, arm9_cp15.get());
 
+  interconnect->dma7.SetMemory(arm7_mem.get());
+  interconnect->dma9.SetMemory(arm9_mem.get());
+
   {
     u8 data;
     u32 dst = header->arm7.load_address;
