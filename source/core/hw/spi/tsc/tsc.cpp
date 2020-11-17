@@ -55,7 +55,7 @@ void TSC::SetTouchState(bool pressed, int x, int y) {
     position_y = (y - scr_y1 + 1) * (adc_y2 - adc_y1) / (scr_y2 - scr_y1) + adc_y1;
 } else {
     position_x = 0;
-    position_y = 0;
+    position_y = 0xFFF;
   }
 }
 
