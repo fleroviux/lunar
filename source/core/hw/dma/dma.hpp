@@ -11,6 +11,17 @@
 namespace fauxDS::core {
 
 struct DMA {
+  enum Time {
+    Immediate = 0,
+    VBlank = 1,
+    HBlank = 2,
+    VideoTransfer = 3,
+    MainMemoryDisplay = 4,
+    Slot1 = 5,
+    Slot2 = 6,
+    GxFIFO = 7
+  };
+
   using Bus = arm::MemoryBase::Bus;
 
   DMA(IRQ& irq) : irq(irq) {
@@ -22,6 +33,7 @@ struct DMA {
   void Write(uint chan_id, uint offset, u8 value);
   auto ReadFill (uint offset) -> u8;
   void WriteFill(uint offset, u8 value);
+  void Request(Time time);
 
   // TODO: get rid of this ugly hack that only exists
   // because we can't pass "memory" to the constructor at the moment.
@@ -54,10 +66,7 @@ private:
       Reload = 3
     } dst_mode = Increment, src_mode = Increment;
 
-    // TODO: how to handle NDS7 and NDS9 differences?
-    enum Timing {
-      Immediate = 0
-    } time = Immediate;
+    Time time = Immediate;
 
     enum Size {
       Half = 0,

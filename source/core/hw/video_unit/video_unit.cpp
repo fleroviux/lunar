@@ -12,12 +12,14 @@ static constexpr int kDrawingLines = 192;
 static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
-VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9)
+VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9, DMA& dma7, DMA& dma9)
     : ppu_a(vram.region_ppu_a_bg, vram.region_ppu_a_obj, &pram[0x000])
     , ppu_b(vram.region_ppu_b_bg, vram.region_ppu_b_obj, &pram[0x400]) 
     , scheduler(scheduler)
     , irq7(irq7)
-    , irq9(irq9) {
+    , irq9(irq9)
+    , dma7(dma7)
+    , dma9(dma9) {
   Reset();
 }
 
@@ -51,6 +53,7 @@ void VideoUnit::OnHdrawBegin(int late) {
   }
 
   if (vcount.value == kDrawingLines) {
+    dma9.Request(DMA::Time::VBlank);
     if (dispstat7.vblank.enable_irq) {
       irq7.Raise(IRQ::Source::VBlank);
     }
@@ -94,6 +97,11 @@ void VideoUnit::OnHblankBegin(int late) {
 }
 
 void VideoUnit::OnHblankFlagSet(int late) {
+  // TODO: should Hblank DMA be triggered here or in "OnHblankBegin"? 
+  if (vcount.value <= kTotalLines - 1) {
+    dma9.Request(DMA::Time::HBlank);
+  }
+
   dispstat7.hblank.flag = true;
   dispstat9.hblank.flag = true;
 

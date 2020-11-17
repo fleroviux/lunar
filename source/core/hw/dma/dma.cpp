@@ -93,7 +93,7 @@ void DMA::Write(uint chan_id, uint offset, u8 value) {
 
       channel.src_mode = static_cast<Channel::AddressMode>((channel.src_mode & 1) | ((value & 1) << 1));
       channel.size = static_cast<Channel::Size>((value >> 2) & 1);
-      channel.time = static_cast<Channel::Timing>((value >> 3) & 7);
+      channel.time = static_cast<Time>((value >> 3) & 7);
       channel.repeat = value & 2;
       channel.interrupt = value & 64;
       channel.enable = value & 128;
@@ -107,10 +107,19 @@ void DMA::Write(uint chan_id, uint offset, u8 value) {
         } else {
           channel.latch.length = channel.length;
         }
-        if (channel.time == Channel::Timing::Immediate) {
+        if (channel.time == Time::Immediate) {
           RunChannel(channel);
-        } else {
-          LOG_WARN("DMA: unhandled start time: {0}", channel.time);
+        }
+
+        // Diagnostics, get rid of it once emulation is more stable...
+        switch (channel.time) {
+          case Time::Immediate:
+          case Time::VBlank:
+          case Time::HBlank:
+            break;
+          default:
+            ASSERT(false, "DMA: unhandled start time: {0}", channel.time);
+            break;
         }
       }
       break;
@@ -128,6 +137,13 @@ void DMA::WriteFill(uint offset, u8 value) {
   if (offset >= 16)
     UNREACHABLE;
   filldata[offset] = value;
+}
+
+void DMA::Request(Time time) {
+  for (auto& channel : channels) {
+    if (channel.enable && channel.time == time)
+      RunChannel(channel);
+  }
 }
 
 void DMA::RunChannel(Channel& channel) {
@@ -157,7 +173,7 @@ void DMA::RunChannel(Channel& channel) {
     }
   }
 
-  if (channel.repeat && channel.time != Channel::Timing::Immediate) {
+  if (channel.repeat && channel.time != Time::Immediate) {
     if (channel.length == 0) {
       channel.latch.length = 0x200000;
     } else {

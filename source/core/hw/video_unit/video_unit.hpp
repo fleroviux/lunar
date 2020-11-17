@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/hw/dma/dma.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/scheduler.hpp>
 #include <functional>
@@ -17,7 +18,7 @@ namespace fauxDS::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
-  VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9);
+  VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9, DMA& dma7, DMA& dma9);
 
   void Reset();
 
@@ -60,6 +61,8 @@ private:
   Scheduler* scheduler;
   IRQ& irq7;
   IRQ& irq9;
+  DMA& dma7;
+  DMA& dma9;
 };
 
 } // namespace fauxDS::core
