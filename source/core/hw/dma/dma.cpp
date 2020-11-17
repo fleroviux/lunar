@@ -103,6 +103,7 @@ void DMA::Write(uint chan_id, uint offset, u8 value) {
 
       if (!enable_old && channel.enable && channel.time == Channel::Timing::Immediate) {
         LOG_INFO("DMA: immediate transfer, src=0x{0:08X} dst=0x{1:08X}", channel.src, channel.dst);
+        //channel.enable = false;
       }
       break;
     }
@@ -120,6 +121,5 @@ void DMA::WriteFill(uint offset, u8 value) {
     UNREACHABLE;
   filldata[offset] = value;
 }
-
 
 } // namespace fauxDS::core

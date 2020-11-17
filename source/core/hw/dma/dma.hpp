@@ -20,7 +20,7 @@ struct DMA {
   void Reset();
   auto Read (uint chan_id, uint offset) -> u8;
   void Write(uint chan_id, uint offset, u8 value);
-  auto ReadFill(uint offset) -> u8;
+  auto ReadFill (uint offset) -> u8;
   void WriteFill(uint offset, u8 value);
 
   // TODO: get rid of this ugly hack that only exists
