@@ -25,7 +25,7 @@ void Timer::Reset() {
   }
 }
 
-auto Timer::Read(int chan_id, int offset) -> u8 {
+auto Timer::Read(uint chan_id, uint offset) -> u8 {
   auto const& channel = channels[chan_id];
   auto const& control = channel.control;
 
@@ -58,7 +58,7 @@ auto Timer::Read(int chan_id, int offset) -> u8 {
   UNREACHABLE;
 }
 
-void Timer::Write(int chan_id, int offset, u8 value) {
+void Timer::Write(uint chan_id, uint offset, u8 value) {
   auto& channel = channels[chan_id];
   auto& control = channel.control;
 

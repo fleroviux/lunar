@@ -17,8 +17,8 @@ struct Timer {
   }
 
   void Reset();
-  auto Read (int chan_id, int offset) -> u8;
-  void Write(int chan_id, int offset, u8 value);
+  auto Read (uint chan_id, uint offset) -> u8;
+  void Write(uint chan_id, uint offset, u8 value);
 
 private:
   enum Registers {
@@ -27,7 +27,7 @@ private:
   };
 
   struct Channel {
-    int id;
+    uint id;
     u16 reload = 0;
     u32 counter = 0;
 
