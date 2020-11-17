@@ -38,20 +38,24 @@ auto Timer::Read(int chan_id, int offset) -> u8 {
   }
 
   switch (offset) {
-    case REG_TMXCNT_L | 0: {
+    case REG_TMXCNT_L|0: {
       return counter & 0xFF;
     }
-    case REG_TMXCNT_L | 1: {
+    case REG_TMXCNT_L|1: {
       return counter >> 8;
     }
-    case REG_TMXCNT_H: {
+    case REG_TMXCNT_H|0: {
       return (control.frequency) |
              (control.cascade   ? 4   : 0) |
              (control.interrupt ? 64  : 0) |
              (control.enable    ? 128 : 0);
     }
-    default: return 0;
+    case REG_TMXCNT_H|1: {
+      return 0;
+    }
   }
+
+  UNREACHABLE;
 }
 
 void Timer::Write(int chan_id, int offset, u8 value) {
@@ -59,9 +63,15 @@ void Timer::Write(int chan_id, int offset, u8 value) {
   auto& control = channel.control;
 
   switch (offset) {
-    case REG_TMXCNT_L | 0: channel.reload = (channel.reload & 0xFF00) | (value << 0); break;
-    case REG_TMXCNT_L | 1: channel.reload = (channel.reload & 0x00FF) | (value << 8); break;
-    case REG_TMXCNT_H: {
+    case REG_TMXCNT_L|0: {
+      channel.reload = (channel.reload & 0xFF00) | (value << 0);
+      break;
+    }
+    case REG_TMXCNT_L|1: {
+      channel.reload = (channel.reload & 0x00FF) | (value << 8);
+      break;
+    }
+    case REG_TMXCNT_H|0: {
       bool enable_previous = control.enable;
 
       if (channel.running) {
@@ -91,6 +101,12 @@ void Timer::Write(int chan_id, int offset, u8 value) {
           StartChannel(channel, late);
         }
       }
+    }
+    case REG_TMXCNT_H|1: {
+      break;
+    }
+    default: {
+      UNREACHABLE;
     }
   }
 
