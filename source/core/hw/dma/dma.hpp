@@ -36,6 +36,9 @@ private:
   };
 
   struct Channel {
+    Channel(uint id) : id(id) {}
+
+    uint id;
     bool enable = false;
     bool repeat = false;
     bool interrupt = false;
@@ -60,7 +63,15 @@ private:
       Half = 0,
       Word = 1
     } size = Half;
-  } channels[4];
+
+    struct {
+      u32 length;
+      u32 dst;
+      u32 src;
+    } latch;
+  } channels[4] { 0, 1, 2, 3 };
+
+  void RunChannel(Channel& channel);
 
   u8 filldata[16];
   arm::MemoryBase* memory;

@@ -12,8 +12,8 @@ namespace fauxDS::core {
 void DMA::Reset() {
   memset(filldata, 0, sizeof(filldata));
 
-  for (auto& channel : channels) {
-    channel = {};
+  for (uint i = 0; i < 4; i++) {
+    channels[i] = {i};
   }
 }
 
@@ -98,12 +98,20 @@ void DMA::Write(uint chan_id, uint offset, u8 value) {
       channel.interrupt = value & 64;
       channel.enable = value & 128;
 
-      ASSERT(channel.time == Channel::Timing::Immediate,
-        "DMA: unhandled start timing {0}", channel.time);
-
-      if (!enable_old && channel.enable && channel.time == Channel::Timing::Immediate) {
-        LOG_INFO("DMA: immediate transfer, src=0x{0:08X} dst=0x{1:08X}", channel.src, channel.dst);
-        //channel.enable = false;
+      if (!enable_old && channel.enable) {
+        u32 mask = channel.size == Channel::Size::Word ? ~3 : ~1;
+        channel.latch.src = channel.src & mask;
+        channel.latch.dst = channel.dst & mask;
+        if (channel.length == 0) {
+          channel.latch.length = 0x200000;
+        } else {
+          channel.latch.length = channel.length;
+        }
+        if (channel.time == Channel::Timing::Immediate) {
+          RunChannel(channel);
+        } else {
+          LOG_WARN("DMA: unhandled start time: {0}", channel.time);
+        }
       }
       break;
     }
@@ -120,6 +128,57 @@ void DMA::WriteFill(uint offset, u8 value) {
   if (offset >= 16)
     UNREACHABLE;
   filldata[offset] = value;
+}
+
+void DMA::RunChannel(Channel& channel) {
+  // FIXME: what happens if source control is set to reload?
+  static constexpr int dma_modify[2][4] = {
+    { 2, -2, 0, 2 },
+    { 4, -4, 0, 4 }
+  };
+
+  int dst_offset = dma_modify[channel.size][channel.dst_mode];
+  int src_offset = dma_modify[channel.size][channel.src_mode];
+
+  LOG_INFO("DMA: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
+    channel.latch.src, channel.latch.dst, channel.latch.length, channel.size);
+
+  if (channel.size == Channel::Size::Word) {
+    while (channel.latch.length-- != 0) {
+      memory->WriteWord(channel.latch.dst, memory->ReadWord(channel.latch.src, Bus::Data));
+      channel.latch.dst += dst_offset;
+      channel.latch.src += src_offset;
+    }
+  } else {
+    while (channel.latch.length-- != 0) {
+      memory->WriteHalf(channel.latch.dst, memory->ReadHalf(channel.latch.src, Bus::Data));
+      channel.latch.dst += dst_offset;
+      channel.latch.src += src_offset;
+    }
+  }
+
+  if (channel.repeat && channel.time != Channel::Timing::Immediate) {
+    if (channel.length == 0) {
+      channel.latch.length = 0x200000;
+    } else {
+      channel.latch.length = channel.length;
+    }
+    if (channel.dst_mode == Channel::AddressMode::Reload) {
+      channel.latch.dst = channel.dst & (channel.size == Channel::Size::Word ? ~3 : ~1);
+    }
+  } else {
+    channel.enable = false;
+  }
+
+  if (channel.interrupt) {
+    // TODO: write this in a cleaner faashion...
+    switch (channel.id) {
+      case 0: irq.Raise(IRQ::Source::DMA0); break;
+      case 1: irq.Raise(IRQ::Source::DMA1); break;
+      case 2: irq.Raise(IRQ::Source::DMA2); break;
+      case 3: irq.Raise(IRQ::Source::DMA3); break;
+    }
+  }
 }
 
 } // namespace fauxDS::core
