@@ -16,6 +16,7 @@ void Firmware::Reset() {
   ASSERT(file.good(), "Firmware: failed to open firmware.bin");
   state = State::Deselected;
   address = 0;
+  enable_write = false;
 }
 
 void Firmware::Select() {
@@ -58,6 +59,9 @@ auto Firmware::Transfer(u8 data) -> u8 {
       LOG_INFO("SPI: FIRM: read 0x{0:02X} at address 0x{1:06X}", data, address - 1);
       ASSERT(file.good(), "SPI: FIRM: firmware byte read went rougue");
       return data;
+    case State::ReadStatus:
+      // TODO: write/program/erase in progress
+      return (enable_write ? 2 : 0);
     case State::Deselected:
       ASSERT(false, "SPI: FIRM: attempted to access deselected device.");
     default:
@@ -73,6 +77,12 @@ void Firmware::ParseCommand(u8 command) {
   switch (static_cast<Command>(command)) {
     case Command::ReadData:
       state = State::ReadAddress0;
+      break;
+    case Command::ReadStatus:
+      state = State::ReadStatus;
+      break;
+    case Command::WriteEnable:
+      enable_write = true;
       break;
     default:
       ASSERT(false, "SPI: FIRM: unimplemented command: 0x{0:02X}", command);

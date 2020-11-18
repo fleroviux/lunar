@@ -39,6 +39,7 @@ private:
     ReadAddress1,
     ReadAddress2,
     ReadData,
+    ReadStatus,
     Deselected
   };
 
@@ -47,6 +48,7 @@ private:
   State state;
   Command command;
   u32 address;
+  bool enable_write = false;
 
   std::fstream file;
 };
