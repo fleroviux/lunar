@@ -7,7 +7,8 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 #include <core/hw/cart/cart.hpp>
-#include <core/hw/dma/dma.hpp>
+#include <core/hw/dma/dma7.hpp>
+#include <core/hw/dma/dma9.hpp>
 #include <core/hw/ipc/ipc.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/spi/spi.hpp>
@@ -72,8 +73,8 @@ struct Interconnect {
   SPI spi;
   Timer timer7;
   Timer timer9;
-  DMA dma7;
-  DMA dma9;
+  DMA7 dma7;
+  DMA9 dma9;
   VideoUnit video_unit;
 
   struct WRAMCNT {

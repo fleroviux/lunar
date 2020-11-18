@@ -13,6 +13,24 @@ enum Registers {
   REG_DISPSTAT = 0x0400'0004,
   REG_VCOUNT = 0x0400'0006,
 
+  // DMA
+  REG_DMA0SAD = 0x0400'00B0,
+  REG_DMA0DAD = 0x0400'00B4,
+  REG_DMA0CNT_L = 0x0400'00B8,
+  REG_DMA0CNT_H = 0x0400'00BA,
+  REG_DMA1SAD = 0x0400'00BC,
+  REG_DMA1DAD = 0x0400'00C0,
+  REG_DMA1CNT_L = 0x0400'00C4,
+  REG_DMA1CNT_H = 0x0400'00C6,
+  REG_DMA2SAD = 0x0400'00C8,
+  REG_DMA2DAD = 0x0400'00CC,
+  REG_DMA2CNT_L = 0x0400'00D0,
+  REG_DMA2CNT_H = 0x0400'00D2,
+  REG_DMA3SAD = 0x0400'00D4,
+  REG_DMA3DAD = 0x0400'00D8,
+  REG_DMA3CNT_L = 0x0400'00DC,
+  REG_DMA3CNT_H = 0x0400'00DE,
+
   // Timers
   REG_TM0CNT_L = 0x0400'0100,
   REG_TM0CNT_H = 0x0400'0102,
@@ -60,6 +78,104 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return video_unit.vcount.ReadByte(0);
     case REG_VCOUNT|1:
       return video_unit.vcount.ReadByte(1);
+
+    // DMA
+    case REG_DMA0SAD|0:
+      return dma.Read(0, 0);
+    case REG_DMA0SAD|1:
+      return dma.Read(0, 1);
+    case REG_DMA0SAD|2:
+      return dma.Read(0, 2);
+    case REG_DMA0SAD|3:
+      return dma.Read(0, 3);
+    case REG_DMA0DAD|0:
+      return dma.Read(0, 4);
+    case REG_DMA0DAD|1:
+      return dma.Read(0, 5);
+    case REG_DMA0DAD|2:
+      return dma.Read(0, 6);
+    case REG_DMA0DAD|3:
+      return dma.Read(0, 7);
+    case REG_DMA0CNT_L|0:
+      return dma.Read(0, 8);
+    case REG_DMA0CNT_L|1:
+      return dma.Read(0, 9);
+    case REG_DMA0CNT_H|0:
+      return dma.Read(0, 10);
+    case REG_DMA0CNT_H|1:
+      return dma.Read(0, 11);
+    case REG_DMA1SAD|0:
+      return dma.Read(1, 0);
+    case REG_DMA1SAD|1:
+      return dma.Read(1, 1);
+    case REG_DMA1SAD|2:
+      return dma.Read(1, 2);
+    case REG_DMA1SAD|3:
+      return dma.Read(1, 3);
+    case REG_DMA1DAD|0:
+      return dma.Read(1, 4);
+    case REG_DMA1DAD|1:
+      return dma.Read(1, 5);
+    case REG_DMA1DAD|2:
+      return dma.Read(1, 6);
+    case REG_DMA1DAD|3:
+      return dma.Read(1, 7);
+    case REG_DMA1CNT_L|0:
+      return dma.Read(1, 8);
+    case REG_DMA1CNT_L|1:
+      return dma.Read(1, 9);
+    case REG_DMA1CNT_H|0:
+      return dma.Read(1, 10);
+    case REG_DMA1CNT_H|1:
+      return dma.Read(1, 11);
+    case REG_DMA2SAD|0:
+      return dma.Read(2, 0);
+    case REG_DMA2SAD|1:
+      return dma.Read(2, 1);
+    case REG_DMA2SAD|2:
+      return dma.Read(2, 2);
+    case REG_DMA2SAD|3:
+      return dma.Read(2, 3);
+    case REG_DMA2DAD|0:
+      return dma.Read(2, 4);
+    case REG_DMA2DAD|1:
+      return dma.Read(2, 5);
+    case REG_DMA2DAD|2:
+      return dma.Read(2, 6);
+    case REG_DMA2DAD|3:
+      return dma.Read(2, 7);
+    case REG_DMA2CNT_L|0:
+      return dma.Read(2, 8);
+    case REG_DMA2CNT_L|1:
+      return dma.Read(2, 9);
+    case REG_DMA2CNT_H|0:
+      return dma.Read(2, 10);
+    case REG_DMA2CNT_H|1:
+      return dma.Read(2, 11);
+    case REG_DMA3SAD|0:
+      return dma.Read(3, 0);
+    case REG_DMA3SAD|1:
+      return dma.Read(3, 1);
+    case REG_DMA3SAD|2:
+      return dma.Read(3, 2);
+    case REG_DMA3SAD|3:
+      return dma.Read(3, 3);
+    case REG_DMA3DAD|0:
+      return dma.Read(3, 4);
+    case REG_DMA3DAD|1:
+      return dma.Read(3, 5);
+    case REG_DMA3DAD|2:
+      return dma.Read(3, 6);
+    case REG_DMA3DAD|3:
+      return dma.Read(3, 7);
+    case REG_DMA3CNT_L|0:
+      return dma.Read(3, 8);
+    case REG_DMA3CNT_L|1:
+      return dma.Read(3, 9);
+    case REG_DMA3CNT_H|0:
+      return dma.Read(3, 10);
+    case REG_DMA3CNT_H|1:
+      return dma.Read(3, 11);
 
     // Timers
     case REG_TM0CNT_L|0:
@@ -200,6 +316,152 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_DISPSTAT|1:
       video_unit.dispstat7.WriteByte(1, value);
+      break;
+
+    // DMA
+    case REG_DMA0SAD|0:
+      dma.Write(0, 0, value);
+      break;
+    case REG_DMA0SAD|1:
+      dma.Write(0, 1, value);
+      break;
+    case REG_DMA0SAD|2:
+      dma.Write(0, 2, value);
+      break;
+    case REG_DMA0SAD|3:
+      dma.Write(0, 3, value);
+      break;
+    case REG_DMA0DAD|0:
+      dma.Write(0, 4, value);
+      break;
+    case REG_DMA0DAD|1:
+      dma.Write(0, 5, value);
+      break;
+    case REG_DMA0DAD|2:
+      dma.Write(0, 6, value);
+      break;
+    case REG_DMA0DAD|3:
+      dma.Write(0, 7, value);
+      break;
+    case REG_DMA0CNT_L|0:
+      dma.Write(0, 8, value);
+      break;
+    case REG_DMA0CNT_L|1:
+      dma.Write(0, 9, value);
+      break;
+    case REG_DMA0CNT_H|0:
+      dma.Write(0, 10, value);
+      break;
+    case REG_DMA0CNT_H|1:
+      dma.Write(0, 11, value);
+      break;
+    case REG_DMA1SAD|0:
+      dma.Write(1, 0, value);
+      break;
+    case REG_DMA1SAD|1:
+      dma.Write(1, 1, value);
+      break;
+    case REG_DMA1SAD|2:
+      dma.Write(1, 2, value);
+      break;
+    case REG_DMA1SAD|3:
+      dma.Write(1, 3, value);
+      break;
+    case REG_DMA1DAD|0:
+      dma.Write(1, 4, value);
+      break;
+    case REG_DMA1DAD|1:
+      dma.Write(1, 5, value);
+      break;
+    case REG_DMA1DAD|2:
+      dma.Write(1, 6, value);
+      break;
+    case REG_DMA1DAD|3:
+      dma.Write(1, 7, value);
+      break;
+    case REG_DMA1CNT_L|0:
+      dma.Write(1, 8, value);
+      break;
+    case REG_DMA1CNT_L|1:
+      dma.Write(1, 9, value);
+      break;
+    case REG_DMA1CNT_H|0:
+      dma.Write(1, 10, value);
+      break;
+    case REG_DMA1CNT_H|1:
+      dma.Write(1, 11, value);
+      break;
+    case REG_DMA2SAD|0:
+      dma.Write(2, 0, value);
+      break;
+    case REG_DMA2SAD|1:
+      dma.Write(2, 1, value);
+      break;
+    case REG_DMA2SAD|2:
+      dma.Write(2, 2, value);
+      break;
+    case REG_DMA2SAD|3:
+      dma.Write(2, 3, value);
+      break;
+    case REG_DMA2DAD|0:
+      dma.Write(2, 4, value);
+      break;
+    case REG_DMA2DAD|1:
+      dma.Write(2, 5, value);
+      break;
+    case REG_DMA2DAD|2:
+      dma.Write(2, 6, value);
+      break;
+    case REG_DMA2DAD|3:
+      dma.Write(2, 7, value);
+      break;
+    case REG_DMA2CNT_L|0:
+      dma.Write(2, 8, value);
+      break;
+    case REG_DMA2CNT_L|1:
+      dma.Write(2, 9, value);
+      break;
+    case REG_DMA2CNT_H|0:
+      dma.Write(2, 10, value);
+      break;
+    case REG_DMA2CNT_H|1:
+      dma.Write(2, 11, value);
+      break;
+    case REG_DMA3SAD|0:
+      dma.Write(3, 0, value);
+      break;
+    case REG_DMA3SAD|1:
+      dma.Write(3, 1, value);
+      break;
+    case REG_DMA3SAD|2:
+      dma.Write(3, 2, value);
+      break;
+    case REG_DMA3SAD|3:
+      dma.Write(3, 3, value);
+      break;
+    case REG_DMA3DAD|0:
+      dma.Write(3, 4, value);
+      break;
+    case REG_DMA3DAD|1:
+      dma.Write(3, 5, value);
+      break;
+    case REG_DMA3DAD|2:
+      dma.Write(3, 6, value);
+      break;
+    case REG_DMA3DAD|3:
+      dma.Write(3, 7, value);
+      break;
+    case REG_DMA3CNT_L|0:
+      dma.Write(3, 8, value);
+      break;
+    case REG_DMA3CNT_L|1:
+      dma.Write(3, 9, value);
+      break;
+    case REG_DMA3CNT_H|0:
+      dma.Write(3, 10, value);
+      break;
+    case REG_DMA3CNT_H|1:
+      dma.Write(3, 11, value);
       break;
 
     // Timers

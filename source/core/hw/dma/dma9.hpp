@@ -10,7 +10,7 @@
 
 namespace fauxDS::core {
 
-struct DMA {
+struct DMA9 {
   enum Time {
     Immediate = 0,
     VBlank = 1,
@@ -24,7 +24,7 @@ struct DMA {
 
   using Bus = arm::MemoryBase::Bus;
 
-  DMA(IRQ& irq) : irq(irq) {
+  DMA9(IRQ& irq) : irq(irq) {
     Reset();
   }
 

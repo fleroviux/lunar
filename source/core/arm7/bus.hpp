@@ -49,6 +49,7 @@ private:
   IRQ& irq7;
   SPI& spi;
   Timer& timer;
+  DMA7& dma;
   VideoUnit& video_unit;
   VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;

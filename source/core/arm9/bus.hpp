@@ -65,7 +65,7 @@ private:
   IPC& ipc;
   IRQ& irq9;
   Timer& timer;
-  DMA& dma;
+  DMA9& dma;
   VideoUnit& video_unit;
   VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;
