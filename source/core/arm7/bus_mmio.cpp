@@ -50,6 +50,11 @@ enum Registers {
   REG_IPCFIFOSEND = 0x0400'0188,
   REG_IPCFIFORECV = 0x0410'0000,
 
+    // Cartridge interface
+  REG_ROMCTRL = 0x0400'01A4,
+  REG_CARDCMD = 0x0400'01A8,
+  REG_CARDDATA = 0x0410'0010,
+
   // SPI
   REG_SPICNT = 0x0400'01C0,
   REG_SPIDATA = 0x0400'01C2,
@@ -234,6 +239,38 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 2);
     case REG_IPCFIFORECV|3:
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 3);
+
+    // Cartridge interface
+    case REG_ROMCTRL|0:
+      return cart.romctrl.ReadByte(0);
+    case REG_ROMCTRL|1:
+      return cart.romctrl.ReadByte(1);
+    case REG_ROMCTRL|2:
+      return cart.romctrl.ReadByte(2);
+    case REG_ROMCTRL|3:
+      return cart.romctrl.ReadByte(3);
+    case REG_CARDCMD|0:
+      return cart.cardcmd.ReadByte(0);
+    case REG_CARDCMD|1:
+      return cart.cardcmd.ReadByte(1);
+    case REG_CARDCMD|2:
+      return cart.cardcmd.ReadByte(2);
+    case REG_CARDCMD|3:
+      return cart.cardcmd.ReadByte(3);
+    case REG_CARDCMD|4:
+      return cart.cardcmd.ReadByte(4);
+    case REG_CARDCMD|5:
+      return cart.cardcmd.ReadByte(5);
+    case REG_CARDCMD|6:
+      return cart.cardcmd.ReadByte(6);
+    case REG_CARDCMD|7:
+      return cart.cardcmd.ReadByte(7);
+    case REG_CARDDATA|0:
+    case REG_CARDDATA|1:
+    case REG_CARDDATA|2:
+    case REG_CARDDATA|3:
+      ASSERT(false, "ARM7: unhandled byte read from REG_CARDDATA");
+      return 0;
 
     // SPI
     case REG_SPICNT|0:
@@ -532,6 +569,44 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_IPCFIFOSEND|2:
     case REG_IPCFIFOSEND|3:
       ipc.ipcfifosend.WriteByte(IPC::Client::ARM7, value);
+      break;
+
+    // Cartridge interface
+    case REG_ROMCTRL|0:
+      cart.romctrl.WriteByte(0, value);
+      break;
+    case REG_ROMCTRL|1:
+      cart.romctrl.WriteByte(1, value);
+      break;
+    case REG_ROMCTRL|2:
+      cart.romctrl.WriteByte(2, value);
+      break;
+    case REG_ROMCTRL|3:
+      cart.romctrl.WriteByte(3, value);
+      break;
+    case REG_CARDCMD|0:
+      cart.cardcmd.WriteByte(0, value);
+      break;
+    case REG_CARDCMD|1:
+      cart.cardcmd.WriteByte(1, value);
+      break;
+    case REG_CARDCMD|2:
+      cart.cardcmd.WriteByte(2, value);
+      break;
+    case REG_CARDCMD|3:
+      cart.cardcmd.WriteByte(3, value);
+      break;
+    case REG_CARDCMD|4:
+      cart.cardcmd.WriteByte(4, value);
+      break;
+    case REG_CARDCMD|5:
+      cart.cardcmd.WriteByte(5, value);
+      break;
+    case REG_CARDCMD|6:
+      cart.cardcmd.WriteByte(6, value);
+      break;
+    case REG_CARDCMD|7:
+      cart.cardcmd.WriteByte(7, value);
       break;
 
     // SPI

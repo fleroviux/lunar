@@ -14,6 +14,7 @@ namespace fauxDS::core {
 ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) 
     : ewram(interconnect->ewram)
     , swram(interconnect->swram.arm7)
+    , cart(interconnect->cart)
     , ipc(interconnect->ipc)
     , irq7(interconnect->irq7)
     , spi(interconnect->spi)
