@@ -337,6 +337,8 @@ auto ARM7MemoryBus::ReadWordIO(u32 address) -> u32 {
   switch (address) {
     case REG_IPCFIFORECV:
       return ipc.ipcfiforecv.ReadWord(IPC::Client::ARM7);
+    case REG_CARDDATA:
+      return cart.ReadData();
   }
 
   return (ReadByteIO(address | 0) <<  0) |
