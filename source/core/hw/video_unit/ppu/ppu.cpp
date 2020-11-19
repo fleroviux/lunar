@@ -8,10 +8,16 @@
 
 namespace fauxDS::core {
 
-PPU::PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram) 
-    : vram_bg(vram_bg)
+PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram) 
+    : id(id)
+    , vram_bg(vram_bg)
     , vram_obj(vram_obj)
     , pram(pram) {
+  if (id == 0) {
+    mmio.dispcnt = {};
+  } else {
+    mmio.dispcnt = {0xC0B3FFF7};
+  }
   Reset();
 }
 

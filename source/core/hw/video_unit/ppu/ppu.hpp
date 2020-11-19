@@ -14,7 +14,7 @@ namespace fauxDS::core {
 /// 2D picture processing unit (PPU).
 /// The Nintendo DS has two of these (PPU A and PPU B) for each screen.
 struct PPU {
-  PPU(Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram);
+  PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram);
 
   struct MMIO {
     DisplayControl dispcnt;
@@ -55,6 +55,8 @@ private:
   }
 
   void RenderLayerText(uint id, u16 vcount);
+
+  int id;
 
   u32 framebuffer[256 * 192];
   u16 buffer_bg[4][256];
