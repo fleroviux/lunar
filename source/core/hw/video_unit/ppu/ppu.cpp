@@ -16,22 +16,64 @@ PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
-    mmio.dispcnt = {0xC0B3FFF7};
+    mmio.dispcnt = {0xC033FFF7};
   }
   Reset();
 }
 
 void PPU::Reset() {
   memset(framebuffer, 0, sizeof(framebuffer));
+
   mmio.dispcnt.Reset();
+  
   for (int i = 0; i < 4; i++) {
     mmio.bgcnt[i].Reset();
     mmio.bghofs[i].Reset();
     mmio.bgvofs[i].Reset();
   }
+
+  for (int i = 0; i < 2; i++) {
+    mmio.winh[i].Reset();
+    mmio.winv[i].Reset();
+  }
+
+  mmio.winin.Reset();
+  mmio.winout.Reset();
+
+  mmio.bldcnt.Reset();
+  mmio.bldalpha.Reset();
+  mmio.bldy.Reset();
+
+  mmio.mosaic.Reset();
 }
 
 void PPU::RenderScanline(u16 vcount) {
+  switch (mmio.dispcnt.display_mode) {
+    case 0:
+      RenderDisplayOff(vcount);
+      break;
+    case 1:
+      RenderNormal(vcount);
+      break;
+    case 2:
+      RenderVideoMemoryDisplay(vcount);
+      break;
+    case 3:
+      RenderMainMemoryDisplay(vcount);
+      break;
+  }
+}
+
+
+void PPU::RenderDisplayOff(u16 vcount) {
+  u32* line = &framebuffer[vcount * 256];
+
+  for (uint x = 0; x < 256; x++) {
+    line[x] = 0xFFF8F8F8;
+  }
+}
+
+void PPU::RenderNormal(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
   for (int i = 0; i < 4; i++) {
@@ -55,6 +97,14 @@ void PPU::RenderScanline(u16 vcount) {
               (((color >> 10) & 0x1F) <<  3) |
               0xFF000000;
   }
+}
+
+void PPU::RenderVideoMemoryDisplay(u16 vcount) {
+  ASSERT(false, "PPU: unimplemented video memory display mode.");
+}
+
+void PPU::RenderMainMemoryDisplay(u16 vcount) {
+  ASSERT(false, "PPU: unimplemented main memory display mode.");
 }
 
 void PPU::RenderLayerText(uint id, u16 vcount) {

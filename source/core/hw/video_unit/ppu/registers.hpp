@@ -72,4 +72,63 @@ struct BackgroundOffset {
   void WriteByte(uint offset, u8 value);
 };
 
+struct WindowRange {
+  u8 min;
+  u8 max;
+  bool _changed;
+
+  void Reset();
+  void WriteByte(uint offset, u8 value);
+};
+
+struct WindowLayerSelect {
+  bool enable[2][6];
+
+  void Reset();
+  auto ReadByte(uint offset) -> u8;
+  void WriteByte(uint offset, u8 value);
+};
+
+struct BlendControl {
+  enum Effect {
+    SFX_NONE,
+    SFX_BLEND,
+    SFX_BRIGHTEN,
+    SFX_DARKEN
+  } sfx;
+  
+  bool targets[2][6];
+
+  void Reset();
+  auto ReadByte(uint offset) -> u8;
+  void WriteByte(uint offset, u8 value);
+};
+
+struct BlendAlpha {
+  int a;
+  int b;
+
+  void Reset();
+  auto ReadByte(uint offset) -> u8;
+  void WriteByte(uint offset, u8 value);
+};
+
+struct BlendBrightness {
+  int y;
+
+  void Reset();
+  void WriteByte(uint offset, u8 value);
+};
+
+struct Mosaic {
+  struct {
+    int size_x;
+    int size_y;
+    int _counter_y;
+  } bg, obj;
+  
+  void Reset();
+  void WriteByte(uint offset, u8 value);
+};
+
 } // namespace fauxDS::core

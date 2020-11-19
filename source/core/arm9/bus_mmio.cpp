@@ -38,6 +38,26 @@ enum Registers {
   REG_BG3HOFS_B = 0x0400'101C,
   REG_BG3VOFS_A = 0x0400'001E,
   REG_BG3VOFS_B = 0x0400'101E,
+  REG_WIN0H_A = 0x0400'0040,
+  REG_WIN0H_B = 0x0400'1040,
+  REG_WIN1H_A = 0x0400'0042,
+  REG_WIN1H_B = 0x0400'1042,
+  REG_WIN0V_A = 0x0400'0044,
+  REG_WIN0V_B = 0x0400'1044,
+  REG_WIN1V_A = 0x0400'0046,
+  REG_WIN1V_B = 0x0400'1046,
+  REG_WININ_A = 0x0400'0048,
+  REG_WININ_B = 0x0400'1048,
+  REG_WINOUT_A = 0x0400'004A,
+  REG_WINOUT_B = 0x0400'104A,
+  REG_MOSAIC_A = 0x0400'004C,
+  REG_MOSAIC_B = 0x0400'104C,
+  REG_BLDCNT_A = 0x0400'0050,
+  REG_BLDCNT_B = 0x0400'1050,
+  REG_BLDALPHA_A = 0x0400'0052,
+  REG_BLDALPHA_B = 0x0400'1052,
+  REG_BLDY_A = 0x0400'0054,
+  REG_BLDY_B = 0x0400'1054,
 
   // DMA
   REG_DMA0SAD = 0x0400'00B0,
@@ -108,7 +128,7 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
   auto& ppu_io_b = video_unit.ppu_b.mmio;
 
   switch (address) {
-    // PPU engine A / B
+    // PPU engine A
     case REG_DISPCNT_A|0:
       return ppu_io_a.dispcnt.ReadByte(0);
     case REG_DISPCNT_A|1:
@@ -117,14 +137,6 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ppu_io_a.dispcnt.ReadByte(2);
     case REG_DISPCNT_A|3:
       return ppu_io_a.dispcnt.ReadByte(3);
-    case REG_DISPCNT_B|0:
-      return ppu_io_b.dispcnt.ReadByte(0);
-    case REG_DISPCNT_B|1:
-      return ppu_io_b.dispcnt.ReadByte(1);
-    case REG_DISPCNT_B|2:
-      return ppu_io_b.dispcnt.ReadByte(2);
-    case REG_DISPCNT_B|3:
-      return ppu_io_b.dispcnt.ReadByte(3);
     case REG_DISPSTAT|0:
       return video_unit.dispstat9.ReadByte(0);
     case REG_DISPSTAT|1:
@@ -137,35 +149,77 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ppu_io_a.bgcnt[0].ReadByte(0);
     case REG_BG0CNT_A|1:
       return ppu_io_a.bgcnt[0].ReadByte(1);
-    case REG_BG0CNT_B|0:
-      return ppu_io_b.bgcnt[0].ReadByte(0);
-    case REG_BG0CNT_B|1:
-      return ppu_io_b.bgcnt[0].ReadByte(1);
     case REG_BG1CNT_A|0:
       return ppu_io_a.bgcnt[1].ReadByte(0);
     case REG_BG1CNT_A|1:
       return ppu_io_a.bgcnt[1].ReadByte(1);
-    case REG_BG1CNT_B|0:
-      return ppu_io_b.bgcnt[1].ReadByte(0);
-    case REG_BG1CNT_B|1:
-      return ppu_io_b.bgcnt[1].ReadByte(1);
     case REG_BG2CNT_A|0:
       return ppu_io_a.bgcnt[2].ReadByte(0);
     case REG_BG2CNT_A|1:
       return ppu_io_a.bgcnt[2].ReadByte(1);
-    case REG_BG2CNT_B|0:
-      return ppu_io_b.bgcnt[2].ReadByte(0);
-    case REG_BG2CNT_B|1:
-      return ppu_io_b.bgcnt[2].ReadByte(1);
     case REG_BG3CNT_A|0:
       return ppu_io_a.bgcnt[3].ReadByte(0);
     case REG_BG3CNT_A|1:
       return ppu_io_a.bgcnt[3].ReadByte(1);
+    case REG_WININ_A|0:
+      return ppu_io_a.winin.ReadByte(0);
+    case REG_WININ_A|1:
+      return ppu_io_a.winin.ReadByte(1);
+    case REG_WINOUT_A|0:
+      return ppu_io_a.winout.ReadByte(0);
+    case REG_WINOUT_A|1:
+      return ppu_io_a.winout.ReadByte(1);
+    case REG_BLDCNT_A|0:
+      return ppu_io_a.bldcnt.ReadByte(0);
+    case REG_BLDCNT_A|1:
+      return ppu_io_a.bldcnt.ReadByte(1);
+    case REG_BLDALPHA_A|0:
+      return ppu_io_a.bldalpha.ReadByte(0);
+    case REG_BLDALPHA_A|1:
+      return ppu_io_a.bldalpha.ReadByte(1);
+
+    // PPU engine B
+    case REG_DISPCNT_B|0:
+      return ppu_io_b.dispcnt.ReadByte(0);
+    case REG_DISPCNT_B|1:
+      return ppu_io_b.dispcnt.ReadByte(1);
+    case REG_DISPCNT_B|2:
+      return ppu_io_b.dispcnt.ReadByte(2);
+    case REG_DISPCNT_B|3:
+      return ppu_io_b.dispcnt.ReadByte(3);
+    case REG_BG0CNT_B|0:
+      return ppu_io_b.bgcnt[0].ReadByte(0);
+    case REG_BG0CNT_B|1:
+      return ppu_io_b.bgcnt[0].ReadByte(1);
+    case REG_BG1CNT_B|0:
+      return ppu_io_b.bgcnt[1].ReadByte(0);
+    case REG_BG1CNT_B|1:
+      return ppu_io_b.bgcnt[1].ReadByte(1);
+    case REG_BG2CNT_B|0:
+      return ppu_io_b.bgcnt[2].ReadByte(0);
+    case REG_BG2CNT_B|1:
+      return ppu_io_b.bgcnt[2].ReadByte(1);
     case REG_BG3CNT_B|0:
       return ppu_io_b.bgcnt[3].ReadByte(0);
     case REG_BG3CNT_B|1:
       return ppu_io_b.bgcnt[3].ReadByte(1);
-
+    case REG_WININ_B|0:
+      return ppu_io_b.winin.ReadByte(0);
+    case REG_WININ_B|1:
+      return ppu_io_b.winin.ReadByte(1);
+    case REG_WINOUT_B|0:
+      return ppu_io_b.winout.ReadByte(0);
+    case REG_WINOUT_B|1:
+      return ppu_io_b.winout.ReadByte(1);
+    case REG_BLDCNT_B|0:
+      return ppu_io_b.bldcnt.ReadByte(0);
+    case REG_BLDCNT_B|1:
+      return ppu_io_b.bldcnt.ReadByte(1);
+    case REG_BLDALPHA_B|0:
+      return ppu_io_b.bldalpha.ReadByte(0);
+    case REG_BLDALPHA_B|1:
+      return ppu_io_b.bldalpha.ReadByte(1);
+    
     // DMA
     case REG_DMA0SAD|0:
       return dma.Read(0, 0);
@@ -453,7 +507,7 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
   auto& ppu_io_b = video_unit.ppu_b.mmio;
 
   switch (address) {
-    // PPU engine A / B
+    // PPU engine A
     case REG_DISPCNT_A|0:
       ppu_io_a.dispcnt.WriteByte(0, value);
       break;
@@ -466,19 +520,6 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_DISPCNT_A|3:
       ppu_io_a.dispcnt.WriteByte(3, value);
       break;
-    case REG_DISPCNT_B|0:
-      ppu_io_b.dispcnt.WriteByte(0, value);
-      break;
-    case REG_DISPCNT_B|1:
-      ppu_io_b.dispcnt.WriteByte(1, value);
-      break;
-    case REG_DISPCNT_B|2:
-      ppu_io_b.dispcnt.WriteByte(2, value);
-      break;
-    case REG_DISPCNT_B|3:
-      ppu_io_b.dispcnt.WriteByte(3, value);
-      break;
-
     case REG_DISPSTAT|0:
       video_unit.dispstat9.WriteByte(0, value);
       break;
@@ -491,23 +532,11 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG0CNT_A|1:
       ppu_io_a.bgcnt[0].WriteByte(1, value);
       break;
-    case REG_BG0CNT_B|0:
-      ppu_io_b.bgcnt[0].WriteByte(0, value);
-      break;
-    case REG_BG0CNT_B|1:
-      ppu_io_b.bgcnt[0].WriteByte(1, value);
-      break;
     case REG_BG1CNT_A|0:
       ppu_io_a.bgcnt[1].WriteByte(0, value);
       break;
     case REG_BG1CNT_A|1:
       ppu_io_a.bgcnt[1].WriteByte(1, value);
-      break;
-    case REG_BG1CNT_B|0:
-      ppu_io_b.bgcnt[1].WriteByte(0, value);
-      break;
-    case REG_BG1CNT_B|1:
-      ppu_io_b.bgcnt[1].WriteByte(1, value);
       break;
     case REG_BG2CNT_A|0:
       ppu_io_a.bgcnt[2].WriteByte(0, value);
@@ -515,23 +544,11 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG2CNT_A|1:
       ppu_io_a.bgcnt[2].WriteByte(1, value);
       break;
-    case REG_BG2CNT_B|0:
-      ppu_io_b.bgcnt[2].WriteByte(0, value);
-      break;
-    case REG_BG2CNT_B|1:
-      ppu_io_b.bgcnt[2].WriteByte(1, value);
-      break;
     case REG_BG3CNT_A|0:
       ppu_io_a.bgcnt[3].WriteByte(0, value);
       break;
     case REG_BG3CNT_A|1:
       ppu_io_a.bgcnt[3].WriteByte(1, value);
-      break;
-    case REG_BG3CNT_B|0:
-      ppu_io_b.bgcnt[3].WriteByte(0, value);
-      break;
-    case REG_BG3CNT_B|1:
-      ppu_io_b.bgcnt[3].WriteByte(1, value);
       break;
     case REG_BG0HOFS_A|0:
       ppu_io_a.bghofs[0].WriteByte(0, value);
@@ -539,23 +556,11 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG0HOFS_A|1:
       ppu_io_a.bghofs[0].WriteByte(1, value);
       break;
-    case REG_BG0HOFS_B|0:
-      ppu_io_b.bghofs[0].WriteByte(0, value);
-      break;
-    case REG_BG0HOFS_B|1:
-      ppu_io_b.bghofs[0].WriteByte(1, value);
-      break;
     case REG_BG0VOFS_A|0:
       ppu_io_a.bgvofs[0].WriteByte(0, value);
       break;
     case REG_BG0VOFS_A|1:
       ppu_io_a.bgvofs[0].WriteByte(1, value);
-      break;
-    case REG_BG0VOFS_B|0:
-      ppu_io_b.bgvofs[0].WriteByte(0, value);
-      break;
-    case REG_BG0VOFS_B|1:
-      ppu_io_b.bgvofs[0].WriteByte(1, value);
       break;
     case REG_BG1HOFS_A|0:
       ppu_io_a.bghofs[1].WriteByte(0, value);
@@ -563,23 +568,11 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG1HOFS_A|1:
       ppu_io_a.bghofs[1].WriteByte(1, value);
       break;
-    case REG_BG1HOFS_B|0:
-      ppu_io_b.bghofs[1].WriteByte(0, value);
-      break;
-    case REG_BG1HOFS_B|1:
-      ppu_io_b.bghofs[1].WriteByte(1, value);
-      break;
     case REG_BG1VOFS_A|0:
       ppu_io_a.bgvofs[1].WriteByte(0, value);
       break;
     case REG_BG1VOFS_A|1:
       ppu_io_a.bgvofs[1].WriteByte(1, value);
-      break;
-    case REG_BG1VOFS_B|0:
-      ppu_io_b.bgvofs[1].WriteByte(0, value);
-      break;
-    case REG_BG1VOFS_B|1:
-      ppu_io_b.bgvofs[1].WriteByte(1, value);
       break;
     case REG_BG2HOFS_A|0:
       ppu_io_a.bghofs[2].WriteByte(0, value);
@@ -587,23 +580,11 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG2HOFS_A|1:
       ppu_io_a.bghofs[2].WriteByte(1, value);
       break;
-    case REG_BG2HOFS_B|0:
-      ppu_io_b.bghofs[2].WriteByte(0, value);
-      break;
-    case REG_BG2HOFS_B|1:
-      ppu_io_b.bghofs[2].WriteByte(1, value);
-      break;
     case REG_BG2VOFS_A|0:
       ppu_io_a.bgvofs[2].WriteByte(0, value);
       break;
     case REG_BG2VOFS_A|1:
       ppu_io_a.bgvofs[2].WriteByte(1, value);
-      break;
-    case REG_BG2VOFS_B|0:
-      ppu_io_b.bgvofs[2].WriteByte(0, value);
-      break;
-    case REG_BG2VOFS_B|1:
-      ppu_io_b.bgvofs[2].WriteByte(1, value);
       break;
     case REG_BG3HOFS_A|0:
       ppu_io_a.bghofs[3].WriteByte(0, value);
@@ -611,23 +592,225 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG3HOFS_A|1:
       ppu_io_a.bghofs[3].WriteByte(1, value);
       break;
-    case REG_BG3HOFS_B|0:
-      ppu_io_b.bghofs[3].WriteByte(0, value);
-      break;
-    case REG_BG3HOFS_B|1:
-      ppu_io_b.bghofs[3].WriteByte(1, value);
-      break;
     case REG_BG3VOFS_A|0:
       ppu_io_a.bgvofs[3].WriteByte(0, value);
       break;
     case REG_BG3VOFS_A|1:
       ppu_io_a.bgvofs[3].WriteByte(1, value);
       break;
+    case REG_WIN0H_A|0:
+      ppu_io_a.winh[0].WriteByte(0, value);
+      break;
+    case REG_WIN0H_A|1:
+      ppu_io_a.winh[0].WriteByte(1, value);
+      break;
+    case REG_WIN1H_A|0:
+      ppu_io_a.winh[1].WriteByte(0, value);
+      break;
+    case REG_WIN1H_A|1:
+      ppu_io_a.winh[1].WriteByte(1, value);
+      break;
+    case REG_WIN0V_A|0:
+      ppu_io_a.winv[0].WriteByte(0, value);
+      break;
+    case REG_WIN0V_A|1:
+      ppu_io_a.winv[0].WriteByte(1, value);
+      break;
+    case REG_WIN1V_A|0:
+      ppu_io_a.winv[1].WriteByte(0, value);
+      break;
+    case REG_WIN1V_A|1:
+      ppu_io_a.winv[1].WriteByte(1, value);
+      break;
+    case REG_WININ_A|0:
+      ppu_io_a.winin.WriteByte(0, value);
+      break;
+    case REG_WININ_A|1:
+      ppu_io_a.winin.WriteByte(1, value);
+      break;
+    case REG_WINOUT_A|0:
+      ppu_io_a.winout.WriteByte(0, value);
+      break;
+    case REG_WINOUT_A|1:
+      ppu_io_a.winout.WriteByte(1, value);
+      break;
+    case REG_MOSAIC_A|0:
+      ppu_io_a.mosaic.WriteByte(0, value);
+      break;
+    case REG_MOSAIC_A|1:
+      ppu_io_a.mosaic.WriteByte(1, value);
+      break;
+    case REG_MOSAIC_A|2:
+    case REG_MOSAIC_A|3:
+      break;
+    case REG_BLDCNT_A|0:
+      ppu_io_a.bldcnt.WriteByte(0, value);
+      break;
+    case REG_BLDCNT_A|1:
+      ppu_io_a.bldcnt.WriteByte(1, value);
+      break;
+    case REG_BLDALPHA_A|0:
+      ppu_io_a.bldalpha.WriteByte(0, value);
+      break;
+    case REG_BLDALPHA_A|1:
+      ppu_io_a.bldalpha.WriteByte(1, value);
+      break;
+    case REG_BLDY_A|0:
+      ppu_io_a.bldy.WriteByte(0, value);
+      break;
+    case REG_BLDY_A|1:
+    case REG_BLDY_A|2:
+    case REG_BLDY_A|3:
+      break;
+      
+    // PPU engine B
+    case REG_DISPCNT_B|0:
+      ppu_io_b.dispcnt.WriteByte(0, value);
+      break;
+    case REG_DISPCNT_B|1:
+      ppu_io_b.dispcnt.WriteByte(1, value);
+      break;
+    case REG_DISPCNT_B|2:
+      ppu_io_b.dispcnt.WriteByte(2, value);
+      break;
+    case REG_DISPCNT_B|3:
+      ppu_io_b.dispcnt.WriteByte(3, value);
+      break;
+    case REG_BG0CNT_B|0:
+      ppu_io_b.bgcnt[0].WriteByte(0, value);
+      break;
+    case REG_BG0CNT_B|1:
+      ppu_io_b.bgcnt[0].WriteByte(1, value);
+      break;
+    case REG_BG1CNT_B|0:
+      ppu_io_b.bgcnt[1].WriteByte(0, value);
+      break;
+    case REG_BG1CNT_B|1:
+      ppu_io_b.bgcnt[1].WriteByte(1, value);
+      break;
+    case REG_BG2CNT_B|0:
+      ppu_io_b.bgcnt[2].WriteByte(0, value);
+      break;
+    case REG_BG2CNT_B|1:
+      ppu_io_b.bgcnt[2].WriteByte(1, value);
+      break;
+    case REG_BG3CNT_B|0:
+      ppu_io_b.bgcnt[3].WriteByte(0, value);
+      break;
+    case REG_BG3CNT_B|1:
+      ppu_io_b.bgcnt[3].WriteByte(1, value);
+      break;
+    case REG_BG0HOFS_B|0:
+      ppu_io_b.bghofs[0].WriteByte(0, value);
+      break;
+    case REG_BG0HOFS_B|1:
+      ppu_io_b.bghofs[0].WriteByte(1, value);
+      break;
+    case REG_BG0VOFS_B|0:
+      ppu_io_b.bgvofs[0].WriteByte(0, value);
+      break;
+    case REG_BG0VOFS_B|1:
+      ppu_io_b.bgvofs[0].WriteByte(1, value);
+      break;
+    case REG_BG1HOFS_B|0:
+      ppu_io_b.bghofs[1].WriteByte(0, value);
+      break;
+    case REG_BG1HOFS_B|1:
+      ppu_io_b.bghofs[1].WriteByte(1, value);
+      break;
+    case REG_BG1VOFS_B|0:
+      ppu_io_b.bgvofs[1].WriteByte(0, value);
+      break;
+    case REG_BG1VOFS_B|1:
+      ppu_io_b.bgvofs[1].WriteByte(1, value);
+      break;
+    case REG_BG2HOFS_B|0:
+      ppu_io_b.bghofs[2].WriteByte(0, value);
+      break;
+    case REG_BG2HOFS_B|1:
+      ppu_io_b.bghofs[2].WriteByte(1, value);
+      break;
+    case REG_BG2VOFS_B|0:
+      ppu_io_b.bgvofs[2].WriteByte(0, value);
+      break;
+    case REG_BG2VOFS_B|1:
+      ppu_io_b.bgvofs[2].WriteByte(1, value);
+      break;
+    case REG_BG3HOFS_B|0:
+      ppu_io_b.bghofs[3].WriteByte(0, value);
+      break;
+    case REG_BG3HOFS_B|1:
+      ppu_io_b.bghofs[3].WriteByte(1, value);
+      break;
     case REG_BG3VOFS_B|0:
       ppu_io_b.bgvofs[3].WriteByte(0, value);
       break;
     case REG_BG3VOFS_B|1:
       ppu_io_b.bgvofs[3].WriteByte(1, value);
+      break;
+    case REG_WIN0H_B|0:
+      ppu_io_b.winh[0].WriteByte(0, value);
+      break;
+    case REG_WIN0H_B|1:
+      ppu_io_b.winh[0].WriteByte(1, value);
+      break;
+    case REG_WIN1H_B|0:
+      ppu_io_b.winh[1].WriteByte(0, value);
+      break;
+    case REG_WIN1H_B|1:
+      ppu_io_b.winh[1].WriteByte(1, value);
+      break;
+    case REG_WIN0V_B|0:
+      ppu_io_b.winv[0].WriteByte(0, value);
+      break;
+    case REG_WIN0V_B|1:
+      ppu_io_b.winv[0].WriteByte(1, value);
+      break;
+    case REG_WIN1V_B|0:
+      ppu_io_b.winv[1].WriteByte(0, value);
+      break;
+    case REG_WIN1V_B|1:
+      ppu_io_b.winv[1].WriteByte(1, value);
+      break;
+    case REG_WININ_B|0:
+      ppu_io_b.winin.WriteByte(0, value);
+      break;
+    case REG_WININ_B|1:
+      ppu_io_b.winin.WriteByte(1, value);
+      break;
+    case REG_WINOUT_B|0:
+      ppu_io_b.winout.WriteByte(0, value);
+      break;
+    case REG_WINOUT_B|1:
+      ppu_io_b.winout.WriteByte(1, value);
+      break;
+    case REG_MOSAIC_B|0:
+      ppu_io_b.mosaic.WriteByte(0, value);
+      break;
+    case REG_MOSAIC_B|1:
+      ppu_io_b.mosaic.WriteByte(1, value);
+      break;
+    case REG_MOSAIC_B|2:
+    case REG_MOSAIC_B|3:
+      break;
+    case REG_BLDCNT_B|0:
+      ppu_io_b.bldcnt.WriteByte(0, value);
+      break;
+    case REG_BLDCNT_B|1:
+      ppu_io_b.bldcnt.WriteByte(1, value);
+      break;
+    case REG_BLDALPHA_B|0:
+      ppu_io_b.bldalpha.WriteByte(0, value);
+      break;
+    case REG_BLDALPHA_B|1:
+      ppu_io_b.bldalpha.WriteByte(1, value);
+      break;
+    case REG_BLDY_B|0:
+      ppu_io_b.bldy.WriteByte(0, value);
+      break;
+    case REG_BLDY_B|1:
+    case REG_BLDY_B|2:
+    case REG_BLDY_B|3:
       break;
 
     // DMA

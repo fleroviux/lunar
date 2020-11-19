@@ -145,4 +145,165 @@ void BackgroundOffset::WriteByte(uint offset, u8 value) {
   }
 }
 
+void WindowRange::Reset() {
+  min = 0;
+  max = 0;
+  _changed = false;
+}
+
+void WindowRange::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      if (value != max)
+        _changed = true;
+      max = value;
+      break;
+    case 1:
+      if (value != min)
+        _changed = true;
+      min = value;
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+void WindowLayerSelect::Reset() {
+  WriteByte(0, 0);
+  WriteByte(1, 0);
+}
+
+auto WindowLayerSelect::ReadByte(uint offset) -> u8 {
+  u8 value = 0;
+  
+  for (int i = 0; i < 6; i++) {
+    value |= enable[offset][i] ? (1 << i) : 0;
+  }
+  
+  return value;
+}
+
+void WindowLayerSelect::WriteByte(uint offset, u8 value) {
+  for (int i = 0; i < 6; i++) {
+    enable[offset][i] = value & (1 << i);
+  }
+}
+
+void BlendControl::Reset() {
+  WriteByte(0, 0);
+  WriteByte(1, 0);
+}
+
+auto BlendControl::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0: {
+      u8 value = 0;
+      for (int i = 0; i < 6; i++)
+        value |= targets[0][i] ? (1 << i) : 0;
+      value |= static_cast<u8>(sfx << 6);
+      return value;
+    }
+    case 1: {
+      u8 value = 0;
+      for (int i = 0; i < 6; i++)
+        value |= targets[1][i] ? (1 << i) : 0;
+      return value;
+    }
+  }
+
+  UNREACHABLE;
+}
+
+void BlendControl::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      for (int i = 0; i < 6; i++)
+        targets[0][i] = value & (1 << i);
+      sfx = static_cast<Effect>(value >> 6);
+      break;
+    case 1:
+      for (int i = 0; i < 6; i++)
+        targets[1][i] = value & (1 << i);
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+void BlendAlpha::Reset() {
+  WriteByte(0, 0);
+  WriteByte(1, 0);
+}
+
+auto BlendAlpha::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return a;
+    case 1:
+      return b;
+    default:
+      UNREACHABLE;
+  }
+
+  return 0;
+}
+
+void BlendAlpha::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      a = value & 31;
+      break;
+    case 1:
+      b = value & 31;
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+void BlendBrightness::Reset() {
+  WriteByte(0, 0);
+}
+
+void BlendBrightness::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      y = value & 31;
+      break;
+    case 1:
+    case 2:
+    case 3:
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+void Mosaic::Reset() {
+  bg.size_x = 1;
+  bg.size_y = 1;
+  bg._counter_y = 0;
+  obj.size_x = 1;
+  obj.size_y = 1;
+  bg._counter_y = 0;
+}
+
+void Mosaic::WriteByte(uint offset, u8 value) {
+  // TODO: how does hardware handle mid-frame or mid-line mosaic changes?
+  switch (offset) {
+    case 0:
+      bg.size_x = (value & 15) + 1;
+      bg.size_y = (value >> 4) + 1;    
+      bg._counter_y = 0;
+      break;
+    case 1:
+      obj.size_x = (value & 15) + 1;
+      obj.size_y = (value >> 4) + 1;
+      obj._counter_y = 0;
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
 } // namespace fauxDS::core

@@ -18,9 +18,21 @@ struct PPU {
 
   struct MMIO {
     DisplayControl dispcnt;
+
     BackgroundControl bgcnt[4] { 0, 1, 2, 3 };
-    BackgroundOffset bghofs[4] {};
-    BackgroundOffset bgvofs[4] {};
+    BackgroundOffset bghofs[4];
+    BackgroundOffset bgvofs[4];
+
+    WindowRange winh[2];
+    WindowRange winv[2];
+    WindowLayerSelect winin;
+    WindowLayerSelect winout;
+
+    BlendControl bldcnt;
+    BlendAlpha bldalpha;
+    BlendBrightness bldy;
+
+    Mosaic mosaic;
   } mmio;
 
   void Reset();
@@ -53,6 +65,11 @@ private:
       data >>= 8;
     }
   }
+
+  void RenderDisplayOff(u16 vcount);
+  void RenderNormal(u16 vcount);
+  void RenderVideoMemoryDisplay(u16 vcount);
+  void RenderMainMemoryDisplay(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
 
