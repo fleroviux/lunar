@@ -40,6 +40,29 @@ struct PPU {
   void RenderScanline(u16 vcount);
 
 private:
+  enum Layer {
+    LAYER_BG0 = 0,
+    LAYER_BG1 = 1,
+    LAYER_BG2 = 2,
+    LAYER_BG3 = 3,
+    LAYER_OBJ = 4,
+    LAYER_SFX = 5,
+    LAYER_BD  = 5
+  };
+
+  enum Enable {
+    ENABLE_BG0 = 0,
+    ENABLE_BG1 = 1,
+    ENABLE_BG2 = 2,
+    ENABLE_BG3 = 3,
+    ENABLE_OBJ = 4,
+    ENABLE_WIN0 = 5,
+    ENABLE_WIN1 = 6,
+    ENABLE_OBJWIN = 7
+  };
+
+  static auto ConvertColor(u16 color) -> u32;
+
   inline auto ReadPalette(uint palette, uint index) -> u16 {
     return *reinterpret_cast<u16 const*>(&pram[(palette * 16 + index) * 2]) & 0x7FFF;
   }
@@ -50,7 +73,7 @@ private:
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 15;
-      buffer[x ^ xor_x] = index == 0 ? 0x8000 : ReadPalette(palette, index);
+      buffer[x ^ xor_x] = index == 0 ? s_color_transparent : ReadPalette(palette, index);
       data >>= 4;
     }
   }
@@ -61,7 +84,7 @@ private:
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 0xFF;
-      buffer[x ^ xor_x] = index == 0 ? 0x8000 : ReadPalette(0, index);
+      buffer[x ^ xor_x] = index == 0 ? s_color_transparent : ReadPalette(0, index);
       data >>= 8;
     }
   }
@@ -72,11 +95,26 @@ private:
   void RenderMainMemoryDisplay(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
+  void RenderWindow(uint id, u8 value);
+
+  void ComposeScanline(u16 vcount, int bg_min, int bg_max);
+  void InitBlendTable();
+  void Blend(u16& target1, u16 target2, BlendControl::Effect sfx);
+
+  u8 blend_table[17][17][32][32];
 
   int id;
-
   u32 framebuffer[256 * 192];
   u16 buffer_bg[4][256];
+  bool buffer_win[2][256];
+  bool window_scanline_enable[2];
+
+  struct ObjectPixel {
+    u16 color;
+    u8  priority;
+    unsigned alpha  : 1;
+    unsigned window : 1;
+  } buffer_obj[256];
 
   /// Background tile and map data
   Region<32> const& vram_bg;
@@ -86,6 +124,8 @@ private:
 
   /// Palette RAM
   u8 const* pram;
+
+  static constexpr u16 s_color_transparent = 0x8000;
 };
 
 } // namespace fauxDS::core

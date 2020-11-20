@@ -99,7 +99,7 @@ void VideoUnit::OnHblankBegin(int late) {
 
 void VideoUnit::OnHblankFlagSet(int late) {
   // TODO: should Hblank DMA be triggered here or in "OnHblankBegin"? 
-  if (vcount.value <= kTotalLines - 1) {
+  if (vcount.value <= kDrawingLines - 1) {
     dma9.Request(DMA9::Time::HBlank);
   }
 
