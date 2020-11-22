@@ -78,10 +78,13 @@ void VideoUnit::OnHdrawBegin(int late) {
     ppu_b.RenderScanline(vcount.value);
   }
 
-  scheduler.Add(1536 - late, this, &VideoUnit::OnHblankBegin);
+  scheduler.Add(1606 - late, this, &VideoUnit::OnHblankBegin);
 }
 
 void VideoUnit::OnHblankBegin(int late) {
+  dispstat7.hblank.flag = true;
+  dispstat9.hblank.flag = true;
+
   if (dispstat7.hblank.enable_irq) {
     irq7.Raise(IRQ::Source::HBlank);
   }
@@ -90,17 +93,9 @@ void VideoUnit::OnHblankBegin(int late) {
     irq9.Raise(IRQ::Source::HBlank);
   }
 
-  scheduler.Add(70 - late, this, &VideoUnit::OnHblankFlagSet);
-}
-
-void VideoUnit::OnHblankFlagSet(int late) {
-  // TODO: should Hblank DMA be triggered here or in "OnHblankBegin"? 
   if (vcount.value <= kDrawingLines - 1) {
     dma9.Request(DMA9::Time::HBlank);
   }
-
-  dispstat7.hblank.flag = true;
-  dispstat9.hblank.flag = true;
 
   scheduler.Add(594 - late, this, &VideoUnit::OnHdrawBegin);
 }

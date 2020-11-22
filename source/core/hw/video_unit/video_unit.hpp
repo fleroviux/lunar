@@ -57,7 +57,6 @@ struct VideoUnit {
 private:
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);
-  void OnHblankFlagSet(int late);
 
   Scheduler& scheduler;
   IRQ& irq7;
