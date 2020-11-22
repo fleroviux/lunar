@@ -101,10 +101,7 @@ private:
   void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
 
   void ComposeScanline(u16 vcount, int bg_min, int bg_max);
-  void InitBlendTable();
   void Blend(u16& target1, u16 target2, BlendControl::Effect sfx);
-
-  u8 blend_table[17][17][32][32];
 
   int id;
   u32 framebuffer[256 * 192];

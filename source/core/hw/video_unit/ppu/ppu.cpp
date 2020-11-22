@@ -19,7 +19,6 @@ PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const
   } else {
     mmio.dispcnt = {0xC033FFF7};
   }
-  InitBlendTable();
   Reset();
 }
 
@@ -435,21 +434,9 @@ void PPU::ComposeScanline(u16 vcount, int bg_min, int bg_max) {
   }
 }
 
-void PPU::InitBlendTable() {
-  for (int color0 = 0; color0 <= 31; color0++) {
-    for (int color1 = 0; color1 <= 31; color1++) {
-      for (int factor0 = 0; factor0 <= 16; factor0++) {
-        for (int factor1 = 0; factor1 <= 16; factor1++) {
-          int result = (color0 * factor0 + color1 * factor1) >> 4;
-
-          blend_table[factor0][factor1][color0][color1] = std::min<u8>(result, 31);
-        }
-      }
-    }
-  }
-}
-
-void PPU::Blend(u16& target1, u16 target2, BlendControl::Effect sfx) {
+void PPU::Blend(u16& target1,
+                u16  target2,
+                BlendControl::Effect sfx) {
   int r1 = (target1 >>  0) & 0x1F;
   int g1 = (target1 >>  5) & 0x1F;
   int b1 = (target1 >> 10) & 0x1F;
@@ -463,25 +450,25 @@ void PPU::Blend(u16& target1, u16 target2, BlendControl::Effect sfx) {
       int g2 = (target2 >>  5) & 0x1F;
       int b2 = (target2 >> 10) & 0x1F;
 
-      r1 = blend_table[eva][evb][r1][r2];
-      g1 = blend_table[eva][evb][g1][g2];
-      b1 = blend_table[eva][evb][b1][b2];
+      r1 = std::min<u8>((r1 * eva + r2 * evb) >> 4, 31);
+      g1 = std::min<u8>((g1 * eva + g2 * evb) >> 4, 31);
+      b1 = std::min<u8>((b1 * eva + b2 * evb) >> 4, 31);
       break;
     }
     case BlendControl::Effect::SFX_BRIGHTEN: {
       int evy = std::min<int>(16, mmio.bldy.y);
-
-      r1 = blend_table[16 - evy][evy][r1][31];
-      g1 = blend_table[16 - evy][evy][g1][31];
-      b1 = blend_table[16 - evy][evy][b1][31];
+      
+      r1 += ((31 - r1) * evy) >> 4;
+      g1 += ((31 - g1) * evy) >> 4;
+      b1 += ((31 - b1) * evy) >> 4;
       break;
     }
     case BlendControl::Effect::SFX_DARKEN: {
       int evy = std::min<int>(16, mmio.bldy.y);
-
-      r1 = blend_table[16 - evy][evy][r1][0];
-      g1 = blend_table[16 - evy][evy][g1][0];
-      b1 = blend_table[16 - evy][evy][b1][0];
+      
+      r1 -= (r1 * evy) >> 4;
+      g1 -= (g1 * evy) >> 4;
+      b1 -= (b1 * evy) >> 4;
       break;
     }
   }
