@@ -37,6 +37,8 @@ struct VideoUnit {
     } vblank = {}, hblank = {}, vcount = {};
 
     u16 vcount_setting = 0;
+
+    std::function<void(void)> write_cb;
   } dispstat7, dispstat9;
 
   /// Currently rendered scanline.
@@ -55,6 +57,7 @@ struct VideoUnit {
   PPU ppu_b;
 
 private:
+  void CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq);
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);
 

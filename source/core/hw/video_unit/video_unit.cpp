@@ -30,10 +30,28 @@ void VideoUnit::Reset() {
   dispstat9 = {};
   vcount = {};
 
+  dispstat7.write_cb = [this]() {
+    CheckVerticalCounterIRQ(dispstat7, irq7);
+  };
+
+  dispstat9.write_cb = [this]() {
+    CheckVerticalCounterIRQ(dispstat9, irq9);
+  };
+
   ppu_a.Reset();
   ppu_b.Reset();
 
   OnHdrawBegin(0);
+}
+
+void VideoUnit::CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq) {
+  auto flag_new = dispstat.vcount_setting == vcount.value;
+
+  if (dispstat.vcount.enable_irq && !dispstat.vcount.flag && flag_new) {
+    irq.Raise(IRQ::Source::VCount);
+  }
+  
+  dispstat.vcount.flag = flag_new;
 }
 
 void VideoUnit::OnHdrawBegin(int late) {
@@ -41,8 +59,8 @@ void VideoUnit::OnHdrawBegin(int late) {
     vcount.value = 0;
   }
 
-  dispstat7.vcount.flag = vcount.value == dispstat7.vcount_setting;
-  dispstat9.vcount.flag = vcount.value == dispstat9.vcount_setting;
+  CheckVerticalCounterIRQ(dispstat7, irq7);
+  CheckVerticalCounterIRQ(dispstat9, irq9);
 
   if (dispstat7.vcount.enable_irq && dispstat7.vcount.flag) {
     irq7.Raise(IRQ::Source::VCount);
@@ -131,6 +149,8 @@ void VideoUnit::DisplayStatus::WriteByte(uint offset, u8 value) {
     default:
       UNREACHABLE;
   }
+
+  write_cb();
 }
 
 auto VideoUnit::VCOUNT::ReadByte(uint offset) -> u8 {
