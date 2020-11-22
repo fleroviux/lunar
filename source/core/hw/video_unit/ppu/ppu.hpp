@@ -97,6 +97,9 @@ private:
   void RenderLayerText(uint id, u16 vcount);
   void RenderWindow(uint id, u8 value);
 
+  template<bool window, bool blending>
+  void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
+
   void ComposeScanline(u16 vcount, int bg_min, int bg_max);
   void InitBlendTable();
   void Blend(u16& target1, u16 target2, BlendControl::Effect sfx);
@@ -115,6 +118,8 @@ private:
     unsigned alpha  : 1;
     unsigned window : 1;
   } buffer_obj[256];
+
+  bool line_contains_alpha_obj = false;
 
   /// Background tile and map data
   Region<32> const& vram_bg;
