@@ -91,9 +91,12 @@ void VideoUnit::OnHdrawBegin(int late) {
   dispstat7.hblank.flag = false;
   dispstat9.hblank.flag = false;
 
-  if (vcount.value < kDrawingLines) {
-    ppu_a.RenderScanline(vcount.value);
-    ppu_b.RenderScanline(vcount.value);
+  if (vcount.value <= kDrawingLines - 1) {
+    ppu_a.OnDrawScanlineBegin(vcount.value);
+    ppu_b.OnDrawScanlineBegin(vcount.value);
+  } else {
+    ppu_a.OnBlankScanlineBegin(vcount.value);
+    ppu_b.OnBlankScanlineBegin(vcount.value);    
   }
 
   scheduler.Add(1606 - late, this, &VideoUnit::OnHblankBegin);

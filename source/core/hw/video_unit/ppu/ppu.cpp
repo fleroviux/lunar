@@ -59,6 +59,28 @@ void PPU::Reset() {
   mmio.mosaic.Reset();
 }
 
+void PPU::OnDrawScanlineBegin(u16 vcount) {
+  if (mmio.dispcnt.enable[ENABLE_WIN0]) {
+    RenderWindow(0, vcount);
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_WIN1]) {
+    RenderWindow(1, vcount);
+  }
+
+  RenderScanline(vcount);
+}
+
+void PPU::OnBlankScanlineBegin(u16 vcount) {
+  if (mmio.dispcnt.enable[ENABLE_WIN0]) {
+    RenderWindow(0, vcount);
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_WIN1]) {
+    RenderWindow(1, vcount);
+  }
+}
+
 void PPU::RenderScanline(u16 vcount) {
   switch (mmio.dispcnt.display_mode) {
     case 0:
@@ -76,7 +98,6 @@ void PPU::RenderScanline(u16 vcount) {
   }
 }
 
-
 void PPU::RenderDisplayOff(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
@@ -93,14 +114,6 @@ void PPU::RenderNormal(u16 vcount) {
       line[x] = ConvertColor(0x7FFF);
     }
     return;
-  }
-
-  if (mmio.dispcnt.enable[ENABLE_WIN0]) {
-    RenderWindow(0, vcount);
-  }
-
-  if (mmio.dispcnt.enable[ENABLE_WIN1]) {
-    RenderWindow(1, vcount);
   }
 
   for (uint i = 0; i < 4; i++) {
@@ -220,31 +233,30 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
 
 void PPU::RenderWindow(uint id, u8 vcount) {
   auto& winv = mmio.winv[id];
+  auto& winh = mmio.winh[id];
 
-  // Check if the current scanline is outside of the window.
-  if ((winv.min <= winv.max && (vcount < winv.min || vcount >= winv.max)) ||
-      (winv.min >  winv.max && (vcount < winv.min && vcount >= winv.max))) {
-    // Mark window as inactive during the current scanline.
-    window_scanline_enable[id] = false;
-  } else {
-    auto& winh = mmio.winh[id];
-
-    // Mark window as active during the current scanline.
+  if (vcount == winv.min) {
     window_scanline_enable[id] = true;
+  }
 
-    // Only recalculate the LUTs if min/max changed between the last update & now.
-    if (winh._changed) {
-      if (winh.min <= winh.max) {
-        for (uint x = 0; x < 256; x++) {
-          buffer_win[id][x] = x >= winh.min && x < winh.max;
-        }
-      } else {
-        for (uint x = 0; x < 256; x++) {
-          buffer_win[id][x] = x >= winh.min || x < winh.max;
-        }
+  if (vcount == winv.max) {
+    window_scanline_enable[id] = false;
+  }
+
+  if (window_scanline_enable[id] && winh._changed) {
+    // TODO: X1=00h is treated as 0 (left-most), X2=00h is treated as 100h (right-most).
+    // However, the window is not displayed if X1=X2=00h
+    if (winh.min <= winh.max) {
+      for (int x = 0; x < 240; x++) {
+        buffer_win[id][x] = x >= winh.min && x < winh.max;
       }
-      winh._changed = false;
+    } else {
+      for (int x = 0; x < 240; x++) {
+        buffer_win[id][x] = x >= winh.min || x < winh.max;
+      }
     }
+    
+    winh._changed = false;
   }
 }
 

@@ -37,7 +37,9 @@ struct PPU {
 
   void Reset();
   auto GetFramebuffer() -> u32* { return &framebuffer[0]; }
-  void RenderScanline(u16 vcount);
+  
+  void OnDrawScanlineBegin(u16 vcount);
+  void OnBlankScanlineBegin(u16 vcount);
 
 private:
   enum Layer {
@@ -88,6 +90,8 @@ private:
       data >>= 8;
     }
   }
+
+  void RenderScanline(u16 vcount);
 
   void RenderDisplayOff(u16 vcount);
   void RenderNormal(u16 vcount);
