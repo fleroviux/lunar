@@ -9,11 +9,12 @@
 
 namespace fauxDS::core {
 
-PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram) 
+PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram, u8 const* oam) 
     : id(id)
     , vram_bg(vram_bg)
     , vram_obj(vram_obj)
-    , pram(pram) {
+    , pram(pram)
+    , oam(oam) {
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
@@ -114,6 +115,10 @@ void PPU::RenderNormal(u16 vcount) {
       line[x] = ConvertColor(0x7FFF);
     }
     return;
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_OBJ]) {
+    RenderLayerOAM(vcount, false);
   }
 
   for (uint i = 0; i < 4; i++) {

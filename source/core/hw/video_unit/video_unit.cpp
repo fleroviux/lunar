@@ -13,8 +13,8 @@ static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
-    : ppu_a(0, vram.region_ppu_a_bg, vram.region_ppu_a_obj, &pram[0x000])
-    , ppu_b(1, vram.region_ppu_b_bg, vram.region_ppu_b_obj, &pram[0x400]) 
+    : ppu_a(0, vram.region_ppu_a_bg, vram.region_ppu_a_obj, &pram[0x000], &oam[0x000])
+    , ppu_b(1, vram.region_ppu_b_bg, vram.region_ppu_b_obj, &pram[0x400], &oam[0x400]) 
     , scheduler(scheduler)
     , irq7(irq7)
     , irq9(irq9)
@@ -25,6 +25,7 @@ VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA
 
 void VideoUnit::Reset() {
   memset(pram, 0, sizeof(pram));
+  memset(oam, 0, sizeof(oam));
   vram.Reset();
   dispstat7 = {};
   dispstat9 = {};

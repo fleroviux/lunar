@@ -52,6 +52,7 @@ struct VideoUnit {
   } vcount;
 
   u8 pram[0x800];
+  u8 oam[0x800];
   VRAM vram;
   PPU ppu_a;
   PPU ppu_b;

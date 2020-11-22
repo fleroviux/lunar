@@ -92,6 +92,8 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
           return vram.region_lcdc.Read<T>(address & 0xFFFFF);
       }
       return 0;
+    case 0x07:
+      return *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]);
     case 0x08:
       LOG_WARN("ARM9: unhandled ROM read!");
       return 0xFF;
@@ -180,6 +182,7 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       }
       break;
     case 0x07:
+      *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
       break;
     default:
       // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.

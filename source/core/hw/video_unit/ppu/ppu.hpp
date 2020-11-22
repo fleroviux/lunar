@@ -14,7 +14,7 @@ namespace fauxDS::core {
 /// 2D picture processing unit (PPU).
 /// The Nintendo DS has two of these (PPU A and PPU B) for each screen.
 struct PPU {
-  PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram);
+  PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram, u8 const* oam);
 
   struct MMIO {
     DisplayControl dispcnt;
@@ -42,6 +42,19 @@ struct PPU {
   void OnBlankScanlineBegin(u16 vcount);
 
 private:
+  // Ugh....
+  enum ObjAttribute {
+    OBJ_IS_ALPHA  = 1,
+    OBJ_IS_WINDOW = 2
+  };
+
+  enum ObjectMode {
+    OBJ_NORMAL = 0,
+    OBJ_SEMI   = 1,
+    OBJ_WINDOW = 2,
+    OBJ_PROHIBITED = 3
+  };
+
   enum Layer {
     LAYER_BG0 = 0,
     LAYER_BG1 = 1,
@@ -69,6 +82,8 @@ private:
     return *reinterpret_cast<u16 const*>(&pram[(palette * 16 + index) * 2]) & 0x7FFF;
   }
 
+  // FIXME: handle differences between BG and OAM cleanly.
+
   inline void DecodeTileLine4BPP(u16* buffer, u32 base, uint palette, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
     u32  data  = vram_bg.Read<u32>(base + number * 32 + y * 4);
@@ -91,6 +106,27 @@ private:
     }
   }
 
+  auto DecodeTilePixel4BPP(u32 address, int palette, int x, int y) -> u16 {
+    u8 tuple = vram_obj.Read<u8>(address + (y * 4) + (x / 2));
+    u8 index = (x & 1) ? (tuple >> 4) : (tuple & 0xF);
+
+    if (index == 0) {
+      return s_color_transparent;
+    } else {
+      return ReadPalette(palette, index);
+    }
+  }
+
+  auto DecodeTilePixel8BPP(u32 address, int x, int y, bool sprite = false) -> u16 {
+    u8 index = vram_obj.Read<u8>(address + (y * 8) + x);
+
+    if (index == 0) {
+      return s_color_transparent;
+    } else {
+      return ReadPalette(sprite ? 16 : 0, index);
+    }
+  }
+
   void RenderScanline(u16 vcount);
 
   void RenderDisplayOff(u16 vcount);
@@ -99,6 +135,7 @@ private:
   void RenderMainMemoryDisplay(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
+  void RenderLayerOAM(u16 vcount, bool bitmap_mode);
   void RenderWindow(uint id, u8 value);
 
   template<bool window, bool blending>
@@ -131,7 +168,11 @@ private:
   /// Palette RAM
   u8 const* pram;
 
+  /// Object Attribute Map
+  u8 const* oam;
+
   static constexpr u16 s_color_transparent = 0x8000;
+  static const int s_obj_size[4][4][2];
 };
 
 } // namespace fauxDS::core
