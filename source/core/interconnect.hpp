@@ -28,7 +28,7 @@ struct Interconnect {
       , timer9(scheduler, irq9)
       , dma7(irq7)
       , dma9(irq9)
-      , video_unit(&scheduler, irq7, irq9, dma7, dma9)
+      , video_unit(scheduler, irq7, irq9, dma7, dma9)
       , wramcnt(swram) {
     Reset();
   }

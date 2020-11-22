@@ -19,7 +19,7 @@ namespace fauxDS::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
-  VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9);
+  VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9);
 
   void Reset();
 
@@ -59,7 +59,7 @@ private:
   void OnHblankBegin(int late);
   void OnHblankFlagSet(int late);
 
-  Scheduler* scheduler;
+  Scheduler& scheduler;
   IRQ& irq7;
   IRQ& irq9;
   DMA7& dma7;

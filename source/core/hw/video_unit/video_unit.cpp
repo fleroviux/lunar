@@ -12,7 +12,7 @@ static constexpr int kDrawingLines = 192;
 static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
-VideoUnit::VideoUnit(Scheduler* scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
+VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
     : ppu_a(0, vram.region_ppu_a_bg, vram.region_ppu_a_obj, &pram[0x000])
     , ppu_b(1, vram.region_ppu_b_bg, vram.region_ppu_b_obj, &pram[0x400]) 
     , scheduler(scheduler)
@@ -78,9 +78,7 @@ void VideoUnit::OnHdrawBegin(int late) {
     ppu_b.RenderScanline(vcount.value);
   }
 
-  scheduler->Add(1536 - late, [this](int late) {
-    this->OnHblankBegin(late);
-  });
+  scheduler.Add(1536 - late, this, &VideoUnit::OnHblankBegin);
 }
 
 void VideoUnit::OnHblankBegin(int late) {
@@ -92,9 +90,7 @@ void VideoUnit::OnHblankBegin(int late) {
     irq9.Raise(IRQ::Source::HBlank);
   }
 
-  scheduler->Add(70 - late, [this](int late) {
-    this->OnHblankFlagSet(late);
-  });
+  scheduler.Add(70 - late, this, &VideoUnit::OnHblankFlagSet);
 }
 
 void VideoUnit::OnHblankFlagSet(int late) {
@@ -106,9 +102,7 @@ void VideoUnit::OnHblankFlagSet(int late) {
   dispstat7.hblank.flag = true;
   dispstat9.hblank.flag = true;
 
-  scheduler->Add(594 - late, [this](int late) {
-    this->OnHdrawBegin(late);
-  });
+  scheduler.Add(594 - late, this, &VideoUnit::OnHdrawBegin);
 }
 
 auto VideoUnit::DisplayStatus::ReadByte(uint offset) -> u8 {

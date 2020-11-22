@@ -16,6 +16,9 @@ struct Scheduler {
   Scheduler();
  ~Scheduler();
 
+  template<class T>
+  using EventMethod = void (T::*)(int);
+
   struct Event {
     std::function<void(int)> callback;
   private:
@@ -47,6 +50,13 @@ struct Scheduler {
   void Step();
   auto Add(u64 delay, std::function<void(int)> callback) -> Event*;
   void Cancel(Event* event) { Remove(event->handle); }
+
+  template<class T>
+  void Add(std::uint64_t delay, T* object, EventMethod<T> method) {
+    Add(delay, [object, method](int cycles_late) {
+      (object->*method)(cycles_late);
+    });
+  }
 
 private:
   static constexpr int kMaxEvents = 64;
