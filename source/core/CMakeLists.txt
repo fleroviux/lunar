@@ -15,6 +15,10 @@ set(SOURCES
   hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
   hw/timer/timer.cpp
+  hw/video_unit/ppu/render/oam.cpp
+  hw/video_unit/ppu/render/text.cpp
+  hw/video_unit/ppu/render/window.cpp
+  hw/video_unit/ppu/composer.cpp
   hw/video_unit/ppu/ppu.cpp
   hw/video_unit/ppu/registers.cpp
   hw/video_unit/video_unit.cpp
