@@ -37,21 +37,13 @@ const int PPU::s_obj_size[4][4][2] = {
   }
 };
 
-// TODO: the "bitmap_mode" flag probably shouldn't be relevant at all for NDS mode.
-
-void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
-  /* 2d-affine transform matrix (pa, pb, pc, pd). */
+void PPU::RenderLayerOAM(u16 vcount) {
   s16 transform[4];
 
   int tile_num;
   u16 pixel;
 
   line_contains_alpha_obj = false;
-
-  // TODO: this needs to be adjusted for NDS mode.
-  // Also: what even are the penalties for the new bitmap OAM mode?
-  int cycles = 0;
-  int cycle_limit = mmio.dispcnt.hblank_oam_update ? 954 : 1210;
 
   for (int x = 0; x < 256; x++) {
     buffer_obj[x].priority = 4;
@@ -61,7 +53,7 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
   }
 
   for (s32 offset = 0; offset <= 127 * 8; offset += 8) {
-    /* Check if OBJ is diabled (affine=0, attr0bit9=1) */
+    // Check if OBJ is disabled (affine=0, attr0bit9=1)
     if ((oam[offset + 1] & 3) == 2) {
       continue;
     }
@@ -81,49 +73,41 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
     int mode   = (attr0 >> 10) & 3;
     int mosaic = (attr0 >> 12) & 1;
 
-    if (mode == OBJ_PROHIBITED) {
-      continue;
-    }
-
-    // TODO: this most likely is different for NDS too...
+    // TODO: confirm that this logic is correct.
     if (x >= 256) x -= 512;
     if (y >= 192) y -= 256;
 
     int affine  = (attr0 >> 8) & 1;
     int attr0b9 = (attr0 >> 9) & 1;
 
-    /* Decode OBJ width and height. */
+    // Decode OBJ width and height.
     width  = s_obj_size[shape][size][0];
     height = s_obj_size[shape][size][1];
 
     int half_width  = width / 2;
     int half_height = height / 2;
 
-    /* Set x and y to OBJ origin. */
+    // Set x and y to OBJ origin.
     x += half_width;
     y += half_height;
 
-    int cycles_per_pixel;
-
-    /* Load transform matrix. */
+    // Load transform matrix.
     if (affine) {
       int group = ((attr1 >> 9) & 0x1F) << 5;
 
-      /* Read transform matrix. */
+      // Read transform matrix.
       transform[0] = (oam[group + 0x7 ] << 8) | oam[group + 0x6 ];
       transform[1] = (oam[group + 0xF ] << 8) | oam[group + 0xE ];
       transform[2] = (oam[group + 0x17] << 8) | oam[group + 0x16];
       transform[3] = (oam[group + 0x1F] << 8) | oam[group + 0x1E];
 
-      /* Check double-size flag. Doubles size of the view rectangle. */
+      // Check double-size flag. Doubles size of the view rectangle.
       if (attr0b9) {
         x += half_width;
         y += half_height;
         half_width  *= 2;
         half_height *= 2;
       }
-
-      cycles_per_pixel = 2;
     } else {
       /* Set transform to identity:
        * [ 1 0 ]
@@ -133,18 +117,14 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
       transform[1] = 0;
       transform[2] = 0;
       transform[3] = 0x100;
-
-      cycles_per_pixel = 1;
     }
 
-    int line = vcount; // remove me
-
-    /* Bail out if scanline is outside OBJ's view rectangle. */
-    if (line < (y - half_height) || line >= (y + half_height)) {
+    // Bail out if scanline is outside OBJ's view rectangle.
+    if (vcount < (y - half_height) || vcount >= (y + half_height)) {
       continue;
     }
 
-    int local_y = line - y;
+    s16 local_y = vcount - y;
     int number  =  attr2 & 0x3FF;
     int palette = (attr2 >> 12) + 16;
     int flip_h  = !affine && (attr1 & (1 << 12));
@@ -158,33 +138,23 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
       local_y -= mmio.mosaic.obj._counter_y;
     }
 
-    if (affine) {
-      cycles += 10;
-    }
-
-    /* Render OBJ scanline. */
+    // Render OBJ scanline. 
     for (int local_x = -half_width; local_x <= half_width; local_x++) {
       int _local_x = local_x - mosaic_x;
       int global_x = local_x + x;
-
-      if (cycles > cycle_limit) {
-        return;
-      }
-
-      cycles += cycles_per_pixel;
 
       if (mosaic && (++mosaic_x == mmio.mosaic.obj.size_x)) {
         mosaic_x = 0;
       }
 
-      if (global_x < 0 || global_x >= 240) {
+      if (global_x < 0 || global_x >= 256) {
         continue;
       }
 
       int tex_x = ((transform[0] * _local_x + transform[1] * local_y) >> 8) + (width / 2);
       int tex_y = ((transform[2] * _local_x + transform[3] * local_y) >> 8) + (height / 2);
 
-      /* Check if transformed coordinates are inside bounds. */
+      // Check if transformed coordinates are inside bounds.
       if (tex_x >= width || tex_y >= height ||
         tex_x < 0 || tex_y < 0) {
         continue;
@@ -207,10 +177,6 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
 
         tile_num += block_x * 2;
 
-        /*if (bitmap_mode && tile_num < 512) {
-          continue;
-        }*/
-
         pixel = DecodeTilePixel8BPP(tile_num * 32, tile_x, tile_y, true);
       } else {
         if (mmio.dispcnt.tile_obj.mapping == DisplayControl::Mapping::OneDimensional) {
@@ -220,10 +186,6 @@ void PPU::RenderLayerOAM(u16 vcount, bool bitmap_mode) {
         }
 
         tile_num += block_x;
-
-        /*if (bitmap_mode && tile_num < 512) {
-          continue;
-        }*/
 
         pixel = DecodeTilePixel4BPP(tile_num * 32, palette, tile_x, tile_y);
       }

@@ -52,7 +52,7 @@ private:
     OBJ_NORMAL = 0,
     OBJ_SEMI   = 1,
     OBJ_WINDOW = 2,
-    OBJ_PROHIBITED = 3
+    OBJ_BITMAP = 3
   };
 
   enum Layer {
@@ -135,7 +135,7 @@ private:
   void RenderMainMemoryDisplay(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
-  void RenderLayerOAM(u16 vcount, bool bitmap_mode);
+  void RenderLayerOAM(u16 vcount);
   void RenderWindow(uint id, u8 value);
 
   template<bool window, bool blending>

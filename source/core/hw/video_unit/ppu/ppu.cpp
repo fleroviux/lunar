@@ -118,7 +118,7 @@ void PPU::RenderNormal(u16 vcount) {
   }
 
   if (mmio.dispcnt.enable[ENABLE_OBJ]) {
-    RenderLayerOAM(vcount, false);
+    RenderLayerOAM(vcount);
   }
 
   for (uint i = 0; i < 4; i++) {
