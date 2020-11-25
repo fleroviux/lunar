@@ -73,7 +73,6 @@ void PPU::RenderLayerOAM(u16 vcount) {
     int mode   = (attr0 >> 10) & 3;
     int mosaic = (attr0 >> 12) & 1;
 
-    // TODO: confirm that this logic is correct.
     if (x >= 256) x -= 512;
     if (y >= 192) y -= 256;
 
@@ -192,11 +191,10 @@ void PPU::RenderLayerOAM(u16 vcount) {
 
       auto& point = buffer_obj[global_x];
 
-      // TODO: GBA's OAM priority bug does not apply to the NDS!
       if (pixel != s_color_transparent) {
         if (mode == OBJ_WINDOW) {
           point.window = 1;
-        } else if (prio < point.priority || point.color == s_color_transparent) {
+        } else if (prio < point.priority) {
           point.priority = prio;
           point.color = pixel;
           point.alpha = (mode == OBJ_SEMI) ? 1 : 0;
@@ -204,10 +202,6 @@ void PPU::RenderLayerOAM(u16 vcount) {
             line_contains_alpha_obj = true;
           }
         }
-      }
-
-      if (prio < point.priority) {
-        point.priority = prio;
       }
     }
   }
