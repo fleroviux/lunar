@@ -3,6 +3,7 @@
  */
 
 #include <core/hw/video_unit/ppu/ppu.hpp>
+#include <common/log.hpp>
 
 namespace fauxDS::core {
 
@@ -167,7 +168,22 @@ void PPU::RenderLayerOAM(u16 vcount) {
       int block_x = tex_x / 8;
       int block_y = tex_y / 8;
 
-      if (is_256) {
+      if (mode == OBJ_BITMAP) {
+        // TODO: Attr 2, Bit 12-15 is used as Alpha-OAM value (instead of as palette setting).
+        if (mmio.dispcnt.bitmap_obj.mapping == DisplayControl::Mapping::OneDimensional) {
+          tile_num = (number << mmio.dispcnt.bitmap_obj.boundary) + block_y * (width / 8); 
+        } else {
+          tile_num = number + block_y * (16 << mmio.dispcnt.bitmap_obj.dimension);
+        }
+
+        tile_num += block_x;
+
+        pixel = vram_obj.Read<u16>(tile_num * 128 + tile_y * 16 + tile_x * 2);
+
+        if ((pixel & 0x8000) == 0) {
+          pixel = s_color_transparent;
+        }
+      } else if (is_256) {
         if (mmio.dispcnt.tile_obj.mapping == DisplayControl::Mapping::OneDimensional) {
           tile_num = (number << mmio.dispcnt.tile_obj.boundary) + block_y * (width / 4);
         } else {
