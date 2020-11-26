@@ -163,6 +163,7 @@ void PPU::RenderLayerOAM(u16 vcount) {
       if (flip_h) tex_x = width  - tex_x - 1;
       if (flip_v) tex_y = height - tex_y - 1;
 
+      // TODO: these variables are never used in bitmap mode...
       int tile_x  = tex_x % 8;
       int tile_y  = tex_y % 8;
       int block_x = tex_x / 8;
@@ -171,14 +172,13 @@ void PPU::RenderLayerOAM(u16 vcount) {
       if (mode == OBJ_BITMAP) {
         // TODO: Attr 2, Bit 12-15 is used as Alpha-OAM value (instead of as palette setting).
         if (mmio.dispcnt.bitmap_obj.mapping == DisplayControl::Mapping::OneDimensional) {
-          tile_num = (number << mmio.dispcnt.bitmap_obj.boundary) + block_y * (width / 8); 
+          pixel = vram_obj.Read<u16>((number * (64 << mmio.dispcnt.bitmap_obj.boundary) + tex_y * width + tex_x) * 2);
         } else {
-          tile_num = number + block_y * (16 << mmio.dispcnt.bitmap_obj.dimension);
+          auto dimension = mmio.dispcnt.bitmap_obj.dimension;
+          auto mask = (16 << dimension) - 1;
+          
+          pixel = vram_obj.Read<u16>(((number & ~mask) * 64 + (number & mask) * 8 + tile_y * (128 << dimension) + tile_x) * 2);
         }
-
-        tile_num += block_x;
-
-        pixel = vram_obj.Read<u16>(tile_num * 128 + tile_y * 16 + tile_x * 2);
 
         if ((pixel & 0x8000) == 0) {
           pixel = s_color_transparent;
