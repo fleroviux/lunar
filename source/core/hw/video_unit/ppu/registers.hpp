@@ -72,6 +72,21 @@ struct BackgroundOffset {
   void WriteByte(uint offset, u8 value);
 };
 
+struct ReferencePoint {
+  s32 initial;
+  s32 _current;
+  
+  void Reset();
+  void WriteByte(uint offset, u8 value);
+};
+
+struct RotateScaleParameter {
+  s16 value;
+
+  void Reset();
+  void WriteByte(uint offset, u8 value);
+};
+
 struct WindowRange {
   u8 min;
   u8 max;

@@ -38,6 +38,30 @@ enum Registers {
   REG_BG3HOFS_B = 0x0400'101C,
   REG_BG3VOFS_A = 0x0400'001E,
   REG_BG3VOFS_B = 0x0400'101E,
+  REG_BG2PA_A = 0x0400'0020,
+  REG_BG2PA_B = 0x0400'1020,
+  REG_BG2PB_A = 0x0400'0022,
+  REG_BG2PB_B = 0x0400'1022,
+  REG_BG2PC_A = 0x0400'0024,
+  REG_BG2PC_B = 0x0400'1024,
+  REG_BG2PD_A = 0x0400'0026,
+  REG_BG2PD_B = 0x0400'1026,
+  REG_BG2X_A = 0x0400'0028,
+  REG_BG2X_B = 0x0400'1028,
+  REG_BG2Y_A = 0x0400'002C,
+  REG_BG2Y_B = 0x0400'102C,
+  REG_BG3PA_A = 0x0400'0030,
+  REG_BG3PA_B = 0x0400'1030,
+  REG_BG3PB_A = 0x0400'0032,
+  REG_BG3PB_B = 0x0400'1032,
+  REG_BG3PC_A = 0x0400'0034,
+  REG_BG3PC_B = 0x0400'1034,
+  REG_BG3PD_A = 0x0400'0036,
+  REG_BG3PD_B = 0x0400'1036,
+  REG_BG3X_A = 0x0400'0038,
+  REG_BG3X_B = 0x0400'1038,
+  REG_BG3Y_A = 0x0400'003C,
+  REG_BG3Y_B = 0x0400'103C,
   REG_WIN0H_A = 0x0400'0040,
   REG_WIN0H_B = 0x0400'1040,
   REG_WIN1H_A = 0x0400'0042,
@@ -597,6 +621,103 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_BG3VOFS_A|1:
       ppu_io_a.bgvofs[3].WriteByte(1, value);
+      break;    
+    
+    case REG_BG2PA_A|0:
+      ppu_io_a.bgpa[0].WriteByte(0, value);
+      break;
+    case REG_BG2PA_A|1:
+      ppu_io_a.bgpa[0].WriteByte(1, value);
+      break;
+    case REG_BG2PB_A|0:
+      ppu_io_a.bgpb[0].WriteByte(0, value);
+      break;
+    case REG_BG2PB_A|1:
+      ppu_io_a.bgpb[0].WriteByte(1, value);
+      break;
+    case REG_BG2PC_A|0:
+      ppu_io_a.bgpc[0].WriteByte(0, value);
+      break;
+    case REG_BG2PC_A|1:
+      ppu_io_a.bgpc[0].WriteByte(1, value);
+      break;
+    case REG_BG2PD_A|0:
+      ppu_io_a.bgpd[0].WriteByte(0, value);
+      break;
+    case REG_BG2PD_A|1:
+      ppu_io_a.bgpd[0].WriteByte(1, value);
+      break;
+    case REG_BG2X_A|0:
+      ppu_io_a.bgx[0].WriteByte(0, value);
+      break;
+    case REG_BG2X_A|1:
+      ppu_io_a.bgx[0].WriteByte(1, value);
+      break;
+    case REG_BG2X_A|2:
+      ppu_io_a.bgx[0].WriteByte(2, value);
+      break;
+    case REG_BG2X_A|3:
+      ppu_io_a.bgx[0].WriteByte(3, value);
+      break;
+    case REG_BG2Y_A|0:
+      ppu_io_a.bgy[0].WriteByte(0, value);
+      break;
+    case REG_BG2Y_A|1:
+      ppu_io_a.bgy[0].WriteByte(1, value);
+      break;
+    case REG_BG2Y_A|2:
+      ppu_io_a.bgy[0].WriteByte(2, value);
+      break;
+    case REG_BG2Y_A|3:
+      ppu_io_a.bgy[0].WriteByte(3, value);
+      break;
+    case REG_BG3PA_A|0:
+      ppu_io_a.bgpa[1].WriteByte(0, value);
+      break;
+    case REG_BG3PA_A|1:
+      ppu_io_a.bgpa[1].WriteByte(1, value);
+      break;
+    case REG_BG3PB_A|0:
+      ppu_io_a.bgpb[1].WriteByte(0, value);
+      break;
+    case REG_BG3PB_A|1:
+      ppu_io_a.bgpb[1].WriteByte(1, value);
+      break;
+    case REG_BG3PC_A|0:
+      ppu_io_a.bgpc[1].WriteByte(0, value);
+      break;
+    case REG_BG3PC_A|1:
+      ppu_io_a.bgpc[1].WriteByte(1, value);
+      break;
+    case REG_BG3PD_A|0:
+      ppu_io_a.bgpd[1].WriteByte(0, value);
+      break;
+    case REG_BG3PD_A|1:
+      ppu_io_a.bgpd[1].WriteByte(1, value);
+      break;
+    case REG_BG3X_A|0:
+      ppu_io_a.bgx[1].WriteByte(0, value);
+      break;
+    case REG_BG3X_A|1:
+      ppu_io_a.bgx[1].WriteByte(1, value);
+      break;
+    case REG_BG3X_A|2:
+      ppu_io_a.bgx[1].WriteByte(2, value);
+      break;
+    case REG_BG3X_A|3:
+      ppu_io_a.bgx[1].WriteByte(3, value);
+      break;
+    case REG_BG3Y_A|0:
+      ppu_io_a.bgy[1].WriteByte(0, value);
+      break;
+    case REG_BG3Y_A|1:
+      ppu_io_a.bgy[1].WriteByte(1, value);
+      break;
+    case REG_BG3Y_A|2:
+      ppu_io_a.bgy[1].WriteByte(2, value);
+      break;
+    case REG_BG3Y_A|3:
+      ppu_io_a.bgy[1].WriteByte(3, value);
       break;
     case REG_WIN0H_A|0:
       ppu_io_a.winh[0].WriteByte(0, value);
@@ -747,6 +868,102 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_BG3VOFS_B|1:
       ppu_io_b.bgvofs[3].WriteByte(1, value);
+      break;
+    case REG_BG2PA_B|0:
+      ppu_io_b.bgpa[0].WriteByte(0, value);
+      break;
+    case REG_BG2PA_B|1:
+      ppu_io_b.bgpa[0].WriteByte(1, value);
+      break;
+    case REG_BG2PB_B|0:
+      ppu_io_b.bgpb[0].WriteByte(0, value);
+      break;
+    case REG_BG2PB_B|1:
+      ppu_io_b.bgpb[0].WriteByte(1, value);
+      break;
+    case REG_BG2PC_B|0:
+      ppu_io_b.bgpc[0].WriteByte(0, value);
+      break;
+    case REG_BG2PC_B|1:
+      ppu_io_b.bgpc[0].WriteByte(1, value);
+      break;
+    case REG_BG2PD_B|0:
+      ppu_io_b.bgpd[0].WriteByte(0, value);
+      break;
+    case REG_BG2PD_B|1:
+      ppu_io_b.bgpd[0].WriteByte(1, value);
+      break;
+    case REG_BG2X_B|0:
+      ppu_io_b.bgx[0].WriteByte(0, value);
+      break;
+    case REG_BG2X_B|1:
+      ppu_io_b.bgx[0].WriteByte(1, value);
+      break;
+    case REG_BG2X_B|2:
+      ppu_io_b.bgx[0].WriteByte(2, value);
+      break;
+    case REG_BG2X_B|3:
+      ppu_io_b.bgx[0].WriteByte(3, value);
+      break;
+    case REG_BG2Y_B|0:
+      ppu_io_b.bgy[0].WriteByte(0, value);
+      break;
+    case REG_BG2Y_B|1:
+      ppu_io_b.bgy[0].WriteByte(1, value);
+      break;
+    case REG_BG2Y_B|2:
+      ppu_io_b.bgy[0].WriteByte(2, value);
+      break;
+    case REG_BG2Y_B|3:
+      ppu_io_b.bgy[0].WriteByte(3, value);
+      break;
+    case REG_BG3PA_B|0:
+      ppu_io_b.bgpa[1].WriteByte(0, value);
+      break;
+    case REG_BG3PA_B|1:
+      ppu_io_b.bgpa[1].WriteByte(1, value);
+      break;
+    case REG_BG3PB_B|0:
+      ppu_io_b.bgpb[1].WriteByte(0, value);
+      break;
+    case REG_BG3PB_B|1:
+      ppu_io_b.bgpb[1].WriteByte(1, value);
+      break;
+    case REG_BG3PC_B|0:
+      ppu_io_b.bgpc[1].WriteByte(0, value);
+      break;
+    case REG_BG3PC_B|1:
+      ppu_io_b.bgpc[1].WriteByte(1, value);
+      break;
+    case REG_BG3PD_B|0:
+      ppu_io_b.bgpd[1].WriteByte(0, value);
+      break;
+    case REG_BG3PD_B|1:
+      ppu_io_b.bgpd[1].WriteByte(1, value);
+      break;
+    case REG_BG3X_B|0:
+      ppu_io_b.bgx[1].WriteByte(0, value);
+      break;
+    case REG_BG3X_B|1:
+      ppu_io_b.bgx[1].WriteByte(1, value);
+      break;
+    case REG_BG3X_B|2:
+      ppu_io_b.bgx[1].WriteByte(2, value);
+      break;
+    case REG_BG3X_B|3:
+      ppu_io_b.bgx[1].WriteByte(3, value);
+      break;
+    case REG_BG3Y_B|0:
+      ppu_io_b.bgy[1].WriteByte(0, value);
+      break;
+    case REG_BG3Y_B|1:
+      ppu_io_b.bgy[1].WriteByte(1, value);
+      break;
+    case REG_BG3Y_B|2:
+      ppu_io_b.bgy[1].WriteByte(2, value);
+      break;
+    case REG_BG3Y_B|3:
+      ppu_io_b.bgy[1].WriteByte(3, value);
       break;
     case REG_WIN0H_B|0:
       ppu_io_b.winh[0].WriteByte(0, value);

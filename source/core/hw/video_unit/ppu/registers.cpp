@@ -145,6 +145,53 @@ void BackgroundOffset::WriteByte(uint offset, u8 value) {
   }
 }
 
+void ReferencePoint::Reset() {
+  initial = 0;
+  _current = 0;
+}
+
+void ReferencePoint::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      initial = (initial & 0x0FFFFF00) | value;
+      break;
+    case 1:
+      initial = (initial & 0x0FFF00FF) | (value << 8);
+      break;
+    case 2:
+      initial = (initial & 0x0F00FFFF) | (value << 16);
+      break;
+    case 3:
+      initial = (initial & 0x00FFFFFF) | (value << 24);
+      break;
+    default:
+      UNREACHABLE;
+  }
+  
+  if (initial & (1 << 27)) {
+    initial |= 0xF0000000;
+  }
+  
+  _current = initial;
+}
+
+void RotateScaleParameter::Reset() {
+  value = 0;
+}
+
+void RotateScaleParameter::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      this->value = (this->value & 0xFF00) | value;
+      break;
+    case 1:
+      this->value = (this->value & 0x00FF) | (value << 8);
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
 void WindowRange::Reset() {
   min = 0;
   max = 0;

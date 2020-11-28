@@ -22,6 +22,12 @@ struct PPU {
     BackgroundControl bgcnt[4] { 0, 1, 2, 3 };
     BackgroundOffset bghofs[4];
     BackgroundOffset bgvofs[4];
+    RotateScaleParameter bgpa[2];
+    RotateScaleParameter bgpb[2];
+    RotateScaleParameter bgpc[2];
+    RotateScaleParameter bgpd[2];
+    ReferencePoint bgx[2];
+    ReferencePoint bgy[2];
 
     WindowRange winh[2];
     WindowRange winv[2];
@@ -118,12 +124,63 @@ private:
   }
 
   auto DecodeTilePixel8BPP(u32 address, int x, int y, bool sprite = false) -> u16 {
-    u8 index = vram_obj.Read<u8>(address + (y * 8) + x);
+    u8 index = vram_bg.Read<u8>(address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
     } else {
       return ReadPalette(sprite ? 16 : 0, index);
+    }
+  }
+
+  void AffineRenderLoop(uint id,
+                        int width,
+                        int height,
+                        std::function<void(int, int, int)> render_func) {
+    auto const& bg = mmio.bgcnt[2 + id];
+    auto const& mosaic = mmio.mosaic.bg;
+    u16* buffer = buffer_bg[2 + id];
+    
+    s32 ref_x = mmio.bgx[id]._current;
+    s32 ref_y = mmio.bgy[id]._current;
+    s16 pa = mmio.bgpa[id].value;
+    s16 pc = mmio.bgpc[id].value;
+    
+    int mosaic_x = 0;
+    
+    for (int _x = 0; _x < 256; _x++) {
+      s32 x = ref_x >> 8;
+      s32 y = ref_y >> 8;
+      
+      if (bg.enable_mosaic) {
+        if (++mosaic_x == mosaic.size_x) {
+          ref_x += mosaic.size_x * pa;
+          ref_y += mosaic.size_x * pc;
+          mosaic_x = 0;
+        }
+      } else {
+        ref_x += pa;
+        ref_y += pc;
+      }
+      
+      if (bg.wraparound) {
+        if (x >= width) {
+          x %= width;
+        } else if (x < 0) {
+          x = width + (x % width);
+        }
+        
+        if (y >= height) {
+          y %= height;
+        } else if (y < 0) {
+          y = height + (y % height);
+        }
+      } else if (x >= width || y >= height || x < 0 || y < 0) {
+        buffer[_x] = s_color_transparent;
+        continue;
+      }
+      
+      render_func(_x, (int)x, (int)y);
     }
   }
 
@@ -135,8 +192,9 @@ private:
   void RenderMainMemoryDisplay(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
+  void RenderLayerAffine(uint id, u16 vcount);
   void RenderLayerOAM(u16 vcount);
-  void RenderWindow(uint id, u8 value);
+  void RenderWindow(uint id, u8 vcount);
 
   template<bool window, bool blending>
   void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);

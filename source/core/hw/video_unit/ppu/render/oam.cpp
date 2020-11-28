@@ -163,7 +163,6 @@ void PPU::RenderLayerOAM(u16 vcount) {
       if (flip_h) tex_x = width  - tex_x - 1;
       if (flip_v) tex_y = height - tex_y - 1;
 
-      // TODO: these variables are never used in bitmap mode...
       int tile_x  = tex_x % 8;
       int tile_y  = tex_y % 8;
       int block_x = tex_x / 8;
@@ -176,7 +175,7 @@ void PPU::RenderLayerOAM(u16 vcount) {
         } else {
           auto dimension = mmio.dispcnt.bitmap_obj.dimension;
           auto mask = (16 << dimension) - 1;
-          
+
           pixel = vram_obj.Read<u16>(((number & ~mask) * 64 + (number & mask) * 8 + tile_y * (128 << dimension) + tile_x) * 2);
         }
 

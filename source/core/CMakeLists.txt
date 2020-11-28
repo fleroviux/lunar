@@ -15,6 +15,7 @@ set(SOURCES
   hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
   hw/timer/timer.cpp
+  hw/video_unit/ppu/render/affine.cpp
   hw/video_unit/ppu/render/oam.cpp
   hw/video_unit/ppu/render/text.cpp
   hw/video_unit/ppu/render/window.cpp
