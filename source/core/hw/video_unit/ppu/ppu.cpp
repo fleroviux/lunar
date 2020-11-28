@@ -71,10 +71,32 @@ void PPU::Reset() {
 }
 
 void PPU::OnDrawScanlineBegin(u16 vcount) {
+  if (mmio.dispcnt.enable[ENABLE_WIN0]) {
+    RenderWindow(0, vcount);
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_WIN1]) {
+    RenderWindow(1, vcount);
+  }
+
+  RenderScanline(vcount);
+}
+
+void PPU::OnDrawScanlineEnd() {
   auto& dispcnt = mmio.dispcnt;
   auto& bgx = mmio.bgx;
   auto& bgy = mmio.bgy;
   auto& mosaic = mmio.mosaic;
+
+  // Advance vertical background mosaic counter
+  if (++mosaic.bg._counter_y == mosaic.bg.size_y) {
+    mosaic.bg._counter_y = 0;
+  }
+
+  // Advance vertical OBJ mosaic counter
+  if (++mosaic.obj._counter_y == mosaic.obj.size_y) {
+    mosaic.obj._counter_y = 0;
+  }
 
   /* Mode 0 doesn't have any affine backgrounds,
    * in that case the internal registers seemingly aren't updated.
@@ -94,16 +116,6 @@ void PPU::OnDrawScanlineBegin(u16 vcount) {
       }
     }
   }
-
-  if (dispcnt.enable[ENABLE_WIN0]) {
-    RenderWindow(0, vcount);
-  }
-
-  if (dispcnt.enable[ENABLE_WIN1]) {
-    RenderWindow(1, vcount);
-  }
-
-  RenderScanline(vcount);
 }
 
 void PPU::OnBlankScanlineBegin(u16 vcount) {

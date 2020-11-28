@@ -8,10 +8,16 @@ namespace fauxDS::core {
 
 void PPU::RenderLayerText(uint id, u16 vcount) {
   auto const& bgcnt = mmio.bgcnt[id];
+  auto const& mosaic = mmio.mosaic.bg;
 
   u32 tile_base = mmio.dispcnt.tile_block * 65536 + bgcnt.tile_block * 16384;
    
   int line = mmio.bgvofs[id].value + vcount;
+
+  // Apply vertical mosaic
+  if (bgcnt.enable_mosaic) {
+    line -= mosaic._counter_y;
+  }
 
   int draw_x = -(mmio.bghofs[id].value % 8);
   int grid_x =   mmio.bghofs[id].value / 8;
@@ -103,6 +109,18 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
     base_adjust *= -1;
     grid_x = 0;
   } while (draw_x < 256);
+
+  // Apply horizontal mosaic
+  if (bgcnt.enable_mosaic && mosaic.size_x != 1) {
+    int mosaic_x = 0;
+
+    for (int x = 0; x < 256; x++) {
+      buffer[x] = buffer[x - mosaic_x];
+      if (++mosaic_x == mosaic.size_x) {
+        mosaic_x = 0;
+      }
+    }
+  }
 }
 
 } // namespace fauxDS::core

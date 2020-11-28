@@ -74,12 +74,15 @@ void VideoUnit::OnHdrawBegin(int late) {
   if (vcount.value == kDrawingLines) {
     dma7.Request(DMA7::Time::VBlank);
     dma9.Request(DMA9::Time::VBlank);
+
     if (dispstat7.vblank.enable_irq) {
       irq7.Raise(IRQ::Source::VBlank);
     }
+
     if (dispstat9.vblank.enable_irq) {
       irq9.Raise(IRQ::Source::VBlank);
     }
+
     dispstat7.vblank.flag = true;
     dispstat9.vblank.flag = true;
   }
@@ -117,6 +120,8 @@ void VideoUnit::OnHblankBegin(int late) {
 
   if (vcount.value <= kDrawingLines - 1) {
     dma9.Request(DMA9::Time::HBlank);
+    ppu_a.OnDrawScanlineEnd();
+    ppu_b.OnDrawScanlineEnd();
   }
 
   scheduler.Add(594 - late, this, &VideoUnit::OnHdrawBegin);

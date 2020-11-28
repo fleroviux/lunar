@@ -45,6 +45,7 @@ struct PPU {
   auto GetFramebuffer() -> u32* { return &framebuffer[0]; }
   
   void OnDrawScanlineBegin(u16 vcount);
+  void OnDrawScanlineEnd();
   void OnBlankScanlineBegin(u16 vcount);
 
 private:
