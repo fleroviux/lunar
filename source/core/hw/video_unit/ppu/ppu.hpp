@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <core/hw/video_unit/vram_region.hpp>
+#include <functional>
 
 #include "registers.hpp"
 
