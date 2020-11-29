@@ -5,7 +5,7 @@
 #pragma once
 
 #include <common/integer.hpp>
-#include <core/hw/video_unit/vram_region.hpp>
+#include <core/hw/video_unit/vram.hpp>
 #include <functional>
 
 #include "registers.hpp"
@@ -15,7 +15,7 @@ namespace fauxDS::core {
 /// 2D picture processing unit (PPU).
 /// The Nintendo DS has two of these (PPU A and PPU B) for each screen.
 struct PPU {
-  PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram, u8 const* oam);
+  PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam);
 
   struct MMIO {
     DisplayControl dispcnt;
@@ -50,12 +50,6 @@ struct PPU {
   void OnBlankScanlineBegin(u16 vcount);
 
 private:
-  // Ugh....
-  enum ObjAttribute {
-    OBJ_IS_ALPHA  = 1,
-    OBJ_IS_WINDOW = 2
-  };
-
   enum ObjectMode {
     OBJ_NORMAL = 0,
     OBJ_SEMI   = 1,
@@ -84,13 +78,43 @@ private:
     ENABLE_OBJWIN = 7
   };
 
-  static auto ConvertColor(u16 color) -> u32;
+  void AffineRenderLoop(
+    uint id,
+    int  width,
+    int  height,
+    std::function<void(int, int, int)> render_func);
 
-  inline auto ReadPalette(uint palette, uint index) -> u16 {
+  void RenderScanline(u16 vcount);
+  void RenderDisplayOff(u16 vcount);
+  void RenderNormal(u16 vcount);
+  void RenderVideoMemoryDisplay(u16 vcount);
+  void RenderMainMemoryDisplay(u16 vcount);
+
+  void RenderLayerText(uint id, u16 vcount);
+  void RenderLayerAffine(uint id);
+  void RenderLayerExtended(uint id);
+  void RenderLayerLarge();
+  void RenderLayerOAM(u16 vcount);
+  void RenderWindow(uint id, u8 vcount);
+
+  template<bool window, bool blending>
+  void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
+  void ComposeScanline(u16 vcount, int bg_min, int bg_max);
+  void Blend(u16& target1, u16 target2, BlendControl::Effect sfx);
+
+  static auto ConvertColor(u16 color) -> u32 {
+    u32 r = (color >>  0) & 0x1F;
+    u32 g = (color >>  5) & 0x1F;
+    u32 b = (color >> 10) & 0x1F;
+
+    return r << 19 | g << 11 | b << 3 | 0xFF000000;
+  }
+
+  auto ReadPalette(uint palette, uint index) -> u16 {
     return *reinterpret_cast<u16 const*>(&pram[(palette * 16 + index) * 2]) & 0x7FFF;
   }
 
-  inline void DecodeTileLine4BPP(u16* buffer, u32 base, uint palette, uint number, uint y, bool flip) {
+  void DecodeTileLine4BPP(u16* buffer, u32 base, uint palette, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
     u32  data  = vram_bg.Read<u32>(base + number * 32 + y * 4);
 
@@ -101,7 +125,7 @@ private:
     }
   }
 
-  inline void DecodeTileLine8BPP(u16* buffer, u32 base, uint number, uint y, bool flip) {
+  void DecodeTileLine8BPP(u16* buffer, u32 base, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
     u64  data  = vram_bg.Read<u64>(base + number * 64 + y * 8);
 
@@ -143,32 +167,6 @@ private:
     }
   }
 
-  void AffineRenderLoop(
-    uint id,
-    int  width,
-    int  height,
-    std::function<void(int, int, int)> render_func);
-
-  void RenderScanline(u16 vcount);
-
-  void RenderDisplayOff(u16 vcount);
-  void RenderNormal(u16 vcount);
-  void RenderVideoMemoryDisplay(u16 vcount);
-  void RenderMainMemoryDisplay(u16 vcount);
-
-  void RenderLayerText(uint id, u16 vcount);
-  void RenderLayerAffine(uint id);
-  void RenderLayerExtended(uint id);
-  void RenderLayerLarge();
-  void RenderLayerOAM(u16 vcount);
-  void RenderWindow(uint id, u8 vcount);
-
-  template<bool window, bool blending>
-  void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
-
-  void ComposeScanline(u16 vcount, int bg_min, int bg_max);
-  void Blend(u16& target1, u16 target2, BlendControl::Effect sfx);
-
   int id;
   u32 framebuffer[256 * 192];
   u16 buffer_bg[4][256];
@@ -184,10 +182,12 @@ private:
 
   bool line_contains_alpha_obj = false;
 
-  /// Background tile and map data
+  VRAM const& vram;
+
+  /// Background tile, map and bitmap data
   Region<32> const& vram_bg;
 
-  /// OBJ tile data
+  /// OBJ tile and bitmap data
   Region<16> const& vram_obj;
 
   /// Palette RAM

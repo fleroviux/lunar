@@ -59,10 +59,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x00000, bank_a);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x20000 * vramcnt_a.offset, bank_a);
+          region_ppu_bg[0].Unmap(0x20000 * vramcnt_a.offset, bank_a);
           break;
         case 2:
-          region_ppu_a_obj.Unmap(0x20000 * (vramcnt_a.offset & 1), bank_a);
+          region_ppu_obj[0].Unmap(0x20000 * (vramcnt_a.offset & 1), bank_a);
           break;
       }
       break;
@@ -72,10 +72,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x20000, bank_b);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x20000 * vramcnt_b.offset, bank_b);
+          region_ppu_bg[0].Unmap(0x20000 * vramcnt_b.offset, bank_b);
           break;
         case 2:
-          region_ppu_a_obj.Unmap(0x20000 * (vramcnt_b.offset & 1), bank_b);
+          region_ppu_obj[0].Unmap(0x20000 * (vramcnt_b.offset & 1), bank_b);
           break;
       }
       break;
@@ -85,13 +85,13 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x40000, bank_c);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x20000 * vramcnt_c.offset, bank_c);
+          region_ppu_bg[0].Unmap(0x20000 * vramcnt_c.offset, bank_c);
           break;
         case 2:
           region_arm7_wram.Unmap(0x20000 * (vramcnt_c.offset & 1), bank_c);
           break;
         case 4:
-          region_ppu_b_bg.Unmap(0x00000, bank_c);
+          region_ppu_bg[1].Unmap(0x00000, bank_c);
           break;
       }
       break;
@@ -101,13 +101,13 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x60000, bank_d);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x20000 * vramcnt_d.offset, bank_d);
+          region_ppu_bg[0].Unmap(0x20000 * vramcnt_d.offset, bank_d);
           break;
         case 2:
           region_arm7_wram.Unmap(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
         case 4:
-          region_ppu_b_obj.Unmap(0x00000, bank_d);
+          region_ppu_obj[1].Unmap(0x00000, bank_d);
           break;
       }
       break;
@@ -117,10 +117,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x80000, bank_e);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x00000, bank_e);
+          region_ppu_bg[0].Unmap(0x00000, bank_e);
           break;
         case 2:
-          region_ppu_a_obj.Unmap(0x00000, bank_e);
+          region_ppu_obj[0].Unmap(0x00000, bank_e);
           break;
       }
       break;
@@ -130,10 +130,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x90000, bank_f);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          region_ppu_bg[0].Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
         case 2:
-          region_ppu_a_obj.Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          region_ppu_obj[0].Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
       }
       break;
@@ -143,10 +143,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x94000, bank_g);
           break;
         case 1:
-          region_ppu_a_bg.Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          region_ppu_bg[0].Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
         case 2:
-          region_ppu_a_obj.Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          region_ppu_obj[0].Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
       }
       break;
@@ -156,7 +156,7 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0x98000, bank_h);
           break;
         case 1:
-          region_ppu_b_bg.Unmap(0x00000, bank_h);
+          region_ppu_bg[1].Unmap(0x00000, bank_h);
           break;
       }
       break;
@@ -166,10 +166,10 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           region_lcdc.Unmap(0xA0000, bank_i);
           break;
         case 1:
-          region_ppu_b_bg.Unmap(0x08000, bank_i);
+          region_ppu_bg[1].Unmap(0x08000, bank_i);
           break;
         case 2:
-          region_ppu_b_obj.Unmap(0x00000, bank_i);
+          region_ppu_obj[1].Unmap(0x00000, bank_i);
           break;
       }
       break;
@@ -184,10 +184,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x00000, bank_a);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x20000 * vramcnt_a.offset, bank_a);
+          region_ppu_bg[0].Map(0x20000 * vramcnt_a.offset, bank_a);
           break;
         case 2:
-          region_ppu_a_obj.Map(0x20000 * (vramcnt_a.offset & 1), bank_a);
+          region_ppu_obj[0].Map(0x20000 * (vramcnt_a.offset & 1), bank_a);
           break;
         default:
           LOG_ERROR("VRAM bank A: unsupported configuration: mst={0} offset={1}", vramcnt_a.mst, vramcnt_a.offset);
@@ -199,10 +199,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x20000, bank_b);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x20000 * vramcnt_b.offset, bank_b);
+          region_ppu_bg[0].Map(0x20000 * vramcnt_b.offset, bank_b);
           break;
         case 2:
-          region_ppu_a_obj.Map(0x20000 * (vramcnt_b.offset & 1), bank_b);
+          region_ppu_obj[0].Map(0x20000 * (vramcnt_b.offset & 1), bank_b);
           break;
         default:
           LOG_ERROR("VRAM bank B: unsupported configuration: mst={0} offset={1}", vramcnt_b.mst, vramcnt_b.offset);
@@ -214,13 +214,13 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x40000, bank_c);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x20000 * vramcnt_c.offset, bank_c);
+          region_ppu_bg[0].Map(0x20000 * vramcnt_c.offset, bank_c);
           break;
         case 2:
           region_arm7_wram.Map(0x20000 * (vramcnt_c.offset & 1), bank_c);
           break;
         case 4:
-          region_ppu_b_bg.Map(0x00000, bank_c);
+          region_ppu_bg[1].Map(0x00000, bank_c);
           break;
         default:
           LOG_ERROR("VRAM bank C: unsupported configuration: mst={0} offset={1}", vramcnt_c.mst, vramcnt_c.offset);
@@ -232,13 +232,13 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x60000, bank_d);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x20000 * vramcnt_d.offset, bank_d);
+          region_ppu_bg[0].Map(0x20000 * vramcnt_d.offset, bank_d);
           break;
         case 2:
           region_arm7_wram.Map(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
         case 4:
-          region_ppu_b_obj.Map(0x00000, bank_d);
+          region_ppu_obj[1].Map(0x00000, bank_d);
           break;
         default:
           LOG_ERROR("VRAM bank D: unsupported configuration: mst={0} offset={1}", vramcnt_d.mst, vramcnt_d.offset);
@@ -250,10 +250,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x80000, bank_e);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x00000, bank_e);
+          region_ppu_bg[0].Map(0x00000, bank_e);
           break;
         case 2:
-          region_ppu_a_obj.Map(0x00000, bank_e);
+          region_ppu_obj[0].Map(0x00000, bank_e);
           break;
         default:
           LOG_ERROR("VRAM bank E: unsupported configuration: mst={0} offset={1}", vramcnt_e.mst, vramcnt_e.offset);
@@ -265,10 +265,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x90000, bank_f);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          region_ppu_bg[0].Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
         case 2:
-          region_ppu_a_obj.Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          region_ppu_obj[0].Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
         default:
           LOG_ERROR("VRAM bank F: unsupported configuration: mst={0} offset={1}", vramcnt_f.mst, vramcnt_f.offset);
@@ -280,10 +280,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x94000, bank_g);
           break;
         case 1:
-          region_ppu_a_bg.Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          region_ppu_bg[0].Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
         case 2:
-          region_ppu_a_obj.Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          region_ppu_obj[0].Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
         default:
           LOG_ERROR("VRAM bank G: unsupported configuration: mst={0} offset={1}", vramcnt_g.mst, vramcnt_g.offset);
@@ -295,7 +295,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0x98000, bank_h);
           break;
         case 1:
-          region_ppu_b_bg.Map(0x00000, bank_h);
+          region_ppu_bg[1].Map(0x00000, bank_h);
           break;
         default:
           LOG_ERROR("VRAM bank H: unsupported configuration: mst={0} offset={1}", vramcnt_h.mst, vramcnt_h.offset);
@@ -307,10 +307,10 @@ void VRAM::MapToCurrent(Bank bank) {
           region_lcdc.Map(0xA0000, bank_i);
           break;
         case 1:
-          region_ppu_b_bg.Map(0x08000, bank_i);
+          region_ppu_bg[1].Map(0x08000, bank_i);
           break;
         case 2:
-          region_ppu_b_obj.Map(0x00000, bank_i);
+          region_ppu_obj[1].Map(0x00000, bank_i);
           break;
         default:
           LOG_ERROR("VRAM bank I: unsupported configuration: mst={0} offset={1}", vramcnt_i.mst, vramcnt_i.offset);

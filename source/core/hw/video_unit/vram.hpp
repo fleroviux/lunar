@@ -29,11 +29,22 @@ struct VRAM {
 
   void Reset();
 
-  /// LCDC and PPU A / B VRAM mapping (16 KiB pages)
-  Region<32> region_ppu_a_bg  { 31 };
-  Region<32> region_ppu_b_bg  {  7 };
-  Region<16> region_ppu_a_obj { 15 };
-  Region<16> region_ppu_b_obj {  7 };
+  /// VRAM banks A - I (total: 656 KiB)
+  std::array<u8, 0x20000> bank_a; // 128 KiB
+  std::array<u8, 0x20000> bank_b; // 128 KiB
+  std::array<u8, 0x20000> bank_c; // 128 KiB
+  std::array<u8, 0x20000> bank_d; // 128 KiB
+  std::array<u8, 0x10000> bank_e; //  64 KiB
+  std::array<u8,  0x4000> bank_f; //  16 KiB
+  std::array<u8,  0x4000> bank_g; //  16 KiB
+  std::array<u8,  0x8000> bank_h; //  32 KiB
+  std::array<u8,  0x4000> bank_i; //  16 KiB
+
+  /// LCDC and PPU A / B VRAM mapping
+  Region<32> region_ppu_bg [2] { 31, 7 };
+  Region<16> region_ppu_obj[2] { 15, 7 };
+
+  /// ARM9 direct access "LCDC" mapping
   Region<41> region_lcdc { 63 };
 
   /// ARM7 bank C / D mapping
@@ -91,17 +102,6 @@ private:
 
   /// Map VRAM bank according to its current configuration.
   void MapToCurrent(Bank bank);
-
-  /// VRAM banks A - I (total: 656 KiB)
-  std::array<u8, 0x20000> bank_a; // 128 KiB
-  std::array<u8, 0x20000> bank_b; // 128 KiB
-  std::array<u8, 0x20000> bank_c; // 128 KiB
-  std::array<u8, 0x20000> bank_d; // 128 KiB
-  std::array<u8, 0x10000> bank_e; //  64 KiB
-  std::array<u8,  0x4000> bank_f; //  16 KiB
-  std::array<u8,  0x4000> bank_g; //  16 KiB
-  std::array<u8,  0x8000> bank_h; //  32 KiB
-  std::array<u8,  0x4000> bank_i; //  16 KiB
 };
 
 } // namespace fauxDS::core

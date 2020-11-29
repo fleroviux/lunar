@@ -9,10 +9,11 @@
 
 namespace fauxDS::core {
 
-PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const* pram, u8 const* oam) 
+PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam) 
     : id(id)
-    , vram_bg(vram_bg)
-    , vram_obj(vram_obj)
+    , vram(vram)
+    , vram_bg(vram.region_ppu_bg[id])
+    , vram_obj(vram.region_ppu_obj[id])
     , pram(pram)
     , oam(oam) {
   if (id == 0) {
@@ -21,17 +22,6 @@ PPU::PPU(int id, Region<32> const& vram_bg, Region<16> const& vram_obj, u8 const
     mmio.dispcnt = {0xC033FFF7};
   }
   Reset();
-}
-
-auto PPU::ConvertColor(u16 color) -> u32 {
-  int r = (color >>  0) & 0x1F;
-  int g = (color >>  5) & 0x1F;
-  int b = (color >> 10) & 0x1F;
-
-  return r << 19 |
-         g << 11 |
-         b <<  3 |
-         0xFF000000;
 }
 
 void PPU::Reset() {
@@ -180,6 +170,7 @@ void PPU::RenderNormal(u16 vcount) {
     return;
   }
 
+  // TODO: on a real Nintendo DS all sprites are rendered one scanline ahead.
   if (mmio.dispcnt.enable[ENABLE_OBJ]) {
     RenderLayerOAM(vcount);
   }
@@ -273,7 +264,29 @@ void PPU::RenderNormal(u16 vcount) {
 }
 
 void PPU::RenderVideoMemoryDisplay(u16 vcount) {
-  ASSERT(false, "PPU: unimplemented video memory display mode.");
+  u16 const* source;
+  u32* line = &framebuffer[vcount * 256];
+
+  switch (mmio.dispcnt.vram_block) {
+    case 0:
+      source = reinterpret_cast<u16 const*>(vram.bank_a.data());
+      break;
+    case 1:
+      source = reinterpret_cast<u16 const*>(vram.bank_b.data());
+      break;
+    case 2:
+      source = reinterpret_cast<u16 const*>(vram.bank_c.data());
+      break;
+    case 3:
+      source = reinterpret_cast<u16 const*>(vram.bank_d.data());
+      break;
+  }
+
+  source += 256 * vcount;
+
+  for (uint x = 0; x < 256; x++) {
+    line[x] = ConvertColor(*source++);
+  }
 }
 
 void PPU::RenderMainMemoryDisplay(u16 vcount) {

@@ -70,22 +70,22 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
         /// PPU A - BG VRAM (max 512 KiB)
         case 0:
         case 1:
-          return vram.region_ppu_a_bg.Read<T>(address & 0x1FFFFF);
+          return vram.region_ppu_bg[0].Read<T>(address & 0x1FFFFF);
 
         /// PPU B - BG VRAM (max 512 KiB)
         case 2:
         case 3:
-          return vram.region_ppu_b_bg.Read<T>(address & 0x1FFFFF);
+          return vram.region_ppu_bg[1].Read<T>(address & 0x1FFFFF);
 
         /// PPU A - OBJ VRAM (max 256 KiB)
         case 4:
         case 5:
-          return vram.region_ppu_a_obj.Read<T>(address & 0x1FFFFF);
+          return vram.region_ppu_obj[0].Read<T>(address & 0x1FFFFF);
 
         /// PPU B - OBJ VRAM (max 128 KiB)
         case 6:
         case 7:
-          return vram.region_ppu_b_obj.Read<T>(address & 0x1FFFFF);
+          return vram.region_ppu_obj[1].Read<T>(address & 0x1FFFFF);
 
         /// LCDC (max 656 KiB)
         default:
@@ -154,25 +154,25 @@ void ARM9MemoryBus::Write(u32 address, T value) {
         /// PPU A - BG VRAM (max 512 KiB)
         case 0:
         case 1:
-          vram.region_ppu_a_bg.Write<T>(address & 0x1FFFFF, value);
+          vram.region_ppu_bg[0].Write<T>(address & 0x1FFFFF, value);
           break;
 
         /// PPU B - BG VRAM (max 512 KiB)
         case 2:
         case 3:
-          vram.region_ppu_b_bg.Write<T>(address & 0x1FFFFF, value);
+          vram.region_ppu_bg[1].Write<T>(address & 0x1FFFFF, value);
           break;
 
         /// PPU A - OBJ VRAM (max 256 KiB)
         case 4:
         case 5:
-          vram.region_ppu_a_obj.Write<T>(address & 0x1FFFFF, value);
+          vram.region_ppu_obj[0].Write<T>(address & 0x1FFFFF, value);
           break;
 
         /// PPU B - OBJ VRAM (max 128 KiB)
         case 6:
         case 7:
-          vram.region_ppu_b_obj.Write<T>(address & 0x1FFFFF, value);
+          vram.region_ppu_obj[1].Write<T>(address & 0x1FFFFF, value);
           break;
 
         /// LCDC (max 656 KiB)
