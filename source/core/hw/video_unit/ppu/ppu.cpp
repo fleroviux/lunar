@@ -188,28 +188,81 @@ void PPU::RenderNormal(u16 vcount) {
     // BG0 = Text/3D, BG1 - BG3 = Text
     case 0:
       for (uint i = 0; i < 4; i++) {
-        if (mmio.dispcnt.enable[i])
+        if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
+        }
       }
       break;
     // BG0 = Text/3D, BG1 - BG2 = Text, BG = affine
     case 1:
       for (uint i = 0; i < 3; i++) {
-        if (mmio.dispcnt.enable[i])
+        if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
+        }
       }
-      if (mmio.dispcnt.enable[ENABLE_BG3])
-        RenderLayerAffine(0, vcount);
+      if (mmio.dispcnt.enable[ENABLE_BG3]) {
+        RenderLayerAffine(1);
+      }
       break;
     // BG0 = Text/3D, BG1 = Text, BG2 - BG3 = affine
     case 2:
       for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[i])
+        if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
+        }
       }
       for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[2 + i])
-          RenderLayerAffine(i, vcount);
+        if (mmio.dispcnt.enable[2 + i]) {
+          RenderLayerAffine(i);
+        }
+      }
+      break;
+    // BG0 = Text / 3D, BG1 - BG2 = Text, BG3 = extended
+    case 3:
+      for (uint i = 0; i < 3; i++) {
+        if (mmio.dispcnt.enable[i]) {
+          RenderLayerText(i, vcount);
+        }
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG3]) {
+        RenderLayerExtended(1);
+      }
+      break;
+    // BG0 = Text / 3D, BG1 = Text, BG2 = affine, BG3 = extended
+    case 4:
+      for (uint i = 0; i < 2; i++) {
+        if (mmio.dispcnt.enable[i]) {
+          RenderLayerText(i, vcount);
+        }
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+        RenderLayerAffine(0);
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG3]) {
+        RenderLayerExtended(1);
+      }
+      break;
+    // BG0 = Text / 3D, BG1 = Text, BG2 = extended, BG3 = extended
+    case 5:
+      for (uint i = 0; i < 2; i++) {
+        if (mmio.dispcnt.enable[i]) {
+          RenderLayerText(i, vcount);
+        }
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+        RenderLayerExtended(0);
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG3]) {
+        RenderLayerExtended(1);
+      }
+      break;
+    case 6:
+      // TODO: exclude BG1 and BG3 from compositing.
+      if (mmio.dispcnt.enable[ENABLE_BG0]) {
+        RenderLayerText(0, vcount);
+      }
+      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+        RenderLayerLarge();
       }
       break;
     default:
