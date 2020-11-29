@@ -111,7 +111,7 @@ private:
     }
   }
 
-  auto DecodeTilePixel4BPP(u32 address, int palette, int x, int y) -> u16 {
+  auto DecodeTilePixel4BPP_OBJ(u32 address, int palette, int x, int y) -> u16 {
     u8 tuple = vram_obj.Read<u8>(address + (y * 4) + (x / 2));
     u8 index = (x & 1) ? (tuple >> 4) : (tuple & 0xF);
 
@@ -122,13 +122,23 @@ private:
     }
   }
 
-  auto DecodeTilePixel8BPP(u32 address, int x, int y, bool sprite = false) -> u16 {
+  auto DecodeTilePixel8BPP_BG(u32 address, int x, int y) -> u16 {
     u8 index = vram_bg.Read<u8>(address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
     } else {
-      return ReadPalette(sprite ? 16 : 0, index);
+      return ReadPalette(0, index);
+    }
+  }
+
+  auto DecodeTilePixel8BPP_OBJ(u32 address, int x, int y) -> u16 {
+    u8 index = vram_obj.Read<u8>(address + (y * 8) + x);
+
+    if (index == 0) {
+      return s_color_transparent;
+    } else {
+      return ReadPalette(16, index);
     }
   }
 
