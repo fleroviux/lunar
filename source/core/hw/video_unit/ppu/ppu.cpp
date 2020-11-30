@@ -268,18 +268,10 @@ void PPU::RenderVideoMemoryDisplay(u16 vcount) {
   u32* line = &framebuffer[vcount * 256];
 
   switch (mmio.dispcnt.vram_block) {
-    case 0:
-      source = reinterpret_cast<u16 const*>(vram.bank_a.data());
-      break;
-    case 1:
-      source = reinterpret_cast<u16 const*>(vram.bank_b.data());
-      break;
-    case 2:
-      source = reinterpret_cast<u16 const*>(vram.bank_c.data());
-      break;
-    case 3:
-      source = reinterpret_cast<u16 const*>(vram.bank_d.data());
-      break;
+    case 0: source = reinterpret_cast<u16 const*>(vram.bank_a.data()); break;
+    case 1: source = reinterpret_cast<u16 const*>(vram.bank_b.data()); break;
+    case 2: source = reinterpret_cast<u16 const*>(vram.bank_c.data()); break;
+    case 3: source = reinterpret_cast<u16 const*>(vram.bank_d.data()); break;
   }
 
   source += 256 * vcount;
