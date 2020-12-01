@@ -15,7 +15,7 @@
 
 namespace fauxDS::core {
 
-template<size_t page_count>
+template<size_t page_count, u32 page_size = 16384>
 struct Region {
   Region(size_t mask) : mask(mask) {}
 
@@ -23,8 +23,8 @@ struct Region {
   auto Read(u32 offset) const -> T {
     static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
-    auto const& desc = pages[(offset >> 14) & mask];
-    offset &= 0x3FFF & ~(sizeof(T) - 1);
+    auto const& desc = pages[(offset >> kPageShift) & mask];
+    offset &= kPageMask & ~(sizeof(T) - 1);
     if (likely(desc.page != nullptr)) {
       return *reinterpret_cast<T*>(&desc.page[offset]);
     }
@@ -42,8 +42,8 @@ struct Region {
   void Write(u32 offset, T value) {
     static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
-    auto const& desc = pages[(offset >> 14) & mask];
-    offset &= 0x3FFF & ~(sizeof(T) - 1);
+    auto const& desc = pages[(offset >> kPageShift) & mask];
+    offset &= kPageMask & ~(sizeof(T) - 1);
     if (likely(desc.page != nullptr)) {
       *reinterpret_cast<T*>(&desc.page[offset]) = value;
       return;
@@ -56,8 +56,8 @@ struct Region {
 
   template<size_t bank_size>
   void Map(u32 offset, std::array<u8, bank_size>& bank) {
-    auto id = static_cast<size_t>(offset >> 14);
-    auto final_id = id + (bank_size >> 14);
+    auto id = static_cast<size_t>(offset >> kPageShift);
+    auto final_id = id + (bank_size >> kPageShift);
     auto data = bank.data();
 
     while (id < final_id) {
@@ -74,14 +74,14 @@ struct Region {
         desc.page = data;
       }
 
-      data += 16384;
+      data += page_size;
     }
   }
 
   template<size_t bank_size>
   void Unmap(u32 offset, std::array<u8, bank_size> const& bank) {
-    auto id = static_cast<size_t>(offset >> 14);
-    auto final_id = id + (bank_size >> 14);
+    auto id = static_cast<size_t>(offset >> kPageShift);
+    auto final_id = id + (bank_size >> kPageShift);
     auto data = bank.data();
 
     while (id < final_id) {
@@ -103,7 +103,7 @@ struct Region {
         }
       }
 
-      data += 16384;
+      data += page_size;
     }
   }
 
@@ -119,6 +119,18 @@ private:
 
   size_t mask;
   std::array<PageDescriptor, page_count> pages {};
+
+  static constexpr int kPageShift = []() constexpr -> int {
+    for (int i = 0; i < 32; i++)
+      if (page_size == (1 << i))
+        return i;
+    return -1;
+  }();
+
+  static constexpr int kPageMask = page_size - 1;
+
+  // Make sure that the provided page size actually is a power-of-two.
+  static_assert(kPageShift != -1, "Region: page size must be a power-of-two.");
 };
 
 } // namespace fauxDS::core
