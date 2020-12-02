@@ -25,7 +25,7 @@ struct IRQ {
     IPC_Sync = 1 << 16,
     IPC_SendEmpty = 1 << 17,
     IPC_ReceiveNotEmpty = 1 << 18,
-    Cart = 1 << 19,
+    Cart_DataReady = 1 << 19,
     SPI = 1 << 23
   };
 

@@ -106,6 +106,12 @@ void Cartridge::OnCommandStart() {
       ASSERT(false, "Cartridge: unhandled command 0x{0:02X}", cardcmd.buffer[0]);
     }
   }
+
+  if (auxspicnt.enable_ready_irq && transfer.data_count != 0) {
+    // TODO: only raise the IRQ on the CPU which has rights to the cartridge bus.
+    irq7.Raise(IRQ::Source::Cart_DataReady);
+    irq9.Raise(IRQ::Source::Cart_DataReady);
+  } 
 }
 
 auto Cartridge::ReadSPI() -> u8 {
@@ -113,6 +119,7 @@ auto Cartridge::ReadSPI() -> u8 {
 }
 
 void Cartridge::WriteSPI(u8 value) {
+  LOG_INFO("Cartridge: SPI: send value 0x{0:02X}", value);
 }
 
 auto Cartridge::ReadROM() -> u32 {
@@ -127,7 +134,11 @@ auto Cartridge::ReadROM() -> u32 {
   if (transfer.index == transfer.count) {
     transfer.index = 0;
     transfer.count = 0;
-  }
+  } else if (auxspicnt.enable_ready_irq) {
+    // TODO: only raise the IRQ on the CPU which has rights to the cartridge bus.
+    irq7.Raise(IRQ::Source::Cart_DataReady);
+    irq9.Raise(IRQ::Source::Cart_DataReady);
+  } 
 
   return data;
 }

@@ -5,13 +5,14 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <core/hw/irq/irq.hpp>
 #include <fstream>
 #include <string>
 
 namespace fauxDS::core {
 
 struct Cartridge {
-  Cartridge() { Reset(); }
+  Cartridge(IRQ& irq7, IRQ& irq9) : irq7(irq7), irq9(irq9) { Reset(); }
 
   void Reset();
   void Load(std::string const& path);
@@ -85,6 +86,9 @@ private:
     /// Underlying transfer buffer
     u32 data[0x1000] {0};
   } transfer;
+
+  IRQ& irq7;
+  IRQ& irq9;
 };
 
 } // namespace fauxDS::core
