@@ -191,7 +191,7 @@ void PPU::RenderLayerOAM(u16 vcount) {
 
         tile_num += block_x * 2;
 
-        pixel = DecodeTilePixel8BPP_OBJ(tile_num * 32, tile_x, tile_y);
+        pixel = DecodeTilePixel8BPP_OBJ(tile_num * 32, palette, tile_x, tile_y);
       } else {
         if (mmio.dispcnt.tile_obj.mapping == DisplayControl::Mapping::OneDimensional) {
           tile_num = (number << mmio.dispcnt.tile_obj.boundary) + block_y * (width / 8);

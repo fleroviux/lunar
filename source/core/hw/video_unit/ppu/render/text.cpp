@@ -9,6 +9,7 @@ namespace fauxDS::core {
 void PPU::RenderLayerText(uint id, u16 vcount) {
   auto const& bgcnt = mmio.bgcnt[id];
   auto const& mosaic = mmio.mosaic.bg;
+  uint expal_slot = id <= 1 ? bgcnt.palette_slot : id;
 
   u32 tile_base = mmio.dispcnt.tile_block * 65536 + bgcnt.tile_block * 16384;
    
@@ -75,7 +76,7 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
         if (!bgcnt.full_palette) {
           DecodeTileLine4BPP(tile, tile_base, palette, number, _tile_y, flip_x);
         } else {
-          DecodeTileLine8BPP(tile, tile_base, number, _tile_y, flip_x);
+          DecodeTileLine8BPP(tile, tile_base, palette, expal_slot, number, _tile_y, flip_x);
         }
 
         last_encoder = encoder;

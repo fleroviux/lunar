@@ -14,6 +14,8 @@ PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam)
     , vram(vram)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
+    , extpal_bg(vram.region_ppu_bg_extpal[id])
+    , extpal_obj(vram.region_ppu_obj_extpal[id])
     , pram(pram)
     , oam(oam) {
   if (id == 0) {

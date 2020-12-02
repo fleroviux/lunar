@@ -73,6 +73,9 @@ void PPU::RenderLayerAffine(uint id) {
     auto tile_number = vram_bg.Read<u8>(map_base + (y >> 3) * block_width + (x >> 3));
     buffer[line_x] = DecodeTilePixel8BPP_BG(
       tile_base + tile_number * 64,
+      false,
+      0,
+      0,
       x & 7,
       y & 7
     );
@@ -127,13 +130,14 @@ void PPU::RenderLayerExtended(uint id) {
     AffineRenderLoop(id, size, size, [&](int line_x, int x, int y) {
       u16 encoder = vram_bg.Read<u16>(map_base + ((y >> 3) * block_width + (x >> 3)) * 2);
       int number  = encoder & 0x3FF;
+      int palette = encoder >> 12;
       int tile_x = x & 7;
       int tile_y = y & 7;
 
       if (encoder & (1 << 10)) tile_x = 7 - tile_x;
       if (encoder & (1 << 11)) tile_y = 7 - tile_y;
  
-      buffer[line_x] = DecodeTilePixel8BPP_BG(tile_base + number * 64, tile_x, tile_y);
+      buffer[line_x] = DecodeTilePixel8BPP_BG(tile_base + number * 64, true, palette, bg.palette_slot, tile_x, tile_y);
     });
   }
 }

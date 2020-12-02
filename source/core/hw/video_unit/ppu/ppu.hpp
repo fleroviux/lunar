@@ -125,18 +125,24 @@ private:
     }
   }
 
-  void DecodeTileLine8BPP(u16* buffer, u32 base, uint number, uint y, bool flip) {
+  void DecodeTileLine8BPP(u16* buffer, u32 base, uint palette, uint extpal_slot, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
     u64  data  = vram_bg.Read<u64>(base + number * 64 + y * 8);
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 0xFF;
-      buffer[x ^ xor_x] = index == 0 ? s_color_transparent : ReadPalette(0, index);
+      if (index == 0) {
+        buffer[x ^ xor_x] = s_color_transparent;
+      } else if (mmio.dispcnt.enable_extpal_bg) {
+        buffer[x ^ xor_x] = extpal_bg.Read<u16>(0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
+      } else {
+        buffer[x ^ xor_x] = ReadPalette(0, index);
+      }
       data >>= 8;
     }
   }
 
-  auto DecodeTilePixel4BPP_OBJ(u32 address, int palette, int x, int y) -> u16 {
+  auto DecodeTilePixel4BPP_OBJ(u32 address, uint palette, int x, int y) -> u16 {
     u8 tuple = vram_obj.Read<u8>(address + (y * 4) + (x / 2));
     u8 index = (x & 1) ? (tuple >> 4) : (tuple & 0xF);
 
@@ -147,23 +153,29 @@ private:
     }
   }
 
-  auto DecodeTilePixel8BPP_BG(u32 address, int x, int y) -> u16 {
+  auto DecodeTilePixel8BPP_BG(u32 address, bool enable_extpal, uint palette, uint extpal_slot, int x, int y) -> u16 {
     u8 index = vram_bg.Read<u8>(address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
+    } else if (enable_extpal && mmio.dispcnt.enable_extpal_bg) {
+      return extpal_bg.Read<u16>(0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
     } else {
       return ReadPalette(0, index);
     }
   }
 
-  auto DecodeTilePixel8BPP_OBJ(u32 address, int x, int y) -> u16 {
+  auto DecodeTilePixel8BPP_OBJ(u32 address, uint palette, int x, int y) -> u16 {
     u8 index = vram_obj.Read<u8>(address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
     } else {
-      return ReadPalette(16, index);
+      if (mmio.dispcnt.enable_extpal_obj) {
+        return extpal_obj.Read<u16>((palette * 256 + index) * sizeof(u16));
+      } else {
+        return ReadPalette(16, index);
+      }  
     }
   }
 
@@ -189,6 +201,12 @@ private:
 
   /// OBJ tile and bitmap data
   Region<16> const& vram_obj;
+
+  /// Background extended palette data
+  Region<4, 8192> const& extpal_bg;
+
+  /// OBJ extended palette data
+  Region<1, 8192> const& extpal_obj;
 
   /// Palette RAM
   u8 const* pram;

@@ -21,8 +21,8 @@ struct DisplayControl {
   bool hblank_oam_update = false;
   int  tile_block = 0;
   int  map_block = 0;
-  bool enable_ext_pal_bg = false;
-  bool enable_ext_pal_obj = false;
+  bool enable_extpal_bg = false;
+  bool enable_extpal_obj = false;
 
   struct {
     Mapping mapping = Mapping::TwoDimensional;

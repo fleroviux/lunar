@@ -35,6 +35,7 @@ struct Region {
         value |= *reinterpret_cast<T*>(&page[offset]);
       return value;
     }
+    
     return 0;
   }
 

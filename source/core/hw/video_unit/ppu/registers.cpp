@@ -41,8 +41,8 @@ auto DisplayControl::ReadByte(uint offset) -> u8 {
     case 3: {
       return tile_block |
              (map_block << 3) |
-             (enable_ext_pal_bg ? 64 : 0) |
-             (enable_ext_pal_obj ? 128 : 0);
+             (enable_extpal_bg ? 64 : 0) |
+             (enable_extpal_obj ? 128 : 0);
     }
   }
 
@@ -75,8 +75,8 @@ void DisplayControl::WriteByte(uint offset, u8 value) {
     case 3:
       tile_block = value & 7;
       map_block = (value >> 3) & 7;
-      enable_ext_pal_bg = value & 64;
-      enable_ext_pal_obj = value & 128; 
+      enable_extpal_bg = value & 64;
+      enable_extpal_obj = value & 128; 
       break;
     default:
       UNREACHABLE;
