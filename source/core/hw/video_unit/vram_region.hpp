@@ -55,9 +55,9 @@ struct Region {
   }
 
   template<size_t bank_size>
-  void Map(u32 offset, std::array<u8, bank_size>& bank) {
+  void Map(u32 offset, std::array<u8, bank_size>& bank, size_t size = bank_size) {
     auto id = static_cast<size_t>(offset >> kPageShift);
-    auto final_id = id + (bank_size >> kPageShift);
+    auto final_id = id + (size >> kPageShift);
     auto data = bank.data();
 
     while (id < final_id) {
@@ -79,9 +79,9 @@ struct Region {
   }
 
   template<size_t bank_size>
-  void Unmap(u32 offset, std::array<u8, bank_size> const& bank) {
+  void Unmap(u32 offset, std::array<u8, bank_size> const& bank, size_t size = bank_size) {
     auto id = static_cast<size_t>(offset >> kPageShift);
-    auto final_id = id + (bank_size >> kPageShift);
+    auto final_id = id + (size >> kPageShift);
     auto data = bank.data();
 
     while (id < final_id) {
@@ -108,7 +108,7 @@ struct Region {
   }
 
 private:
-  /// 16 KiB virtualized VRAM page descriptor
+  /// VRAM page descriptor (default size is 16 KiB)
   struct PageDescriptor {
     /// Pointer to a single physical page (regular case).
     u8* page = nullptr;
