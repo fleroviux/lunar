@@ -13,7 +13,8 @@ void Cartridge::Reset() {
   if (file.is_open())
     file.close();
   loaded = false;
-  // FIXME: properly reset ROMCTRL.
+  // FIXME: properly reset AUXSPICNT and ROMCTRL.
+  //auxspicnt = {};
   //romctrl = {};
   cardcmd = {};
 }
@@ -107,7 +108,14 @@ void Cartridge::OnCommandStart() {
   }
 }
 
-auto Cartridge::ReadData() -> u32 {
+auto Cartridge::ReadSPI() -> u8 {
+  return 0;
+}
+
+void Cartridge::WriteSPI(u8 value) {
+}
+
+auto Cartridge::ReadROM() -> u32 {
   ASSERT(transfer.count != 0, "Cartridge: attempted to read data outside of a transfer.");
 
   u32 data = 0xFFFFFFFF;
@@ -122,6 +130,35 @@ auto Cartridge::ReadData() -> u32 {
   }
 
   return data;
+}
+
+auto Cartridge::AUXSPICNT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return baudrate | (busy ? 128 : 0);
+    case 1:
+      return (select_spi ? 32 : 0) |
+             (enable_ready_irq ? 64 : 0) |
+             (enable_slot ? 128 : 0);
+  }
+
+  UNREACHABLE;
+}
+
+void Cartridge::AUXSPICNT::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      baudrate = value & 3;
+      chipselect_hold = value & 64;
+      break;
+    case 1:
+      select_spi = value & 32;
+      enable_ready_irq = value & 64;
+      enable_slot = value & 128;
+      break;
+    default:
+      UNREACHABLE;
+  }
 }
 
 auto Cartridge::ROMCTRL::ReadByte(uint offset) -> u8 {

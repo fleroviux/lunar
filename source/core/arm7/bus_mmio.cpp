@@ -50,7 +50,9 @@ enum Registers {
   REG_IPCFIFOSEND = 0x0400'0188,
   REG_IPCFIFORECV = 0x0410'0000,
 
-    // Cartridge interface
+  // Cartridge interface
+  REG_AUXSPICNT = 0x0400'01A0,
+  REG_AUXSPIDATA = 0x0400'01A2,
   REG_ROMCTRL = 0x0400'01A4,
   REG_CARDCMD = 0x0400'01A8,
   REG_CARDDATA = 0x0410'0010,
@@ -241,6 +243,14 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ipc.ipcfiforecv.ReadByte(IPC::Client::ARM7, 3);
 
     // Cartridge interface
+    case REG_AUXSPICNT|0:
+      return cart.auxspicnt.ReadByte(0);
+    case REG_AUXSPICNT|1:
+      return cart.auxspicnt.ReadByte(1);
+    case REG_AUXSPIDATA|0:
+      return cart.ReadSPI();
+    case REG_AUXSPIDATA|1:
+      return 0;
     case REG_ROMCTRL|0:
       return cart.romctrl.ReadByte(0);
     case REG_ROMCTRL|1:
@@ -338,7 +348,7 @@ auto ARM7MemoryBus::ReadWordIO(u32 address) -> u32 {
     case REG_IPCFIFORECV:
       return ipc.ipcfiforecv.ReadWord(IPC::Client::ARM7);
     case REG_CARDDATA:
-      return cart.ReadData();
+      return cart.ReadROM();
   }
 
   return (ReadByteIO(address | 0) <<  0) |
@@ -574,6 +584,17 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     // Cartridge interface
+    case REG_AUXSPICNT|0:
+      cart.auxspicnt.WriteByte(0, value);
+      break;
+    case REG_AUXSPICNT|1:
+      cart.auxspicnt.WriteByte(1, value);
+      break;
+    case REG_AUXSPIDATA|0:
+      cart.WriteSPI(value);
+      break;
+    case REG_AUXSPIDATA|1:
+      break;
     case REG_ROMCTRL|0:
       cart.romctrl.WriteByte(0, value);
       break;

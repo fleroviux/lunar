@@ -15,7 +15,28 @@ struct Cartridge {
 
   void Reset();
   void Load(std::string const& path);
-  auto ReadData() -> u32;
+  auto ReadSPI() -> u8;
+  void WriteSPI(u8 value);
+  auto ReadROM() -> u32;
+
+  struct AUXSPICNT {
+    AUXSPICNT(Cartridge& cart) : cart(cart) {}
+
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+
+  private:
+    friend struct fauxDS::core::Cartridge;
+
+    int  baudrate = 0;
+    bool chipselect_hold = false;
+    bool busy = false;
+    bool select_spi = false;
+    bool enable_ready_irq = false;
+    bool enable_slot = false;
+
+    Cartridge& cart;
+  } auxspicnt { *this };
 
   struct ROMCTRL {
     ROMCTRL(Cartridge& cart) : cart(cart) {}
