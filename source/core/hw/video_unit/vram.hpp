@@ -50,6 +50,10 @@ struct VRAM {
   /// ARM7 bank C / D mapping
   Region<16> region_arm7_wram { 15 };
 
+  /// PPU A / B extended palette slots
+  Region<4, 8192> region_ppu_bg_extpal [2] { 3, 3 };
+  Region<1, 8192> region_ppu_obj_extpal[2] { 0, 0 };
+
   /// VRAM bank control register
   struct VRAMCNT {
     VRAMCNT(VRAM& vram, Bank bank) : vram(vram), bank(bank) {}

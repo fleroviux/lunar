@@ -122,6 +122,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Unmap(0x00000, bank_e);
           break;
+        case 4:
+          region_ppu_bg_extpal[0].Map(0, bank_e, 0x8000);
+          break;
       }
       break;
     case Bank::F:
@@ -134,6 +137,12 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[0].Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          break;
+        case 4:
+          region_ppu_bg_extpal[0].Map(0x4000 * (vramcnt_f.offset & 1), bank_f);
+          break;
+        case 5:
+          region_ppu_obj_extpal[0].Map(0, bank_f, 0x2000);
           break;
       }
       break;
@@ -148,6 +157,12 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
+        case 4:
+          region_ppu_bg_extpal[0].Map(0x4000 * (vramcnt_g.offset & 1), bank_g);
+          break;
+        case 5:
+          region_ppu_obj_extpal[0].Map(0, bank_g, 0x2000);
+          break;
       }
       break;
     case Bank::H:
@@ -157,6 +172,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 1:
           region_ppu_bg[1].Unmap(0x00000, bank_h);
+          break;
+        case 2:
+          region_ppu_bg_extpal[1].Map(0, bank_h);
           break;
       }
       break;
@@ -170,6 +188,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[1].Unmap(0x00000, bank_i);
+          break;
+        case 3:
+          region_ppu_obj_extpal[1].Map(0, bank_i, 0x2000);
           break;
       }
       break;
