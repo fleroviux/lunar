@@ -17,6 +17,7 @@ void Cartridge::Reset() {
   //auxspicnt = {};
   //romctrl = {};
   cardcmd = {};
+  spidata = 0;
 }
 
 void Cartridge::Load(std::string const& path) {
@@ -115,11 +116,14 @@ void Cartridge::OnCommandStart() {
 }
 
 auto Cartridge::ReadSPI() -> u8 {
-  return 0;
+  return spidata;
 }
 
 void Cartridge::WriteSPI(u8 value) {
-  LOG_INFO("Cartridge: SPI: send value 0x{0:02X}", value);
+  spidata = backup.Transfer(value);
+  
+  if (!auxspicnt.chipselect_hold)
+    backup.Deselect();
 }
 
 auto Cartridge::ReadROM() -> u32 {

@@ -9,6 +9,8 @@
 #include <fstream>
 #include <string>
 
+#include "backup.hpp"
+
 namespace fauxDS::core {
 
 struct Cartridge {
@@ -87,8 +89,12 @@ private:
     u32 data[0x1000] {0};
   } transfer;
 
+  /// SPI backup data register
+  u8 spidata = 0;
+
   IRQ& irq7;
   IRQ& irq9;
+  Backup backup;
 };
 
 } // namespace fauxDS::core
