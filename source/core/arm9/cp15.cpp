@@ -36,6 +36,9 @@ void CP15::Reset() {
   Write(0, 1, 0, 0, 0x00052000);
 
   // Reset DTCM and ITCM configuration
+  // TODO: according to StrikerX3 the real values after firmware boot are:
+  // 9, 1, 0 - 0x027C0005
+  // 9, 1, 1 - 0x00000010
   Write(0, 9, 1, 0, 0x0080000A);
   Write(0, 9, 1, 1, 0x0000000C);
 }
@@ -144,12 +147,9 @@ void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
     value &= 0xFFF;
     LOG_ERROR("CP15: ITCM base address cannot be changed on the Nintendo DS!");
   }
-  reg_itcm = value & 0x00000FFF;
+  reg_itcm = value;
   itcm_config.base = 0;
-  itcm_config.limit = base + (512 << size) - 1;
-  if (itcm_config.limit < itcm_config.base) {
-    LOG_ERROR("CP15: ITCM limit is lower than base address!");
-  }
+  itcm_config.limit = (512 << size) - 1;
   bus->SetITCM(itcm_config);
 
   LOG_INFO("CP15: ITCM mapped @ 0x{0:08X} - 0x{1:08X}", itcm_config.base, itcm_config.limit);
