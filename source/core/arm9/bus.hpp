@@ -64,6 +64,7 @@ private:
   Cartridge& cart;
   IPC& ipc;
   IRQ& irq9;
+  MathEngine& math_engine;
   Timer& timer;
   DMA9& dma;
   VideoUnit& video_unit;

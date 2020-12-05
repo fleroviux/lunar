@@ -10,6 +10,7 @@
 #include <core/hw/dma/dma7.hpp>
 #include <core/hw/dma/dma9.hpp>
 #include <core/hw/ipc/ipc.hpp>
+#include <core/hw/math/math_engine.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/spi/spi.hpp>
 #include <core/hw/timer/timer.hpp>
@@ -42,6 +43,7 @@ struct Interconnect {
     cart.Reset();
     irq7.Reset();
     irq9.Reset();
+    math_engine.Reset();
     ipc.Reset();
     spi.Reset();
     timer7.Reset();
@@ -70,6 +72,7 @@ struct Interconnect {
   Cartridge cart;
   IRQ irq7;
   IRQ irq9;
+  MathEngine math_engine;
   IPC ipc;
   SPI spi;
   Timer timer7;

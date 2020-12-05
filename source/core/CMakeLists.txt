@@ -11,6 +11,7 @@ set(SOURCES
   hw/dma/dma9.cpp
   hw/ipc/ipc.cpp
   hw/irq/irq.cpp
+  hw/math/math_engine.cpp
   hw/spi/firmware/firmware.cpp
   hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
@@ -42,11 +43,13 @@ set(HEADERS
   arm7/bus.hpp
   arm9/bus.hpp
   arm9/cp15.hpp
+  hw/cart/backup.hpp
   hw/cart/cart.hpp
   hw/dma/dma7.hpp
   hw/dma/dma9.hpp
   hw/ipc/ipc.hpp
   hw/irq/irq.hpp
+  hw/math/math_engine.hpp
   hw/spi/firmware/firmware.hpp
   hw/spi/tsc/tsc.hpp
   hw/spi/spi.hpp

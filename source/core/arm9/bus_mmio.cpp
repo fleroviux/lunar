@@ -146,7 +146,14 @@ enum Registers {
   REG_VRAMCNT_G = 0x0400'0246,
   REG_WRAMCNT   = 0x0400'0247,
   REG_VRAMCNT_H = 0x0400'0248,
-  REG_VRAMCNT_I = 0x0400'0249
+  REG_VRAMCNT_I = 0x0400'0249,
+
+  // Math engine
+  REG_DIVCNT = 0x0400'0280,
+  REG_DIV_NUMER = 0x0400'0290,
+  REG_DIV_DENOM = 0x0400'0298,
+  REG_DIV_RESULT = 0x0400'02A0,
+  REG_DIVREM_RESULT = 0x0400'02A8
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -503,6 +510,76 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_WRAMCNT:
       return wramcnt.ReadByte();
 
+    // Math engine
+    case REG_DIVCNT|0:
+      return math_engine.divcnt.ReadByte(0);
+    case REG_DIVCNT|1:
+      return math_engine.divcnt.ReadByte(1);
+    case REG_DIV_NUMER|0:
+      return math_engine.div_numer.ReadByte(0);
+    case REG_DIV_NUMER|1:
+      return math_engine.div_numer.ReadByte(1);
+    case REG_DIV_NUMER|2:
+      return math_engine.div_numer.ReadByte(2);
+    case REG_DIV_NUMER|3:
+      return math_engine.div_numer.ReadByte(3);
+    case REG_DIV_NUMER|4:
+      return math_engine.div_numer.ReadByte(4);
+    case REG_DIV_NUMER|5:
+      return math_engine.div_numer.ReadByte(5);
+    case REG_DIV_NUMER|6:
+      return math_engine.div_numer.ReadByte(6);
+    case REG_DIV_NUMER|7:
+      return math_engine.div_numer.ReadByte(7);
+    case REG_DIV_DENOM|0:
+      return math_engine.div_denom.ReadByte(0);
+    case REG_DIV_DENOM|1:
+      return math_engine.div_denom.ReadByte(1);
+    case REG_DIV_DENOM|2:
+      return math_engine.div_denom.ReadByte(2);
+    case REG_DIV_DENOM|3:
+      return math_engine.div_denom.ReadByte(3);
+    case REG_DIV_DENOM|4:
+      return math_engine.div_denom.ReadByte(4);
+    case REG_DIV_DENOM|5:
+      return math_engine.div_denom.ReadByte(5);
+    case REG_DIV_DENOM|6:
+      return math_engine.div_denom.ReadByte(6);
+    case REG_DIV_DENOM|7:
+      return math_engine.div_denom.ReadByte(7);
+    case REG_DIV_RESULT|0:
+      return math_engine.div_result.ReadByte(0);
+    case REG_DIV_RESULT|1:
+      return math_engine.div_result.ReadByte(1);
+    case REG_DIV_RESULT|2:
+      return math_engine.div_result.ReadByte(2);
+    case REG_DIV_RESULT|3:
+      return math_engine.div_result.ReadByte(3);
+    case REG_DIV_RESULT|4:
+      return math_engine.div_result.ReadByte(4);
+    case REG_DIV_RESULT|5:
+      return math_engine.div_result.ReadByte(5);
+    case REG_DIV_RESULT|6:
+      return math_engine.div_result.ReadByte(6);
+    case REG_DIV_RESULT|7:
+      return math_engine.div_result.ReadByte(7);
+    case REG_DIVREM_RESULT|0:
+      return math_engine.div_remain.ReadByte(0);
+    case REG_DIVREM_RESULT|1:
+      return math_engine.div_remain.ReadByte(1);
+    case REG_DIVREM_RESULT|2:
+      return math_engine.div_remain.ReadByte(2);
+    case REG_DIVREM_RESULT|3:
+      return math_engine.div_remain.ReadByte(3);
+    case REG_DIVREM_RESULT|4:
+      return math_engine.div_remain.ReadByte(4);
+    case REG_DIVREM_RESULT|5:
+      return math_engine.div_remain.ReadByte(5);
+    case REG_DIVREM_RESULT|6:
+      return math_engine.div_remain.ReadByte(6);
+    case REG_DIVREM_RESULT|7:
+      return math_engine.div_remain.ReadByte(7);
+
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
   }
@@ -632,7 +709,6 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BG3VOFS_A|1:
       ppu_io_a.bgvofs[3].WriteByte(1, value);
       break;    
-    
     case REG_BG2PA_A|0:
       ppu_io_a.bgpa[0].WriteByte(0, value);
       break;
@@ -1416,6 +1492,62 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_VRAMCNT_I:
       vram.vramcnt_i.WriteByte(value);
+      break;
+
+    // Math engine
+    case REG_DIVCNT|0:
+      math_engine.divcnt.WriteByte(0, value);
+      break;
+    case REG_DIVCNT|1:
+      math_engine.divcnt.WriteByte(1, value);
+      break;
+    case REG_DIV_NUMER|0:
+      math_engine.div_numer.WriteByte(0, value);
+      break;
+    case REG_DIV_NUMER|1:
+      math_engine.div_numer.WriteByte(1, value);
+      break;
+    case REG_DIV_NUMER|2:
+      math_engine.div_numer.WriteByte(2, value);
+      break;
+    case REG_DIV_NUMER|3:
+      math_engine.div_numer.WriteByte(3, value);
+      break;
+    case REG_DIV_NUMER|4:
+      math_engine.div_numer.WriteByte(4, value);
+      break;
+    case REG_DIV_NUMER|5:
+      math_engine.div_numer.WriteByte(5, value);
+      break;
+    case REG_DIV_NUMER|6:
+      math_engine.div_numer.WriteByte(6, value);
+      break;
+    case REG_DIV_NUMER|7:
+      math_engine.div_numer.WriteByte(7, value);
+      break;
+    case REG_DIV_DENOM|0:
+      math_engine.div_denom.WriteByte(0, value);
+      break;
+    case REG_DIV_DENOM|1:
+      math_engine.div_denom.WriteByte(1, value);
+      break;
+    case REG_DIV_DENOM|2:
+      math_engine.div_denom.WriteByte(2, value);
+      break;
+    case REG_DIV_DENOM|3:
+      math_engine.div_denom.WriteByte(3, value);
+      break;
+    case REG_DIV_DENOM|4:
+      math_engine.div_denom.WriteByte(4, value);
+      break;
+    case REG_DIV_DENOM|5:
+      math_engine.div_denom.WriteByte(5, value);
+      break;
+    case REG_DIV_DENOM|6:
+      math_engine.div_denom.WriteByte(6, value);
+      break;
+    case REG_DIV_DENOM|7:
+      math_engine.div_denom.WriteByte(7, value);
       break;
 
     default:
