@@ -52,9 +52,9 @@ struct Interconnect {
     dma9.Reset();
     video_unit.Reset();
 
-    // TODO: this is just a stub!
-    swram.arm9 = { nullptr, 0 };
-    swram.arm7 = { swram.data, 0x7FFF };
+    // TODO: this is the value for direct boot,
+    // which value is correct for firmware boot?
+    wramcnt.WriteByte(3);
   }
 
   u8 ewram[0x400000];
