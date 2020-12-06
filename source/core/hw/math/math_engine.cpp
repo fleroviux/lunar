@@ -56,7 +56,6 @@ void MathEngine::DIV::WriteByte(uint offset, u8 value) {
   this->value &= ~(0xFFULL << (offset * 8));
   this->value |=  u64(value) << (offset * 8);
 
-  if (offset == 7)
   math_engine.UpdateDivision();
 }
 
