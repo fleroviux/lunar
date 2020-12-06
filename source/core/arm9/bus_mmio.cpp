@@ -153,7 +153,10 @@ enum Registers {
   REG_DIV_NUMER = 0x0400'0290,
   REG_DIV_DENOM = 0x0400'0298,
   REG_DIV_RESULT = 0x0400'02A0,
-  REG_DIVREM_RESULT = 0x0400'02A8
+  REG_DIVREM_RESULT = 0x0400'02A8,
+  REG_SQRTCNT = 0x0400'02B0,
+  REG_SQRT_RESULT = 0x0400'02B4,
+  REG_SQRT_PARAM = 0x0400'02B8
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -579,6 +582,34 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return math_engine.div_remain.ReadByte(6);
     case REG_DIVREM_RESULT|7:
       return math_engine.div_remain.ReadByte(7);
+    case REG_SQRTCNT|0:
+      return math_engine.sqrtcnt.ReadByte(0);
+    case REG_SQRTCNT|1:
+      return math_engine.sqrtcnt.ReadByte(1);
+    case REG_SQRT_RESULT|0:
+      return math_engine.sqrt_result.ReadByte(0);
+    case REG_SQRT_RESULT|1:
+      return math_engine.sqrt_result.ReadByte(1);
+    case REG_SQRT_RESULT|2:
+      return math_engine.sqrt_result.ReadByte(2);
+    case REG_SQRT_RESULT|3:
+      return math_engine.sqrt_result.ReadByte(3);
+    case REG_SQRT_PARAM|0:
+      return math_engine.sqrt_param.ReadByte(0);
+    case REG_SQRT_PARAM|1:
+      return math_engine.sqrt_param.ReadByte(1);
+    case REG_SQRT_PARAM|2:
+      return math_engine.sqrt_param.ReadByte(2);
+    case REG_SQRT_PARAM|3:
+      return math_engine.sqrt_param.ReadByte(3);
+    case REG_SQRT_PARAM|4:
+      return math_engine.sqrt_param.ReadByte(4);
+    case REG_SQRT_PARAM|5:
+      return math_engine.sqrt_param.ReadByte(5);
+    case REG_SQRT_PARAM|6:
+      return math_engine.sqrt_param.ReadByte(6);
+    case REG_SQRT_PARAM|7:
+      return math_engine.sqrt_param.ReadByte(7);
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -1548,6 +1579,36 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_DIV_DENOM|7:
       math_engine.div_denom.WriteByte(7, value);
+      break;
+    case REG_SQRTCNT|0:
+      math_engine.sqrtcnt.WriteByte(0, value);
+      break;
+    case REG_SQRTCNT|1:
+      math_engine.sqrtcnt.WriteByte(1, value);
+      break;
+    case REG_SQRT_PARAM|0:
+      math_engine.sqrt_param.WriteByte(0, value);
+      break;
+    case REG_SQRT_PARAM|1:
+      math_engine.sqrt_param.WriteByte(1, value);
+      break;
+    case REG_SQRT_PARAM|2:
+      math_engine.sqrt_param.WriteByte(2, value);
+      break;
+    case REG_SQRT_PARAM|3:
+      math_engine.sqrt_param.WriteByte(3, value);
+      break;
+    case REG_SQRT_PARAM|4:
+      math_engine.sqrt_param.WriteByte(4, value);
+      break;
+    case REG_SQRT_PARAM|5:
+      math_engine.sqrt_param.WriteByte(5, value);
+      break;
+    case REG_SQRT_PARAM|6:
+      math_engine.sqrt_param.WriteByte(6, value);
+      break;
+    case REG_SQRT_PARAM|7:
+      math_engine.sqrt_param.WriteByte(7, value);
       break;
 
     default:

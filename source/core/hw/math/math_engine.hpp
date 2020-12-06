@@ -32,7 +32,6 @@ struct MathEngine {
 
     DivisionMode mode = DivisionMode::S32_S32;
     bool error_divide_by_zero = false;
-
     MathEngine& math_engine;
   } divcnt { *this };
 
@@ -45,7 +44,6 @@ struct MathEngine {
     friend struct fauxDS::core::MathEngine;
 
     u64 value = 0;
-
     MathEngine& math_engine;
   };
 
@@ -54,8 +52,43 @@ struct MathEngine {
   DIV div_result { *this };
   DIV div_remain { *this };
 
+  struct SQRTCNT {
+    SQRTCNT(MathEngine& math_engine) : math_engine(math_engine) {}
+
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+  private:
+    friend struct fauxDS::core::MathEngine;
+
+    bool mode_64bit = false;
+    MathEngine& math_engine;
+  } sqrtcnt { *this };
+
+  struct SQRT_RESULT {
+    auto ReadByte(uint offset) -> u8;
+
+  private:
+    friend struct fauxDS::core::MathEngine;
+
+    u32 value = 0;
+  } sqrt_result;
+
+  struct SQRT_PARAM {
+    SQRT_PARAM(MathEngine& math_engine) : math_engine(math_engine) {}
+
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+  
+  private:
+    friend struct fauxDS::core::MathEngine;
+
+    u64 value = 0;
+    MathEngine& math_engine;
+  } sqrt_param { *this };
+
 private:
   void UpdateDivision();
+  void UpdateSquareRoot();
 };
 
 }; // namespace fauxDS::core

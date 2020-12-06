@@ -4,6 +4,7 @@
 
 #include <common/log.hpp>
 #include <limits>
+#include <cmath>
 
 #include "math_engine.hpp"
 
@@ -11,6 +12,7 @@ namespace fauxDS::core {
 
 void MathEngine::Reset() {
   // TODO!
+  sqrt_result = {};
 }
 
 auto MathEngine::DIVCNT::ReadByte(uint offset) -> u8 {
@@ -59,6 +61,58 @@ void MathEngine::DIV::WriteByte(uint offset, u8 value) {
   math_engine.UpdateDivision();
 }
 
+auto MathEngine::SQRTCNT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return mode_64bit ? 1 : 0;
+    case 1:
+      return 0;
+  }
+
+  UNREACHABLE;
+}
+
+void MathEngine::SQRTCNT::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      mode_64bit = value & 1;
+      break;
+    case 1:
+      break;
+    default:
+      UNREACHABLE;
+  }
+
+  math_engine.UpdateSquareRoot();
+}
+
+auto MathEngine::SQRT_RESULT::ReadByte(uint offset) -> u8 {
+  if (offset >= 4) {
+    UNREACHABLE;
+  }
+
+  return value >> (offset * 8);
+}
+
+auto MathEngine::SQRT_PARAM::ReadByte(uint offset) -> u8 {
+  if (offset >= 8) {
+    UNREACHABLE;
+  }
+
+  return value >> (offset * 8);
+}
+
+void MathEngine::SQRT_PARAM::WriteByte(uint offset, u8 value) {
+  if (offset >= 8) {
+    UNREACHABLE;
+  }
+
+  this->value &= ~(0xFFULL << (offset * 8));
+  this->value |=  u64(value) << (offset * 8);
+
+  math_engine.UpdateSquareRoot();
+}
+
 void MathEngine::UpdateDivision() {
   divcnt.error_divide_by_zero = div_denom.value == 0;
 
@@ -99,6 +153,16 @@ void MathEngine::UpdateDivision() {
       }
       break;
     }
+  }
+}
+
+void MathEngine::UpdateSquareRoot() {
+  // TODO: I'm not a huge fan of how this is handled.
+  // Maybe there is an equally efficient solution that doesn't use floating point numbers?
+  if (sqrtcnt.mode_64bit) {
+    sqrt_result.value = std::sqrt((long double)sqrt_param.value);
+  } else {
+    sqrt_result.value = std::sqrt(u32(sqrt_param.value));
   }
 }
 
