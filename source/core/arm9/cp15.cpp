@@ -30,17 +30,15 @@ CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
 }
 
 void CP15::Reset() {
-  // TODO: research what values these registers should really have upon boot.
+  // TODO: these values are for direct boot.
+  // they would need to be different if we boot into the firmware.
 
   // Reset control register (enable DTCM and ITCM, exception base = 0xFFFF0000)
-  Write(0, 1, 0, 0, 0x00052000);
+  Write(0, 1, 0, 0, 0x0005707D);
 
   // Reset DTCM and ITCM configuration
-  // TODO: according to StrikerX3 the real values after firmware boot are:
-  // 9, 1, 0 - 0x027C0005
-  // 9, 1, 1 - 0x00000010
-  Write(0, 9, 1, 0, 0x0080000A);
-  Write(0, 9, 1, 1, 0x0000000C);
+  Write(0, 9, 1, 0, 0x0300000A);
+  Write(0, 9, 1, 1, 0x00000020);
 }
 
 void CP15::RegisterHandler(int cn, int cm, int opcode, ReadHandler handler) {
