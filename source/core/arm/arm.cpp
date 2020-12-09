@@ -80,26 +80,22 @@ void ARM::SignalIRQ() {
     return;
   }
 
+  // Save current program status register.
+  state.spsr[BANK_IRQ].v = state.cpsr.v;
+
+  // Enter IRQ mode and disable IRQs.
+  SwitchMode(MODE_IRQ);
+  state.cpsr.f.mask_irq = 1;
+
+  // Save current program counter and disable Thumb.
   if (state.cpsr.f.thumb) {
-    /* Store return address in r14<irq>. */
-    state.bank[BANK_IRQ][BANK_R14] = state.r15;
-
-    /* Save program status and switch to IRQ mode. */
-    state.spsr[BANK_IRQ].v = state.cpsr.v;
-    SwitchMode(MODE_IRQ);
     state.cpsr.f.thumb = 0;
-    state.cpsr.f.mask_irq = 1;
+    state.r14 = state.r15;
   } else {
-    /* Store return address in r14<irq>. */
-    state.bank[BANK_IRQ][BANK_R14] = state.r15 - 4;
-
-    /* Save program status and switch to IRQ mode. */
-    state.spsr[BANK_IRQ].v = state.cpsr.v;
-    SwitchMode(MODE_IRQ);
-    state.cpsr.f.mask_irq = 1;
+    state.r14 = state.r15 - 4;
   }
-
-  /* Jump to exception vector. */
+  
+  // Jump to IRQ exception vector.
   state.r15 = ExceptionBase() + 0x18;
   ReloadPipeline32();
 }

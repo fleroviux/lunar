@@ -489,16 +489,16 @@ void Thumb_ConditionalBranch(u16 instruction) {
 }
 
 void Thumb_SWI(u16 instruction) {
-  // Save return address and program status.
-  state.bank[BANK_SVC][BANK_R14] = state.r15 - 2;
+  // Save current program status register.
   state.spsr[BANK_SVC].v = state.cpsr.v;
 
-  // Switch to SVC mode and disable interrupts.
+  // Enter SVC mode and disable IRQs.
   SwitchMode(MODE_SVC);
   state.cpsr.f.thumb = 0;
   state.cpsr.f.mask_irq = 1;
 
-  // Jump to execution vector
+  // Save current program counter and jump to SVC exception vector.
+  state.r14 = state.r15 - 2;
   state.r15 = ExceptionBase() + 0x08;
   ReloadPipeline32();
 }

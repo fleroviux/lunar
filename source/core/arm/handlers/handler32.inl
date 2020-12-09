@@ -756,29 +756,29 @@ void ARM_BlockDataTransfer(u32 instruction) {
 void ARM_Undefined(u32 instruction) {
   LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 
-  // Save return address and program status.
-  state.bank[BANK_UND][BANK_R14] = state.r15 - 4;
+  // Save current program status register.
   state.spsr[BANK_UND].v = state.cpsr.v;
 
-  // Switch to UND mode and disable interrupts.
+  // Enter UND mode and disable IRQs.
   SwitchMode(MODE_UND);
   state.cpsr.f.mask_irq = 1;
 
-  // Jump to execution vector.
+  // Save current program counter and jump to UND exception vector.
+  state.r14 = state.r15 - 4;
   state.r15 = ExceptionBase() + 0x04;
   ReloadPipeline32();
 }
 
 void ARM_SWI(u32 instruction) {
-  // Save return address and program status.
-  state.bank[BANK_SVC][BANK_R14] = state.r15 - 4;
+  // Save current program status register.
   state.spsr[BANK_SVC].v = state.cpsr.v;
 
-  // Switch to SVC mode and disable interrupts.
+  // Enter SVC mode and disable IRQs.
   SwitchMode(MODE_SVC);
   state.cpsr.f.mask_irq = 1;
 
-  // Jump to execution vector.
+  // Save current program counter and jump to SVC exception vector.
+  state.r14 = state.r15 - 4;
   state.r15 = ExceptionBase() + 0x08;
   ReloadPipeline32();
 }
