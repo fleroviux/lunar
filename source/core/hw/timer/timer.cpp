@@ -109,18 +109,6 @@ void Timer::Write(uint chan_id, uint offset, u8 value) {
       UNREACHABLE;
     }
   }
-
-  if (chan_id <= 1) {
-    constexpr int kCyclesPerSecond = 16777216;
-    auto timer0_duty = 0x10000 - channels[0].reload;
-    auto timer1_duty = 0x10000 - channels[1].reload;
-    channels[0].samplerate = kCyclesPerSecond / (timer0_duty << channels[0].shift);
-    if (channels[1].control.cascade) {
-      channels[1].samplerate = channels[0].samplerate / timer1_duty;
-    } else {
-      channels[1].samplerate = kCyclesPerSecond / (timer1_duty << channels[1].shift);
-    }
-  }
 }
 
 auto Timer::GetCounterDeltaSinceLastUpdate(Channel const& channel) -> u32 {

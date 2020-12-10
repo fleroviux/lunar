@@ -41,7 +41,6 @@ private:
     bool running = false;
     int shift;
     int mask;
-    int samplerate;
     u64 timestamp_started;
     Scheduler::Event* event = nullptr;
     std::function<void(int)> event_cb;
