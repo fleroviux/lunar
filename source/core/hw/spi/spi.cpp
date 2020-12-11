@@ -76,15 +76,22 @@ void SPI::SPIDATA::WriteByte(u8 value) {
     return;
   }
 
-  if (spi.devices[spi.spicnt.device] == nullptr) {
+  if (spi.spicnt.enable_irq) {
+    spi.irq7.Raise(IRQ::Source::SPI);
+  }
+
+  auto device = spi.devices[spi.spicnt.device];
+
+  if (device == nullptr) {
     LOG_WARN("SPI: attempted to access unimplemented or reserved device.");
     return;
   }
 
-  this->value = spi.devices[spi.spicnt.device]->Transfer(value);
+  this->value = device->Transfer(value);
 
-  if (spi.spicnt.enable_irq) {
-    spi.irq7.Raise(IRQ::Source::SPI);
+  if (!spi.spicnt.chipselect_hold) {
+    device->Deselect();
+    device->Select();
   }
 }
 

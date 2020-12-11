@@ -112,8 +112,8 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
       t0 = SDL_GetTicks();
     }
 
-    SDL_UpdateTexture(tex_top, nullptr, framebuffer_bottom, sizeof(u32) * 256);
-    SDL_UpdateTexture(tex_bottom, nullptr, framebuffer_top, sizeof(u32) * 256);
+    SDL_UpdateTexture(tex_top, nullptr, framebuffer_top, sizeof(u32) * 256);
+    SDL_UpdateTexture(tex_bottom, nullptr, framebuffer_bottom, sizeof(u32) * 256);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, tex_top, nullptr, &dest_top);
     SDL_RenderCopy(renderer, tex_bottom, nullptr, &dest_bottom);
