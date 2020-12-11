@@ -115,6 +115,7 @@ void DMA9::Write(uint chan_id, uint offset, u8 value) {
           case Time::Immediate:
           case Time::VBlank:
           case Time::HBlank:
+          case Time::Slot1:
             break;
           default:
             ASSERT(false, "DMA9: unhandled start time: {0}", channel.time);

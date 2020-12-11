@@ -23,7 +23,7 @@ namespace fauxDS::core {
 
 struct Interconnect {
   Interconnect()
-      : cart(irq7, irq9) 
+      : cart(irq7, irq9, dma7, dma9) 
       , ipc(irq7, irq9)
       , spi(irq7)
       , timer7(scheduler, irq7)

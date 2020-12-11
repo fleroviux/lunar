@@ -109,9 +109,11 @@ void Cartridge::OnCommandStart() {
   }
 
   if (auxspicnt.enable_ready_irq && transfer.data_count != 0) {
-    // TODO: only raise the IRQ on the CPU which has rights to the cartridge bus.
+    // TODO: only raise IRQ and DMA on the CPU which has rights to the cartridge bus.
     irq7.Raise(IRQ::Source::Cart_DataReady);
     irq9.Raise(IRQ::Source::Cart_DataReady);
+    dma7.Request(DMA7::Time::Slot1);
+    dma9.Request(DMA9::Time::Slot1);
   } 
 }
 
@@ -139,9 +141,11 @@ auto Cartridge::ReadROM() -> u32 {
     transfer.index = 0;
     transfer.count = 0;
   } else if (auxspicnt.enable_ready_irq) {
-    // TODO: only raise the IRQ on the CPU which has rights to the cartridge bus.
+    // TODO: only raise IRQ or DMA on the CPU which has rights to the cartridge bus.
     irq7.Raise(IRQ::Source::Cart_DataReady);
     irq9.Raise(IRQ::Source::Cart_DataReady);
+    dma7.Request(DMA7::Time::Slot1);
+    dma9.Request(DMA9::Time::Slot1);
   } 
 
   return data;

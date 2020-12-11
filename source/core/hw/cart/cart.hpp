@@ -5,6 +5,8 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <core/hw/dma/dma7.hpp>
+#include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <fstream>
 #include <string>
@@ -14,7 +16,13 @@
 namespace fauxDS::core {
 
 struct Cartridge {
-  Cartridge(IRQ& irq7, IRQ& irq9) : irq7(irq7), irq9(irq9) { Reset(); }
+  Cartridge(IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
+      : irq7(irq7)
+      , irq9(irq9)
+      , dma7(dma7)
+      , dma9(dma9) {
+    Reset();
+  }
 
   void Reset();
   void Load(std::string const& path);
@@ -92,6 +100,8 @@ private:
   /// SPI backup data register
   u8 spidata = 0;
 
+  DMA7& dma7;
+  DMA9& dma9;
   IRQ& irq7;
   IRQ& irq9;
   Backup backup;
