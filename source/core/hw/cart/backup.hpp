@@ -100,6 +100,10 @@ private:
   void ParseCommand(u8 command) {
     this->command = static_cast<Command>(command);
 
+    // This is a hack to ignore IR chipselect commands, for now.
+    if (command == 0 || command == 8)
+      return;
+
     switch (static_cast<Command>(command)) {
       case Command::ReadData:
         state = State::ReadAddress0;
