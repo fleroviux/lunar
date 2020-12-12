@@ -156,10 +156,14 @@ enum Registers {
   REG_DIVREM_RESULT = 0x0400'02A8,
   REG_SQRTCNT = 0x0400'02B0,
   REG_SQRT_RESULT = 0x0400'02B4,
-  REG_SQRT_PARAM = 0x0400'02B8
+  REG_SQRT_PARAM = 0x0400'02B8,
+  
+  // GPU
+  REG_DISP3DCNT = 0x0400'0060
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
+  auto& gpu_io = video_unit.gpu;
   auto& ppu_io_a = video_unit.ppu_a.mmio;
   auto& ppu_io_b = video_unit.ppu_b.mmio;
 
@@ -610,6 +614,12 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return math_engine.sqrt_param.ReadByte(6);
     case REG_SQRT_PARAM|7:
       return math_engine.sqrt_param.ReadByte(7);
+      
+    // GPU
+    case REG_DISP3DCNT|0:
+      return gpu_io.disp3dcnt.ReadByte(0);
+    case REG_DISP3DCNT|1:
+      return gpu_io.disp3dcnt.ReadByte(1);
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -645,6 +655,7 @@ auto ARM9MemoryBus::ReadWordIO(u32 address) -> u32 {
 }
 
 void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
+  auto& gpu_io = video_unit.gpu;
   auto& ppu_io_a = video_unit.ppu_a.mmio;
   auto& ppu_io_b = video_unit.ppu_b.mmio;
 
@@ -1609,6 +1620,14 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_SQRT_PARAM|7:
       math_engine.sqrt_param.WriteByte(7, value);
+      break;
+
+    // GPU
+    case REG_DISP3DCNT|0:
+      gpu_io.disp3dcnt.WriteByte(0, value);
+      break;
+    case REG_DISP3DCNT|1:
+      gpu_io.disp3dcnt.WriteByte(1, value);
       break;
 
     default:

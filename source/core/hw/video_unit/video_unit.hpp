@@ -12,6 +12,7 @@
 #include <core/scheduler.hpp>
 #include <functional>
 
+#include "gpu/gpu.hpp"
 #include "ppu/ppu.hpp"
 #include "vram.hpp"
 
@@ -54,6 +55,7 @@ struct VideoUnit {
   u8 pram[0x800];
   u8 oam[0x800];
   VRAM vram;
+  GPU gpu;
   PPU ppu_a;
   PPU ppu_b;
 

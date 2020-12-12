@@ -16,6 +16,7 @@ set(SOURCES
   hw/spi/tsc/tsc.cpp
   hw/spi/spi.cpp
   hw/timer/timer.cpp
+  hw/video_unit/gpu/gpu.cpp
   hw/video_unit/ppu/render/affine.cpp
   hw/video_unit/ppu/render/oam.cpp
   hw/video_unit/ppu/render/text.cpp
@@ -55,6 +56,7 @@ set(HEADERS
   hw/spi/spi.hpp
   hw/spi/spi_device.hpp
   hw/timer/timer.cpp
+  hw/video_unit/gpu/gpu.hpp
   hw/video_unit/ppu/ppu.hpp
   hw/video_unit/ppu/registers.hpp
   hw/video_unit/video_unit.hpp
