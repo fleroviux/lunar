@@ -10,9 +10,10 @@ namespace fauxDS::core {
 
 void GPU::Reset() {
   disp3dcnt = {};
+  gxstat = {};
 }
 
-auto GPU::DisplayControl3D::ReadByte(uint offset) -> u8 {
+auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
   switch (offset) {
     case 0:
       return (enable_textures ? 1 : 0) |
@@ -32,7 +33,7 @@ auto GPU::DisplayControl3D::ReadByte(uint offset) -> u8 {
   UNREACHABLE;
 }
 
-void GPU::DisplayControl3D::WriteByte(uint offset, u8 value) {
+void GPU::DISP3DCNT::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0:
       enable_textures = value & 1;
@@ -47,6 +48,37 @@ void GPU::DisplayControl3D::WriteByte(uint offset, u8 value) {
     case 1:
       fog_depth_shift = value & 0xF;
       enable_rear_bitmap = value & 64;
+      break;
+    default:
+      UNREACHABLE;
+  }
+}
+
+auto GPU::GXSTAT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return 0;
+    case 1:
+      return 0;
+    case 2:
+      return 0;
+    case 3:
+      return (gx_busy ? 8 : 0) | (static_cast<u8>(cmd_fifo_irq) << 6);
+  }
+  
+  UNREACHABLE;
+}
+
+void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      break;
+    case 1:
+      break;
+    case 2:
+      break;
+    case 3:
+      cmd_fifo_irq = static_cast<IRQMode>(value >> 6);
       break;
     default:
       UNREACHABLE;

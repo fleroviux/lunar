@@ -14,12 +14,12 @@ struct GPU {
   
   void Reset();
   
-  struct DisplayControl3D {
+  struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend struct GPU;
+    friend struct fauxDS::core::GPU;
     
     enum class Shading {
       Toon = 0,
@@ -44,6 +44,26 @@ struct GPU {
     bool polyvert_ram_overflow = false;
     bool enable_rear_bitmap = false;
   } disp3dcnt;
+  
+  struct GXSTAT {
+    // TODO: implement (box)test and matrix stack bits.
+        
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+    
+  private:
+    friend struct fauxDS::core::GPU;
+    
+    enum class IRQMode {
+      Never = 0,
+      LessThanHalfFull = 1,
+      Empty = 2,
+      Reserved = 3
+    };
+    
+    bool gx_busy = false;
+    IRQMode cmd_fifo_irq = IRQMode::Never;
+  } gxstat;
 };
 
 } // namespace fauxDS::core

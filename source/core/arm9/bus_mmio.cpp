@@ -159,7 +159,8 @@ enum Registers {
   REG_SQRT_PARAM = 0x0400'02B8,
   
   // GPU
-  REG_DISP3DCNT = 0x0400'0060
+  REG_DISP3DCNT = 0x0400'0060,
+  REG_GXSTAT = 0x0400'0600
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -620,6 +621,14 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return gpu_io.disp3dcnt.ReadByte(0);
     case REG_DISP3DCNT|1:
       return gpu_io.disp3dcnt.ReadByte(1);
+    case REG_GXSTAT|0:
+      return gpu_io.gxstat.ReadByte(0);
+    case REG_GXSTAT|1:
+      return gpu_io.gxstat.ReadByte(1);
+    case REG_GXSTAT|2:
+      return gpu_io.gxstat.ReadByte(2);
+    case REG_GXSTAT|3:
+      return gpu_io.gxstat.ReadByte(3);
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -1628,6 +1637,18 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_DISP3DCNT|1:
       gpu_io.disp3dcnt.WriteByte(1, value);
+      break;
+    case REG_GXSTAT|0:
+      gpu_io.gxstat.WriteByte(0, value);
+      break;
+    case REG_GXSTAT|1:
+      gpu_io.gxstat.WriteByte(1, value);
+      break;
+    case REG_GXSTAT|2:
+      gpu_io.gxstat.WriteByte(2, value);
+      break;
+    case REG_GXSTAT|3:
+      gpu_io.gxstat.WriteByte(3, value);
       break;
 
     default:
