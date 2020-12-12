@@ -8,7 +8,7 @@
 
 namespace fauxDS::core {
 
-static constexpr int kCmdNumParams[] = {
+static constexpr int kCmdNumParams[256] {
   // 0x00 - 0x0F (all NOPs)
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
@@ -39,59 +39,63 @@ void GPU::Reset() {
   // FIXME
   //gxstat = {};
   gxfifo.Reset();
+  gxpipe.Reset();
 }
 
 void GPU::WriteCommandPort(uint port, u32 parameter) {
-  u8 command = 0x00;
-
-  // TODO: is there a cleaner way to translate ports to commands...?
-  switch (port) {
-    case 0x40: command = 0x10; break;
-    case 0x44: command = 0x11; break;
-    case 0x48: command = 0x12; break;
-    case 0x4C: command = 0x13; break;
-    case 0x50: command = 0x14; break;
-    case 0x54: command = 0x15; break;
-    case 0x58: command = 0x16; break;
-    case 0x5C: command = 0x17; break;
-    case 0x60: command = 0x18; break;
-    case 0x64: command = 0x19; break;
-    case 0x68: command = 0x1A; break;
-    case 0x6C: command = 0x1B; break;
-    case 0x70: command = 0x1C; break;
-    case 0x80: command = 0x20; break;
-    case 0x84: command = 0x21; break;
-    case 0x88: command = 0x22; break;
-    case 0x8C: command = 0x23; break;
-    case 0x90: command = 0x24; break;
-    case 0x94: command = 0x25; break;
-    case 0x98: command = 0x26; break;
-    case 0x9C: command = 0x27; break;
-    case 0xA0: command = 0x28; break;
-    case 0xA4: command = 0x29; break;
-    case 0xA8: command = 0x2A; break;
-    case 0xAC: command = 0x2B; break;
-    case 0xC0: command = 0x30; break;
-    case 0xC4: command = 0x31; break;
-    case 0xC8: command = 0x32; break;
-    case 0xCC: command = 0x33; break;
-    case 0xD0: command = 0x34; break;
-    case 0x100: command = 0x40; break;
-    case 0x104: command = 0x41; break;
-    case 0x140: command = 0x50; break;
-    case 0x180: command = 0x60; break;
-    case 0x1C0: command = 0x70; break;
-    case 0x1C4: command = 0x71; break;
-    case 0x1C8: command = 0x72; break;
-
-    default:
-      LOG_ERROR("GPU: unknown command port, port=0x{0:02X}, param=0x{1:08X}", port, parameter);
+  if (port <= 0x3F || port >= 0x1CC) {
+    LOG_ERROR("GPU: unknown command port 0x{0:03X}", port);
+    return;
   }
 
-  LOG_DEBUG("GPU: received command 0x{0:02X} param0=0x{1:08X}", command, parameter);
+  Enqueue({ static_cast<u8>(port >> 2), parameter });
+}
+
+void GPU::Enqueue(CmdArgPack pack) {
+  if (gxfifo.IsEmpty() && !gxpipe.IsFull()) {
+    gxpipe.Write(pack);
+  } else {
+    gxfifo.Write(pack);
+  }
+
+  ProcessCommands();
+}
+
+auto GPU::Dequeue() -> CmdArgPack {
+  ASSERT(gxpipe.Count() != 0, "GPU: attempted to dequeue entry from empty GXPIPE");
+
+  auto entry = gxpipe.Read();
+  if (gxpipe.Count() <= 2 && !gxfifo.IsEmpty()) {
+    gxpipe.Write(gxfifo.Read());
+    CheckGXFIFO_IRQ();
+  }
+
+  return entry;
+}
+
+void GPU::ProcessCommands() {
+  auto count = gxpipe.Count() + gxfifo.Count();
+
+  if (count == 0) {
+    return;
+  }
+
+  auto const& entry = gxpipe.Peek();
+  auto param_count = kCmdNumParams[entry.command];
+
+  if (count >= param_count) {
+    auto entry_cmd = Dequeue();
+
+    // TODO: only do this if the command is unimplemented.
+    for (int i = 1; i < param_count; i++)
+      Dequeue();
+
+    LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry_cmd.command);
+  }
 }
 
 void GPU::CheckGXFIFO_IRQ() {
+  // TODO: this is pretty bad. we should only raise the IRQ if the condition changed.
   switch (gxstat.cmd_fifo_irq) {
     case GXSTAT::IRQMode::Never:
     case GXSTAT::IRQMode::Reserved:

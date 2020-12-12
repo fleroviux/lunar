@@ -83,10 +83,14 @@ private:
     u32 argument = 0;
   };
 
+  void Enqueue(CmdArgPack pack);
+  auto Dequeue() -> CmdArgPack;
+  void ProcessCommands();
   void CheckGXFIFO_IRQ();
 
   IRQ& irq9;
   common::FIFO<CmdArgPack, 256> gxfifo;
+  common::FIFO<CmdArgPack, 4> gxpipe;
 };
 
 } // namespace fauxDS::core
