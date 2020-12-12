@@ -15,6 +15,10 @@ void GPU::Reset() {
   gxfifo.Reset();
 }
 
+void GPU::WriteCommandPort(u8 port, u32 parameter) {
+  LOG_DEBUG("GPU: write to command port, port=0x{0:02X}, param=0x{1:08X}", port, parameter);
+}
+
 void GPU::CheckGXFIFO_IRQ() {
   switch (gxstat.cmd_fifo_irq) {
     case GXSTAT::IRQMode::Never:

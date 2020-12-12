@@ -1674,6 +1674,11 @@ void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
     case REG_IPCFIFOSEND:
       ipc.ipcfifosend.WriteWord(IPC::Client::ARM9, value);
       break;
+    // GPU command ports
+    // TODO: handle 8-bit and 16-bit accesses, but how do they behave?
+    case 0x0400'0440 ... 0x0400'05FF:
+      video_unit.gpu.WriteCommandPort(u8(address & 0xFF), value);
+      break;
     default:
       WriteByteIO(address | 0, u8(value >>  0));
       WriteByteIO(address | 1, u8(value >>  8));

@@ -18,6 +18,7 @@ struct GPU {
   }
   
   void Reset();
+  void WriteCommandPort(u8 port, u32 parameter);
   
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -84,9 +85,8 @@ private:
 
   void CheckGXFIFO_IRQ();
 
-  common::FIFO<CmdArgPack, 256> gxfifo;
-
   IRQ& irq9;
+  common::FIFO<CmdArgPack, 256> gxfifo;
 };
 
 } // namespace fauxDS::core
