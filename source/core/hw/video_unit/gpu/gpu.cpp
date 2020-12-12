@@ -10,7 +10,25 @@ namespace fauxDS::core {
 
 void GPU::Reset() {
   disp3dcnt = {};
-  gxstat = {};
+  // FIXME
+  //gxstat = {};
+  gxfifo.Reset();
+}
+
+void GPU::CheckGXFIFO_IRQ() {
+  switch (gxstat.cmd_fifo_irq) {
+    case GXSTAT::IRQMode::Never:
+    case GXSTAT::IRQMode::Reserved:
+      break;
+    case GXSTAT::IRQMode::LessThanHalfFull:
+      if (gxfifo.Count() < 128)
+        irq9.Raise(IRQ::Source::GXFIFO);
+      break;
+    case GXSTAT::IRQMode::Empty:
+      if (gxfifo.IsEmpty())
+        irq9.Raise(IRQ::Source::GXFIFO);
+      break;
+  }
 }
 
 auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
@@ -61,15 +79,21 @@ auto GPU::GXSTAT::ReadByte(uint offset) -> u8 {
     case 1:
       return 0;
     case 2:
-      return 0;
+      return gpu.gxfifo.Count();
     case 3:
-      return (gx_busy ? 8 : 0) | (static_cast<u8>(cmd_fifo_irq) << 6);
+      return (gpu.gxfifo.IsFull() ? 1 : 0) |
+             (gpu.gxfifo.Count() < 128 ? 2 : 0) |
+             (gpu.gxfifo.IsEmpty() ? 4 : 0) |
+             (gx_busy ? 8 : 0) |
+             (static_cast<u8>(cmd_fifo_irq) << 6);
   }
   
   UNREACHABLE;
 }
 
 void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
+  auto cmd_fifo_irq_old = cmd_fifo_irq;
+
   switch (offset) {
     case 0:
       break;
@@ -79,6 +103,9 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
       break;
     case 3:
       cmd_fifo_irq = static_cast<IRQMode>(value >> 6);
+      // TODO: confirm that the GXFIFO IRQ indeed can be triggered by this.
+      if (cmd_fifo_irq != cmd_fifo_irq_old)
+        gpu.CheckGXFIFO_IRQ();
       break;
     default:
       UNREACHABLE;

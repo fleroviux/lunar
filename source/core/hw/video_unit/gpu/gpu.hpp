@@ -5,12 +5,17 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <common/fifo.hpp>
+#include <core/hw/irq/irq.hpp>
 
 namespace fauxDS::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
-  GPU() { Reset(); }
+  GPU(IRQ& irq9)
+      : irq9(irq9) {
+    Reset();
+  }
   
   void Reset();
   
@@ -47,6 +52,8 @@ struct GPU {
   
   struct GXSTAT {
     // TODO: implement (box)test and matrix stack bits.
+
+    GXSTAT(GPU& gpu) : gpu(gpu) {}
         
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
@@ -63,7 +70,23 @@ struct GPU {
     
     bool gx_busy = false;
     IRQMode cmd_fifo_irq = IRQMode::Never;
-  } gxstat;
+
+    GPU& gpu;
+  } gxstat { *this };
+
+private:
+  // TODO: come up with a name that does *not* suck.
+  struct CmdArgPack {
+    // NOTE: command is only used if this is the first entry of a command.
+    u8 command = 0;
+    u32 argument = 0;
+  };
+
+  void CheckGXFIFO_IRQ();
+
+  common::FIFO<CmdArgPack, 256> gxfifo;
+
+  IRQ& irq9;
 };
 
 } // namespace fauxDS::core
