@@ -65,11 +65,6 @@ struct IPC {
   } ipcfiforecv {*this};
 
 private:
-  friend struct IPCSYNC;
-  friend struct IPCFIFOCNT;
-  friend struct IPCFIFOSEND;
-  friend struct IPCFIFORECV;
-
   static constexpr auto GetRemote(Client client) {
     if (client == Client::ARM9)
       return Client::ARM7;
