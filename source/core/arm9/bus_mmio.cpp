@@ -1677,7 +1677,7 @@ void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
     // GPU command ports
     // TODO: handle 8-bit and 16-bit accesses, but how do they behave?
     case 0x0400'0440 ... 0x0400'05FF:
-      video_unit.gpu.WriteCommandPort(u8(address & 0xFF), value);
+      video_unit.gpu.WriteCommandPort(address & 0x1FF, value);
       break;
     default:
       WriteByteIO(address | 0, u8(value >>  0));

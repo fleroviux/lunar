@@ -18,7 +18,7 @@ struct GPU {
   }
   
   void Reset();
-  void WriteCommandPort(u8 port, u32 parameter);
+  void WriteCommandPort(uint port, u32 parameter);
   
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
