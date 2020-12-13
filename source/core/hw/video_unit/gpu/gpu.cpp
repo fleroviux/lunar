@@ -3,7 +3,6 @@
  */
 
 #include <common/log.hpp>
-#include <string.h>
 
 #include "gpu.hpp"
 
@@ -43,7 +42,8 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
-  memset(output, 0, sizeof(output));
+  for (uint i = 0; i < 256 * 192; i++)
+    output[i] = 0x8000;
 }
 
 void GPU::WriteGXFIFO(u32 value) {
