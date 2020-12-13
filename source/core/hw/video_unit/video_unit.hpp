@@ -69,7 +69,7 @@ struct VideoUnit {
     bool enable_ppu_b = false;
     bool enable_gpu_geometry = false;
     bool enable_gpu_render = false;
-    bool display_swap = false;
+    bool display_swap = true;
   } powcnt1;
 
   u8 pram[0x800];
