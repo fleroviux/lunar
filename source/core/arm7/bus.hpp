@@ -55,6 +55,7 @@ private:
   VRAM& vram;
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
+  Interconnect::ExtKeyInput& extkeyinput;
 };
 
 } // namespace fauxDS::core

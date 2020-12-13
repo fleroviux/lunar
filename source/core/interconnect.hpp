@@ -146,6 +146,18 @@ struct Interconnect {
       UNREACHABLE;
     }
   } keyinput = {};
+
+  struct ExtKeyInput {
+    bool x = false;
+    bool y = false;
+    bool pen_down = false;
+
+    auto ReadByte() -> u8 {
+      return (x ? 0 : 1) |
+             (y ? 0 : 2) |
+             (pen_down ? 0 : 64);
+    }
+  } extkeyinput = {};
 };
 
 } // namespace fauxDS::core

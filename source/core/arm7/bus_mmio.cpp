@@ -43,6 +43,7 @@ enum Registers {
 
   // Input
   REG_KEYINPUT = 0x0400'0130,
+  REG_EXTKEYINPUT = 0x0400'0136,
 
   // IPC
   REG_IPCSYNC = 0x0400'0180,
@@ -223,6 +224,8 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return keyinput.ReadByte(0);
     case REG_KEYINPUT|1:
       return keyinput.ReadByte(1);
+    case REG_EXTKEYINPUT:
+      return extkeyinput.ReadByte();
 
     // IPC
     case REG_IPCSYNC|0:

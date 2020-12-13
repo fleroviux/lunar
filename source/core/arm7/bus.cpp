@@ -23,7 +23,8 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , video_unit(interconnect->video_unit)
     , vram(interconnect->video_unit.vram)
     , wramcnt(interconnect->wramcnt)
-    , keyinput(interconnect->keyinput) {
+    , keyinput(interconnect->keyinput)
+    , extkeyinput(interconnect->extkeyinput) {
   std::ifstream file { "bios7.bin", std::ios::in | std::ios::binary };
   ASSERT(file.good(), "ARM7: failed to open bios7.bin");
   file.read(reinterpret_cast<char*>(bios), 16384);

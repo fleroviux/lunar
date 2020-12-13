@@ -74,6 +74,8 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   auto& irq7 = interconnect->irq7;
   auto& irq9 = interconnect->irq9;
   auto& tsc = interconnect->spi.tsc;
+  auto& keyinput = interconnect->keyinput;
+  auto& extkeyinput = interconnect->extkeyinput;
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
@@ -125,8 +127,6 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
         int key = -1;
         bool pressed = event.type == SDL_KEYDOWN;
 
-        auto& keyinput = interconnect->keyinput;
-
         switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
           case SDLK_a: keyinput.a = pressed; break;
           case SDLK_s: keyinput.b = pressed; break;
@@ -138,13 +138,17 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
           case SDLK_DOWN: keyinput.down = pressed; break;
           case SDLK_d: keyinput.l = pressed; break;
           case SDLK_f: keyinput.r = pressed; break;
+          case SDLK_q: extkeyinput.x = pressed; break;
+          case SDLK_w: extkeyinput.y = pressed; break;
         }
       }
       if (event.type == SDL_MOUSEMOTION) {
         auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
         s32 x = mouse_event->x;
         s32 y = mouse_event->y - 192;
-        tsc.SetTouchState((mouse_event->state & SDL_BUTTON_LMASK) && y >= 0, x, y);
+        bool down = (mouse_event->state & SDL_BUTTON_LMASK) && y >= 0;
+        tsc.SetTouchState(down, x, y);
+        extkeyinput.pen_down = down;
       }
     }
   }
