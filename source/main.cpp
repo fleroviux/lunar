@@ -53,8 +53,8 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
 
   // TODO: handle screen swapping
-  u32* framebuffer_top = interconnect->video_unit.ppu_a.GetFramebuffer();
-  u32* framebuffer_bottom = interconnect->video_unit.ppu_b.GetFramebuffer();
+  u32 const* framebuffer_top = interconnect->video_unit.ppu_a.GetOutput();
+  u32 const* framebuffer_bottom = interconnect->video_unit.ppu_b.GetOutput();
 
   SDL_Rect dest_top {
     .x = 0,

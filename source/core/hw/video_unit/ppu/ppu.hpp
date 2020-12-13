@@ -15,7 +15,13 @@ namespace fauxDS::core {
 /// 2D picture processing unit (PPU).
 /// The Nintendo DS has two of these (PPU A and PPU B) for each screen.
 struct PPU {
-  PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam, u16* gpu_framebuffer);
+  PPU(
+    int id,
+    VRAM const& vram,
+    u8  const* pram,
+    u8  const* oam,
+    u16 const* gpu_output = nullptr
+  );
 
   struct MMIO {
     DisplayControl dispcnt;
@@ -43,7 +49,7 @@ struct PPU {
   } mmio;
 
   void Reset();
-  auto GetFramebuffer() -> u32* { return &framebuffer[0]; }
+  auto GetOutput() -> u32 const* { return &output[0]; }
   
   void OnDrawScanlineBegin(u16 vcount);
   void OnDrawScanlineEnd();
@@ -180,7 +186,7 @@ private:
   }
 
   int id;
-  u32 framebuffer[256 * 192];
+  u32 output[256 * 192];
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
@@ -193,8 +199,6 @@ private:
   } buffer_obj[256];
 
   bool line_contains_alpha_obj = false;
-
-  u16* gpu_framebuffer;
 
   VRAM const& vram;
 
@@ -215,6 +219,9 @@ private:
 
   /// Object Attribute Map
   u8 const* oam;
+
+  /// Full-frame output of the 3D engine 
+  u16 const* gpu_output;
 
   static constexpr u16 s_color_transparent = 0x8000;
   static const int s_obj_size[4][4][2];

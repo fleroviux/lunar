@@ -9,7 +9,7 @@ namespace fauxDS::core {
 
 template<bool window, bool blending>
 void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
-  u32* line = &framebuffer[vcount * 256];
+  u32* line = &output[vcount * 256];
   u16 backdrop = ReadPalette(0, 0);
 
   auto const& dispcnt = mmio.dispcnt;

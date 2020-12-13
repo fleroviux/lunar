@@ -9,8 +9,13 @@
 
 namespace fauxDS::core {
 
-PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam, u16* gpu_framebuffer)
-    : id(id)
+PPU::PPU(
+  int id,
+  VRAM const& vram,
+  u8  const* pram,
+  u8  const* oam,
+  u16 const* gpu_output
+)   : id(id)
     , vram(vram)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
@@ -18,7 +23,7 @@ PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam, u16* gpu_frame
     , extpal_obj(vram.region_ppu_obj_extpal[id])
     , pram(pram)
     , oam(oam)
-    , gpu_framebuffer(gpu_framebuffer) {
+    , gpu_output(gpu_output) {
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
@@ -28,7 +33,7 @@ PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam, u16* gpu_frame
 }
 
 void PPU::Reset() {
-  memset(framebuffer, 0, sizeof(framebuffer));
+  memset(output, 0, sizeof(output));
 
   mmio.dispcnt.Reset();
   
@@ -156,7 +161,7 @@ void PPU::RenderScanline(u16 vcount) {
 }
 
 void PPU::RenderDisplayOff(u16 vcount) {
-  u32* line = &framebuffer[vcount * 256];
+  u32* line = &output[vcount * 256];
 
   for (uint x = 0; x < 256; x++) {
     line[x] = ConvertColor(0x7FFF);
@@ -164,7 +169,7 @@ void PPU::RenderDisplayOff(u16 vcount) {
 }
 
 void PPU::RenderNormal(u16 vcount) {
-  u32* line = &framebuffer[vcount * 256];
+  u32* line = &output[vcount * 256];
 
   if (mmio.dispcnt.forced_blank) {
     for (uint x = 0; x < 256; x++) {
@@ -181,7 +186,7 @@ void PPU::RenderNormal(u16 vcount) {
   if (mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      memcpy(buffer_bg, &gpu_framebuffer[vcount * 256], sizeof(buffer_bg));
+      memcpy(buffer_bg, &gpu_output[vcount * 256], sizeof(buffer_bg));
     } else {
       RenderLayerText(0, vcount);
     }
@@ -233,7 +238,7 @@ void PPU::RenderNormal(u16 vcount) {
 
 void PPU::RenderVideoMemoryDisplay(u16 vcount) {
   u16 const* source;
-  u32* line = &framebuffer[vcount * 256];
+  u32* line = &output[vcount * 256];
 
   switch (mmio.dispcnt.vram_block) {
     case 0: source = reinterpret_cast<u16 const*>(vram.bank_a.data()); break;

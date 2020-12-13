@@ -43,13 +43,11 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
-  memset(framebuffer, 0, sizeof(framebuffer));
+  memset(output, 0, sizeof(output));
 }
 
 void GPU::WriteGXFIFO(u32 value) {
   u8 command;
-  
-  LOG_DEBUG("GPU: GXFIFO = 0x{0:08X}", value);
   
   // Handle arguments for the correct command.
   if (packed_args_left != 0) {
@@ -136,13 +134,13 @@ void GPU::ProcessCommands() {
         x = ((x * 16) >> 12) + 128;
         y = ((y * 12) >> 12) + 96;
         if (x >= 0 && x <= 255 && y >= 0 && y <= 191) {
-          framebuffer[y * 256 + x] = 0x7FFF;
+          output[y * 256 + x] = 0x7FFF;
         }
         break;
       }
       case 0x50: // swap buffers
         for (uint i = 0; i < 256 * 192; i++)
-          framebuffer[i] = 0x8000;
+          output[i] = 0x8000;
         break;
     }
   
