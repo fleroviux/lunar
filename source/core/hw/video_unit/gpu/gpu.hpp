@@ -22,6 +22,7 @@ struct GPU {
   void Reset();
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
+  auto GetFramebuffer() -> u16* { return &framebuffer[0]; }
   
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -96,7 +97,9 @@ private:
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  // TODO: change these names, they suck.
+  u16 framebuffer[256 * 192];
+
+  // Packed command processing
   u32 packed_cmds;
   int packed_args_left;
 };

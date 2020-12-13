@@ -9,7 +9,7 @@
 
 namespace fauxDS::core {
 
-PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam) 
+PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam, u16* gpu_framebuffer)
     : id(id)
     , vram(vram)
     , vram_bg(vram.region_ppu_bg[id])
@@ -17,7 +17,8 @@ PPU::PPU(int id, VRAM const& vram, u8 const* pram, u8 const* oam)
     , extpal_bg(vram.region_ppu_bg_extpal[id])
     , extpal_obj(vram.region_ppu_obj_extpal[id])
     , pram(pram)
-    , oam(oam) {
+    , oam(oam)
+    , gpu_framebuffer(gpu_framebuffer) {
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
@@ -177,10 +178,19 @@ void PPU::RenderNormal(u16 vcount) {
     RenderLayerOAM(vcount);
   }
 
+  if (mmio.dispcnt.enable[ENABLE_BG0]) {
+    // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
+    if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
+      memcpy(buffer_bg, &gpu_framebuffer[vcount * 256], sizeof(buffer_bg));
+    } else {
+      RenderLayerText(0, vcount);
+    }
+  }
+
   switch (mmio.dispcnt.bg_mode) {
     // BG0 = Text/3D, BG1 - BG3 = Text
     case 0:
-      for (uint i = 0; i < 4; i++) {
+      for (uint i = 1; i < 4; i++) {
         if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
         }
@@ -188,7 +198,7 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     // BG0 = Text/3D, BG1 - BG2 = Text, BG = affine
     case 1:
-      for (uint i = 0; i < 3; i++) {
+      for (uint i = 1; i < 3; i++) {
         if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
         }
@@ -199,10 +209,8 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     // BG0 = Text/3D, BG1 = Text, BG2 - BG3 = affine
     case 2:
-      for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
+      if (mmio.dispcnt.enable[ENABLE_BG1]) {
+        RenderLayerText(1, vcount);
       }
       for (uint i = 0; i < 2; i++) {
         if (mmio.dispcnt.enable[2 + i]) {
@@ -212,7 +220,7 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     // BG0 = Text / 3D, BG1 - BG2 = Text, BG3 = extended
     case 3:
-      for (uint i = 0; i < 3; i++) {
+      for (uint i = 1; i < 3; i++) {
         if (mmio.dispcnt.enable[i]) {
           RenderLayerText(i, vcount);
         }
@@ -223,10 +231,8 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     // BG0 = Text / 3D, BG1 = Text, BG2 = affine, BG3 = extended
     case 4:
-      for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
+      if (mmio.dispcnt.enable[ENABLE_BG1]) {
+        RenderLayerText(1, vcount);
       }
       if (mmio.dispcnt.enable[ENABLE_BG2]) {
         RenderLayerAffine(0);
@@ -237,10 +243,8 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     // BG0 = Text / 3D, BG1 = Text, BG2 = extended, BG3 = extended
     case 5:
-      for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
+      if (mmio.dispcnt.enable[ENABLE_BG1]) {
+        RenderLayerText(1, vcount);
       }
       if (mmio.dispcnt.enable[ENABLE_BG2]) {
         RenderLayerExtended(0);
@@ -251,9 +255,6 @@ void PPU::RenderNormal(u16 vcount) {
       break;
     case 6:
       // TODO: exclude BG1 and BG3 from compositing.
-      if (mmio.dispcnt.enable[ENABLE_BG0]) {
-        RenderLayerText(0, vcount);
-      }
       if (mmio.dispcnt.enable[ENABLE_BG2]) {
         RenderLayerLarge();
       }
