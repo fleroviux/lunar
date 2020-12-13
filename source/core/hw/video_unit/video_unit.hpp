@@ -57,7 +57,7 @@ struct VideoUnit {
 
   /// Graphics power control register
   /// TODO: right now all bits except for "display_swap" will be ignored.
-  struct POWCNT {
+  struct PowerControl {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
 
@@ -69,7 +69,7 @@ struct VideoUnit {
     bool enable_ppu_b = false;
     bool enable_gpu_geometry = false;
     bool enable_gpu_render = false;
-    bool display_swap = true;
+    bool display_swap = false;
   } powcnt1;
 
   u8 pram[0x800];

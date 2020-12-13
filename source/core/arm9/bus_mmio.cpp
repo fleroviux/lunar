@@ -162,6 +162,7 @@ enum Registers {
   
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
+  REG_POWCNT1 = 0x0400'0304,
   REG_GXFIFO = 0x0400'0400,
   REG_GXCMDPORT_LO = 0x0400'0440,
   REG_GXCMDPORT_HI = 0x0400'05C8,
@@ -626,6 +627,10 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return gpu_io.disp3dcnt.ReadByte(0);
     case REG_DISP3DCNT|1:
       return gpu_io.disp3dcnt.ReadByte(1);
+    case REG_POWCNT1|0:
+      return video_unit.powcnt1.ReadByte(0);
+    case REG_POWCNT1|1:
+      return video_unit.powcnt1.ReadByte(1);
     case REG_GXSTAT|0:
       return gpu_io.gxstat.ReadByte(0);
     case REG_GXSTAT|1:
@@ -1642,6 +1647,12 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_DISP3DCNT|1:
       gpu_io.disp3dcnt.WriteByte(1, value);
+      break;
+    case REG_POWCNT1|0:
+      video_unit.powcnt1.WriteByte(0, value);
+      break;
+    case REG_POWCNT1|1:
+      video_unit.powcnt1.WriteByte(1, value);
       break;
     case REG_GXSTAT|0:
       gpu_io.gxstat.WriteByte(0, value);

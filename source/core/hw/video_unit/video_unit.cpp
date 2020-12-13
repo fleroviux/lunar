@@ -184,7 +184,7 @@ auto VideoUnit::VCOUNT::ReadByte(uint offset) -> u8 {
   UNREACHABLE;
 }
 
-auto VideoUnit::POWCNT::ReadByte(uint offset) -> u8 {
+auto VideoUnit::PowerControl::ReadByte(uint offset) -> u8 {
   switch (offset) {
     case 0:
       return (enable_lcds  ? 1 : 0) |
@@ -199,7 +199,7 @@ auto VideoUnit::POWCNT::ReadByte(uint offset) -> u8 {
   UNREACHABLE;
 }
 
-void VideoUnit::POWCNT::WriteByte(uint offset, u8 value) {
+void VideoUnit::PowerControl::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0:
       enable_lcds = value & 1;

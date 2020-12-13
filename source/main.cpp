@@ -52,10 +52,6 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   auto tex_top = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
   auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
 
-  // TODO: handle screen swapping
-  u32 const* framebuffer_top = interconnect->video_unit.GetOutput(VideoUnit::Screen::Top);
-  u32 const* framebuffer_bottom = interconnect->video_unit.GetOutput(VideoUnit::Screen::Bottom);
-
   SDL_Rect dest_top {
     .x = 0,
     .y = 0,
@@ -112,8 +108,11 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
       t0 = SDL_GetTicks();
     }
 
-    SDL_UpdateTexture(tex_top, nullptr, framebuffer_top, sizeof(u32) * 256);
-    SDL_UpdateTexture(tex_bottom, nullptr, framebuffer_bottom, sizeof(u32) * 256);
+    u32 const* output_top = interconnect->video_unit.GetOutput(VideoUnit::Screen::Top);
+    u32 const* output_bottom = interconnect->video_unit.GetOutput(VideoUnit::Screen::Bottom);
+
+    SDL_UpdateTexture(tex_top, nullptr, output_top, sizeof(u32) * 256);
+    SDL_UpdateTexture(tex_bottom, nullptr, output_bottom, sizeof(u32) * 256);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, tex_top, nullptr, &dest_top);
     SDL_RenderCopy(renderer, tex_bottom, nullptr, &dest_bottom);
