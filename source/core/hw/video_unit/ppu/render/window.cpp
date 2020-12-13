@@ -22,11 +22,11 @@ void PPU::RenderWindow(uint id, u8 vcount) {
     // TODO: X1=00h is treated as 0 (left-most), X2=00h is treated as 100h (right-most).
     // However, the window is not displayed if X1=X2=00h
     if (winh.min <= winh.max) {
-      for (int x = 0; x < 240; x++) {
+      for (int x = 0; x < 256; x++) {
         buffer_win[id][x] = x >= winh.min && x < winh.max;
       }
     } else {
-      for (int x = 0; x < 240; x++) {
+      for (int x = 0; x < 256; x++) {
         buffer_win[id][x] = x >= winh.min || x < winh.max;
       }
     }

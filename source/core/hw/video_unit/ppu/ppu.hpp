@@ -20,8 +20,7 @@ struct PPU {
     VRAM const& vram,
     u8  const* pram,
     u8  const* oam,
-    u16 const* gpu_output = nullptr
-  );
+    u16 const* gpu_output = nullptr);
 
   struct MMIO {
     DisplayControl dispcnt;
