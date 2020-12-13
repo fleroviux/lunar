@@ -7,13 +7,15 @@
 #include <common/integer.hpp>
 #include <common/fifo.hpp>
 #include <core/hw/irq/irq.hpp>
+#include <core/scheduler.hpp>
 
 namespace fauxDS::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
-  GPU(IRQ& irq9)
-      : irq9(irq9) {
+  GPU(Scheduler& scheduler, IRQ& irq9)
+      : scheduler(scheduler)
+      , irq9(irq9) {
     Reset();
   }
   
@@ -89,6 +91,7 @@ private:
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
 
+  Scheduler& scheduler;
   IRQ& irq9;
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;

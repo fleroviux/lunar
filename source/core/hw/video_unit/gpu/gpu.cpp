@@ -112,7 +112,7 @@ auto GPU::Dequeue() -> CmdArgPack {
 void GPU::ProcessCommands() {
   auto count = gxpipe.Count() + gxfifo.Count();
 
-  if (count == 0) {
+  if (count == 0 || gxstat.gx_busy) {
     return;
   }
 
@@ -127,11 +127,17 @@ void GPU::ProcessCommands() {
       Dequeue();
 
     LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry_cmd.command);
+  
+    // Fake command processing
+    gxstat.gx_busy = true;
+    scheduler.Add(9, [this](int cycles_late) {
+      gxstat.gx_busy = false;
+      ProcessCommands();
+    });
   }
 }
 
 void GPU::CheckGXFIFO_IRQ() {
-  // TODO: this is pretty bad. we should only raise the IRQ if the condition changed.
   switch (gxstat.cmd_fifo_irq) {
     case GXSTAT::IRQMode::Never:
     case GXSTAT::IRQMode::Reserved:

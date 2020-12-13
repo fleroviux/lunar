@@ -13,7 +13,7 @@ static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
-    : gpu(irq9)
+    : gpu(scheduler, irq9)
     , ppu_a(0, vram, &pram[0x000], &oam[0x000])
     , ppu_b(1, vram, &pram[0x400], &oam[0x400]) 
     , scheduler(scheduler)
