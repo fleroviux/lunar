@@ -31,6 +31,7 @@ void VideoUnit::Reset() {
   dispstat7 = {};
   dispstat9 = {};
   vcount = {};
+  powcnt1 = {};
 
   dispstat7.write_cb = [this]() {
     CheckVerticalCounterIRQ(dispstat7, irq7);
@@ -44,6 +45,15 @@ void VideoUnit::Reset() {
   ppu_b.Reset();
 
   OnHdrawBegin(0);
+}
+
+auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
+  switch (screen) {
+    case Screen::Top:
+      return powcnt1.display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
+    case Screen::Bottom:
+      return powcnt1.display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
+  }
 }
 
 void VideoUnit::CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq) {
@@ -172,6 +182,38 @@ auto VideoUnit::VCOUNT::ReadByte(uint offset) -> u8 {
   }
 
   UNREACHABLE;
+}
+
+auto VideoUnit::POWCNT::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0:
+      return (enable_lcds  ? 1 : 0) |
+             (enable_ppu_a ? 2 : 0) |
+             (enable_ppu_b ? 4 : 0) |
+             (enable_gpu_geometry ? 8 : 0);
+    case 1:
+      return (enable_gpu_render ? 2 : 0) |
+             (display_swap ? 128 : 0);
+  }
+
+  UNREACHABLE;
+}
+
+void VideoUnit::POWCNT::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0:
+      enable_lcds = value & 1;
+      enable_ppu_a = value & 2;
+      enable_ppu_b = value & 4;
+      enable_gpu_geometry = value & 8;
+      break;
+    case 1:
+      enable_gpu_render = value & 2;
+      display_swap = value & 128;
+      break;
+    default:
+      UNREACHABLE;
+  }
 }
 
 } // namespace fauxDS::core
