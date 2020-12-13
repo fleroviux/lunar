@@ -40,15 +40,51 @@ void GPU::Reset() {
   //gxstat = {};
   gxfifo.Reset();
   gxpipe.Reset();
+  packed_cmds = 0;
+  packed_args_left = 0;
 }
 
-void GPU::WriteCommandPort(uint port, u32 parameter) {
+void GPU::WriteGXFIFO(u32 value) {
+  u8 command;
+  
+  LOG_DEBUG("GPU: GXFIFO = 0x{0:08X}", value);
+  
+  // Handle arguments for the correct command.
+  if (packed_args_left != 0) {
+    command = packed_cmds & 0xFF;
+    Enqueue({ command, value });
+    
+    // Do not process further commands until all arguments have been send.
+    if (--packed_args_left != 0) {
+      return;
+    }
+    
+    packed_cmds >>= 8;
+  } else {
+    packed_cmds = value;
+  }
+  
+  // Enqueue commands that don't have any arguments,
+  // but only until we encounter a command which does require arguments.
+  while (packed_cmds != 0) {
+    command = packed_cmds & 0xFF;
+    packed_args_left = kCmdNumParams[command];
+    if (packed_args_left == 0) {
+      Enqueue({ command, 0 });
+      packed_cmds >>= 8;
+    } else {
+      break;
+    }
+  }
+}
+
+void GPU::WriteCommandPort(uint port, u32 value) {
   if (port <= 0x3F || port >= 0x1CC) {
     LOG_ERROR("GPU: unknown command port 0x{0:03X}", port);
     return;
   }
 
-  Enqueue({ static_cast<u8>(port >> 2), parameter });
+  Enqueue({ static_cast<u8>(port >> 2), value });
 }
 
 void GPU::Enqueue(CmdArgPack pack) {

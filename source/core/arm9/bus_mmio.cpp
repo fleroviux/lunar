@@ -8,6 +8,8 @@
 
 namespace fauxDS::core {
 
+// TODO: handle byte and hword GPU accesses, but how do they behave?
+
 enum Registers {
   // PPU
   REG_DISPCNT_A = 0x0400'0000,
@@ -160,6 +162,9 @@ enum Registers {
   
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
+  REG_GXFIFO = 0x0400'0400,
+  REG_GXCMDPORT_LO = 0x0400'0440,
+  REG_GXCMDPORT_HI = 0x0400'05C8,
   REG_GXSTAT = 0x0400'0600
 };
 
@@ -1671,12 +1676,16 @@ void ARM9MemoryBus::WriteHalfIO(u32 address, u16 value) {
 
 void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
   switch (address) {
+    // IPC
     case REG_IPCFIFOSEND:
       ipc.ipcfifosend.WriteWord(IPC::Client::ARM9, value);
       break;
-    // GPU command ports
-    // TODO: handle 8-bit and 16-bit accesses, but how do they behave?
-    case 0x0400'0440 ... 0x0400'05FF:
+      
+    // GPU
+    case REG_GXFIFO:
+      video_unit.gpu.WriteGXFIFO(value);
+      break;
+    case REG_GXCMDPORT_LO ... REG_GXCMDPORT_HI:
       video_unit.gpu.WriteCommandPort(address & 0x1FF, value);
       break;
     default:
