@@ -3,6 +3,7 @@
  */
 
 #include <common/log.hpp>
+#include <string.h>
 
 #include "gpu.hpp"
 
@@ -42,12 +43,11 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  memset(output, 0, sizeof(output));
 }
 
 void GPU::WriteGXFIFO(u32 value) {
   u8 command;
-  
-  LOG_DEBUG("GPU: GXFIFO = 0x{0:08X}", value);
   
   // Handle arguments for the correct command.
   if (packed_args_left != 0) {
@@ -116,18 +116,17 @@ void GPU::ProcessCommands() {
     return;
   }
 
-  auto const& entry = gxpipe.Peek();
-  auto param_count = kCmdNumParams[entry.command];
+  auto arg_count = kCmdNumParams[gxpipe.Peek().command];
 
-  if (count >= param_count) {
-    auto entry_cmd = Dequeue();
+  if (count >= arg_count) {
+    auto entry = Dequeue();
 
     // TODO: only do this if the command is unimplemented.
-    for (int i = 1; i < param_count; i++)
+    for (int i = 1; i < arg_count; i++)
       Dequeue();
 
-    LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry_cmd.command);
-  
+    LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry.command);
+
     // Fake command processing
     gxstat.gx_busy = true;
     scheduler.Add(9, [this](int cycles_late) {

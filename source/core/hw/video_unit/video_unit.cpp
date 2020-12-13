@@ -14,8 +14,8 @@ static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
     : gpu(scheduler, irq9)
-    , ppu_a(0, vram, &pram[0x000], &oam[0x000])
-    , ppu_b(1, vram, &pram[0x400], &oam[0x400]) 
+    , ppu_a(0, vram, &pram[0x000], &oam[0x000], gpu.GetOutput())
+    , ppu_b(1, vram, &pram[0x400], &oam[0x400])
     , scheduler(scheduler)
     , irq7(irq7)
     , irq9(irq9)
