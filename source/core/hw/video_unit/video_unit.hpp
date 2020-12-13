@@ -20,9 +20,12 @@ namespace fauxDS::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
+  enum class Screen { Top, Bottom };
+
   VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9);
 
   void Reset();
+  auto GetOutput(Screen screen) -> u32 const*;
 
   /// Graphics status and IRQ control.
   struct DisplayStatus {
@@ -51,6 +54,23 @@ struct VideoUnit {
     friend struct fauxDS::core::VideoUnit;
     u16 value = 0xFFFF;
   } vcount;
+
+  /// Graphics power control register
+  /// TODO: right now all bits except for "display_swap" will be ignored.
+  struct POWCNT {
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+
+  private:
+    friend struct fauxDS::core::VideoUnit;
+
+    bool enable_lcds = false;
+    bool enable_ppu_a = false;
+    bool enable_ppu_b = false;
+    bool enable_gpu_geometry = false;
+    bool enable_gpu_render = false;
+    bool display_swap = false;
+  } powcnt1;
 
   u8 pram[0x800];
   u8 oam[0x800];
