@@ -128,6 +128,23 @@ void GPU::ProcessCommands() {
       Dequeue();
 
     LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry.command);
+
+    switch (entry.command) {
+      case 0x23: {
+        s32 x =  s16(entry.argument & 0xFFFF);
+        s32 y = -s16(entry.argument >> 16);
+        x = ((x * 16) >> 12) + 128;
+        y = ((y * 12) >> 12) + 96;
+        if (x >= 0 && x <= 255 && y >= 0 && y <= 191) {
+          framebuffer[y * 256 + x] = 0x7FFF;
+        }
+        break;
+      }
+      case 0x50: // swap buffers
+        for (uint i = 0; i < 256 * 192; i++)
+          framebuffer[i] = 0x8000;
+        break;
+    }
   
     // Fake command processing
     gxstat.gx_busy = true;

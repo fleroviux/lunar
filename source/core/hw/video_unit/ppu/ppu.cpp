@@ -187,80 +187,45 @@ void PPU::RenderNormal(u16 vcount) {
     }
   }
 
-  switch (mmio.dispcnt.bg_mode) {
-    // BG0 = Text/3D, BG1 - BG3 = Text
-    case 0:
-      for (uint i = 1; i < 4; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
-      }
-      break;
-    // BG0 = Text/3D, BG1 - BG2 = Text, BG = affine
-    case 1:
-      for (uint i = 1; i < 3; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG3]) {
-        RenderLayerAffine(1);
-      }
-      break;
-    // BG0 = Text/3D, BG1 = Text, BG2 - BG3 = affine
-    case 2:
-      if (mmio.dispcnt.enable[ENABLE_BG1]) {
-        RenderLayerText(1, vcount);
-      }
-      for (uint i = 0; i < 2; i++) {
-        if (mmio.dispcnt.enable[2 + i]) {
-          RenderLayerAffine(i);
-        }
-      }
-      break;
-    // BG0 = Text / 3D, BG1 - BG2 = Text, BG3 = extended
-    case 3:
-      for (uint i = 1; i < 3; i++) {
-        if (mmio.dispcnt.enable[i]) {
-          RenderLayerText(i, vcount);
-        }
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG3]) {
-        RenderLayerExtended(1);
-      }
-      break;
-    // BG0 = Text / 3D, BG1 = Text, BG2 = affine, BG3 = extended
-    case 4:
-      if (mmio.dispcnt.enable[ENABLE_BG1]) {
-        RenderLayerText(1, vcount);
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+  if (mmio.dispcnt.enable[ENABLE_BG1] && mmio.dispcnt.bg_mode != 6) {
+    RenderLayerText(1, vcount);
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_BG2]) {
+    switch (mmio.dispcnt.bg_mode) {
+      case 0:
+      case 1:
+      case 3:
+        RenderLayerText(2, vcount);
+        break;
+      case 2:
+      case 4:
         RenderLayerAffine(0);
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG3]) {
-        RenderLayerExtended(1);
-      }
-      break;
-    // BG0 = Text / 3D, BG1 = Text, BG2 = extended, BG3 = extended
-    case 5:
-      if (mmio.dispcnt.enable[ENABLE_BG1]) {
-        RenderLayerText(1, vcount);
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+        break;
+      case 5:
         RenderLayerExtended(0);
-      }
-      if (mmio.dispcnt.enable[ENABLE_BG3]) {
-        RenderLayerExtended(1);
-      }
-      break;
-    case 6:
-      // TODO: exclude BG1 and BG3 from compositing.
-      if (mmio.dispcnt.enable[ENABLE_BG2]) {
+        break;
+      case 6:
         RenderLayerLarge();
-      }
-      break;
-    default:
-      ASSERT(false, "PPU: unhandled BG mode {0}", mmio.dispcnt.bg_mode);
+        break;
+    }
+  }
+
+  if (mmio.dispcnt.enable[ENABLE_BG3]) {
+    switch (mmio.dispcnt.bg_mode) {
+      case 0:
+        RenderLayerText(3, vcount);
+        break;
+      case 1:
+      case 2:
+        RenderLayerAffine(1);
+        break;
+      case 3:
+      case 4:
+      case 5:
+        RenderLayerExtended(1);
+        break;
+    }
   }
 
   ComposeScanline(vcount, 0, 3);
