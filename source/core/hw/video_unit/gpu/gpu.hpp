@@ -8,6 +8,9 @@
 #include <common/fifo.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/scheduler.hpp>
+#include <stack>
+
+#include "matrix_stack.hpp"
 
 namespace fauxDS::core {
 
@@ -80,7 +83,13 @@ struct GPU {
   } gxstat { *this };
 
 private:
-  // TODO: come up with a name that does *not* suck.
+  enum class MatrixMode {
+    Projection = 0,
+    Modelview = 1,
+    Simultaneous = 2,
+    Texture = 3
+  };
+  
   struct CmdArgPack {
     // NOTE: command is only used if this is the first entry of a command.
     u8 command = 0;
@@ -92,6 +101,19 @@ private:
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
 
+  void CMD_SetMatrixMode();
+  void CMD_PushMatrix();
+  void CMD_PopMatrix();
+  void CMD_StoreMatrix();
+  void CMD_LoadIdentity();
+  void CMD_LoadMatrix4x4();
+  void CMD_LoadMatrix4x3();
+  void CMD_MatrixMultiply4x4();
+  void CMD_MatrixMultiply4x3();
+  void CMD_MatrixMultiply3x3();
+  void CMD_MatrixScale();
+  void CMD_MatrixTranslate();
+
   Scheduler& scheduler;
   IRQ& irq9;
   common::FIFO<CmdArgPack, 256> gxfifo;
@@ -102,6 +124,13 @@ private:
   /// Packed command processing
   u32 packed_cmds;
   int packed_args_left;
+  
+  /// Matrix stacks
+  MatrixMode matrix_mode;
+  MatrixStack< 1> projection;
+  MatrixStack<31> modelview;
+  MatrixStack<31> direction;
+  MatrixStack< 1> texture;
 };
 
 } // namespace fauxDS::core

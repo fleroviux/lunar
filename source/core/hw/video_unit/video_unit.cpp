@@ -51,7 +51,7 @@ auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
   switch (screen) {
     case Screen::Top:
       return powcnt1.display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
-    case Screen::Bottom:
+    default:
       return powcnt1.display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
   }
 }

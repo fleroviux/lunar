@@ -42,6 +42,13 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  
+  matrix_mode = MatrixMode::Projection;
+  projection.Reset();
+  modelview.Reset();
+  direction.Reset();
+  texture.Reset();
+  
   for (uint i = 0; i < 256 * 192; i++)
     output[i] = 0x8000;
 }
@@ -116,18 +123,87 @@ void GPU::ProcessCommands() {
     return;
   }
 
-  auto arg_count = kCmdNumParams[gxpipe.Peek().command];
+  auto command = gxpipe.Peek().command;
+  auto arg_count = kCmdNumParams[command];
 
   if (count >= arg_count) {
-    auto entry = Dequeue();
+    static Vector4 vertices[8192];
+    static int vertex_count = 0;
+  
+    switch (command) {
+      case 0x10: CMD_SetMatrixMode(); break;
+      case 0x11: CMD_PushMatrix(); break;
+      case 0x12: CMD_PopMatrix(); break;
+      case 0x13: CMD_StoreMatrix(); break;
+      case 0x15: CMD_LoadIdentity(); break;
+      case 0x16: CMD_LoadMatrix4x4(); break;
+      case 0x17: CMD_LoadMatrix4x3(); break;
+      case 0x18: CMD_MatrixMultiply4x4(); break;
+      case 0x19: CMD_MatrixMultiply4x3(); break;
+      case 0x1A: CMD_MatrixMultiply3x3(); break;
+      case 0x1B: CMD_MatrixScale(); break;
+      case 0x1C: CMD_MatrixTranslate(); break;
+      
+      case 0x23: {
+        auto entry = Dequeue();
+        
+        Vector4 vec;
+        vec[0] = s16(entry.argument & 0xFFFF);
+        vec[1] = s16(entry.argument >> 16);
+        vec[2] = s16(Dequeue().argument & 0xFFFF);
+        vec[3] = 0x1000;
+        vec = projection.current * (modelview.current * vec);
+        vertices[vertex_count++] = vec;
+        break;
+      }
+      case 0x24: {
+        auto entry = Dequeue();
+        
+        Vector4 vec;
+        vec[0] = (entry.argument >>  0) & 0x3F;
+        vec[1] = (entry.argument >> 10) & 0x3F;
+        vec[2] = (entry.argument >> 20) & 0x3F;
+        vec[3] = 0x1000;
+        for (int i = 0; i < 3; i++) {
+          if (vec[i] & (1 << 9))
+            vec[0] |= ~0x3F;
+        }
+        vec = projection.current * (modelview.current * vec);
+        vertices[vertex_count++] = vec;
+        break;
+      }
+      case 0x50: {
+        Dequeue();
+        for (uint i = 0; i < 256 * 192; i++) {
+          output[i] = 0x8000;
+        }
+        for (int i = 0; i < vertex_count; i++) {
+          Vector4& vec = vertices[i];
+          if (vec[3] == 0) {
+            // Division by zero... omit vertex???
+            break;
+          }
+          s32 x =  (s64(vec[0]) << 12) / vec[3];
+          s32 y = -(s64(vec[1]) << 12) / vec[3];
+          x = ((x * 32) >> 12) + 128;
+          y = ((y * 24) >> 12) + 96;
+          if (x >= 0 && x <= 255 && y >= 0 && y <= 191) {
+            output[y * 256 + x] = 0x7FFF;
+          }
+        }
+        vertex_count = 0;
+        break;
+      }
+      
+      default:
+        LOG_ERROR("GPU: unimplemented command 0x{0:02X}", command);
+        Dequeue();
+        for (int i = 1; i < arg_count; i++)
+          Dequeue();
+        break;
+    }
 
-    // TODO: only do this if the command is unimplemented.
-    for (int i = 1; i < arg_count; i++)
-      Dequeue();
-
-    LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry.command);
-
-    // Fake command processing
+    // Fake the amount of time it takes to process the command.
     gxstat.gx_busy = true;
     scheduler.Add(9, [this](int cycles_late) {
       gxstat.gx_busy = false;
