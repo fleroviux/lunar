@@ -91,16 +91,34 @@ private:
   };
   
   struct CmdArgPack {
-    // NOTE: command is only used if this is the first entry of a command.
     u8 command = 0;
     u32 argument = 0;
   };
+  
+  struct VertexMemory {
+    struct Entry {
+      Vector4 position;
+      // ...
+    } data[6144] {};
+    
+    int count = 0;
+  } vertex_ram;
+  
+  struct PolygonMemory {
+    struct Entry {
+      bool quad = false;
+      int indices[4] {};
+    } data[2048] {};
+    
+    int count = 0;
+  } polygon_ram;
 
   void Enqueue(CmdArgPack pack);
   auto Dequeue() -> CmdArgPack;
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
 
+  /// Matrix commands
   void CMD_SetMatrixMode();
   void CMD_PushMatrix();
   void CMD_PopMatrix();
@@ -113,6 +131,21 @@ private:
   void CMD_MatrixMultiply3x3();
   void CMD_MatrixScale();
   void CMD_MatrixTranslate();
+
+  /// Vertex submission commands
+  void CMD_SetColor();
+  void CMD_SetNormal();
+  void CMD_SetUV();
+  void CMD_SubmitVertex_16();
+  void CMD_SubmitVertex_10();
+  void CMD_SubmitVertex_XY();
+  void CMD_SubmitVertex_XZ();
+  void CMD_SubmitVertex_YZ();
+  void CMD_SubmitVertex_Offset();
+  
+  /// Vertex lists
+  void CMD_BeginVertexList();
+  void CMD_EndVertexList();
 
   Scheduler& scheduler;
   IRQ& irq9;

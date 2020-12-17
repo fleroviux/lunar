@@ -173,7 +173,6 @@ void GPU::CMD_MatrixMultiply4x3() {
     }
   }
   
-  // TODO: I really have no clue if this is correct at all!
   mat[3][3] = 0x1000;
   
   switch (matrix_mode) {
@@ -269,6 +268,39 @@ void GPU::CMD_MatrixTranslate() {
       texture.current[3] += vec;
       break;
   }
+}
+
+void GPU::CMD_SetColor() {
+}
+
+void GPU::CMD_SetNormal() {
+}
+
+void GPU::CMD_SetUV() {
+}
+
+void GPU::CMD_SubmitVertex_16() {
+}
+
+void GPU::CMD_SubmitVertex_10() {
+}
+
+void GPU::CMD_SubmitVertex_XY() {
+}
+
+void GPU::CMD_SubmitVertex_XZ() {
+}
+
+void GPU::CMD_SubmitVertex_YZ() {
+}
+
+void GPU::CMD_SubmitVertex_Offset() {
+}
+
+void GPU::CMD_BeginVertexList() {
+}
+
+void GPU::CMD_EndVertexList() {
 }
 
 } // namespace fauxDS::core

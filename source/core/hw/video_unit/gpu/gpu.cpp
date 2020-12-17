@@ -43,6 +43,9 @@ void GPU::Reset() {
   packed_cmds = 0;
   packed_args_left = 0;
   
+  vertex_ram = {};
+  polygon_ram = {};
+  
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
   modelview.Reset();
@@ -127,9 +130,6 @@ void GPU::ProcessCommands() {
   auto arg_count = kCmdNumParams[command];
 
   if (count >= arg_count) {
-    static Vector4 vertices[8192];
-    static int vertex_count = 0;
-  
     switch (command) {
       case 0x10: CMD_SetMatrixMode(); break;
       case 0x11: CMD_PushMatrix(); break;
@@ -153,7 +153,8 @@ void GPU::ProcessCommands() {
         vec[2] = s16(Dequeue().argument & 0xFFFF);
         vec[3] = 0x1000;
         vec = projection.current * (modelview.current * vec);
-        vertices[vertex_count++] = vec;
+        
+        vertex_ram.data[vertex_ram.count++] = { vec };
         break;
       }
       case 0x24: {
@@ -169,7 +170,7 @@ void GPU::ProcessCommands() {
             vec[0] |= ~0x3F;
         }
         vec = projection.current * (modelview.current * vec);
-        vertices[vertex_count++] = vec;
+        vertex_ram.data[vertex_ram.count++] = { vec };
         break;
       }
       case 0x50: {
@@ -177,8 +178,8 @@ void GPU::ProcessCommands() {
         for (uint i = 0; i < 256 * 192; i++) {
           output[i] = 0x8000;
         }
-        for (int i = 0; i < vertex_count; i++) {
-          Vector4& vec = vertices[i];
+        for (int i = 0; i < vertex_ram.count; i++) {
+          Vector4& vec = vertex_ram.data[i].position;
           if (vec[3] == 0) {
             // Division by zero... omit vertex???
             break;
@@ -191,7 +192,7 @@ void GPU::ProcessCommands() {
             output[y * 256 + x] = 0x7FFF;
           }
         }
-        vertex_count = 0;
+        vertex_ram.count = 0;
         break;
       }
       

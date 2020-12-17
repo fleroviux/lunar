@@ -57,10 +57,12 @@ struct MatrixStack {
   }
   
   bool error;
+  
   Matrix4x4 current;
 
 private:
   int index;
+  
   Matrix4x4 stack[capacity];
 };
 
