@@ -306,9 +306,17 @@ void GPU::CMD_SubmitVertex_Offset() {
 }
 
 void GPU::CMD_BeginVertexList() {
+  auto arg = Dequeue().argument;
+  in_vertex_list = true;
+  vertex_counter = 0;
+  is_quad = arg & 1;
+  is_strip = arg & 2;
 }
 
 void GPU::CMD_EndVertexList() {
+  Dequeue();
+  // TODO: allegedly this command is a no-operation on the DS...
+  in_vertex_list = false;
 }
 
 void GPU::CMD_SwapBuffers() {
@@ -337,6 +345,7 @@ void GPU::CMD_SwapBuffers() {
   }
   
   vertex.count = 0;
+  polygon.count = 0;
 }
 
 } // namespace fauxDS::core

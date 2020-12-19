@@ -175,6 +175,11 @@ private:
 
   void CMD_SwapBuffers();
 
+  bool in_vertex_list;
+  bool is_quad;
+  bool is_strip;
+  int vertex_counter;
+
   /// Vertex RAM
   struct {
     int count = 0;

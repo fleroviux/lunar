@@ -43,6 +43,7 @@ void GPU::Reset() {
   packed_cmds = 0;
   packed_args_left = 0;
   
+  in_vertex_list = false;
   vertex = {};
   polygon = {};
   position_old = {};
@@ -152,6 +153,9 @@ void GPU::ProcessCommands() {
       case 0x27: CMD_SubmitVertex_YZ(); break;
       case 0x28: CMD_SubmitVertex_Offset(); break;
 
+      case 0x40: CMD_BeginVertexList(); break;
+      case 0x41: CMD_EndVertexList(); break;
+
       case 0x50: CMD_SwapBuffers(); break;
 
       default:
@@ -172,17 +176,46 @@ void GPU::ProcessCommands() {
 }
 
 void GPU::AddVertex(Vector4 const& position) {
+  if (!in_vertex_list) {
+    LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
+    return;
+  }
+
   if (vertex.count == 6144) {
     // TODO: set buffer overflow bit in GXSTAT.
-    LOG_ERROR("GPU: submitted more vertices than fits into vertex RAM.");
+    LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
+    return;
+  }
+
+  if (polygon.count == 2048) {
+    // TODO: set buffer overflow bit in GXSTAT.
+    LOG_ERROR("GPU: submitted more polygons than fit into polygon RAM.");
     return;
   }
 
   position_old = position;
 
-  vertex.data[vertex.count++] = {
+  auto index = vertex.count;
+
+  vertex.data[index] = {
     projection.current * (modelview.current * position)
   };
+  vertex.count++;
+
+  int required = is_quad ? 4 : 3;
+
+  if (++vertex_counter >= required) {
+    // meh....
+    auto& poly = polygon.data[polygon.count++];
+    for (int i = 0; i < required; i++) {
+      poly.indices[i] = index - required + i + 1;
+    }
+    poly.quad = is_quad;
+    // In strip mode we just keep reusing old vertices.
+    if (!is_strip) {
+      vertex_counter = 0;
+    }
+  }
 }
 
 void GPU::CheckGXFIFO_IRQ() {
