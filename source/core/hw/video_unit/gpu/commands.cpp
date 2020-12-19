@@ -85,13 +85,7 @@ void GPU::CMD_LoadIdentity() {
 }
 
 void GPU::CMD_LoadMatrix4x4() {
-  Matrix4x4 mat;
-  
-  for (int col = 0; col < 4; col++) {
-    for (int row = 0; row < 4; row++) {
-      mat[col][row] = Dequeue().argument;
-    }
-  }
+  auto mat = DequeueMatrix4x4();
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
@@ -111,15 +105,7 @@ void GPU::CMD_LoadMatrix4x4() {
 }
 
 void GPU::CMD_LoadMatrix4x3() {
-  Matrix4x4 mat;
-  
-  for (int col = 0; col < 4; col++) {
-    for (int row = 0; row < 3; row++) {
-      mat[col][row] = Dequeue().argument;
-    }
-  }
-  
-  mat[3][3] = 0x1000;
+  auto mat = DequeueMatrix4x3();
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
@@ -139,13 +125,7 @@ void GPU::CMD_LoadMatrix4x3() {
 }
 
 void GPU::CMD_MatrixMultiply4x4() {
-  Matrix4x4 mat;
-  
-  for (int col = 0; col < 4; col++) {
-    for (int row = 0; row < 4; row++) {
-      mat[col][row] = Dequeue().argument;
-    }
-  }
+  auto mat = DequeueMatrix4x4();
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
@@ -165,15 +145,7 @@ void GPU::CMD_MatrixMultiply4x4() {
 }
 
 void GPU::CMD_MatrixMultiply4x3() {
-  Matrix4x4 mat;
-  
-  for (int col = 0; col < 4; col++) {
-    for (int row = 0; row < 3; row++) {
-      mat[col][row] = Dequeue().argument;
-    }
-  }
-  
-  mat[3][3] = 0x1000;
+  auto mat = DequeueMatrix4x3();
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
@@ -193,15 +165,7 @@ void GPU::CMD_MatrixMultiply4x3() {
 }
 
 void GPU::CMD_MatrixMultiply3x3() {
-  Matrix4x4 mat;
-  
-  for (int col = 0; col < 3; col++) {
-    for (int row = 0; row < 3; row++) {
-      mat[col][row] = Dequeue().argument;
-    }
-  }
-  
-  mat[3][3] = 0x1000;
+  auto mat = DequeueMatrix3x3();
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
@@ -221,13 +185,13 @@ void GPU::CMD_MatrixMultiply3x3() {
 }
 
 void GPU::CMD_MatrixScale() {
-  // TODO: this can be a lot more optimized...
-  Matrix4x4 mat;
+  // TODO: this implementation is unoptimized.
+  // A matrix multiplication is complete overkill for scaling.
   
+  Matrix4x4 mat;
   for (int i = 0; i < 3; i++) {
     mat[i][i] = Dequeue().argument;
   }
-  
   mat[3][3] = 0x1000;
   
   switch (matrix_mode) {
@@ -248,7 +212,6 @@ void GPU::CMD_MatrixScale() {
 
 void GPU::CMD_MatrixTranslate() {
   Vector4 vec;
-  
   for (int i = 0; i < 3; i++) {
     vec[i] = Dequeue().argument;
   }

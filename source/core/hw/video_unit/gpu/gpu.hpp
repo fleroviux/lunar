@@ -117,6 +117,38 @@ private:
   auto Dequeue() -> CmdArgPack;
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
+  
+  auto DequeueMatrix4x4() -> Matrix4x4 {
+    Matrix4x4 mat;
+    for (int col = 0; col < 4; col++) {
+      for (int row = 0; row < 4; row++) {
+        mat[col][row] = Dequeue().argument;
+      }
+    }
+    return mat;
+  }
+  
+  auto DequeueMatrix4x3() -> Matrix4x4 {
+    Matrix4x4 mat;
+    for (int col = 0; col < 4; col++) {
+      for (int row = 0; row < 3; row++) {
+        mat[col][row] = Dequeue().argument;
+      }
+    }
+    mat[3][3] = 0x1000;
+    return mat;
+  }
+
+  auto DequeueMatrix3x3() -> Matrix4x4 {
+    Matrix4x4 mat;
+    for (int col = 0; col < 3; col++) {
+      for (int row = 0; row < 3; row++) {
+        mat[col][row] = Dequeue().argument;
+      }
+    }
+    mat[3][3] = 0x1000;
+    return mat;
+  }
 
   /// Matrix commands
   void CMD_SetMatrixMode();
