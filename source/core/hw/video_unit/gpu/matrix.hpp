@@ -9,11 +9,20 @@
 namespace fauxDS::core {
 
 struct Vector4 {
+  Vector4() {}
+  
+  Vector4(s32 x, s32 y, s32 z, s32 w) {
+    data[0] = x;
+    data[1] = y;
+    data[2] = z;
+    data[3] = w;
+  }
+
   auto operator[](int i) -> s32& {
     return data[i];
   }
   
-   auto operator[](int i) const -> s32 {
+  auto operator[](int i) const -> s32 {
     return data[i];
   }
   

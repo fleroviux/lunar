@@ -243,27 +243,100 @@ void GPU::CMD_SetUV() {
 }
 
 void GPU::CMD_SubmitVertex_16() {
+  auto arg0 = Dequeue().argument;
+  auto arg1 = Dequeue().argument;
+  AddVertex({
+    s16(arg0 & 0xFFFF),
+    s16(arg0 >> 16),
+    s16(arg1 & 0xFFFF),
+    0x1000
+  });
 }
 
 void GPU::CMD_SubmitVertex_10() {
+  auto arg = Dequeue().argument;
+  // TODO: cleanup and check correctness.
+  AddVertex({
+    s32(s16(((arg >>  0) & 0x3F) | (arg & (1 <<  9) ? 0xFFC0 : 0))) << 6,
+    s32(s16(((arg >> 10) & 0x3F) | (arg & (1 << 19) ? 0xFFC0 : 0))) << 6,
+    s32(s16(((arg >> 20) & 0x3F) | (arg & (1 << 29) ? 0xFFC0 : 0))) << 6,
+    0x1000
+  });
 }
 
 void GPU::CMD_SubmitVertex_XY() {
+  auto arg = Dequeue().argument;
+  AddVertex({
+    s16(arg & 0xFFFF),
+    s16(arg >> 16),
+    position_old[2],
+    0x1000
+  });
 }
 
 void GPU::CMD_SubmitVertex_XZ() {
+  auto arg = Dequeue().argument;
+  AddVertex({
+    s16(arg & 0xFFFF),
+    position_old[1],
+    s16(arg >> 16),
+    0x1000
+  });
 }
 
 void GPU::CMD_SubmitVertex_YZ() {
+  auto arg = Dequeue().argument;
+  AddVertex({
+    position_old[0],
+    s16(arg & 0xFFFF),
+    s16(arg >> 16),
+    0x1000
+  });
 }
 
 void GPU::CMD_SubmitVertex_Offset() {
+  auto arg = Dequeue().argument;
+  // TODO: cleanup and check correctness.
+  AddVertex({
+    position_old[0] + (s16(((arg >>  0) & 0x3F) | (arg & (1 <<  9) ? 0xFFC0 : 0)) << 3),
+    position_old[1] + (s16(((arg >> 10) & 0x3F) | (arg & (1 << 19) ? 0xFFC0 : 0)) << 3),
+    position_old[2] + (s16(((arg >> 20) & 0x3F) | (arg & (1 << 29) ? 0xFFC0 : 0)) << 3),
+    0x1000
+  });
 }
 
 void GPU::CMD_BeginVertexList() {
 }
 
 void GPU::CMD_EndVertexList() {
+}
+
+void GPU::CMD_SwapBuffers() {
+  // TODO: this is a massive hackfest...
+  Dequeue();
+  
+  for (uint i = 0; i < 256 * 192; i++) {
+    output[i] = 0x8000;
+  }
+  
+  for (int i = 0; i < vertex.count; i++) {
+    Vector4& vec = vertex.data[i].position;
+    if (vec[3] == 0) {
+      break;
+    }
+
+    s32 x =  (s64(vec[0]) << 12) / vec[3];
+    s32 y = -(s64(vec[1]) << 12) / vec[3];
+    
+    x = ((x * 128) >> 12) + 128;
+    y = ((y *  96) >> 12) + 96;
+    
+    if (x >= 0 && x <= 255 && y >= 0 && y <= 191) {
+      output[y * 256 + x] = 0x7FFF;
+    }
+  }
+  
+  vertex.count = 0;
 }
 
 } // namespace fauxDS::core

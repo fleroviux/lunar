@@ -94,24 +94,16 @@ private:
     u8 command = 0;
     u32 argument = 0;
   };
-  
-  struct VertexMemory {
-    struct Entry {
-      Vector4 position;
-      // ...
-    } data[6144] {};
-    
-    int count = 0;
-  } vertex_ram;
-  
-  struct PolygonMemory {
-    struct Entry {
-      bool quad = false;
-      int indices[4] {};
-    } data[2048] {};
-    
-    int count = 0;
-  } polygon_ram;
+
+  struct Vertex {
+    Vector4 position;
+    // ...
+  };
+
+  struct Polygon {
+    bool quad;
+    int indices[4];
+  };
 
   void Enqueue(CmdArgPack pack);
   auto Dequeue() -> CmdArgPack;
@@ -150,6 +142,8 @@ private:
     return mat;
   }
 
+  void AddVertex(Vector4 const& position);
+
   /// Matrix commands
   void CMD_SetMatrixMode();
   void CMD_PushMatrix();
@@ -178,6 +172,23 @@ private:
   /// Vertex lists
   void CMD_BeginVertexList();
   void CMD_EndVertexList();
+
+  void CMD_SwapBuffers();
+
+  /// Vertex RAM
+  struct {
+    int count = 0;
+    Vertex data[6144];
+  } vertex;
+
+  /// Polygon RAM
+  struct {
+    int count = 0;
+    Polygon data[2048];
+  } polygon;
+
+  /// Untransformed vertex from the previous vertex submission command.
+  Vector4 position_old;
 
   Scheduler& scheduler;
   IRQ& irq9;
