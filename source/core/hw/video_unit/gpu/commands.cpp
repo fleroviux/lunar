@@ -386,7 +386,9 @@ void GPU::CMD_SwapBuffers() {
       x1_delta = ((p1_x - p0_x) << 8) / y1_delta;
     }
 
-    if (p1_x < p0_x) {
+    bool edges_swapped = (x0 + x0_delta * y1_delta) > (p1_x << 8);
+
+    if (edges_swapped) {
       std::swap(x0, x1);
       std::swap(x0_delta, x1_delta);
     }
@@ -403,19 +405,20 @@ void GPU::CMD_SwapBuffers() {
         }
 
         if (_x0 >= 0 && _x0 <= 255) {
-          output[y * 256 + _x0] = 0x1F << 10;
+          output[y * 256 + _x0] = 0x666;
         }
 
         if (_x1 >= 0 && _x1 <= 255) {
-          output[y * 256 + _x1] = 0x1F << 10;
+          output[y * 256 + _x1] = 0x666;
         }
       }
 
-      if (y == p1_y) {
-        if (p1_x > p0_x) {
-          x1_delta = (p2_y - p1_y) == 0 ? 0 : ((p2_x - p1_x) << 8) / (p2_y - p1_y);
+      if (p1_y != p2_y && p1_y == y) {
+        auto delta = ((p2_x - p1_x) << 8) / (p2_y - p1_y);
+        if (edges_swapped) {
+          x0_delta = delta;
         } else {
-          x0_delta = (p2_y - p1_y) == 0 ? 0 : ((p2_x - p1_x) << 8) / (p2_y - p1_y);
+          x1_delta = delta;
         }
       }
 
