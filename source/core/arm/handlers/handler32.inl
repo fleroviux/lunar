@@ -535,22 +535,15 @@ void ARM_BranchLinkExchangeImm(u32 instruction) {
 
 template <bool immediate, bool pre, bool add, bool byte, bool writeback, bool load>
 void ARM_SingleDataTransfer(u32 instruction) {
-  Mode mode;
   u32 offset;
 
   int dst  = (instruction >> 12) & 0xF;
   int base = (instruction >> 16) & 0xF;
   u32 address = state.reg[base];
 
-  /* Post-indexing implicitly write back to the base register.
-   * In that case user mode registers will be used if the W-bit is set.
-   */
-  constexpr bool user_mode = !pre && writeback;
+  constexpr bool translation = !pre && writeback;
 
-  if constexpr (user_mode) {
-    mode = static_cast<Mode>(state.cpsr.f.mode);
-    SwitchMode(MODE_USR);
-  }
+  ASSERT(!translation, "ARM: unhandled LDRT or STRT instruction");
 
   // Calculate offset relative to base register.
   if constexpr (immediate) {
@@ -593,15 +586,10 @@ void ARM_SingleDataTransfer(u32 instruction) {
     }
   }
 
-  // Restore original mode (if it was changed).
-  if constexpr (user_mode) {
-    SwitchMode(mode);
-  }
-
   if constexpr (load) {
     if (dst == 15) {
       if ((state.r15 & 1) && arch != Architecture::ARMv4T) {
-        ASSERT(!byte && !user_mode, "ARM: LDRB(T) and LDRT with destination = r15 are unpredictable.");
+        ASSERT(!byte && !translation, "ARM: unpredictable LDRB or LDRT with destination = r15.");
         state.cpsr.f.thumb = 1;
         state.r15 &= ~1;
         ReloadPipeline16();
