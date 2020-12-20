@@ -204,8 +204,10 @@ void GPU::AddVertex(Vector4 const& position) {
 
   int required = is_quad ? 4 : 3;
 
-  if (++vertex_counter >= required) {
-    // meh....
+  ++vertex_counter;
+
+  // TODO: this needs to be massively cleaned up...
+  if (vertex_counter >= required && (!is_quad || (vertex_counter % 2) == 0)) {
     auto& poly = polygon.data[polygon.count++];
     for (int i = 0; i < required; i++) {
       poly.indices[i] = index - required + i + 1;

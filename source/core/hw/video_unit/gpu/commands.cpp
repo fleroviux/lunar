@@ -2,6 +2,9 @@
  * Copyright (C) 2020 fleroviux
  */
 
+// Used for sorting, probably won't keep it...
+#include <algorithm>
+
 #include "gpu.hpp"
 
 namespace fauxDS::core {
@@ -199,8 +202,6 @@ void GPU::CMD_MatrixScale() {
       projection.current *= mat;
       break;
     case MatrixMode::Modelview:
-      modelview.current *= mat;
-      break;
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
       break;
@@ -211,24 +212,22 @@ void GPU::CMD_MatrixScale() {
 }
 
 void GPU::CMD_MatrixTranslate() {
-  Vector4 vec;
+  Matrix4x4 mat;
+  mat.LoadIdentity();
   for (int i = 0; i < 3; i++) {
-    vec[i] = Dequeue().argument;
+    mat[3][i] = Dequeue().argument;
   }
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current[3] += vec;
+      projection.current *= mat;
       break;
     case MatrixMode::Modelview:
-      modelview.current[3] += vec;
-      break;
     case MatrixMode::Simultaneous:
-      modelview.current[3] += vec;
-      direction.current[3] += vec;
+      modelview.current *= mat;
       break;
     case MatrixMode::Texture:
-      texture.current[3] += vec;
+      texture.current *= mat;
       break;
   }
 }
@@ -326,24 +325,117 @@ void GPU::CMD_SwapBuffers() {
   for (uint i = 0; i < 256 * 192; i++) {
     output[i] = 0x8000;
   }
-  
-  for (int i = 0; i < vertex.count; i++) {
-    Vector4& vec = vertex.data[i].position;
-    if (vec[3] == 0) {
-      break;
+
+  // TODO: handle quadliterals, like, at all...
+  for (int i = 0; i < polygon.count; i++) {
+    Polygon const& poly = polygon.data[i];
+
+    auto const& p0 = vertex.data[poly.indices[0]].position;
+    auto const& p1 = vertex.data[poly.indices[1]].position;
+    auto const& p2 = vertex.data[poly.indices[2]].position;
+
+    #define view_x(x) (((x * 128) >> 12) + 128)
+    #define view_y(y) (((y *  96) >> 12) +  96)
+    
+    // Skip entire polygon if anything divides by zero...
+    // This will be solved by clipping polygons against the view frustum.
+    if (p0[3] == 0 || p1[3] == 0 || p2[3] == 0)
+      continue;
+
+    // TODO: use some kind of Vec2 struct to store 2d-points, this is atrocious...
+    auto p0_x = view_x(( s64(p0[0]) << 12) / p0[3]);
+    auto p0_y = view_y((-s64(p0[1]) << 12) / p0[3]);
+
+    auto p1_x = view_x(( s64(p1[0]) << 12) / p1[3]);
+    auto p1_y = view_y((-s64(p1[1]) << 12) / p1[3]);
+
+    auto p2_x = view_x(( s64(p2[0]) << 12) / p2[3]);
+    auto p2_y = view_y((-s64(p2[1]) << 12) / p2[3]);
+
+    if (p0_y > p1_y || (p0_y == p1_y && p0_x > p1_x)) {
+      std::swap(p0_x, p1_x);
+      std::swap(p0_y, p1_y);
+    }
+    
+    if (p1_y > p2_y || (p1_y == p2_y && p1_x > p2_x)) {
+      std::swap(p1_x, p2_x);
+      std::swap(p1_y, p2_y);
+    }
+    
+    if (p0_y > p1_y || (p0_y == p1_y && p0_x > p1_x)) {
+      std::swap(p0_x, p1_x);
+      std::swap(p0_y, p1_y);
     }
 
-    s32 x =  (s64(vec[0]) << 12) / vec[3];
-    s32 y = -(s64(vec[1]) << 12) / vec[3];
-    
-    x = ((x * 128) >> 12) + 128;
-    y = ((y *  96) >> 12) + 96;
-    
-    if (x >= 0 && x <= 255 && y >= 0 && y <= 191) {
-      output[y * 256 + x] = 0x7FFF;
+    // TODO: use proper type.
+    auto x0 = p2_x << 8;
+    auto x1 = p1_x << 8;
+    int x0_delta = 0;
+    int x1_delta = 0;
+
+    auto y0_delta = p2_y - p0_y;
+    auto y1_delta = p1_y - p0_y;
+
+    if (y0_delta != 0) {
+      x0 = p0_x << 8;
+      x0_delta = ((p2_x - p0_x) << 8) / y0_delta;
+    }
+
+    if (y1_delta != 0) {
+      x1 = p0_x << 8;
+      x1_delta = ((p1_x - p0_x) << 8) / y1_delta;
+    }
+
+    if (p1_x < p0_x) {
+      std::swap(x0, x1);
+      std::swap(x0_delta, x1_delta);
+    }
+
+    for (auto y = p0_y; y <= p2_y; y++) {
+      if (y >= 0 && y <= 191) {
+        auto _x0 = x0 >> 8;
+        auto _x1 = x1 >> 8;
+
+        for (auto x = _x0; x <= _x1; x++) {
+          if (x >= 0 && x <= 255) {
+            output[y * 256 + x] = 0x1F;
+          }
+        }
+
+        if (_x0 >= 0 && _x0 <= 255) {
+          output[y * 256 + _x0] = 0x1F << 10;
+        }
+
+        if (_x1 >= 0 && _x1 <= 255) {
+          output[y * 256 + _x1] = 0x1F << 10;
+        }
+      }
+
+      if (y == p1_y) {
+        if (p1_x > p0_x) {
+          x1_delta = (p2_y - p1_y) == 0 ? 0 : ((p2_x - p1_x) << 8) / (p2_y - p1_y);
+        } else {
+          x0_delta = (p2_y - p1_y) == 0 ? 0 : ((p2_x - p1_x) << 8) / (p2_y - p1_y);
+        }
+      }
+
+      x0 += x0_delta;
+      x1 += x1_delta;
+    }
+
+    if (p0_x >= 0 && p0_x <= 255 && p0_y >= 0 && p0_y <= 191) {
+      output[p0_y * 256 + p0_x]  = 0x1F << 0;
+    }
+
+    if (p1_x >= 0 && p1_x <= 255 && p1_y >= 0 && p1_y <= 191) {
+      output[p1_y * 256 + p1_x]  = 0x1F << 5;
+    }
+
+    if (p2_x >= 0 && p2_x <= 255 && p2_y >= 0 && p2_y <= 191) {
+      output[p2_y * 256 + p2_x]  = 0x1F << 10;
     }
   }
-  
+
   vertex.count = 0;
   polygon.count = 0;
 }
