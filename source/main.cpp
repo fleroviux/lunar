@@ -11,7 +11,7 @@
 #include <core/arm9/bus.hpp>
 #include <core/arm9/cp15.hpp>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 using namespace fauxDS::core;
 using namespace fauxDS::core::arm;
