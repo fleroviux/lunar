@@ -101,7 +101,8 @@ private:
   };
 
   struct Polygon {
-    bool quad;
+    //bool quad;
+    int count;
     int indices[4];
   };
 

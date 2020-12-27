@@ -197,9 +197,12 @@ void GPU::AddVertex(Vector4 const& position) {
 
   auto index = vertex.count;
 
-  vertex.data[index] = {
-    projection.current * (modelview.current * position)
-  };
+  auto clip_position = projection.current * (modelview.current * position);
+  for (int i = 0; i < 3; i++) {
+    clip_position[i] = (s64(clip_position[i]) << 12) / clip_position[3];
+  }
+
+  vertex.data[index] = { clip_position };
   vertex.count++;
 
   int required = is_quad ? 4 : 3;
@@ -209,10 +212,67 @@ void GPU::AddVertex(Vector4 const& position) {
   // TODO: this needs to be massively cleaned up...
   if (vertex_counter >= required && (!is_quad || (vertex_counter % 2) == 0)) {
     auto& poly = polygon.data[polygon.count++];
+    poly.count = required;
     for (int i = 0; i < required; i++) {
       poly.indices[i] = index - required + i + 1;
     }
-    poly.quad = is_quad;
+
+    // Clip the vertices against the view frustum (unit box in clip space).
+    for (int i = 0; i < poly.count; i++) {
+      auto& v = vertex.data[poly.indices[i]];
+      // TODO: really, really check if this is correct at all...
+      auto& vb = vertex.data[poly.indices[(i - 1 + poly.count) % poly.count]];
+      auto& vn = vertex.data[poly.indices[(i + 1) % poly.count]];
+      for (int j = 0; j < 3; j++) {
+        auto& value = v.position[j];
+
+        if ((value < -0x1000) || (value > 0x1000)) {
+          s32 limit = (value < -0x1000) ? -0x1000 : 0x1000;
+
+          Vector4 edge_a {
+            v.position[0] - vb.position[0],
+            v.position[1] - vb.position[1],
+            v.position[2] - vb.position[2],
+            v.position[3] - vb.position[3]
+          };          
+
+          Vector4 edge_b {
+            v.position[0] - vn.position[0],
+            v.position[1] - vn.position[1],
+            v.position[2] - vn.position[2],
+            v.position[3] - vn.position[3]
+          };
+
+          s32 scale_a = ((limit - vb.position[j]) << 18) / edge_a[j];
+          v.position = Vector4{
+            vb.position[0] + ((edge_a[0] * scale_a) >> 18),
+            vb.position[1] + ((edge_a[1] * scale_a) >> 18),
+            vb.position[2] + ((edge_a[2] * scale_a) >> 18),
+            vb.position[3] + ((edge_a[3] * scale_a) >> 18)
+          };
+
+          s32 scale_b = ((limit - vn.position[j]) << 18) / edge_b[j];
+          // TODO: what happens if vertex RAM overflows?
+          auto foo = vertex.count++;
+          vertex.data[foo] = {
+            Vector4{
+              vn.position[0] + ((edge_b[0] * scale_b) >> 18),
+              vn.position[1] + ((edge_b[1] * scale_b) >> 18),
+              vn.position[2] + ((edge_b[2] * scale_b) >> 18),
+              vn.position[3] + ((edge_b[3] * scale_b) >> 18)
+            }
+          };
+
+          for (int k = poly.count - 1; k >= i + 1; k--) {
+            poly.indices[k + 1] = poly.indices[k];
+          }
+          //poly.indices[i + 1/*++i*/] = foo;
+          poly.indices[++i] = foo;
+          poly.count++;
+        }
+      }
+    }
+
     // In strip mode we just keep reusing old vertices.
     if (!is_strip) {
       vertex_counter = 0;

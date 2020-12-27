@@ -327,8 +327,8 @@ void GPU::CMD_SwapBuffers() {
   for (int i = 0; i < polygon.count; i++) {
     Polygon const& poly = polygon.data[i];
 
-    // FIXME: instead of the "quad"-flag, let the polygon have a vertex count.
-    int num_vertices = poly.quad ? 4 : 3;
+    // TODO: remove this, it is unnecessary now.
+    int num_vertices = poly.count;
 
     // TODO: move this to a less questionable place.
     // TODO: once clipping is in place, probably u8 sbould be sufficient.
@@ -352,8 +352,8 @@ void GPU::CMD_SwapBuffers() {
         skip = true;
         break;
       }
-      points[j].x = view_x(( s64(vert.position[0]) << 12) / vert.position[3]);
-      points[j].y = view_y((-s64(vert.position[1]) << 12) / vert.position[3]);
+      points[j].x = view_x( vert.position[0]);//view_x(( s64(vert.position[0]) << 12) / vert.position[3]);
+      points[j].y = view_y(-vert.position[1]);//view_y((-s64(vert.position[1]) << 12) / vert.position[3]);
     }
 
     if (skip) {
@@ -418,11 +418,11 @@ void GPU::CMD_SwapBuffers() {
         auto _x0 = edge_a.x >> 18;
         auto _x1 = edge_b.x >> 18;
         if (_x0 > _x1) std::swap(_x0, _x1);
-        /*for (auto x = _x0; x <= _x1; x++) {
+        for (auto x = _x0; x <= _x1; x++) {
           if (x >= 0 && x <= 255) {
             output[y * 256 + x] = 0x1F;
           }
-        }*/
+        }
         if (_x0 >= 0 && _x0 <= 255) {
           output[y * 256 + _x0] = 0x666;
         }
@@ -434,6 +434,10 @@ void GPU::CMD_SwapBuffers() {
       edge_a.x += edge_a.delta;
       edge_b.x += edge_b.delta;
     }
+
+    /*for (int j = 0; j < num_vertices; j++) {
+      output[points[j].y * 256 + points[j].x] = 0x1F << 10;
+    }*/
   }
 
   vertex.count = 0;
