@@ -293,13 +293,13 @@ void GPU::CMD_SubmitVertex_YZ() {
 
 void GPU::CMD_SubmitVertex_Offset() {
   auto arg = Dequeue().argument;
-  // TODO: cleanup and check correctness.
   AddVertex({
-    position_old[0] + (s16(((arg >>  0) & 0x3F) | (arg & (1 <<  9) ? 0xFFC0 : 0)) << 3),
-    position_old[1] + (s16(((arg >> 10) & 0x3F) | (arg & (1 << 19) ? 0xFFC0 : 0)) << 3),
-    position_old[2] + (s16(((arg >> 20) & 0x3F) | (arg & (1 << 29) ? 0xFFC0 : 0)) << 3),
+    position_old[0] + s16((((arg >>  0) & 0x3FF) << 3) | (arg & (1 <<  9) ? 0xF000 : 0)),
+    position_old[1] + s16((((arg >> 10) & 0x3FF) << 3) | (arg & (1 << 19) ? 0xF000 : 0)),
+    position_old[2] + s16((((arg >> 20) & 0x3FF) << 3) | (arg & (1 << 29) ? 0xF000 : 0)),
     0x1000
   });
+  
 }
 
 void GPU::CMD_BeginVertexList() {
