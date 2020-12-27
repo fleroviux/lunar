@@ -218,7 +218,7 @@ void GPU::AddVertex(Vector4 const& position) {
     }
 
     // Clip the vertices against the view frustum (unit box in clip space).
-    for (int i = 0; i < poly.count; i++) {
+    /*for (int i = 0; i < poly.count; i++) {
       auto& v = vertex.data[poly.indices[i]];
       // TODO: really, really check if this is correct at all...
       auto& vb = vertex.data[poly.indices[(i - 1 + poly.count) % poly.count]];
@@ -266,12 +266,12 @@ void GPU::AddVertex(Vector4 const& position) {
           for (int k = poly.count - 1; k >= i + 1; k--) {
             poly.indices[k + 1] = poly.indices[k];
           }
-          //poly.indices[i + 1/*++i*/] = foo;
+          //poly.indices[i + 1] = foo;
           poly.indices[++i] = foo;
           poly.count++;
         }
       }
-    }
+    }*/
 
     // In strip mode we just keep reusing old vertices.
     if (!is_strip) {

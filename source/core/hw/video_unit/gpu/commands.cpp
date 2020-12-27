@@ -339,10 +339,6 @@ void GPU::CMD_SwapBuffers() {
 
     Point points[num_vertices];
 
-    // FIXME: this is just bad... no excuse...
-    #define view_x(x) (((x * 128) >> 12) + 128)
-    #define view_y(y) (((y *  96) >> 12) +  96)
-    
     bool skip = false;
 
     for (int j = 0; j < num_vertices; j++) {
@@ -352,8 +348,8 @@ void GPU::CMD_SwapBuffers() {
         skip = true;
         break;
       }
-      points[j].x = view_x( vert.position[0]);//view_x(( s64(vert.position[0]) << 12) / vert.position[3]);
-      points[j].y = view_y(-vert.position[1]);//view_y((-s64(vert.position[1]) << 12) / vert.position[3]);
+      points[j].x = (( vert.position[0] * 128) >> 12) + 128;
+      points[j].y = ((-vert.position[1] *  96) >> 12) +  96;
     }
 
     if (skip) {
