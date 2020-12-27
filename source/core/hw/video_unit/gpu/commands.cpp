@@ -253,11 +253,10 @@ void GPU::CMD_SubmitVertex_16() {
 
 void GPU::CMD_SubmitVertex_10() {
   auto arg = Dequeue().argument;
-  // TODO: cleanup and check correctness.
   AddVertex({
-    s32(s16(((arg >>  0) & 0x3F) | (arg & (1 <<  9) ? 0xFFC0 : 0))) << 6,
-    s32(s16(((arg >> 10) & 0x3F) | (arg & (1 << 19) ? 0xFFC0 : 0))) << 6,
-    s32(s16(((arg >> 20) & 0x3F) | (arg & (1 << 29) ? 0xFFC0 : 0))) << 6,
+    s32(s16(((arg >>  0) & 0x3FF) | (arg & (1 <<  9) ? 0xFC00 : 0))) << 6,
+    s32(s16(((arg >> 10) & 0x3FF) | (arg & (1 << 19) ? 0xFC00 : 0))) << 6,
+    s32(s16(((arg >> 20) & 0x3FF) | (arg & (1 << 29) ? 0xFC00 : 0))) << 6,
     0x1000
   });
 }
