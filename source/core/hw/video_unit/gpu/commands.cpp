@@ -254,9 +254,9 @@ void GPU::CMD_SubmitVertex_16() {
 void GPU::CMD_SubmitVertex_10() {
   auto arg = Dequeue().argument;
   AddVertex({
-    s32(s16(((arg >>  0) & 0x3FF) | (arg & (1 <<  9) ? 0xFC00 : 0))) << 6,
-    s32(s16(((arg >> 10) & 0x3FF) | (arg & (1 << 19) ? 0xFC00 : 0))) << 6,
-    s32(s16(((arg >> 20) & 0x3FF) | (arg & (1 << 29) ? 0xFC00 : 0))) << 6,
+    s16((arg >>  0) << 6),
+    s16((arg >> 10) << 6),
+    s16((arg >> 20) << 6),
     0x1000
   });
 }
@@ -294,12 +294,11 @@ void GPU::CMD_SubmitVertex_YZ() {
 void GPU::CMD_SubmitVertex_Offset() {
   auto arg = Dequeue().argument;
   AddVertex({
-    position_old[0] + s16((((arg >>  0) & 0x3FF) << 3) | (arg & (1 <<  9) ? 0xF000 : 0)),
-    position_old[1] + s16((((arg >> 10) & 0x3FF) << 3) | (arg & (1 << 19) ? 0xF000 : 0)),
-    position_old[2] + s16((((arg >> 20) & 0x3FF) << 3) | (arg & (1 << 29) ? 0xF000 : 0)),
+    position_old[0] + (s16((arg >>  0) << 6) >> 6),
+    position_old[1] + (s16((arg >> 10) << 6) >> 6),
+    position_old[2] + (s16((arg >> 20) << 6) >> 6),
     0x1000
   });
-  
 }
 
 void GPU::CMD_BeginVertexList() {
