@@ -398,12 +398,12 @@ void GPU::CMD_SwapBuffers() {
     Edge edge_b { points[b], points[(b + 1) % num_vertices] };
 
     for (s32 y = y_min; y <= y_max; y++) {
-      if (edge_a.y_end == y) {
+      if (edge_a.y_end <= y) {
         a = (num_vertices + a - 1) % num_vertices;
         edge_a = { points[a], points[(num_vertices + a - 1) % num_vertices] };
       }
 
-      if (edge_b.y_end == y) {
+      if (edge_b.y_end <= y) {
         b = (b + 1) % num_vertices;
         edge_b = { points[b], points[(b + 1) % num_vertices] };
       }
@@ -414,24 +414,36 @@ void GPU::CMD_SwapBuffers() {
         if (_x0 > _x1) std::swap(_x0, _x1);
         for (auto x = _x0; x <= _x1; x++) {
           if (x >= 0 && x <= 255) {
-            output[y * 256 + x] = 0x1F;
+            output[y * 256 + x] = 0x999;
           }
         }
-        if (_x0 >= 0 && _x0 <= 255) {
+        /*if (_x0 >= 0 && _x0 <= 255) {
           output[y * 256 + _x0] = 0x666;
         }
         if (_x1 >= 0 && _x1 <= 255) {
           output[y * 256 + _x1] = 0x666;
-        }
+        }*/
       }
 
       edge_a.x += edge_a.delta;
       edge_b.x += edge_b.delta;
     }
 
-    /*for (int j = 0; j < num_vertices; j++) {
-      output[points[j].y * 256 + points[j].x] = 0x1F << 10;
-    }*/
+    //LOG_DEBUG("GPU: vertex count = {0}", num_vertices);
+    for (int j = 0; j < num_vertices; j++) {
+      if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
+        continue;
+      }
+      u16 color = 0x4269;
+      switch (j) {
+        case 0: color = 0x1F; break;
+        case 1: color = 0x1f << 5; break;
+        case 2: color = 0x1f << 10; break;
+        case 3: color = (0x1F << 5) | 0x1F; break;
+        case 4: color = 0x7FFF; break;
+      }
+      output[points[j].y * 256 + points[j].x] = color;
+    }
   }
 
   vertex.count = 0;

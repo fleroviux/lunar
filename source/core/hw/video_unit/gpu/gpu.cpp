@@ -199,6 +199,7 @@ void GPU::AddVertex(Vector4 const& position) {
 
   auto clip_position = projection.current * (modelview.current * position);
   for (int i = 0; i < 3; i++) {
+    // TODO: what happens if w=0?
     clip_position[i] = (s64(clip_position[i]) << 12) / clip_position[3];
   }
 
@@ -209,22 +210,28 @@ void GPU::AddVertex(Vector4 const& position) {
 
   ++vertex_counter;
 
-  // TODO: this needs to be massively cleaned up...
   if (vertex_counter >= required && (!is_quad || (vertex_counter % 2) == 0)) {
-    auto& poly = polygon.data[polygon.count++];
-    poly.count = required;
+    // TODO: this can be made redundant... generate the indices in the polygon clipper for loop instead.
+    int indices[10];
     for (int i = 0; i < required; i++) {
-      poly.indices[i] = index - required + i + 1;
+      indices[i] = index - required + i + 1;
     }
 
+    auto& poly = polygon.data[polygon.count++];
+    
+    poly.count = 0;
+
     // Clip the vertices against the view frustum (unit box in clip space).
-    /*for (int i = 0; i < poly.count; i++) {
-      auto& v = vertex.data[poly.indices[i]];
+    for (int i = 0; i < required; i++) {
+      auto& v = vertex.data[indices[i]];
       // TODO: really, really check if this is correct at all...
-      auto& vb = vertex.data[poly.indices[(i - 1 + poly.count) % poly.count]];
-      auto& vn = vertex.data[poly.indices[(i + 1) % poly.count]];
+      auto& vb = vertex.data[indices[(i - 1 + required) % required]];
+      auto& vn = vertex.data[indices[(i + 1) % required]];
+
+      poly.indices[poly.count++] = indices[i];
+
       for (int j = 0; j < 3; j++) {
-        auto& value = v.position[j];
+        auto value = v.position[j];
 
         if ((value < -0x1000) || (value > 0x1000)) {
           s32 limit = (value < -0x1000) ? -0x1000 : 0x1000;
@@ -243,35 +250,32 @@ void GPU::AddVertex(Vector4 const& position) {
             v.position[3] - vn.position[3]
           };
 
-          s32 scale_a = ((limit - vb.position[j]) << 18) / edge_a[j];
+          s64 scale_a = (s64(limit - vb.position[j]) << 32) / edge_a[j];
           v.position = Vector4{
-            vb.position[0] + ((edge_a[0] * scale_a) >> 18),
-            vb.position[1] + ((edge_a[1] * scale_a) >> 18),
-            vb.position[2] + ((edge_a[2] * scale_a) >> 18),
-            vb.position[3] + ((edge_a[3] * scale_a) >> 18)
+            vb.position[0] + s32((edge_a[0] * scale_a) >> 32),
+            vb.position[1] + s32((edge_a[1] * scale_a) >> 32),
+            vb.position[2] + s32((edge_a[2] * scale_a) >> 32),
+            vb.position[3] + s32((edge_a[3] * scale_a) >> 32)
           };
 
-          s32 scale_b = ((limit - vn.position[j]) << 18) / edge_b[j];
-          // TODO: what happens if vertex RAM overflows?
-          auto foo = vertex.count++;
-          vertex.data[foo] = {
+          s64 scale_b = (s64(limit - vn.position[j]) << 32) / edge_b[j];
+          auto new_vertex_id = vertex.count++;
+          vertex.data[new_vertex_id] = {
             Vector4{
-              vn.position[0] + ((edge_b[0] * scale_b) >> 18),
-              vn.position[1] + ((edge_b[1] * scale_b) >> 18),
-              vn.position[2] + ((edge_b[2] * scale_b) >> 18),
-              vn.position[3] + ((edge_b[3] * scale_b) >> 18)
+              vn.position[0] + s32((edge_b[0] * scale_b) >> 32),
+              vn.position[1] + s32((edge_b[1] * scale_b) >> 32),
+              vn.position[2] + s32((edge_b[2] * scale_b) >> 32),
+              vn.position[3] + s32((edge_b[3] * scale_b) >> 32)
             }
           };
 
-          for (int k = poly.count - 1; k >= i + 1; k--) {
-            poly.indices[k + 1] = poly.indices[k];
-          }
-          //poly.indices[i + 1] = foo;
-          poly.indices[++i] = foo;
-          poly.count++;
+          // TODO: assert if the 10 vertices limit is hit...
+          // theoretically it should not happen but practically i'm an idiot.
+          poly.indices[poly.count++] = new_vertex_id;
+          break;
         }
       }
-    }*/
+    }
 
     // In strip mode we just keep reusing old vertices.
     if (!is_strip) {
