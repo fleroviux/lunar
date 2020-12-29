@@ -98,7 +98,6 @@ void DoShift(int opcode, u32& operand, u32 amount, int& carry, bool immediate) {
 void LSL(u32& operand, u32 amount, int& carry) {
   if (amount == 0) return;
 
-#if (defined(__i386__) || defined(__x86_64__))
   if (amount >= 32) {
     if (amount > 32) {
       carry = 0;
@@ -108,7 +107,7 @@ void LSL(u32& operand, u32 amount, int& carry) {
     operand = 0;
     return;
   }
-#endif
+
   carry = (operand << (amount - 1)) >> 31;
   operand <<= amount;
 }
@@ -123,7 +122,6 @@ void LSR(u32& operand, u32 amount, int& carry, bool immediate) {
     }
   }
 
-#if (defined(__i386__) || defined(__x86_64__))
   if (amount >= 32) {
     if (amount > 32) {
       carry = 0;
@@ -133,7 +131,7 @@ void LSR(u32& operand, u32 amount, int& carry, bool immediate) {
     operand = 0;
     return;
   }
-#endif
+
   carry = (operand >> (amount - 1)) & 1;
   operand >>= amount;
 }
@@ -150,13 +148,11 @@ void ASR(u32& operand, u32 amount, int& carry, bool immediate) {
 
   int msb = operand >> 31;
 
-#if (defined(__i386__) || defined(__x86_64__))
   if (amount >= 32) {
     carry = msb;
     operand = 0xFFFFFFFF * msb;
     return;
   }
-#endif
 
   carry = (operand >> (amount - 1)) & 1;
   operand = (operand >> amount) | ((0xFFFFFFFF * msb) << (32 - amount));
