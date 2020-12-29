@@ -227,14 +227,22 @@ void GPU::AddVertex(Vector4 const& position) {
 
       poly.indices[poly.count++] = indices[1];
 
+      bool rearrange_top_down = is_quad && is_strip && i >= 1;
+
       for (int j = 0; j < 3; j++) {
-        indices[j]++;
+        if (rearrange_top_down) {
+          if (i == 1) indices[j] += 2;
+          if (i == 2) indices[j] -= 1;
+        } else {
+          indices[j]++;
+        }
+
         // Index to the current vertex will never wraparound.
-        if (i != 1) {
+        if (j != 1) {
           if (indices[j] < 0) {
-            indices[j] = end;
+            indices[j] += required;
           } else if (indices[j] > end) {
-            indices[j] = start;
+            indices[j] -= required;
           }
         }
       }
@@ -243,7 +251,7 @@ void GPU::AddVertex(Vector4 const& position) {
         auto value = v.position[j];
 
         if ((value < -0x1000) || (value > 0x1000)) {
-          s32 limit = (value < -0x1000) ? -0xFFF : 0xFFF;
+          s32 limit = (value < -0x1000) ? -0x1000 : 0x1000;
 
           Vector4 edge_a {
             v.position[0] - vb.position[0],
