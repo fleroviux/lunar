@@ -417,19 +417,18 @@ void GPU::CMD_SwapBuffers() {
             output[y * 256 + x] = 0x999;
           }
         }
-        /*if (_x0 >= 0 && _x0 <= 255) {
+        if (_x0 >= 0 && _x0 <= 255) {
           output[y * 256 + _x0] = 0x666;
         }
         if (_x1 >= 0 && _x1 <= 255) {
           output[y * 256 + _x1] = 0x666;
-        }*/
+        }
       }
 
       edge_a.x += edge_a.delta;
       edge_b.x += edge_b.delta;
     }
 
-    //LOG_DEBUG("GPU: vertex count = {0}", num_vertices);
     for (int j = 0; j < num_vertices; j++) {
       if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
         continue;

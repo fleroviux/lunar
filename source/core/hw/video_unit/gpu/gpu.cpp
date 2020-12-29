@@ -211,30 +211,39 @@ void GPU::AddVertex(Vector4 const& position) {
   ++vertex_counter;
 
   if (vertex_counter >= required && (!is_quad || (vertex_counter % 2) == 0)) {
-    // TODO: this can be made redundant... generate the indices in the polygon clipper for loop instead.
-    int indices[10];
-    for (int i = 0; i < required; i++) {
-      indices[i] = index - required + i + 1;
-    }
-
     auto& poly = polygon.data[polygon.count++];
-    
+
+    int start = index - required + 1;
+    int end = index; // alias for legibility
+    int indices[3] { end, start, start + 1 };
+
     poly.count = 0;
 
     // Clip the vertices against the view frustum (unit box in clip space).
     for (int i = 0; i < required; i++) {
-      auto& v = vertex.data[indices[i]];
-      // TODO: really, really check if this is correct at all...
-      auto& vb = vertex.data[indices[(i - 1 + required) % required]];
-      auto& vn = vertex.data[indices[(i + 1) % required]];
+      auto& v = vertex.data[indices[1]];
+      auto& vb = vertex.data[indices[0]];
+      auto& vn = vertex.data[indices[2]];
 
-      poly.indices[poly.count++] = indices[i];
+      poly.indices[poly.count++] = indices[1];
+
+      for (int j = 0; j < 3; j++) {
+        indices[j]++;
+        // Index to the current vertex will never wraparound.
+        if (i != 1) {
+          if (indices[j] < 0) {
+            indices[j] = end;
+          } else if (indices[j] > end) {
+            indices[j] = start;
+          }
+        }
+      }
 
       for (int j = 0; j < 3; j++) {
         auto value = v.position[j];
 
         if ((value < -0x1000) || (value > 0x1000)) {
-          s32 limit = (value < -0x1000) ? -0x1000 : 0x1000;
+          s32 limit = (value < -0x1000) ? -0xFFF : 0xFFF;
 
           Vector4 edge_a {
             v.position[0] - vb.position[0],
