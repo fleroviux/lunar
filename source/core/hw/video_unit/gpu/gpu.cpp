@@ -198,29 +198,25 @@ void GPU::AddVertex(Vector4 const& position) {
   auto index = vertex.count;
 
   auto clip_position = projection.current * (modelview.current * position);
-  for (int i = 0; i < 3; i++) {
-    // TODO: what happens if w=0?
-    clip_position[i] = (s64(clip_position[i]) << 12) / clip_position[3];
-  }
 
   vertex.data[index] = { clip_position };
   vertex.count++;
 
-  int required = is_quad ? 4 : 3;
+  int num_vertices = is_quad ? 4 : 3;
 
   ++vertex_counter;
 
-  if (vertex_counter >= required && (!is_quad || (vertex_counter % 2) == 0)) {
+  if (vertex_counter >= num_vertices && (!is_quad || (vertex_counter % 2) == 0)) {
     auto& poly = polygon.data[polygon.count++];
 
-    int start = index - required + 1;
+    int start = index - num_vertices + 1;
     int end = index; // alias for legibility
     int indices[3] { end, start, start + 1 };
 
     poly.count = 0;
 
-    // Clip the vertices against the view frustum (unit box in clip space).
-    for (int i = 0; i < required; i++) {
+    // Clip each vertex against the sides of the view frustum.
+    for (int i = 0; i < num_vertices; i++) {
       auto& v = vertex.data[indices[1]];
       auto& vb = vertex.data[indices[0]];
       auto& vn = vertex.data[indices[2]];
@@ -240,18 +236,21 @@ void GPU::AddVertex(Vector4 const& position) {
         // Index to the current vertex will never wraparound.
         if (j != 1) {
           if (indices[j] < 0) {
-            indices[j] += required;
+            indices[j] += num_vertices;
           } else if (indices[j] > end) {
-            indices[j] -= required;
+            indices[j] -= num_vertices;
           }
         }
       }
 
+      auto w = v.position[3];
+
+      // TODO: find the lowest distance instead of clipping immediately?
       for (int j = 0; j < 3; j++) {
         auto value = v.position[j];
 
-        if ((value < -0x1000) || (value > 0x1000)) {
-          s32 limit = (value < -0x1000) ? -0x1000 : 0x1000;
+        if (value < -w || value > w) {
+          s32 limit = (value < -w) ? -w : w;
 
           Vector4 edge_a {
             v.position[0] - vb.position[0],

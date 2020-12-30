@@ -346,8 +346,8 @@ void GPU::CMD_SwapBuffers() {
         skip = true;
         break;
       }
-      points[j].x = (( vert.position[0] * 128) >> 12) + 128;
-      points[j].y = ((-vert.position[1] *  96) >> 12) +  96;
+      points[j].x = (( (s64(vert.position[0]) << 12) / vert.position[3] * 128) >> 12) + 128;
+      points[j].y = ((-(s64(vert.position[1]) << 12) / vert.position[3] *  96) >> 12) +  96;
     }
 
     if (skip) {
