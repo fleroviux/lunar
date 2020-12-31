@@ -193,16 +193,13 @@ void GPU::AddVertex(Vector4 const& position) {
     return;
   }
 
+  int num_vertices = is_quad ? 4 : 3;
+
   position_old = position;
 
-  auto index = vertex.count;
-
   auto clip_position = projection.current * (modelview.current * position);
-
+  auto index = vertex.count++;
   vertex.data[index] = { clip_position };
-  vertex.count++;
-
-  int num_vertices = is_quad ? 4 : 3;
 
   ++vertex_counter;
 
@@ -266,7 +263,17 @@ void GPU::AddVertex(Vector4 const& position) {
             v.position[3] - vn.position[3]
           };
 
-          s64 scale_a = (s64(limit - vb.position[j]) << 32) / edge_a[j];
+          s64 scale_a;
+          s64 scale_b;
+
+          if (value < w) {
+            scale_a = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a[3] + edge_a[j]);
+            scale_b = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b[3] + edge_b[j]);
+          } else {
+            scale_a =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a[3] - edge_a[j]);
+            scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b[3] - edge_b[j]);
+          }
+
           v.position = Vector4{
             vb.position[0] + s32((edge_a[0] * scale_a) >> 32),
             vb.position[1] + s32((edge_a[1] * scale_a) >> 32),
@@ -274,7 +281,12 @@ void GPU::AddVertex(Vector4 const& position) {
             vb.position[3] + s32((edge_a[3] * scale_a) >> 32)
           };
 
-          s64 scale_b = (s64(limit - vn.position[j]) << 32) / edge_b[j];
+          if (vertex.count == 6144) {
+            // TODO: set buffer overflow bit in GXSTAT.
+            LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
+            break;
+          }
+
           auto new_vertex_id = vertex.count++;
           vertex.data[new_vertex_id] = {
             Vector4{
