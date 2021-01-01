@@ -64,6 +64,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Unmap(0x20000 * (vramcnt_a.offset & 1), bank_a);
           break;
+        case 3:
+          region_gpu_texture.Unmap(vramcnt_a.offset * 0x20000, bank_a);
+          break;
       }
       break;
     case Bank::B:
@@ -77,6 +80,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Unmap(0x20000 * (vramcnt_b.offset & 1), bank_b);
           break;
+        case 3:
+          region_gpu_texture.Unmap(vramcnt_b.offset * 0x20000, bank_b);
+          break;
       }
       break;
     case Bank::C:
@@ -89,6 +95,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 2:
           region_arm7_wram.Unmap(0x20000 * (vramcnt_c.offset & 1), bank_c);
+          break;
+        case 3:
+          region_gpu_texture.Unmap(vramcnt_c.offset * 0x20000, bank_c);
           break;
         case 4:
           region_ppu_bg[1].Unmap(0x00000, bank_c);
@@ -106,6 +115,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_arm7_wram.Unmap(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
+        case 3:
+          region_gpu_texture.Unmap(vramcnt_d.offset * 0x20000, bank_d);
+          break;
         case 4:
           region_ppu_obj[1].Unmap(0x00000, bank_d);
           break;
@@ -122,6 +134,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Unmap(0x00000, bank_e);
           break;
+        case 3:
+          region_gpu_palette.Unmap(0, bank_e);
+          break;
         case 4:
           region_ppu_bg_extpal[0].Unmap(0, bank_e, 0x8000);
           break;
@@ -137,6 +152,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[0].Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          break;
+        case 3:
+          region_gpu_palette.Unmap(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
         case 4:
           region_ppu_bg_extpal[0].Unmap(0x4000 * (vramcnt_f.offset & 1), bank_f);
@@ -156,6 +174,9 @@ void VRAM::UnmapFromCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[0].Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          break;
+        case 3:
+          region_gpu_palette.Unmap(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
         case 4:
           region_ppu_bg_extpal[0].Unmap(0x4000 * (vramcnt_g.offset & 1), bank_g);
@@ -210,6 +231,9 @@ void VRAM::MapToCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Map(0x20000 * (vramcnt_a.offset & 1), bank_a);
           break;
+        case 3:
+          region_gpu_texture.Map(vramcnt_a.offset * 0x20000, bank_a);
+          break;
         default:
           LOG_ERROR("VRAM bank A: unsupported configuration: mst={0} offset={1}", vramcnt_a.mst, vramcnt_a.offset);
       }
@@ -225,6 +249,9 @@ void VRAM::MapToCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Map(0x20000 * (vramcnt_b.offset & 1), bank_b);
           break;
+        case 3:
+          region_gpu_texture.Map(vramcnt_b.offset * 0x20000, bank_b);
+          break;
         default:
           LOG_ERROR("VRAM bank B: unsupported configuration: mst={0} offset={1}", vramcnt_b.mst, vramcnt_b.offset);
       }
@@ -239,6 +266,9 @@ void VRAM::MapToCurrent(Bank bank) {
           break;
         case 2:
           region_arm7_wram.Map(0x20000 * (vramcnt_c.offset & 1), bank_c);
+          break;
+        case 3:
+          region_gpu_texture.Map(vramcnt_c.offset * 0x20000, bank_c);
           break;
         case 4:
           region_ppu_bg[1].Map(0x00000, bank_c);
@@ -258,6 +288,9 @@ void VRAM::MapToCurrent(Bank bank) {
         case 2:
           region_arm7_wram.Map(0x20000 * (vramcnt_d.offset & 1), bank_d);
           break;
+        case 3:
+          region_gpu_texture.Map(vramcnt_d.offset * 0x20000, bank_d);
+          break;
         case 4:
           region_ppu_obj[1].Map(0x00000, bank_d);
           break;
@@ -276,6 +309,9 @@ void VRAM::MapToCurrent(Bank bank) {
         case 2:
           region_ppu_obj[0].Map(0x00000, bank_e);
           break;
+        case 3:
+          region_gpu_palette.Map(0, bank_e);
+          break;
         case 4:
           region_ppu_bg_extpal[0].Map(0, bank_e, 0x8000);
           break;
@@ -293,6 +329,9 @@ void VRAM::MapToCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[0].Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
+          break;
+        case 3:
+          region_gpu_palette.Map(0x4000 * (vramcnt_f.offset & 1) + 0x10000 * ((vramcnt_f.offset >> 1) & 1), bank_f);
           break;
         case 4:
           region_ppu_bg_extpal[0].Map(0x4000 * (vramcnt_f.offset & 1), bank_f);
@@ -314,6 +353,9 @@ void VRAM::MapToCurrent(Bank bank) {
           break;
         case 2:
           region_ppu_obj[0].Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
+          break;
+        case 3:
+          region_gpu_palette.Map(0x4000 * (vramcnt_g.offset & 1) + 0x10000 * ((vramcnt_g.offset >> 1) & 1), bank_g);
           break;
         case 4:
           region_ppu_bg_extpal[0].Map(0x4000 * (vramcnt_g.offset & 1), bank_g);
