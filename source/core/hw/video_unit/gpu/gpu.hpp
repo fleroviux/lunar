@@ -254,6 +254,8 @@ private:
   common::FIFO<CmdArgPack, 4> gxpipe;
   
   u16 output[256 * 192];
+  // FIXME: what precision is the depth buffer actually?
+  s32 depthbuffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;

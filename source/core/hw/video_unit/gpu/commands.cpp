@@ -363,8 +363,10 @@ void GPU::CMD_EndVertexList() {
 void GPU::CMD_SwapBuffers() {
   Dequeue();
   
+  // TODO: use data from rear image MMIO registers.
   for (uint i = 0; i < 256 * 192; i++) {
     output[i] = 0x8000;
+    depthbuffer[i] = 0x7FFFFFFF;
   }
 
   for (int i = 0; i < polygon.count; i++) {
@@ -537,29 +539,41 @@ void GPU::CMD_SwapBuffers() {
         uv1[j] = lerp(points[s1].vertex->uv[j], points[e1].vertex->uv[j], y - points[s1].y, points[e1].y - points[s1].y);
       }
 
+      s32 depth0 = lerp(points[s0].depth, points[e0].depth, y - points[s0].y, points[e0].y - points[s0].y);
+      s32 depth1 = lerp(points[s1].depth, points[e1].depth, y - points[s1].y, points[e1].y - points[s1].y);
+
       // TODO: find a faster way to swap the edges,
       // maybe use an index into an array?
       if (x0 > x1) {
         std::swap(x0, x1);
         std::swap(color0, color1);
         std::swap(uv0, uv1);
+        std::swap(depth0, depth1);
       }
 
       // TODO: boundary checks will be redundant if clipping and viewport tranform work properly.
       if (y >= 0 && y <= 191) {
         s32 color[3];
         s16 uv[2];
+        s32 depth;
 
         for (s32 x = x0; x <= x1; x++) {
-          for (int j = 0; j < 3; j++) {
-            color[j] = lerp(color0[j], color1[j], x - x0, x1 - x0);
-          }
-
-          for (int j = 0; j < 2; j++) {
-            uv[j] = lerp(uv0[j], uv1[j], x - x0, x1 - x0);
-          }
-
           if (x >= 0 && x <= 255) {
+            depth = lerp(depth0, depth1, x - x0, x1 - x0);
+
+            // FIXME: implement "equal" depth test mode.
+            if (depth >= depthbuffer[y * 256 + x]) {
+              continue;
+            }
+
+            for (int j = 0; j < 3; j++) {
+              color[j] = lerp(color0[j], color1[j], x - x0, x1 - x0);
+            }
+
+            for (int j = 0; j < 2; j++) {
+              uv[j] = lerp(uv0[j], uv1[j], x - x0, x1 - x0);
+            }
+
             // FIXME: multiply vertex color with texel.
             //output[y * 256 + x] = (color[0] >> 1) |
             //                     ((color[1] >> 1) <<  5) |
@@ -567,6 +581,7 @@ void GPU::CMD_SwapBuffers() {
             auto texel = textureSample(poly.texture_params, uv);
             if (texel != 0x8000) {
               output[y * 256 + x] = texel;
+              depthbuffer[y * 256 + x] = depth;
             }
           }
         }
