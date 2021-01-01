@@ -329,8 +329,8 @@ void GPU::CMD_SetTextureParameters() {
   texture_params.color0_transparent = arg & (1 << 29);
   texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
 
-  LOG_DEBUG("GPU: texture @ 0x{0:08X} width={1} height={2} format={3}",
-    texture_params.address, texture_params.size_u, texture_params.size_v, texture_params.format);
+  LOG_DEBUG("GPU: texture @ 0x{0:08X} width={1} height={2} format={3} transform={4}",
+    texture_params.address, texture_params.size_u, texture_params.size_v, texture_params.format, texture_params.transform);
 }
 
 void GPU::CMD_SetPaletteBase() {
@@ -388,11 +388,95 @@ void GPU::CMD_SwapBuffers() {
       return (a * (t_max - t) + b * t) / t_max;
     };
 
+    auto textureSample = [this](TextureParams const& texture_params, s16 uv[2]) -> u16 {
+      // TODO: properly handle fractional part
+      // TODO: reduce code redundancy by using arrays for u/v everywhere...
+      s16 u = uv[0] >> 4;
+      s16 v = uv[1] >> 4;
+
+      if (u < 0) {
+        if (texture_params.repeat_u) {
+          // TODO: use shifts instead of multiplication and division...
+          int repeats = -u / texture_params.size_u;
+          u += (1 + repeats) * texture_params.size_u;
+          if (texture_params.flip_u && (repeats & 1)) {
+            u = texture_params.size_u - u - 1;
+          }
+        } else {
+          u = 0;
+        }
+      } else if (u >= texture_params.size_u) {
+        if (texture_params.repeat_u) {
+          // TODO: use shifts instead of multiplication and division...
+          int repeats = u / texture_params.size_u;
+          u -= repeats * texture_params.size_u;
+          if (texture_params.flip_u && (repeats & 1)) {
+            u = texture_params.size_u - u - 1;
+          }
+        } else {
+          u = texture_params.size_u - 1;
+        }
+      }
+
+      if (v < 0) {
+        if (texture_params.repeat_v) {
+          // TODO: use shifts instead of multiplication and division...
+          int repeats = -v / texture_params.size_v;
+          v += (1 + repeats) * texture_params.size_v;
+          if (texture_params.flip_v && (repeats & 1)) {
+            v = texture_params.size_v - v - 1;
+          }
+        } else {
+          v = 0;
+        }
+      } else if (v >= texture_params.size_v) {
+        if (texture_params.repeat_v) {
+          // TODO: use shifts instead of multiplication and division...
+          int repeats = v / texture_params.size_v;
+          v -= repeats * texture_params.size_v;
+          if (texture_params.flip_v && (repeats & 1)) {
+            v = texture_params.size_v - v - 1;
+          }
+        } else {
+          v = texture_params.size_v - 1;
+        }
+      }
+
+      switch (texture_params.format) {
+        case TextureParams::Format::None: {
+          return 0x7FFF;
+        }
+        case TextureParams::Format::Palette2BPP: {
+          auto offset = v * texture_params.size_u + u;
+          auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
+          if (texture_params.color0_transparent && index == 0) {
+            return 0x8000;
+          }
+          return vram_palette.Read<u16>((texture_params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF;
+        }
+        case TextureParams::Format::Palette4BPP: {
+          auto offset = v * texture_params.size_u + u;
+          auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
+          if (texture_params.color0_transparent && index == 0) {
+            return 0x8000;
+          }
+          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+        }
+      };
+
+      return u16(0x999);
+    };
+
+    bool skip = false;
+
     for (int j = 0; j < poly.count; j++) {
       auto const& vert = vertex.data[poly.indices[j]];
       auto& point = points[j];
 
-      ASSERT(vert.position[3] != 0, "GPU: w-Coordinate should not be zero.");
+      // FIXME
+      if (vert.position[3] == 0) {
+        skip = true;
+      }
 
       // TODO: use the provided viewport configuration.
       point.x = (( (s64(vert.position[0]) << 12) / vert.position[3] * 128) >> 12) + 128;
@@ -409,6 +493,10 @@ void GPU::CMD_SwapBuffers() {
       if (point.y > y_max) {
         y_max = point.y;
       }
+    }
+
+    if (skip) {
+      continue;
     }
 
     int s0 = start;
@@ -432,6 +520,8 @@ void GPU::CMD_SwapBuffers() {
       // TODO: do not recalculate t and t_max every time we interpolate a vertex attribute.
       s32 x0 = lerp(points[s0].x, points[e0].x, y - points[s0].y, points[e0].y - points[s0].y);
       s32 x1 = lerp(points[s1].x, points[e1].x, y - points[s1].y, points[e1].y - points[s1].y);
+
+      // TODO: do not interpolate attributes which are not used.
 
       s32 color0[3];
       s32 color1[3];
@@ -470,28 +560,18 @@ void GPU::CMD_SwapBuffers() {
           }
 
           if (x >= 0 && x <= 255) {
-            output[y * 256 + x] = (color[0] >> 1) |
-                                 ((color[1] >> 1) <<  5) |
-                                 ((color[2] >> 1) << 10);
+            // FIXME: multiply vertex color with texel.
+            //output[y * 256 + x] = (color[0] >> 1) |
+            //                     ((color[1] >> 1) <<  5) |
+            //                     ((color[2] >> 1) << 10);
+            auto texel = textureSample(poly.texture_params, uv);
+            if (texel != 0x8000) {
+              output[y * 256 + x] = texel;
+            }
           }
         }
       }
     }
-
-    /*for (int j = 0; j < poly.count; j++) {
-      if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
-        continue;
-      }
-      u16 color = 0x4269;
-      switch (j) {
-        case 0: color = 0x1F; break;
-        case 1: color = 0x1f << 5; break;
-        case 2: color = 0x1f << 10; break;
-        case 3: color = (0x1F << 5) | 0x1F; break;
-        case 4: color = 0x7FFF; break;
-      }
-      output[points[j].y * 256 + points[j].x] = color;
-    }*/
   }
 
   vertex.count = 0;
