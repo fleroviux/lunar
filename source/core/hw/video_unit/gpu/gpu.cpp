@@ -146,6 +146,7 @@ void GPU::ProcessCommands() {
       case 0x1B: CMD_MatrixScale(); break;
       case 0x1C: CMD_MatrixTranslate(); break;
       
+      case 0x20: CMD_SetColor(); break;
       case 0x23: CMD_SubmitVertex_16(); break;
       case 0x24: CMD_SubmitVertex_10(); break;
       case 0x25: CMD_SubmitVertex_XY(); break;
@@ -199,7 +200,10 @@ void GPU::AddVertex(Vector4 const& position) {
 
   auto clip_position = projection.current * (modelview.current * position);
   auto index = vertex.count++;
-  vertex.data[index] = { clip_position };
+  vertex.data[index] = {
+    clip_position,
+    { vertex_color[0], vertex_color[1], vertex_color[2] }
+  };
 
   ++vertex_counter;
 
@@ -292,7 +296,8 @@ void GPU::AddVertex(Vector4 const& position) {
               vn.position[1] + s32((edge_b[1] * scale_b) >> 32),
               vn.position[2] + s32((edge_b[2] * scale_b) >> 32),
               vn.position[3] + s32((edge_b[3] * scale_b) >> 32)
-            }
+            },
+            { v.color[0], v.color[1], v.color[2] }
           };
 
           // TODO: assert if the 10 vertices limit is hit...

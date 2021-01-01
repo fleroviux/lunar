@@ -97,6 +97,7 @@ private:
 
   struct Vertex {
     Vector4 position;
+    s32 color[3];
     // ...
   };
 
@@ -195,6 +196,9 @@ private:
 
   /// Untransformed vertex from the previous vertex submission command.
   Vector4 position_old;
+
+  /// Current vertex color
+  s32 vertex_color[3];
 
   Scheduler& scheduler;
   IRQ& irq9;

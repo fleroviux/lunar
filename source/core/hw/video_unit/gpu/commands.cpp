@@ -232,6 +232,17 @@ void GPU::CMD_MatrixTranslate() {
 }
 
 void GPU::CMD_SetColor() {
+  // TODO: fix this absolutely atrocious code...
+
+  auto arg = Dequeue().argument;
+
+  auto r = (arg >>  0) & 31;
+  auto g = (arg >>  5) & 31;
+  auto b = (arg >> 10) & 31;
+
+  vertex_color[0] = r * 2 + (r + 31) / 32;
+  vertex_color[1] = g * 2 + (g + 31) / 32;
+  vertex_color[2] = b * 2 + (b + 31) / 32;
 }
 
 void GPU::CMD_SetNormal() {
@@ -307,6 +318,12 @@ void GPU::CMD_BeginVertexList() {
   vertex_counter = 0;
   is_quad = arg & 1;
   is_strip = arg & 2;
+
+  // TODO: this is likely inaccurate.
+  // I don't know when exactly (and if) vertex attributes are reset.
+  for (int i = 0; i < 3; i++) {
+    vertex_color[i] = 63;
+  }
 }
 
 void GPU::CMD_EndVertexList() {
@@ -339,8 +356,8 @@ void GPU::CMD_SwapBuffers() {
     auto lerp = [](s32 a, s32 b, s32 t, s32 t_max) {
       // CHECKME
       if (t_max == 0)
-        return s64(b);
-      return (s64(a) * (t_max - t) + s64(b) * t) / t_max;
+        return a;
+      return (a * (t_max - t) + b * t) / t_max;
     };
 
     for (int j = 0; j < poly.count; j++) {
@@ -387,20 +404,36 @@ void GPU::CMD_SwapBuffers() {
       s32 x0 = lerp(points[s0].x, points[e0].x, y - points[s0].y, points[e0].y - points[s0].y);
       s32 x1 = lerp(points[s1].x, points[e1].x, y - points[s1].y, points[e1].y - points[s1].y);
 
-      if (x0 > x1)
+      s32 color0[3];
+      s32 color1[3];
+      for (int j = 0; j < 3; j++) {
+        color0[j] = lerp(points[s0].vertex->color[j], points[e0].vertex->color[j], y - points[s0].y, points[e0].y - points[s0].y);
+        color1[j] = lerp(points[s1].vertex->color[j], points[e1].vertex->color[j], y - points[s1].y, points[e1].y - points[s1].y);
+      }
+
+      if (x0 > x1) {
         std::swap(x0, x1);
+        std::swap(color0, color1);
+      }
 
       // TODO: boundary checks will be redundant if clipping and viewport tranform work properly.
       if (y >= 0 && y <= 191) {
+        s32 color[3];
+
         for (s32 x = x0; x <= x1; x++) {
+          for (int j = 0; j < 3; j++) {
+            color[j] = lerp(color0[j], color1[j], x - x0, x1 - x0);
+          }
           if (x >= 0 && x <= 255) {
-            output[y * 256 + x] = 0x999;
+            output[y * 256 + x] = (color[0] >> 1) |
+                                 ((color[1] >> 1) <<  5) |
+                                 ((color[2] >> 1) << 10);
           }
         }
       }
     }
 
-    for (int j = 0; j < poly.count; j++) {
+    /*for (int j = 0; j < poly.count; j++) {
       if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
         continue;
       }
@@ -413,7 +446,7 @@ void GPU::CMD_SwapBuffers() {
         case 4: color = 0x7FFF; break;
       }
       output[points[j].y * 256 + points[j].x] = color;
-    }
+    }*/
   }
 
   vertex.count = 0;
