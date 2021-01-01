@@ -154,6 +154,8 @@ void GPU::ProcessCommands() {
       case 0x26: CMD_SubmitVertex_XZ(); break;
       case 0x27: CMD_SubmitVertex_YZ(); break;
       case 0x28: CMD_SubmitVertex_Offset(); break;
+      case 0x2A: CMD_SetTextureParameters(); break;
+      case 0x2B: CMD_SetPaletteBase(); break;
 
       case 0x40: CMD_BeginVertexList(); break;
       case 0x41: CMD_EndVertexList(); break;
@@ -211,6 +213,8 @@ void GPU::AddVertex(Vector4 const& position) {
 
   if (vertex_counter >= num_vertices && (!is_quad || (vertex_counter % 2) == 0)) {
     auto& poly = polygon.data[polygon.count++];
+
+    poly.texture_params = texture_params;
 
     int start = index - num_vertices + 1;
     int end = index; // alias for legibility

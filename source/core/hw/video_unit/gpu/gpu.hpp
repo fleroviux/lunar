@@ -7,6 +7,7 @@
 #include <common/integer.hpp>
 #include <common/fifo.hpp>
 #include <core/hw/irq/irq.hpp>
+#include <core/hw/video_unit/vram.hpp>
 #include <core/scheduler.hpp>
 #include <stack>
 
@@ -16,9 +17,11 @@ namespace fauxDS::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
-  GPU(Scheduler& scheduler, IRQ& irq9)
+  GPU(Scheduler& scheduler, IRQ& irq9, VRAM const& vram)
       : scheduler(scheduler)
-      , irq9(irq9) {
+      , irq9(irq9)
+      , vram_texture(vram.region_gpu_texture)
+      , vram_palette(vram.region_gpu_palette) {
     Reset();
   }
   
@@ -95,6 +98,37 @@ private:
     u32 argument = 0;
   };
 
+  struct TextureParams {
+    u32 address;
+    bool repeat_u;
+    bool repeat_v;
+    bool flip_u;
+    bool flip_v;
+    int size_u;
+    int size_v;
+
+    enum class Format {
+      None,
+      A3I5,
+      Palette2BPP,
+      Palette4BPP,
+      Palette8BPP,
+      Compressed4x4,
+      A5I3,
+      Direct
+    } format = Format::None;
+
+    bool color0_transparent;
+
+    enum class Transform {
+      TexCoord,
+      Normal,
+      Vertex
+    } transform;
+
+    u16 palette_base;
+  };
+
   struct Vertex {
     Vector4 position;
     s32 color[3];
@@ -106,6 +140,7 @@ private:
     //bool quad;
     int count;
     int indices[4];
+    TextureParams texture_params;
   };
 
   void Enqueue(CmdArgPack pack);
@@ -171,6 +206,8 @@ private:
   void CMD_SubmitVertex_XZ();
   void CMD_SubmitVertex_YZ();
   void CMD_SubmitVertex_Offset();
+  void CMD_SetTextureParameters();
+  void CMD_SetPaletteBase();
   
   /// Vertex lists
   void CMD_BeginVertexList();
@@ -203,6 +240,13 @@ private:
 
   /// Current vertex UV
   s16 vertex_uv[2];
+
+  /// Current texture parameters
+  TextureParams texture_params;
+
+  /// GPU texture and texture palette data
+  Region<4, 131072> const& vram_texture { 3 };
+  Region<8> const& vram_palette { 7 };
 
   Scheduler& scheduler;
   IRQ& irq9;

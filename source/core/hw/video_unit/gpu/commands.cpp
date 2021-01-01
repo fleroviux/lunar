@@ -315,6 +315,28 @@ void GPU::CMD_SubmitVertex_Offset() {
   });
 }
 
+void GPU::CMD_SetTextureParameters() {
+  auto arg = Dequeue().argument;
+
+  texture_params.address = (arg & 0xFFFF) << 3;
+  texture_params.repeat_u = arg & (1 << 16);
+  texture_params.repeat_v = arg & (1 << 17);
+  texture_params.flip_u = arg & (1 << 18);
+  texture_params.flip_v = arg & (1 << 19);
+  texture_params.size_u = 8 << ((arg >> 20) & 7);
+  texture_params.size_v = 8 << ((arg >> 23) & 7);
+  texture_params.format = static_cast<TextureParams::Format>((arg >> 26) & 7);
+  texture_params.color0_transparent = arg & (1 << 29);
+  texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
+
+  LOG_DEBUG("GPU: texture @ 0x{0:08X} width={1} height={2} format={3}",
+    texture_params.address, texture_params.size_u, texture_params.size_v, texture_params.format);
+}
+
+void GPU::CMD_SetPaletteBase() {
+  texture_params.palette_base = Dequeue().argument & 0x1FFF;
+}
+
 void GPU::CMD_BeginVertexList() {
   auto arg = Dequeue().argument;
   in_vertex_list = true;
