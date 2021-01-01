@@ -249,6 +249,9 @@ void GPU::CMD_SetNormal() {
 }
 
 void GPU::CMD_SetUV() {
+  auto arg = Dequeue().argument;
+  vertex_uv[0] = s16(arg & 0xFFFF);
+  vertex_uv[1] = s16(arg >> 16);
 }
 
 void GPU::CMD_SubmitVertex_16() {
@@ -323,6 +326,9 @@ void GPU::CMD_BeginVertexList() {
   // I don't know when exactly (and if) vertex attributes are reset.
   for (int i = 0; i < 3; i++) {
     vertex_color[i] = 63;
+  }
+  for (int i = 0; i < 2; i++) {
+    vertex_uv[i] = 0;
   }
 }
 
@@ -401,6 +407,7 @@ void GPU::CMD_SwapBuffers() {
           e1 = poly.count - 1;
       }
 
+      // TODO: do not recalculate t and t_max every time we interpolate a vertex attribute.
       s32 x0 = lerp(points[s0].x, points[e0].x, y - points[s0].y, points[e0].y - points[s0].y);
       s32 x1 = lerp(points[s1].x, points[e1].x, y - points[s1].y, points[e1].y - points[s1].y);
 
@@ -411,19 +418,35 @@ void GPU::CMD_SwapBuffers() {
         color1[j] = lerp(points[s1].vertex->color[j], points[e1].vertex->color[j], y - points[s1].y, points[e1].y - points[s1].y);
       }
 
+      s16 uv0[2];
+      s16 uv1[2];
+      for (int j = 0; j < 2; j++) {
+        uv0[j] = lerp(points[s0].vertex->uv[j], points[e0].vertex->uv[j], y - points[s0].y, points[e0].y - points[s0].y);
+        uv1[j] = lerp(points[s1].vertex->uv[j], points[e1].vertex->uv[j], y - points[s1].y, points[e1].y - points[s1].y);
+      }
+
+      // TODO: find a faster way to swap the edges,
+      // maybe use an index into an array?
       if (x0 > x1) {
         std::swap(x0, x1);
         std::swap(color0, color1);
+        std::swap(uv0, uv1);
       }
 
       // TODO: boundary checks will be redundant if clipping and viewport tranform work properly.
       if (y >= 0 && y <= 191) {
         s32 color[3];
+        s16 uv[2];
 
         for (s32 x = x0; x <= x1; x++) {
           for (int j = 0; j < 3; j++) {
             color[j] = lerp(color0[j], color1[j], x - x0, x1 - x0);
           }
+
+          for (int j = 0; j < 2; j++) {
+            uv[j] = lerp(uv0[j], uv1[j], x - x0, x1 - x0);
+          }
+
           if (x >= 0 && x <= 255) {
             output[y * 256 + x] = (color[0] >> 1) |
                                  ((color[1] >> 1) <<  5) |

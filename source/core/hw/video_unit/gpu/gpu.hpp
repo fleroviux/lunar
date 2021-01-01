@@ -98,6 +98,7 @@ private:
   struct Vertex {
     Vector4 position;
     s32 color[3];
+    s16 uv[2];
     // ...
   };
 
@@ -199,6 +200,9 @@ private:
 
   /// Current vertex color
   s32 vertex_color[3];
+
+  /// Current vertex UV
+  s16 vertex_uv[2];
 
   Scheduler& scheduler;
   IRQ& irq9;
