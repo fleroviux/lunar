@@ -325,43 +325,38 @@ void GPU::CMD_SwapBuffers() {
   for (int i = 0; i < polygon.count; i++) {
     Polygon const& poly = polygon.data[i];
 
-    // TODO: remove this, it is unnecessary now.
-    int num_vertices = poly.count;
-
-    // TODO: move this to a less questionable place.
-    // TODO: once clipping is in place, probably u8 sbould be sufficient.
     struct Point {
       s32 x;
       s32 y;
-    };
-
-    Point points[num_vertices];
-
-    bool skip = false;
-
-    for (int j = 0; j < num_vertices; j++) {
-      auto const& vert = vertex.data[poly.indices[j]];
-      // Avoid division-by-zero. Later this most likely will be rendered redundant by clipping.
-      if (vert.position[3] == 0) {
-        skip = true;
-        break;
-      }
-      points[j].x = (( (s64(vert.position[0]) << 12) / vert.position[3] * 128) >> 12) + 128;
-      points[j].y = ((-(s64(vert.position[1]) << 12) / vert.position[3] *  96) >> 12) +  96;
-    }
-
-    if (skip) {
-      continue;
-    }
+      s32 depth;
+      Vertex const* vertex;
+    } points[poly.count];
 
     int start = 0;
     s32 y_min = 256;
     s32 y_max = 0;
 
-    // TODO: it is unclear how exactly the start vertex is selected,
-    // besides being one of the vertices with the lowest y-Value.
-    for (int j = 0; j < num_vertices; j++) {
-      auto const& point = points[j];
+    auto lerp = [](s32 a, s32 b, s32 t, s32 t_max) {
+      // CHECKME
+      if (t_max == 0)
+        return s64(b);
+      return (s64(a) * (t_max - t) + s64(b) * t) / t_max;
+    };
+
+    for (int j = 0; j < poly.count; j++) {
+      auto const& vert = vertex.data[poly.indices[j]];
+      auto& point = points[j];
+
+      ASSERT(vert.position[3] != 0, "GPU: w-Coordinate should not be zero.");
+
+      // TODO: use the provided viewport configuration.
+      point.x = (( (s64(vert.position[0]) << 12) / vert.position[3] * 128) >> 12) + 128;
+      point.y = ((-(s64(vert.position[1]) << 12) / vert.position[3] *  96) >> 12) +  96;
+      point.depth = (s64(vert.position[2]) << 12) / vert.position[3];
+      point.vertex = &vert;
+
+      // TODO: it is unclear how exactly the first vertex is selected,
+      // if multiple vertices have the same lowest y-Coordinate.
       if (point.y < y_min) {
         y_min = point.y;
         start = j;
@@ -371,65 +366,41 @@ void GPU::CMD_SwapBuffers() {
       }
     }
 
-    // TODO: absolutely make this less sucky... once things work.
-    struct Edge {
-      s32 x;
-      s32 delta;
-      s32 y_end;
-    
-      Edge(Point const& start, Point const& end) {
-        s32 y_delta = end.y - start.y;
-        // TODO: hardware internally uses a higher precision than 8-bit.
-        if (y_delta != 0) {
-          x = start.x << 18;
-          delta = ((end.x - start.x) << 18) / y_delta;
-        } else {
-          x = end.x << 18;
-          delta = 0;
-        }
-        y_end = end.y;
-      }
-    };
-
-    int a = start;
-    int b = start;
-
-    Edge edge_a { points[a], points[(num_vertices + a - 1) % num_vertices] };
-    Edge edge_b { points[b], points[(b + 1) % num_vertices] };
+    int s0 = start;
+    int e0 = start == (poly.count - 1) ? 0 : (start + 1);
+    int s1 = start;
+    int e1 = start == 0 ? (poly.count - 1) : (start - 1);
 
     for (s32 y = y_min; y <= y_max; y++) {
-      if (edge_a.y_end <= y) {
-        a = (num_vertices + a - 1) % num_vertices;
-        edge_a = { points[a], points[(num_vertices + a - 1) % num_vertices] };
+      if (points[e0].y <= y) {
+        s0 = e0;
+        if (++e0 == poly.count)
+          e0 = 0;
       }
 
-      if (edge_b.y_end <= y) {
-        b = (b + 1) % num_vertices;
-        edge_b = { points[b], points[(b + 1) % num_vertices] };
+      if (points[e1].y <= y) {
+        s1 = e1;
+        if (--e1 == -1)
+          e1 = poly.count - 1;
       }
 
+      s32 x0 = lerp(points[s0].x, points[e0].x, y - points[s0].y, points[e0].y - points[s0].y);
+      s32 x1 = lerp(points[s1].x, points[e1].x, y - points[s1].y, points[e1].y - points[s1].y);
+
+      if (x0 > x1)
+        std::swap(x0, x1);
+
+      // TODO: boundary checks will be redundant if clipping and viewport tranform work properly.
       if (y >= 0 && y <= 191) {
-        auto _x0 = edge_a.x >> 18;
-        auto _x1 = edge_b.x >> 18;
-        if (_x0 > _x1) std::swap(_x0, _x1);
-        for (auto x = _x0; x <= _x1; x++) {
+        for (s32 x = x0; x <= x1; x++) {
           if (x >= 0 && x <= 255) {
             output[y * 256 + x] = 0x999;
           }
         }
-        if (_x0 >= 0 && _x0 <= 255) {
-          output[y * 256 + _x0] = 0x666;
-        }
-        if (_x1 >= 0 && _x1 <= 255) {
-          output[y * 256 + _x1] = 0x666;
-        }
       }
-
-      edge_a.x += edge_a.delta;
-      edge_b.x += edge_b.delta;
     }
 
-    for (int j = 0; j < num_vertices; j++) {
+    for (int j = 0; j < poly.count; j++) {
       if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
         continue;
       }

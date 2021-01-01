@@ -247,8 +247,6 @@ void GPU::AddVertex(Vector4 const& position) {
         auto value = v.position[j];
 
         if (value < -w || value > w) {
-          s32 limit = (value < -w) ? -w : w;
-
           Vector4 edge_a {
             v.position[0] - vb.position[0],
             v.position[1] - vb.position[1],
