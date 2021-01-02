@@ -159,10 +159,12 @@ void DMA9::RunChannel(Channel& channel) {
   int dst_offset = dma_modify[channel.size][channel.dst_mode];
   int src_offset = dma_modify[channel.size][channel.src_mode];
 
-  LOG_INFO("DMA9: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
-    channel.latch.src, channel.latch.dst, channel.latch.length, channel.size);
+  LOG_INFO("DMA9: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3} time={4}",
+    channel.latch.src, channel.latch.dst, channel.latch.length, channel.size, channel.time);
 
-  if (channel.running) {
+  // TODO: this an absolutely atrocious hack.
+  // Rework DMA so we don't need iffy workarounds like this.
+  if (channel.running && channel.time == Time::GxFIFO) {
     return;
   }
 
