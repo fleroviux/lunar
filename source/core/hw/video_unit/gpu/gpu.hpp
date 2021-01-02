@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/fifo.hpp>
+#include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/video_unit/vram.hpp>
 #include <core/scheduler.hpp>
@@ -17,9 +18,10 @@ namespace fauxDS::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
-  GPU(Scheduler& scheduler, IRQ& irq9, VRAM const& vram)
+  GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
       : scheduler(scheduler)
       , irq9(irq9)
+      , dma9(dma9)
       , vram_texture(vram.region_gpu_texture)
       , vram_palette(vram.region_gpu_palette) {
     Reset();
@@ -250,6 +252,7 @@ private:
 
   Scheduler& scheduler;
   IRQ& irq9;
+  DMA9& dma9;
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   

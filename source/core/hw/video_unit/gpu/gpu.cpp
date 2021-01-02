@@ -104,6 +104,7 @@ void GPU::Enqueue(CmdArgPack pack) {
     gxpipe.Write(pack);
   } else {
     gxfifo.Write(pack);
+    dma9.SetGXFIFOHalfEmpty(gxfifo.Count() < 128);
   }
 
   ProcessCommands();
@@ -116,6 +117,13 @@ auto GPU::Dequeue() -> CmdArgPack {
   if (gxpipe.Count() <= 2 && !gxfifo.IsEmpty()) {
     gxpipe.Write(gxfifo.Read());
     CheckGXFIFO_IRQ();
+
+    if (gxfifo.Count() < 128) {
+      dma9.SetGXFIFOHalfEmpty(true);
+      dma9.Request(DMA9::Time::GxFIFO);
+    } else {
+      dma9.SetGXFIFOHalfEmpty(false);
+    }
   }
 
   return entry;

@@ -15,6 +15,8 @@ void DMA9::Reset() {
   for (uint i = 0; i < 4; i++) {
     channels[i] = {i};
   }
+
+  gxfifo_half_empty = false;
 }
 
 auto DMA9::Read(uint chan_id, uint offset) -> u8 {
@@ -107,7 +109,7 @@ void DMA9::Write(uint chan_id, uint offset, u8 value) {
         } else {
           channel.latch.length = channel.length;
         }
-        if (channel.time == Time::Immediate) {
+        if (channel.time == Time::Immediate || (channel.time == Time::GxFIFO && gxfifo_half_empty)) {
           RunChannel(channel);
         }
         // Diagnostics, get rid of it once emulation is more stable...
@@ -116,6 +118,7 @@ void DMA9::Write(uint chan_id, uint offset, u8 value) {
           case Time::VBlank:
           case Time::HBlank:
           case Time::Slot1:
+          case Time::GxFIFO:
             break;
           default:
             ASSERT(false, "DMA9: unhandled start time: {0}", channel.time);
@@ -159,6 +162,12 @@ void DMA9::RunChannel(Channel& channel) {
   LOG_INFO("DMA9: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
     channel.latch.src, channel.latch.dst, channel.latch.length, channel.size);
 
+  if (channel.running) {
+    return;
+  }
+
+  channel.running = true;
+
   if (channel.size == Channel::Size::Word) {
     while (channel.latch.length-- != 0) {
       memory->WriteWord(channel.latch.dst, memory->ReadWord(channel.latch.src, Bus::Data));
@@ -194,6 +203,8 @@ void DMA9::RunChannel(Channel& channel) {
       case 3: irq.Raise(IRQ::Source::DMA3); break;
     }
   }
+
+  channel.running = false;
 }
 
 } // namespace fauxDS::core
