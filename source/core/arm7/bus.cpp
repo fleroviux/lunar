@@ -64,7 +64,7 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0x06:
       return vram.region_arm7_wram.Read<T>(address);
     default:
-      ASSERT(false, "ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
+      LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
 
   return 0;
@@ -102,7 +102,7 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       vram.region_arm7_wram.Write<T>(address, value);
       break;
     default:
-      ASSERT(false, "ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
+      LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
   }
 }
 

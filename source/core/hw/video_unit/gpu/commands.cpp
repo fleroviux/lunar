@@ -363,6 +363,8 @@ void GPU::CMD_EndVertexList() {
 void GPU::CMD_SwapBuffers() {
   Dequeue();
   
+  LOG_DEBUG("GPU: SWAP BUFFERS MF! 8)");
+
   // TODO: use data from rear image MMIO registers.
   for (uint i = 0; i < 256 * 192; i++) {
     output[i] = 0x8000;

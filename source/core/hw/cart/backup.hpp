@@ -47,6 +47,9 @@ struct Backup {
         LOG_INFO("Cartridge: SPI: read address completed, address = 0x{0:06X}", address);
         if (command == Command::ReadData) {
           state = State::ReadData;
+        } else if (command == Command::PageWrite) {
+          address &= ~0xFF;
+          state = State::PageWrite;
         } else {
           ASSERT(false, "Cartridge:SPI: no possible state transition from ReadAddress2");
         }
@@ -56,7 +59,12 @@ struct Backup {
         return save[address++ & 0x7FFFF];
       case State::ReadStatus:
         LOG_TRACE("Cartridge: SPI: read status register!");
-        return 0;
+        // TODO: write/program/erase in progress
+        return enable_write ? 2 : 0;
+      case State::PageWrite:
+        // TODO: only up to 256 bytes may be written.
+        save[address++ & 0x7FFFF] = data;
+        break;
       default:
         UNREACHABLE;
     }
@@ -86,7 +94,8 @@ private:
     ReadAddress1,
     ReadAddress2,
     ReadData,
-    ReadStatus
+    ReadStatus,
+    PageWrite
   };
 
   State state;
@@ -105,14 +114,25 @@ private:
       return;
 
     switch (static_cast<Command>(command)) {
+      case Command::WriteEnable:
+        // TODO: can further commands be send after write enable?
+        enable_write = true;
+        break;
+      case Command::WriteDisable:
+        // TODO: can further commands be send after write disable?
+        enable_write = false;
+        break;
       case Command::ReadData:
         state = State::ReadAddress0;
         break;
       case Command::ReadStatus:
         state = State::ReadStatus;
         break;
+      case Command::PageWrite:
+        state = State::ReadAddress0;
+        break;
       default:
-        ASSERT(false, "Cartridge: SPI: unhandled command 0x{0:02X}", command);
+        LOG_WARN("Cartridge: SPI: unhandled command 0x{0:02X}", command);
     }
   }
 };
