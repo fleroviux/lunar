@@ -31,7 +31,11 @@ void GPU::CMD_PushMatrix() {
 }
 
 void GPU::CMD_PopMatrix() {
-  auto offset = Dequeue().argument & 31;
+  int offset = Dequeue().argument & 63;
+  
+  if (offset & 32) {
+    offset -= 64;
+  }
   
   switch (matrix_mode) {
     case MatrixMode::Projection:

@@ -28,7 +28,7 @@ struct MatrixStack {
   void Pop(int offset) {
     index -= offset;
     
-    // TODO: this is pretty much guessed... how does it really work?
+    // TODO: this is guessed... how does it really work?
     if (index < 0) {
       index = 0;
       error = true;
