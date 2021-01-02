@@ -139,7 +139,6 @@ private:
   };
 
   struct Polygon {
-    //bool quad;
     int count;
     int indices[4];
     TextureParams texture_params;
@@ -189,6 +188,7 @@ private:
   void CMD_PushMatrix();
   void CMD_PopMatrix();
   void CMD_StoreMatrix();
+  void CMD_RestoreMatrix();
   void CMD_LoadIdentity();
   void CMD_LoadMatrix4x4();
   void CMD_LoadMatrix4x3();

@@ -70,6 +70,24 @@ void GPU::CMD_StoreMatrix() {
   }
 }
 
+void GPU::CMD_RestoreMatrix() {
+  auto address = Dequeue().argument & 31;
+
+  switch (matrix_mode) {
+    case MatrixMode::Projection:
+      projection.Restore(address);
+      break;
+    case MatrixMode::Modelview:
+    case MatrixMode::Simultaneous:
+      modelview.Restore(address);
+      direction.Restore(address);
+      break;
+    case MatrixMode::Texture:
+      texture.Restore(address);
+      break;
+  }
+}
+
 void GPU::CMD_LoadIdentity() {
   Dequeue();
   

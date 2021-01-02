@@ -145,6 +145,7 @@ void GPU::ProcessCommands() {
       case 0x11: CMD_PushMatrix(); break;
       case 0x12: CMD_PopMatrix(); break;
       case 0x13: CMD_StoreMatrix(); break;
+      case 0x14: CMD_RestoreMatrix(); break;
       case 0x15: CMD_LoadIdentity(); break;
       case 0x16: CMD_LoadMatrix4x4(); break;
       case 0x17: CMD_LoadMatrix4x3(); break;

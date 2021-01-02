@@ -8,6 +8,7 @@
 
 namespace fauxDS::core {
 
+// TODO: figure out how over- and underflow work on hardware.
 template<int capacity>
 struct MatrixStack {
   void Reset() {
@@ -28,7 +29,6 @@ struct MatrixStack {
   void Pop(int offset) {
     index -= offset;
     
-    // TODO: this is guessed... how does it really work?
     if (index < 0) {
       index = 0;
       error = true;
@@ -43,16 +43,20 @@ struct MatrixStack {
   void Store(int address) {
     if (capacity == 1) {
       stack[0] = current;
-    } else {
+    } else if (address < capacity) {
       stack[address] = current;
+    } else {
+      error = true;
     }
   }
   
   void Restore(int address) {
     if (capacity == 1) {
       current = stack[0];
-    } else {
+    } else if (address < capacity) {
       current = stack[address];
+    } else {
+      error = true;
     }
   }
   
