@@ -390,7 +390,8 @@ void GPU::DISP3DCNT::WriteByte(uint offset, u8 value) {
 auto GPU::GXSTAT::ReadByte(uint offset) -> u8 {
   switch (offset) {
     case 0:
-      return 0;
+      // TODO: do not hardcode the boxtest result to be true.
+      return 2;
     case 1:
       return 0;
     case 2:
