@@ -444,12 +444,26 @@ void GPU::CMD_SwapBuffers() {
         }
       }
 
+      auto offset = v * texture_params.size_u + u;
+
+      // TODO: implement 4x4-compressed format.
       switch (texture_params.format) {
         case TextureParams::Format::None: {
           return 0x7FFF;
         }
+        case TextureParams::Format::A3I5: {
+          u8  value = vram_texture.Read<u8>(texture_params.address + offset);
+          int index = value & 0x1F;
+          int alpha = value >> 5;
+          alpha = (alpha << 2) + (alpha >> 1);
+          // TODO: this is incorrect, but we don't support semi-transparency right now.
+          // I'm also not sure if this format uses the "Color 0 transparent" flag.
+          if (alpha == 0 || (texture_params.color0_transparent && index == 0)) {
+            return 0x8000;
+          }
+          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+        }
         case TextureParams::Format::Palette2BPP: {
-          auto offset = v * texture_params.size_u + u;
           auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
           if (texture_params.color0_transparent && index == 0) {
             return 0x8000;
@@ -457,12 +471,36 @@ void GPU::CMD_SwapBuffers() {
           return vram_palette.Read<u16>((texture_params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::Palette4BPP: {
-          auto offset = v * texture_params.size_u + u;
           auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
           if (texture_params.color0_transparent && index == 0) {
             return 0x8000;
           }
           return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+        }
+        case TextureParams::Format::Palette8BPP: {
+          auto index = vram_texture.Read<u8>(texture_params.address + offset);
+          if (texture_params.color0_transparent && index == 0) {
+            return 0x8000;
+          }
+          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+        }
+        case TextureParams::Format::A5I3: {
+          u8  value = vram_texture.Read<u8>(texture_params.address + offset);
+          int index = value & 7;
+          int alpha = value >> 3;
+          // TODO: this is incorrect, but we don't support semi-transparency right now.
+          // I'm also not sure if this format uses the "Color 0 transparent" flag.
+          if (alpha == 0 || (texture_params.color0_transparent && index == 0)) {
+            return 0x8000;
+          }
+          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+        }
+        case TextureParams::Format::Direct: {
+          auto color = vram_texture.Read<u16>(texture_params.address + offset * sizeof(u16));
+          if (color & 0x8000) {
+            return 0x8000;
+          }
+          return color;
         }
       };
 
