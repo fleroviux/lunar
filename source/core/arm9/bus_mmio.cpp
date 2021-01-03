@@ -159,6 +159,8 @@ enum Registers {
   REG_SQRTCNT = 0x0400'02B0,
   REG_SQRT_RESULT = 0x0400'02B4,
   REG_SQRT_PARAM = 0x0400'02B8,
+
+  REG_POSTFLG = 0x0400'0300,
   
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
@@ -639,6 +641,9 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return gpu_io.gxstat.ReadByte(2);
     case REG_GXSTAT|3:
       return gpu_io.gxstat.ReadByte(3);
+
+    case REG_POSTFLG:
+      return 1;
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);

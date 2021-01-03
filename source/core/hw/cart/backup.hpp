@@ -13,7 +13,7 @@ namespace fauxDS::core {
 struct Backup {
   Backup() {
     // TODO: backup should be deselected by default...
-    state = State::ReceiveCommand;
+    state = State::ReceiveIRCommand;
   }
 
   void Select() {
@@ -21,16 +21,34 @@ struct Backup {
   }
 
   void Deselect() {
+    LOG_DEBUG("Cartridge: SPI: deselected!")
     // TODO: this is likely not correct.
     // It is only there to account for the fact that I don't know,
     // when the backup device is selected.
-    state = State::ReceiveCommand;
+    state = State::ReceiveIRCommand;
   }
 
   auto Transfer(u8 data) -> u8 {
-    LOG_TRACE("Cartridge: SPI: send value 0x{0:02X}", data);
+    LOG_TRACE("Cartridge: SPI: send value 0x{0:02X} state={1}", data, state);
 
     switch (state) {
+      case State::ReceiveIRCommand:
+        switch (data) {
+          case 0x00:
+            state = State::ReceiveCommand;
+            break;
+          case 0x08:
+            ASSERT(false, "Cartridge: SPI: read IR status!");
+            state = State::ReadIRStatus;
+            break;
+          default:
+            // Fallback for cartridges without IR sensor.
+            ParseCommand(data);
+            break;
+        }
+        break;
+      case State::ReadIRStatus:
+        return 0xAA;
       case State::ReceiveCommand:
         ParseCommand(data);
         break;
@@ -48,7 +66,6 @@ struct Backup {
         if (command == Command::ReadData) {
           state = State::ReadData;
         } else if (command == Command::PageWrite) {
-          address &= ~0xFF;
           state = State::PageWrite;
         } else {
           ASSERT(false, "Cartridge:SPI: no possible state transition from ReadAddress2");
@@ -63,6 +80,7 @@ struct Backup {
         return enable_write ? 2 : 0;
       case State::PageWrite:
         // TODO: only up to 256 bytes may be written.
+        LOG_INFO("Cartridge: SPI: write 0x{0:02X} to address 0x{1:06X}", data, address);
         save[address++ & 0x7FFFF] = data;
         break;
       default:
@@ -89,6 +107,8 @@ private:
   };
 
   enum class State {
+    ReceiveIRCommand,
+    ReadIRStatus,
     ReceiveCommand,
     ReadAddress0,
     ReadAddress1,
@@ -110,8 +130,8 @@ private:
     this->command = static_cast<Command>(command);
 
     // This is a hack to ignore IR chipselect commands, for now.
-    if (command == 0 || command == 8)
-      return;
+    //if (command == 0 || command == 8)
+    //  return;
 
     switch (static_cast<Command>(command)) {
       case Command::WriteEnable:
