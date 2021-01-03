@@ -40,11 +40,13 @@ void GPU::CMD_PopMatrix() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.Pop(offset);
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
       modelview.Pop(offset);
       direction.Pop(offset);
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.Pop(offset);
@@ -76,11 +78,13 @@ void GPU::CMD_RestoreMatrix() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.Restore(address);
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
       modelview.Restore(address);
       direction.Restore(address);
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.Restore(address);
@@ -94,9 +98,11 @@ void GPU::CMD_LoadIdentity() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current.LoadIdentity();
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current.LoadIdentity();
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current.LoadIdentity();
@@ -114,13 +120,16 @@ void GPU::CMD_LoadMatrix4x4() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current = mat;
       direction.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current = mat;
@@ -134,13 +143,16 @@ void GPU::CMD_LoadMatrix4x3() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current = mat;
       direction.current = mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current = mat;
@@ -154,13 +166,16 @@ void GPU::CMD_MatrixMultiply4x4() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
       direction.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current *= mat;
@@ -174,13 +189,16 @@ void GPU::CMD_MatrixMultiply4x3() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
       direction.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current *= mat;
@@ -194,13 +212,16 @@ void GPU::CMD_MatrixMultiply3x3() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
       modelview.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
       direction.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current *= mat;
@@ -221,10 +242,12 @@ void GPU::CMD_MatrixScale() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current *= mat;
@@ -242,10 +265,12 @@ void GPU::CMD_MatrixTranslate() {
   switch (matrix_mode) {
     case MatrixMode::Projection:
       projection.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
       modelview.current *= mat;
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current *= mat;

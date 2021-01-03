@@ -5,6 +5,7 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <common/meta.hpp>
 #include <common/fifo.hpp>
 #include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>
@@ -30,6 +31,18 @@ struct GPU {
   void Reset();
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
+
+  template<typename T>
+  auto ReadClipMatrix(u32 offset) -> T {
+    static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
+    if (offset >= 64) {
+      UNREACHABLE;
+    }
+    auto row = (offset >> 2) & 3;
+    auto col =  offset >> 4;
+    return static_cast<T>(clipmatrix[col][row] >> ((offset & 3) * 8));
+  }
+
   auto GetOutput() -> u16 const* { return &output[0]; }
 
   struct DISP3DCNT {
@@ -65,7 +78,6 @@ struct GPU {
   
   struct GXSTAT {
     // TODO: implement (box)test and matrix stack bits.
-
     GXSTAT(GPU& gpu) : gpu(gpu) {}
         
     auto ReadByte (uint offset) -> u8;
@@ -148,6 +160,7 @@ private:
   auto Dequeue() -> CmdArgPack;
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
+  void UpdateClipMatrix();
   
   auto DequeueMatrix4x4() -> Matrix4x4 {
     Matrix4x4 mat;
@@ -270,6 +283,7 @@ private:
   MatrixStack<31> modelview;
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
+  Matrix4x4 clipmatrix;
 };
 
 } // namespace fauxDS::core
