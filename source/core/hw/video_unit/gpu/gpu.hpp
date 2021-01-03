@@ -40,7 +40,7 @@ struct GPU {
     }
     auto row = (offset >> 2) & 3;
     auto col =  offset >> 4;
-    return static_cast<T>(clipmatrix[col][row] >> ((offset & 3) * 8));
+    return static_cast<T>(clip_matrix[col][row] >> ((offset & 3) * 8));
   }
 
   auto GetOutput() -> u16 const* { return &output[0]; }
@@ -283,7 +283,7 @@ private:
   MatrixStack<31> modelview;
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
-  Matrix4x4 clipmatrix;
+  Matrix4x4 clip_matrix;
 };
 
 } // namespace fauxDS::core

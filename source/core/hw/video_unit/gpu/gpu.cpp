@@ -53,7 +53,7 @@ void GPU::Reset() {
   modelview.Reset();
   direction.Reset();
   texture.Reset();
-  clipmatrix.LoadIdentity();
+  clip_matrix.LoadIdentity();
   
   for (uint i = 0; i < 256 * 192; i++)
     output[i] = 0x8000;
@@ -211,7 +211,7 @@ void GPU::AddVertex(Vector4 const& position) {
 
   position_old = position;
 
-  auto clip_position = projection.current * (modelview.current * position);
+  auto clip_position = clip_matrix * position;
   auto index = vertex.count++;
   vertex.data[index] = {
     clip_position,
@@ -349,7 +349,7 @@ void GPU::CheckGXFIFO_IRQ() {
 }
 
 void GPU::UpdateClipMatrix() {
-  clipmatrix = projection.current * modelview.current;
+  clip_matrix = modelview.current * projection.current;
 }
 
 auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
