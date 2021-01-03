@@ -557,7 +557,8 @@ void GPU::CMD_SwapBuffers() {
       }
     }
 
-    if (skip) {
+    // FIXME
+    if (skip || y_max - y_min >= 256) {
       continue;
     }
 
