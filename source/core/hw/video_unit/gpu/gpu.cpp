@@ -5,6 +5,7 @@
 #include <common/log.hpp>
 
 #include "gpu.hpp"
+#include "software/renderer.hpp"
 
 namespace fauxDS::core {
 
@@ -33,6 +34,16 @@ static constexpr int kCmdNumParams[256] {
   // 0x70 - 0x7F (Box, position and vector test)
   3, 2, 1
 };
+
+GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
+    : scheduler(scheduler)
+    , irq9(irq9)
+    , dma9(dma9)
+    , vram_texture(vram.region_gpu_texture)
+    , vram_palette(vram.region_gpu_palette) {
+  renderer = std::make_unique<GPUSoftwareRenderer>();
+  Reset();
+}
 
 void GPU::Reset() {
   disp3dcnt = {};

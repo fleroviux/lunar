@@ -11,22 +11,16 @@
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/video_unit/vram.hpp>
 #include <core/scheduler.hpp>
-#include <stack>
+#include <memory>
 
 #include "matrix_stack.hpp"
+#include "renderer_base.hpp"
 
 namespace fauxDS::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
-  GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
-      : scheduler(scheduler)
-      , irq9(irq9)
-      , dma9(dma9)
-      , vram_texture(vram.region_gpu_texture)
-      , vram_palette(vram.region_gpu_palette) {
-    Reset();
-  }
+  GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram);
   
   void Reset();
   void WriteGXFIFO(u32 value);
@@ -149,7 +143,7 @@ private:
 
   struct Polygon {
     int count;
-    int indices[4];
+    int indices[10];
     TextureParams texture_params;
   };
 
@@ -267,7 +261,6 @@ private:
   common::FIFO<CmdArgPack, 4> gxpipe;
   
   u16 output[256 * 192];
-  // FIXME: what precision is the depth buffer actually?
   s32 depthbuffer[256 * 192];
 
   /// Packed command processing
@@ -281,6 +274,9 @@ private:
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
   Matrix4x4 clip_matrix;
+
+  /// Renderer backend
+  std::unique_ptr<GPURendererBase> renderer;
 };
 
 } // namespace fauxDS::core
