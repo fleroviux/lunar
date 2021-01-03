@@ -114,12 +114,9 @@ private:
 
   struct TextureParams {
     u32 address;
-    bool repeat_u;
-    bool repeat_v;
-    bool flip_u;
-    bool flip_v;
-    int size_u;
-    int size_v;
+    bool repeat[2];
+    bool flip[2];
+    int size[2];
 
     enum class Format {
       None,

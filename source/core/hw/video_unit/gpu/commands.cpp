@@ -366,18 +366,15 @@ void GPU::CMD_SetTextureParameters() {
   auto arg = Dequeue().argument;
 
   texture_params.address = (arg & 0xFFFF) << 3;
-  texture_params.repeat_u = arg & (1 << 16);
-  texture_params.repeat_v = arg & (1 << 17);
-  texture_params.flip_u = arg & (1 << 18);
-  texture_params.flip_v = arg & (1 << 19);
-  texture_params.size_u = 8 << ((arg >> 20) & 7);
-  texture_params.size_v = 8 << ((arg >> 23) & 7);
+  texture_params.repeat[0] = arg & (1 << 16);
+  texture_params.repeat[1]= arg & (1 << 17);
+  texture_params.flip[0] = arg & (1 << 18);
+  texture_params.flip[1] = arg & (1 << 19);
+  texture_params.size[0] = (arg >> 20) & 7;
+  texture_params.size[1] = (arg >> 23) & 7;
   texture_params.format = static_cast<TextureParams::Format>((arg >> 26) & 7);
   texture_params.color0_transparent = arg & (1 << 29);
   texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
-
-  LOG_DEBUG("GPU: texture @ 0x{0:08X} width={1} height={2} format={3} transform={4}",
-    texture_params.address, texture_params.size_u, texture_params.size_v, texture_params.format, texture_params.transform);
 }
 
 void GPU::CMD_SetPaletteBase() {
@@ -431,119 +428,86 @@ void GPU::CMD_SwapBuffers() {
     s32 y_max = 0;
 
     auto lerp = [](s32 a, s32 b, s32 t, s32 t_max) {
-      // CHECKME
       if (t_max == 0)
         return a;
       return (a * (t_max - t) + b * t) / t_max;
     };
 
-    auto textureSample = [this](TextureParams const& texture_params, s16 uv[2]) -> u16 {
-      // TODO: properly handle fractional part
-      // TODO: reduce code redundancy by using arrays for u/v everywhere...
-      s16 u = uv[0] >> 4;
-      s16 v = uv[1] >> 4;
+    auto textureSample = [this](TextureParams const& params, s16 u, s16 v) -> u16 {
+      const int size[2] {
+        8 << params.size[0],
+        8 << params.size[1]
+      };
 
-      if (u < 0) {
-        if (texture_params.repeat_u) {
-          // TODO: use shifts instead of multiplication and division...
-          int repeats = -u / texture_params.size_u;
-          u += (1 + repeats) * texture_params.size_u;
-          if (texture_params.flip_u && (repeats & 1)) {
-            u = texture_params.size_u - u - 1;
+      int coord[2] { u >> 4, v >> 4 };
+
+      for (int i = 0; i < 2; i++) {
+        if (coord[i] < 0 || coord[i] >= size[i]) {
+          int mask = size[i] - 1;
+          if (params.repeat[i]) {
+            coord[i] &= mask;
+            if (params.flip[i]) {
+              coord[i] ^= mask;
+            }
+          } else {
+            coord[i] = std::clamp(coord[i], 0, mask);
           }
-        } else {
-          u = 0;
-        }
-      } else if (u >= texture_params.size_u) {
-        if (texture_params.repeat_u) {
-          // TODO: use shifts instead of multiplication and division...
-          int repeats = u / texture_params.size_u;
-          u -= repeats * texture_params.size_u;
-          if (texture_params.flip_u && (repeats & 1)) {
-            u = texture_params.size_u - u - 1;
-          }
-        } else {
-          u = texture_params.size_u - 1;
         }
       }
 
-      if (v < 0) {
-        if (texture_params.repeat_v) {
-          // TODO: use shifts instead of multiplication and division...
-          int repeats = -v / texture_params.size_v;
-          v += (1 + repeats) * texture_params.size_v;
-          if (texture_params.flip_v && (repeats & 1)) {
-            v = texture_params.size_v - v - 1;
-          }
-        } else {
-          v = 0;
-        }
-      } else if (v >= texture_params.size_v) {
-        if (texture_params.repeat_v) {
-          // TODO: use shifts instead of multiplication and division...
-          int repeats = v / texture_params.size_v;
-          v -= repeats * texture_params.size_v;
-          if (texture_params.flip_v && (repeats & 1)) {
-            v = texture_params.size_v - v - 1;
-          }
-        } else {
-          v = texture_params.size_v - 1;
-        }
-      }
-
-      auto offset = v * texture_params.size_u + u;
+      auto offset = coord[1] * size[0] + coord[0];
 
       // TODO: implement 4x4-compressed format.
-      switch (texture_params.format) {
+      switch (params.format) {
         case TextureParams::Format::None: {
           return 0x7FFF;
         }
         case TextureParams::Format::A3I5: {
-          u8  value = vram_texture.Read<u8>(texture_params.address + offset);
+          u8  value = vram_texture.Read<u8>(params.address + offset);
           int index = value & 0x1F;
           int alpha = value >> 5;
           alpha = (alpha << 2) + (alpha >> 1);
           // TODO: this is incorrect, but we don't support semi-transparency right now.
           // I'm also not sure if this format uses the "Color 0 transparent" flag.
-          if (alpha == 0 || (texture_params.color0_transparent && index == 0)) {
+          if (alpha == 0 || (params.color0_transparent && index == 0)) {
             return 0x8000;
           }
-          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+          return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::Palette2BPP: {
-          auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
-          if (texture_params.color0_transparent && index == 0) {
+          auto index = (vram_texture.Read<u8>(params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
+          if (params.color0_transparent && index == 0) {
             return 0x8000;
           }
-          return vram_palette.Read<u16>((texture_params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF;
+          return vram_palette.Read<u16>((params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::Palette4BPP: {
-          auto index = (vram_texture.Read<u8>(texture_params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
-          if (texture_params.color0_transparent && index == 0) {
+          auto index = (vram_texture.Read<u8>(params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
+          if (params.color0_transparent && index == 0) {
             return 0x8000;
           }
-          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+          return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::Palette8BPP: {
-          auto index = vram_texture.Read<u8>(texture_params.address + offset);
-          if (texture_params.color0_transparent && index == 0) {
+          auto index = vram_texture.Read<u8>(params.address + offset);
+          if (params.color0_transparent && index == 0) {
             return 0x8000;
           }
-          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+          return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::A5I3: {
-          u8  value = vram_texture.Read<u8>(texture_params.address + offset);
+          u8  value = vram_texture.Read<u8>(params.address + offset);
           int index = value & 7;
           int alpha = value >> 3;
           // TODO: this is incorrect, but we don't support semi-transparency right now.
           // I'm also not sure if this format uses the "Color 0 transparent" flag.
-          if (alpha == 0 || (texture_params.color0_transparent && index == 0)) {
+          if (alpha == 0 || (params.color0_transparent && index == 0)) {
             return 0x8000;
           }
-          return vram_palette.Read<u16>((texture_params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+          return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
         }
         case TextureParams::Format::Direct: {
-          auto color = vram_texture.Read<u16>(texture_params.address + offset * sizeof(u16));
+          auto color = vram_texture.Read<u16>(params.address + offset * sizeof(u16));
           if (color & 0x8000) {
             return 0x8000;
           }
@@ -664,7 +628,7 @@ void GPU::CMD_SwapBuffers() {
             //output[y * 256 + x] = (color[0] >> 1) |
             //                     ((color[1] >> 1) <<  5) |
             //                     ((color[2] >> 1) << 10);
-            auto texel = textureSample(poly.texture_params, uv);
+            auto texel = textureSample(poly.texture_params, uv[0], uv[1]);
             if (texel != 0x8000) {
               output[y * 256 + x] = texel;
               depthbuffer[y * 256 + x] = depth;
