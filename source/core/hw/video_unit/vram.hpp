@@ -54,6 +54,10 @@ struct VRAM {
   Region<4, 8192> region_ppu_bg_extpal [2] { 3, 3 };
   Region<1, 8192> region_ppu_obj_extpal[2] { 0, 0 };
 
+  /// GPU texture and texture palette data
+  Region<4, 131072> region_gpu_texture { 3 };
+  Region<8> region_gpu_palette { 7 };
+
   /// VRAM bank control register
   struct VRAMCNT {
     VRAMCNT(VRAM& vram, Bank bank) : vram(vram), bank(bank) {}

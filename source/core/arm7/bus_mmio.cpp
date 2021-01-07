@@ -70,6 +70,7 @@ enum Registers {
   REG_VRAMSTAT = 0x0400'0240,
   REG_WRAMSTAT = 0x0400'0241,
 
+  REG_POSTFLG = 0x0400'0300,
   REG_HALTCNT = 0x0400'0301
 };
 
@@ -326,6 +327,9 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return vram.vramstat.ReadByte();
     case REG_WRAMSTAT:
       return wramcnt.ReadByte();
+
+    case REG_POSTFLG:
+     return 1;
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);

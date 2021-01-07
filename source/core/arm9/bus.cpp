@@ -103,7 +103,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       if ((address & 0xFFFF0000) == 0xFFFF0000)
         return *reinterpret_cast<T*>(&bios[address & 0x7FFF]);
     default:
-      ASSERT(false, "ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
+      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
   }
 
   return 0;
@@ -186,10 +186,7 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
       break;
     default:
-      // TODO: remove this. this is only there to ignore trace enable/disable commands in rockwrestler.
-      if (address == 0x08005500 && value == 0x08005500)
-        break;
-      ASSERT(false, "ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
+      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
   }
 }
 

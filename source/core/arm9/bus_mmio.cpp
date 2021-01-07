@@ -159,6 +159,8 @@ enum Registers {
   REG_SQRTCNT = 0x0400'02B0,
   REG_SQRT_RESULT = 0x0400'02B4,
   REG_SQRT_PARAM = 0x0400'02B8,
+
+  REG_POSTFLG = 0x0400'0300,
   
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
@@ -166,7 +168,9 @@ enum Registers {
   REG_GXFIFO = 0x0400'0400,
   REG_GXCMDPORT_LO = 0x0400'0440,
   REG_GXCMDPORT_HI = 0x0400'05C8,
-  REG_GXSTAT = 0x0400'0600
+  REG_GXSTAT = 0x0400'0600,
+  REG_CLIPMTX_RESULT_LO = 0x0400'0640,
+  REG_CLIPMTX_RESULT_HI = 0x0400'067F
 };
 
 auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -639,6 +643,11 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return gpu_io.gxstat.ReadByte(2);
     case REG_GXSTAT|3:
       return gpu_io.gxstat.ReadByte(3);
+    case REG_CLIPMTX_RESULT_LO ... REG_CLIPMTX_RESULT_HI:
+      return gpu_io.ReadClipMatrix<u8>(address - REG_CLIPMTX_RESULT_LO);
+
+    case REG_POSTFLG:
+      return 1;
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -648,11 +657,15 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
 }
 
 auto ARM9MemoryBus::ReadHalfIO(u32 address) -> u16 {
+  auto& gpu_io = video_unit.gpu;
+
   switch (address) {
     case REG_IPCFIFORECV|0:
       return ipc.ipcfiforecv.ReadHalf(IPC::Client::ARM9, 0);
     case REG_IPCFIFORECV|2:
       return ipc.ipcfiforecv.ReadHalf(IPC::Client::ARM9, 2);
+    case REG_CLIPMTX_RESULT_LO ... REG_CLIPMTX_RESULT_HI:
+      return gpu_io.ReadClipMatrix<u16>(address - REG_CLIPMTX_RESULT_LO);
   }
 
   return (ReadByteIO(address | 0) << 0) |
@@ -660,11 +673,15 @@ auto ARM9MemoryBus::ReadHalfIO(u32 address) -> u16 {
 }
 
 auto ARM9MemoryBus::ReadWordIO(u32 address) -> u32 {
+  auto& gpu_io = video_unit.gpu;
+
   switch (address) {
     case REG_IPCFIFORECV:
       return ipc.ipcfiforecv.ReadWord(IPC::Client::ARM9);
     case REG_CARDDATA:
       return cart.ReadROM();
+    case REG_CLIPMTX_RESULT_LO ... REG_CLIPMTX_RESULT_HI:
+      return gpu_io.ReadClipMatrix<u32>(address - REG_CLIPMTX_RESULT_LO);
   }
 
   return (ReadByteIO(address | 0) <<  0) |

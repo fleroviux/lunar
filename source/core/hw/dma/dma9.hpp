@@ -34,6 +34,7 @@ struct DMA9 {
   auto ReadFill (uint offset) -> u8;
   void WriteFill(uint offset, u8 value);
   void Request(Time time);
+  void SetGXFIFOHalfEmpty(bool value) { gxfifo_half_empty = value; }
 
   // TODO: get rid of this ugly hack that only exists
   // because we can't pass "memory" to the constructor at the moment.
@@ -54,6 +55,7 @@ private:
     bool enable = false;
     bool repeat = false;
     bool interrupt = false;
+    bool running = false;
 
     u32 length = 0;
     u32 dst = 0;
@@ -85,6 +87,7 @@ private:
   u8 filldata[16];
   arm::MemoryBase* memory;
   IRQ& irq;
+  bool gxfifo_half_empty;
 };
 
 } // namespace fauxDS::core

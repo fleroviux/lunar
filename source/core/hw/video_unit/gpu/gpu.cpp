@@ -5,6 +5,7 @@
 #include <common/log.hpp>
 
 #include "gpu.hpp"
+#include "software/renderer.hpp"
 
 namespace fauxDS::core {
 
@@ -34,6 +35,16 @@ static constexpr int kCmdNumParams[256] {
   3, 2, 1
 };
 
+GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
+    : scheduler(scheduler)
+    , irq9(irq9)
+    , dma9(dma9)
+    , vram_texture(vram.region_gpu_texture)
+    , vram_palette(vram.region_gpu_palette) {
+  renderer = std::make_unique<GPUSoftwareRenderer>();
+  Reset();
+}
+
 void GPU::Reset() {
   disp3dcnt = {};
   // FIXME
@@ -42,6 +53,19 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  
+  in_vertex_list = false;
+  vertex = {};
+  polygon = {};
+  position_old = {};
+
+  matrix_mode = MatrixMode::Projection;
+  projection.Reset();
+  modelview.Reset();
+  direction.Reset();
+  texture.Reset();
+  clip_matrix.LoadIdentity();
+  
   for (uint i = 0; i < 256 * 192; i++)
     output[i] = 0x8000;
 }
@@ -92,6 +116,7 @@ void GPU::Enqueue(CmdArgPack pack) {
     gxpipe.Write(pack);
   } else {
     gxfifo.Write(pack);
+    dma9.SetGXFIFOHalfEmpty(gxfifo.Count() < 128);
   }
 
   ProcessCommands();
@@ -104,6 +129,13 @@ auto GPU::Dequeue() -> CmdArgPack {
   if (gxpipe.Count() <= 2 && !gxfifo.IsEmpty()) {
     gxpipe.Write(gxfifo.Read());
     CheckGXFIFO_IRQ();
+
+    if (gxfifo.Count() < 128) {
+      dma9.SetGXFIFOHalfEmpty(true);
+      dma9.Request(DMA9::Time::GxFIFO);
+    } else {
+      dma9.SetGXFIFOHalfEmpty(false);
+    }
   }
 
   return entry;
@@ -116,23 +148,198 @@ void GPU::ProcessCommands() {
     return;
   }
 
-  auto arg_count = kCmdNumParams[gxpipe.Peek().command];
+  auto command = gxpipe.Peek().command;
+  auto arg_count = kCmdNumParams[command];
 
   if (count >= arg_count) {
-    auto entry = Dequeue();
+    switch (command) {
+      case 0x10: CMD_SetMatrixMode(); break;
+      case 0x11: CMD_PushMatrix(); break;
+      case 0x12: CMD_PopMatrix(); break;
+      case 0x13: CMD_StoreMatrix(); break;
+      case 0x14: CMD_RestoreMatrix(); break;
+      case 0x15: CMD_LoadIdentity(); break;
+      case 0x16: CMD_LoadMatrix4x4(); break;
+      case 0x17: CMD_LoadMatrix4x3(); break;
+      case 0x18: CMD_MatrixMultiply4x4(); break;
+      case 0x19: CMD_MatrixMultiply4x3(); break;
+      case 0x1A: CMD_MatrixMultiply3x3(); break;
+      case 0x1B: CMD_MatrixScale(); break;
+      case 0x1C: CMD_MatrixTranslate(); break;
+      
+      case 0x20: CMD_SetColor(); break;
+      case 0x22: CMD_SetUV(); break;
+      case 0x23: CMD_SubmitVertex_16(); break;
+      case 0x24: CMD_SubmitVertex_10(); break;
+      case 0x25: CMD_SubmitVertex_XY(); break;
+      case 0x26: CMD_SubmitVertex_XZ(); break;
+      case 0x27: CMD_SubmitVertex_YZ(); break;
+      case 0x28: CMD_SubmitVertex_Offset(); break;
+      case 0x2A: CMD_SetTextureParameters(); break;
+      case 0x2B: CMD_SetPaletteBase(); break;
 
-    // TODO: only do this if the command is unimplemented.
-    for (int i = 1; i < arg_count; i++)
-      Dequeue();
+      case 0x40: CMD_BeginVertexList(); break;
+      case 0x41: CMD_EndVertexList(); break;
 
-    LOG_DEBUG("GPU: ready to process command 0x{0:02X}", entry.command);
+      case 0x50: CMD_SwapBuffers(); break;
 
-    // Fake command processing
+      default:
+        LOG_ERROR("GPU: unimplemented command 0x{0:02X}", command);
+        Dequeue();
+        for (int i = 1; i < arg_count; i++)
+          Dequeue();
+        break;
+    }
+
+    // Fake the amount of time it takes to process the command.
     gxstat.gx_busy = true;
     scheduler.Add(9, [this](int cycles_late) {
       gxstat.gx_busy = false;
       ProcessCommands();
     });
+  }
+}
+
+void GPU::AddVertex(Vector4 const& position) {
+  if (!in_vertex_list) {
+    LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
+    return;
+  }
+
+  if (vertex.count == 6144) {
+    // TODO: set buffer overflow bit in GXSTAT.
+    LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
+    return;
+  }
+
+  if (polygon.count == 2048) {
+    // TODO: set buffer overflow bit in GXSTAT.
+    LOG_ERROR("GPU: submitted more polygons than fit into polygon RAM.");
+    return;
+  }
+
+  int num_vertices = is_quad ? 4 : 3;
+
+  position_old = position;
+
+  auto clip_position = clip_matrix * position;
+  auto index = vertex.count++;
+  vertex.data[index] = {
+    clip_position,
+    { vertex_color[0], vertex_color[1], vertex_color[2] },
+    { vertex_uv[0], vertex_uv[1] }
+  };
+
+  ++vertex_counter;
+
+  if (vertex_counter >= num_vertices && (!is_quad || (vertex_counter % 2) == 0)) {
+    auto& poly = polygon.data[polygon.count++];
+
+    poly.texture_params = texture_params;
+
+    int start = index - num_vertices + 1;
+    int end = index; // alias for legibility
+    int indices[3] { end, start, start + 1 };
+
+    poly.count = 0;
+
+    // Clip each vertex against the sides of the view frustum.
+    for (int i = 0; i < num_vertices; i++) {
+      auto& v = vertex.data[indices[1]];
+      auto& vb = vertex.data[indices[0]];
+      auto& vn = vertex.data[indices[2]];
+
+      poly.indices[poly.count++] = indices[1];
+
+      bool rearrange_top_down = is_quad && is_strip && i >= 1;
+
+      for (int j = 0; j < 3; j++) {
+        if (rearrange_top_down) {
+          if (i == 1) indices[j] += 2;
+          if (i == 2) indices[j] -= 1;
+        } else {
+          indices[j]++;
+        }
+
+        // Index to the current vertex will never wraparound.
+        if (j != 1) {
+          if (indices[j] < 0) {
+            indices[j] += num_vertices;
+          } else if (indices[j] > end) {
+            indices[j] -= num_vertices;
+          }
+        }
+      }
+
+      auto w = v.position[3];
+
+      // TODO: find the lowest distance instead of clipping immediately?
+      for (int j = 0; j < 3; j++) {
+        auto value = v.position[j];
+
+        if (false) {//value < -w || value > w) {
+          Vector4 edge_a {
+            v.position[0] - vb.position[0],
+            v.position[1] - vb.position[1],
+            v.position[2] - vb.position[2],
+            v.position[3] - vb.position[3]
+          };          
+
+          Vector4 edge_b {
+            v.position[0] - vn.position[0],
+            v.position[1] - vn.position[1],
+            v.position[2] - vn.position[2],
+            v.position[3] - vn.position[3]
+          };
+
+          s64 scale_a;
+          s64 scale_b;
+
+          if (value < w) {
+            scale_a = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a[3] + edge_a[j]);
+            scale_b = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b[3] + edge_b[j]);
+          } else {
+            scale_a =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a[3] - edge_a[j]);
+            scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b[3] - edge_b[j]);
+          }
+
+          v.position = Vector4{
+            vb.position[0] + s32((edge_a[0] * scale_a) >> 32),
+            vb.position[1] + s32((edge_a[1] * scale_a) >> 32),
+            vb.position[2] + s32((edge_a[2] * scale_a) >> 32),
+            vb.position[3] + s32((edge_a[3] * scale_a) >> 32)
+          };
+
+          if (vertex.count == 6144) {
+            // TODO: set buffer overflow bit in GXSTAT.
+            LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
+            break;
+          }
+
+          auto new_vertex_id = vertex.count++;
+          vertex.data[new_vertex_id] = {
+            Vector4{
+              vn.position[0] + s32((edge_b[0] * scale_b) >> 32),
+              vn.position[1] + s32((edge_b[1] * scale_b) >> 32),
+              vn.position[2] + s32((edge_b[2] * scale_b) >> 32),
+              vn.position[3] + s32((edge_b[3] * scale_b) >> 32)
+            },
+            { v.color[0], v.color[1], v.color[2] },
+            { v.uv[0], v.uv[1] }
+          };
+
+          // TODO: assert if the 10 vertices limit is hit...
+          // theoretically it should not happen but practically i'm an idiot.
+          poly.indices[poly.count++] = new_vertex_id;
+          break;
+        }
+      }
+    }
+
+    // In strip mode we just keep reusing old vertices.
+    if (!is_strip) {
+      vertex_counter = 0;
+    }
   }
 }
 
@@ -150,6 +357,10 @@ void GPU::CheckGXFIFO_IRQ() {
         irq9.Raise(IRQ::Source::GXFIFO);
       break;
   }
+}
+
+void GPU::UpdateClipMatrix() {
+  clip_matrix = modelview.current * projection.current;
 }
 
 auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
@@ -196,7 +407,8 @@ void GPU::DISP3DCNT::WriteByte(uint offset, u8 value) {
 auto GPU::GXSTAT::ReadByte(uint offset) -> u8 {
   switch (offset) {
     case 0:
-      return 0;
+      // TODO: do not hardcode the boxtest result to be true.
+      return 2;
     case 1:
       return 0;
     case 2:

@@ -13,7 +13,7 @@ static constexpr int kBlankingLines = 71;
 static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
-    : gpu(scheduler, irq9)
+    : gpu(scheduler, irq9, dma9, vram)
     , ppu_a(0, vram, &pram[0x000], &oam[0x000], gpu.GetOutput())
     , ppu_b(1, vram, &pram[0x400], &oam[0x400])
     , scheduler(scheduler)
@@ -51,7 +51,7 @@ auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
   switch (screen) {
     case Screen::Top:
       return powcnt1.display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
-    case Screen::Bottom:
+    default:
       return powcnt1.display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
   }
 }

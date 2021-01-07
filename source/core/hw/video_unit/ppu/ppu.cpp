@@ -16,11 +16,11 @@ PPU::PPU(
   u8  const* oam,
   u16 const* gpu_output
 )   : id(id)
-    , vram(vram)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
     , extpal_bg(vram.region_ppu_bg_extpal[id])
     , extpal_obj(vram.region_ppu_obj_extpal[id])
+    , vram_lcdc(vram.region_lcdc)
     , pram(pram)
     , oam(oam)
     , gpu_output(gpu_output) {
@@ -237,20 +237,17 @@ void PPU::RenderNormal(u16 vcount) {
 }
 
 void PPU::RenderVideoMemoryDisplay(u16 vcount) {
-  u16 const* source;
   u32* line = &output[vcount * 256];
+  u16 const* source = vram_lcdc.GetUnsafePointer<u16>(mmio.dispcnt.vram_block * 0x20000 + vcount * 256 * sizeof(u16));
 
-  switch (mmio.dispcnt.vram_block) {
-    case 0: source = reinterpret_cast<u16 const*>(vram.bank_a.data()); break;
-    case 1: source = reinterpret_cast<u16 const*>(vram.bank_b.data()); break;
-    case 2: source = reinterpret_cast<u16 const*>(vram.bank_c.data()); break;
-    case 3: source = reinterpret_cast<u16 const*>(vram.bank_d.data()); break;
-  }
-
-  source += 256 * vcount;
-
-  for (uint x = 0; x < 256; x++) {
-    line[x] = ConvertColor(*source++);
+  if (source != nullptr) {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(*source++);
+    }
+  } else {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(0);
+    }
   }
 }
 

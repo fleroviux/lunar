@@ -199,8 +199,6 @@ private:
 
   bool line_contains_alpha_obj = false;
 
-  VRAM const& vram;
-
   /// Background tile, map and bitmap data
   Region<32> const& vram_bg;
 
@@ -212,6 +210,9 @@ private:
 
   /// OBJ extended palette data
   Region<1, 8192> const& extpal_obj;
+
+  /// LCDC mapped VRAM
+  Region<41> const& vram_lcdc;
 
   /// Palette RAM
   u8 const* pram;
