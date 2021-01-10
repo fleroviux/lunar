@@ -231,6 +231,7 @@ void GPU::AddVertex(Vector4 const& position) {
     auto& poly = polygon.data[polygon.count];
 
     // Determine if any or all vertices require clipping.
+    // TODO: remove fully clipped, it is buggy and not needed anymore.
     bool needs_clipping = false;
     bool fully_clipped = true;
     for (auto const& v : vertices) {
@@ -245,6 +246,9 @@ void GPU::AddVertex(Vector4 const& position) {
       needs_clipping |= clip;
       fully_clipped &= clip;
     }
+
+    // !!!!!!!!!!!!!!!!!!!!!!
+    fully_clipped = false;
 
     if (!fully_clipped) {
       if (needs_clipping) {
@@ -270,9 +274,9 @@ void GPU::AddVertex(Vector4 const& position) {
         // Restart polygon strip based on the last two unclipped vertifces.
         if (is_strip) {
           is_first = true;
-          //vertices.erase(vertices.begin(), vertices.begin() + 1);
           vertices.erase(vertices.begin());
-          vertices.erase(vertices.begin());
+          if (is_quad)
+            vertices.erase(vertices.begin());
         } else {
           vertices.clear();
           // TODO: is this even necessary?
@@ -308,7 +312,8 @@ void GPU::AddVertex(Vector4 const& position) {
       }
 
       poly.texture_params = texture_params;
-      polygon.count++;
+      if (poly.count != 0)
+        polygon.count++;
     } else if (is_strip) {
       // Restart polygon strip based on the last two unclipped vertifces.
       if (is_first) {
@@ -348,9 +353,8 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
     auto& vb = vertices[indices[0]];
     auto& vn = vertices[indices[2]];
 
-    clipped.push_back(v);
-
     auto w = v.position[3];
+    bool did_clip = false;
 
     // TODO: find the lowest clip factor instead of clipping immediately?
     for (int j = 0; j < 3; j++) {
@@ -404,43 +408,53 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
           scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b.position[3] - edge_b.position[j]);
         }
 
-        clipped[clipped.size() - 1] = {
-          {
-            vb.position[0] + s32((edge_a.position[0] * scale_a) >> 32),
-            vb.position[1] + s32((edge_a.position[1] * scale_a) >> 32),
-            vb.position[2] + s32((edge_a.position[2] * scale_a) >> 32),
-            vb.position[3] + s32((edge_a.position[3] * scale_a) >> 32)
-          },
-          {
-            vb.color[0] + s32((edge_a.color[0] * scale_a) >> 32),
-            vb.color[1] + s32((edge_a.color[1] * scale_a) >> 32),
-            vb.color[2] + s32((edge_a.color[2] * scale_a) >> 32)
-          },
-          {
-            s64(vb.uv[0] + ((edge_a.uv[0] * scale_a) >> 32)), // why
-            s64(vb.uv[1] + ((edge_a.uv[1] * scale_a) >> 32))
-          }
-        };
+        if ((v.position[j] > w && vb.position[j] < w) || (v.position[j] < -w && vb.position[j] > -w)) {
+          clipped.push_back({
+            {
+              vb.position[0] + s32((edge_a.position[0] * scale_a) >> 32),
+              vb.position[1] + s32((edge_a.position[1] * scale_a) >> 32),
+              vb.position[2] + s32((edge_a.position[2] * scale_a) >> 32),
+              vb.position[3] + s32((edge_a.position[3] * scale_a) >> 32)
+            },
+            {
+              vb.color[0] + s32((edge_a.color[0] * scale_a) >> 32),
+              vb.color[1] + s32((edge_a.color[1] * scale_a) >> 32),
+              vb.color[2] + s32((edge_a.color[2] * scale_a) >> 32)
+            },
+            {
+              s64(vb.uv[0] + ((edge_a.uv[0] * scale_a) >> 32)), // why
+              s64(vb.uv[1] + ((edge_a.uv[1] * scale_a) >> 32))
+            }
+          });
+        }
 
-        clipped.push_back({
-          {
-            vn.position[0] + s32((edge_b.position[0] * scale_b) >> 32),
-            vn.position[1] + s32((edge_b.position[1] * scale_b) >> 32),
-            vn.position[2] + s32((edge_b.position[2] * scale_b) >> 32),
-            vn.position[3] + s32((edge_b.position[3] * scale_b) >> 32)
-          },
-          {
-            vn.color[0] + s32((edge_b.color[0] * scale_b) >> 32),
-            vn.color[1] + s32((edge_b.color[1] * scale_b) >> 32),
-            vn.color[2] + s32((edge_b.color[2] * scale_b) >> 32)
-          },
-          {
-            s64(vn.uv[0] + ((edge_b.uv[0] * scale_b) >> 32)), // why
-            s64(vn.uv[1] + ((edge_b.uv[1] * scale_b) >> 32))
-          }
-        });
+        if ((v.position[j] > w && vn.position[j] < w) || (v.position[j] < -w && vn.position[j] > -w)) {
+          clipped.push_back({
+            {
+              vn.position[0] + s32((edge_b.position[0] * scale_b) >> 32),
+              vn.position[1] + s32((edge_b.position[1] * scale_b) >> 32),
+              vn.position[2] + s32((edge_b.position[2] * scale_b) >> 32),
+              vn.position[3] + s32((edge_b.position[3] * scale_b) >> 32)
+            },
+            {
+              vn.color[0] + s32((edge_b.color[0] * scale_b) >> 32),
+              vn.color[1] + s32((edge_b.color[1] * scale_b) >> 32),
+              vn.color[2] + s32((edge_b.color[2] * scale_b) >> 32)
+            },
+            {
+              s64(vn.uv[0] + ((edge_b.uv[0] * scale_b) >> 32)), // why
+              s64(vn.uv[1] + ((edge_b.uv[1] * scale_b) >> 32))
+            }
+          });
+        }
+
+        did_clip = true;
         break;
       }
+    }
+
+    if (!did_clip) {
+      clipped.push_back(v);
     }
   }
 
