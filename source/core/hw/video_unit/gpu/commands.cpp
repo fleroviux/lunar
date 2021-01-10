@@ -384,9 +384,11 @@ void GPU::CMD_SetPaletteBase() {
 void GPU::CMD_BeginVertexList() {
   auto arg = Dequeue().argument;
   in_vertex_list = true;
-  vertex_counter = 0;
   is_quad = arg & 1;
   is_strip = arg & 2;
+  is_first = true;
+
+  vertices.clear();
 
   // TODO: this is likely inaccurate.
   // I don't know when exactly (and if) vertex attributes are reset.
@@ -547,7 +549,7 @@ void GPU::CMD_SwapBuffers() {
     }
 
     // FIXME
-    if (skip || y_max - y_min >= 256) {
+    if (skip /*|| y_max - y_min >= 256*/) {
       continue;
     }
 
@@ -636,6 +638,21 @@ void GPU::CMD_SwapBuffers() {
           }
         }
       }
+    }
+
+    for (int j = 0; j < poly.count; j++) {
+      if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
+        continue;
+      }
+      u16 color = 0x4269;
+      switch (j) {
+        case 0: color = 0x1F; break;
+        case 1: color = 0x1f << 5; break;
+        case 2: color = 0x1f << 10; break;
+        case 3: color = (0x1F << 5) | 0x1F; break;
+        case 4: color = 0x7FFF; break;
+      }
+      output[points[j].y * 256 + points[j].x] = color;
     }
   }
 

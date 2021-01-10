@@ -13,7 +13,7 @@ struct GPUSoftwareRenderer final : GPURendererBase {
   auto AddPolygon(
     std::vector<int> const& indices,
     Texture const& texture
-  )-> bool override { return false; }
+  ) -> bool override { return false; }
 
   void SwapBuffers() override { }
   void Render() override { }

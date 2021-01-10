@@ -206,141 +206,245 @@ void GPU::AddVertex(Vector4 const& position) {
     return;
   }
 
-  if (vertex.count == 6144) {
-    // TODO: set buffer overflow bit in GXSTAT.
-    LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
-    return;
-  }
-
-  if (polygon.count == 2048) {
-    // TODO: set buffer overflow bit in GXSTAT.
-    LOG_ERROR("GPU: submitted more polygons than fit into polygon RAM.");
-    return;
-  }
-
-  int num_vertices = is_quad ? 4 : 3;
-
-  position_old = position;
-
   auto clip_position = clip_matrix * position;
-  auto index = vertex.count++;
-  vertex.data[index] = {
+
+  vertices.push_back({
     clip_position,
     { vertex_color[0], vertex_color[1], vertex_color[2] },
     { vertex_uv[0], vertex_uv[1] }
-  };
+  });
 
-  ++vertex_counter;
+  position_old = position;
 
-  if (vertex_counter >= num_vertices && (!is_quad || (vertex_counter % 2) == 0)) {
-    auto& poly = polygon.data[polygon.count++];
+  int required = is_quad ? 4 : 3;
+  if (is_strip && !is_first) {
+    required -= 2;
+  }
 
-    poly.texture_params = texture_params;
+  if (vertices.size() == required) {
+    // FIXME: this is disgusting.
+    if (polygon.count == 2048) {
+      vertices.clear();
+      return;
+    }
 
-    int start = index - num_vertices + 1;
-    int end = index; // alias for legibility
-    int indices[3] { end, start, start + 1 };
+    auto& poly = polygon.data[polygon.count];
 
-    poly.count = 0;
-
-    // Clip each vertex against the sides of the view frustum.
-    for (int i = 0; i < num_vertices; i++) {
-      auto& v = vertex.data[indices[1]];
-      auto& vb = vertex.data[indices[0]];
-      auto& vn = vertex.data[indices[2]];
-
-      poly.indices[poly.count++] = indices[1];
-
-      bool rearrange_top_down = is_quad && is_strip && i >= 1;
-
-      for (int j = 0; j < 3; j++) {
-        if (rearrange_top_down) {
-          if (i == 1) indices[j] += 2;
-          if (i == 2) indices[j] -= 1;
-        } else {
-          indices[j]++;
-        }
-
-        // Index to the current vertex will never wraparound.
-        if (j != 1) {
-          if (indices[j] < 0) {
-            indices[j] += num_vertices;
-          } else if (indices[j] > end) {
-            indices[j] -= num_vertices;
-          }
+    // Determine if any or all vertices require clipping.
+    bool needs_clipping = false;
+    bool fully_clipped = true;
+    for (auto const& v : vertices) {
+      auto w = v.position[3];
+      bool clip = false;
+      for (int i = 0; i < 3; i++) {
+        if (v.position[i] < -w || v.position[i] > w) {
+          clip = true;
+          break;
         }
       }
+      needs_clipping |= clip;
+      fully_clipped &= clip;
+    }
 
-      auto w = v.position[3];
+    if (!fully_clipped) {
+      if (needs_clipping) {
+        poly.count = 0;
 
-      // TODO: find the lowest distance instead of clipping immediately?
+        // TODO: this isn't going to cut it efficiency-wise.
+        if (is_strip && !is_first) {
+          vertices.insert(vertices.begin(), vertex.data[vertex.count - 1]);
+          vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
+        }
+
+        for (auto const& v : ClipPolygon(vertices)) {
+          // FIXME: this is disgusting.
+          if (vertex.count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex.count++;
+          vertex.data[index] = v;
+          poly.indices[poly.count++] = index;
+        }
+
+        // Restart polygon strip based on the last two unclipped vertifces.
+        if (is_strip) {
+          is_first = true;
+          //vertices.erase(vertices.begin(), vertices.begin() + 1);
+          vertices.erase(vertices.begin());
+          vertices.erase(vertices.begin());
+        } else {
+          vertices.clear();
+          // TODO: is this even necessary?
+          // "is_first" should be "don't care" for non-strips.
+          is_first = false;
+        }
+      } else {
+        if (is_strip && !is_first) {
+          poly.indices[0] = vertex.count - 2;
+          poly.indices[1] = vertex.count - 1;
+          poly.count = 2;
+        } else {
+          poly.count = 0;
+        }
+
+        for (auto const& v : vertices) {
+          // FIXME: this is disgusting.
+          if (vertex.count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex.count++;
+          vertex.data[index] = v;
+          poly.indices[poly.count++] = index;
+        }
+
+        if (is_strip && is_quad) {
+          std::swap(poly.indices[2], poly.indices[3]);
+        }
+
+        vertices.clear();
+        is_first = false;
+      }
+
+      poly.texture_params = texture_params;
+      polygon.count++;
+    } else if (is_strip) {
+      // Restart polygon strip based on the last two unclipped vertifces.
+      if (is_first) {
+        vertices.erase(vertices.begin(), vertices.begin() + 1);
+      } else {
+        is_first = true;
+      }
+    } else {
+      vertices.clear(); // ???
+    }
+  }
+}
+
+auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex> {
+  // TODO: "vertices" clashes with the member variable.
+  // TODO: we might be able to get rid of the middle index.
+  int size = vertices.size();
+  int indices[3] { size - 1, 0, 1 };
+  std::vector<Vertex> clipped;
+
+  for (int i = 0; i < size; i++) {
+    // Blargh, clean this mess up.
+    indices[1] = i;
+    indices[0] = indices[1] - 1;
+    indices[2] = indices[1] + 1;
+    if (indices[0] == -1) indices[0] = size - 1;
+    if (indices[2] == size) indices[2] = 0;
+    
+    if (is_quad && is_strip) {
       for (int j = 0; j < 3; j++) {
-        auto value = v.position[j];
+        if (indices[j] == 2) indices[j] = 3;
+        else if (indices[j] == 3) indices[j] = 2;
+      }
+    }
 
-        if (false) {//value < -w || value > w) {
-          Vector4 edge_a {
+    auto& v = vertices[indices[1]];
+    auto& vb = vertices[indices[0]];
+    auto& vn = vertices[indices[2]];
+
+    clipped.push_back(v);
+
+    auto w = v.position[3];
+
+    // TODO: find the lowest clip factor instead of clipping immediately?
+    for (int j = 0; j < 3; j++) {
+      auto value = v.position[j];
+
+      if (value < -w || value > w) {
+        Vertex edge_a {
+          {
             v.position[0] - vb.position[0],
             v.position[1] - vb.position[1],
             v.position[2] - vb.position[2],
             v.position[3] - vb.position[3]
-          };          
+          },
+          {
+            v.color[0] - vb.color[0],
+            v.color[1] - vb.color[1],
+            v.color[2] - vb.color[2]
+          },
+          {
+            s64(v.uv[0] - vb.uv[0]), // why?
+            s64(v.uv[1] - vb.uv[1])
+          }
+        };
 
-          Vector4 edge_b {
+        Vertex edge_b {
+          {
             v.position[0] - vn.position[0],
             v.position[1] - vn.position[1],
             v.position[2] - vn.position[2],
             v.position[3] - vn.position[3]
-          };
-
-          s64 scale_a;
-          s64 scale_b;
-
-          if (value < w) {
-            scale_a = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a[3] + edge_a[j]);
-            scale_b = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b[3] + edge_b[j]);
-          } else {
-            scale_a =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a[3] - edge_a[j]);
-            scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b[3] - edge_b[j]);
+          },
+          {
+            v.color[0] - vn.color[0],
+            v.color[1] - vn.color[1],
+            v.color[2] - vn.color[2]
+          },
+          {
+            s64(v.uv[0] - vn.uv[0]), // why?
+            s64(v.uv[1] - vn.uv[1])
           }
+        };
 
-          v.position = Vector4{
-            vb.position[0] + s32((edge_a[0] * scale_a) >> 32),
-            vb.position[1] + s32((edge_a[1] * scale_a) >> 32),
-            vb.position[2] + s32((edge_a[2] * scale_a) >> 32),
-            vb.position[3] + s32((edge_a[3] * scale_a) >> 32)
-          };
+        s64 scale_a;
+        s64 scale_b;
 
-          if (vertex.count == 6144) {
-            // TODO: set buffer overflow bit in GXSTAT.
-            LOG_ERROR("GPU: submitted more vertices than fit into vertex RAM.");
-            break;
-          }
-
-          auto new_vertex_id = vertex.count++;
-          vertex.data[new_vertex_id] = {
-            Vector4{
-              vn.position[0] + s32((edge_b[0] * scale_b) >> 32),
-              vn.position[1] + s32((edge_b[1] * scale_b) >> 32),
-              vn.position[2] + s32((edge_b[2] * scale_b) >> 32),
-              vn.position[3] + s32((edge_b[3] * scale_b) >> 32)
-            },
-            { v.color[0], v.color[1], v.color[2] },
-            { v.uv[0], v.uv[1] }
-          };
-
-          // TODO: assert if the 10 vertices limit is hit...
-          // theoretically it should not happen but practically i'm an idiot.
-          poly.indices[poly.count++] = new_vertex_id;
-          break;
+        if (value < w) {
+          scale_a = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a.position[3] + edge_a.position[j]);
+          scale_b = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b.position[3] + edge_b.position[j]);
+        } else {
+          scale_a =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a.position[3] - edge_a.position[j]);
+          scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b.position[3] - edge_b.position[j]);
         }
+
+        clipped[clipped.size() - 1] = {
+          {
+            vb.position[0] + s32((edge_a.position[0] * scale_a) >> 32),
+            vb.position[1] + s32((edge_a.position[1] * scale_a) >> 32),
+            vb.position[2] + s32((edge_a.position[2] * scale_a) >> 32),
+            vb.position[3] + s32((edge_a.position[3] * scale_a) >> 32)
+          },
+          {
+            vb.color[0] + s32((edge_a.color[0] * scale_a) >> 32),
+            vb.color[1] + s32((edge_a.color[1] * scale_a) >> 32),
+            vb.color[2] + s32((edge_a.color[2] * scale_a) >> 32)
+          },
+          {
+            s64(vb.uv[0] + ((edge_a.uv[0] * scale_a) >> 32)), // why
+            s64(vb.uv[1] + ((edge_a.uv[1] * scale_a) >> 32))
+          }
+        };
+
+        clipped.push_back({
+          {
+            vn.position[0] + s32((edge_b.position[0] * scale_b) >> 32),
+            vn.position[1] + s32((edge_b.position[1] * scale_b) >> 32),
+            vn.position[2] + s32((edge_b.position[2] * scale_b) >> 32),
+            vn.position[3] + s32((edge_b.position[3] * scale_b) >> 32)
+          },
+          {
+            vn.color[0] + s32((edge_b.color[0] * scale_b) >> 32),
+            vn.color[1] + s32((edge_b.color[1] * scale_b) >> 32),
+            vn.color[2] + s32((edge_b.color[2] * scale_b) >> 32)
+          },
+          {
+            s64(vn.uv[0] + ((edge_b.uv[0] * scale_b) >> 32)), // why
+            s64(vn.uv[1] + ((edge_b.uv[1] * scale_b) >> 32))
+          }
+        });
+        break;
       }
     }
-
-    // In strip mode we just keep reusing old vertices.
-    if (!is_strip) {
-      vertex_counter = 0;
-    }
   }
+
+  return clipped;
 }
 
 void GPU::CheckGXFIFO_IRQ() {
