@@ -12,6 +12,7 @@
 #include <core/hw/video_unit/vram.hpp>
 #include <core/scheduler.hpp>
 #include <memory>
+#include <vector>
 
 #include "matrix_stack.hpp"
 #include "renderer_base.hpp"
@@ -137,7 +138,7 @@ private:
   struct Vertex {
     Vector4 position;
     s32 color[3];
-    s16 uv[2];
+    s64 uv[2];
     // ...
   };
 
@@ -186,6 +187,7 @@ private:
   }
 
   void AddVertex(Vector4 const& position);
+  auto ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex>;
 
   /// Matrix commands
   void CMD_SetMatrixMode();
@@ -224,7 +226,7 @@ private:
   bool in_vertex_list;
   bool is_quad;
   bool is_strip;
-  int vertex_counter;
+  bool is_first;
 
   /// Vertex RAM
   struct {
@@ -237,6 +239,10 @@ private:
     int count = 0;
     Polygon data[2048];
   } polygon;
+
+  /// Temporary vertex buffer for the primitive being submitted at the moment.
+  /// TODO: figure out a name that doesn't completely suck.
+  std::vector<Vertex> vertices;
 
   /// Untransformed vertex from the previous vertex submission command.
   Vector4 position_old;
