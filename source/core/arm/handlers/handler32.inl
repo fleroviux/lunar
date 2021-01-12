@@ -471,7 +471,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       } else if (arch == Architecture::ARMv5TE) {
         ASSERT((dst & 1) == 0, "ARM: LDRD: using an odd numbered destination register is undefined.");
         ASSERT(dst != 14, "ARM: LDRD: loading r14 and r15 is unpredictable.");
-        ASSERT(dst != base && (dst + 1) != base, "ARM: LDRD: using the base register as a destination is unpredictable");
+        ASSERT(!writeback || (dst != base && (dst + 1) != base), "ARM: LDRD: using the base register as a destination is unpredictable");
 
         state.reg[dst + 0] = ReadWord(address + 0);
         state.reg[dst + 1] = ReadWord(address + 4);
