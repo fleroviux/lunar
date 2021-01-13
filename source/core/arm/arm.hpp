@@ -11,7 +11,7 @@
 #include "state.hpp"
 #include "memory.hpp"
 
-namespace fauxDS::core::arm {
+namespace Duality::core::arm {
 
 struct ARM {
   // TODO: it would be more appropriate to have this be the processor model.
@@ -82,4 +82,4 @@ private:
   static std::array<Handler32, 8192> s_opcode_lut_32;
 };
 
-} // namespace fauxDS::core::arm
+} // namespace Duality::core::arm

@@ -4,7 +4,7 @@
 
 #include <core/hw/video_unit/ppu/ppu.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 void PPU::RenderWindow(uint id, u8 vcount) {
   auto& winv = mmio.winv[id];
@@ -35,4 +35,4 @@ void PPU::RenderWindow(uint id, u8 vcount) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

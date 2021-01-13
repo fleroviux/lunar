@@ -4,7 +4,7 @@
 
 #include "scheduler.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 Scheduler::Scheduler() {
   for (int i = 0; i < kMaxEvents; i++) {
@@ -92,4 +92,4 @@ void Scheduler::Heapify(int n) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -8,7 +8,7 @@
 #include <core/arm/memory.hpp>
 #include <core/hw/irq/irq.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct DMA7 {
   enum Time {
@@ -80,4 +80,4 @@ private:
   IRQ& irq;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

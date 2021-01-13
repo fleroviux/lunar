@@ -8,7 +8,7 @@
 
 #include "interconnect.hpp"
 
-namespace fauxDS {
+namespace Duality {
 
 struct Core {
 
@@ -16,4 +16,4 @@ private:
   std::unique_ptr<Interconnect> interconnect = std::make_unique<Interconnect>();
 };
 
-} // namespace fauxDS
+} // namespace Duality

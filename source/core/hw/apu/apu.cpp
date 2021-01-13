@@ -12,7 +12,7 @@
 
 #include <fstream>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 static std::fstream file { "audioout.raw", std::ios::binary | std::ios::out };
 
@@ -335,4 +335,4 @@ void AudioCallback(APU* this_, s16* stream, int length) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

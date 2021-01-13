@@ -5,7 +5,7 @@
 #include <core/hw/video_unit/ppu/ppu.hpp>
 #include <common/log.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 const int PPU::s_obj_size[4][4][2] = {
   /* SQUARE */
@@ -222,4 +222,4 @@ void PPU::RenderLayerOAM(u16 vcount) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

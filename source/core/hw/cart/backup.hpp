@@ -7,7 +7,7 @@
 #include <common/integer.hpp>
 #include <common/log.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// This is mostly a stub now, do properly at a later point.
 struct Backup {
@@ -157,4 +157,4 @@ private:
   }
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

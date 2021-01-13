@@ -20,7 +20,7 @@
 
 #include "scheduler.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct Interconnect {
   Interconnect()
@@ -164,4 +164,4 @@ struct Interconnect {
   } extkeyinput = {};
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -6,7 +6,7 @@
 
 #include "bus.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 // TODO: handle byte and hword GPU accesses, but how do they behave?
 
@@ -1725,4 +1725,4 @@ void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -7,7 +7,7 @@
 #include <core/hw/spi/spi_device.hpp>
 #include <fstream>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// SPI firmware flash
 struct Firmware : SPIDevice {
@@ -53,5 +53,5 @@ private:
   std::fstream file;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core
 

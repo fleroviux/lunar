@@ -10,7 +10,7 @@
 
 #include "matrix.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct GPURendererBase {
   struct Vertex {
@@ -52,4 +52,4 @@ struct GPURendererBase {
   virtual void Render() = 0;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

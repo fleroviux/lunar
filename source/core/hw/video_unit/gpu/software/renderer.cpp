@@ -4,8 +4,8 @@
 
 #include "renderer.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 
 
-} // namespace fauxDS::core
+} // namespace Duality::core

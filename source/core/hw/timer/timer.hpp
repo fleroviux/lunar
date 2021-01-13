@@ -8,7 +8,7 @@
 #include <core/hw/irq/irq.hpp>
 #include <core/scheduler.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct Timer {
   Timer(Scheduler& scheduler, IRQ& irq)
@@ -55,4 +55,4 @@ private:
   void OnOverflow(Channel& channel);
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

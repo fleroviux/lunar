@@ -16,7 +16,7 @@
 #include "ppu/ppu.hpp"
 #include "vram.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
@@ -33,7 +33,7 @@ struct VideoUnit {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::VideoUnit;
+    friend struct Duality::core::VideoUnit;
 
     struct {
       bool flag = false;
@@ -51,7 +51,7 @@ struct VideoUnit {
     auto ReadByte(uint offset) -> u8;
 
   private:
-    friend struct fauxDS::core::VideoUnit;
+    friend struct Duality::core::VideoUnit;
     u16 value = 0xFFFF;
   } vcount;
 
@@ -62,7 +62,7 @@ struct VideoUnit {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::VideoUnit;
+    friend struct Duality::core::VideoUnit;
 
     bool enable_lcds = false;
     bool enable_ppu_a = false;
@@ -91,4 +91,4 @@ private:
   DMA9& dma9;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

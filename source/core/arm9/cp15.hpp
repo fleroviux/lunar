@@ -11,7 +11,7 @@
 
 #include "bus.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /** This class emulates the System Control Coprocessor (CP15).
   * It is responsible for various things, such as configuration
@@ -65,4 +65,4 @@ private:
   WriteHandler handler_wr[kLUTSize];
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

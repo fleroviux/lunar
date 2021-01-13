@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct SPIDevice {
   virtual ~SPIDevice() = default;
@@ -16,4 +16,4 @@ struct SPIDevice {
   virtual auto Transfer(u8 data) -> u8 = 0;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

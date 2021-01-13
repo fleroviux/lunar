@@ -5,7 +5,7 @@
 
 #include "ppu.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 template<bool window, bool blending>
 void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
@@ -235,4 +235,4 @@ void PPU::Blend(u16& target1,
   target1 = r1 | (g1 << 5) | (b1 << 10);
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

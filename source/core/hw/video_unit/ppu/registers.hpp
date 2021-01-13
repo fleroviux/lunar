@@ -4,7 +4,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct DisplayControl {
   enum class Mapping {
@@ -146,4 +146,4 @@ struct Mosaic {
   void WriteByte(uint offset, u8 value);
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <vector>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 template<size_t page_count, u32 page_size = 16384>
 struct Region {
@@ -144,4 +144,4 @@ private:
   static_assert(kPageShift != -1, "Region: page size must be a power-of-two.");
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -9,7 +9,7 @@
 #include <core/interconnect.hpp>
 #include <cstddef>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct ARM9MemoryBus final : arm::MemoryBase {
   struct TCMConfig {
@@ -73,4 +73,4 @@ private:
   Interconnect::KeyInput& keyinput;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -4,7 +4,7 @@
 
 #include <core/hw/video_unit/ppu/ppu.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 void PPU::RenderLayerText(uint id, u16 vcount) {
   auto const& bgcnt = mmio.bgcnt[id];
@@ -124,4 +124,4 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -7,7 +7,7 @@
 #include <core/hw/spi/spi_device.hpp>
 #include <core/hw/spi/firmware/firmware.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Touch Screen Controller
 /// Asahi Kasei Microsystems AK4148AVT
@@ -36,4 +36,4 @@ private:
   u8  scr_y1;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

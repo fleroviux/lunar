@@ -6,7 +6,7 @@
 
 #include "bus.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 enum Registers {
   // PPU engine A
@@ -735,4 +735,4 @@ void ARM7MemoryBus::WriteWordIO(u32 address, u32 value) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -8,7 +8,7 @@
 #include <common/integer.hpp>
 #include <core/hw/irq/irq.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Inter-Process Communication hardware for ARM9 and ARM7
 /// synchronization and message passing.
@@ -89,4 +89,4 @@ private:
   IRQ* irq[2];
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

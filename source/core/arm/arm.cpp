@@ -6,7 +6,7 @@
 
 #include "arm.hpp"
 
-namespace fauxDS::core::arm {
+namespace Duality::core::arm {
 
 void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
@@ -193,4 +193,4 @@ void ARM::SwitchMode(Mode new_mode) {
   }
 }
 
-} // namespace fauxDS::core::arm
+} // namespace Duality::core::arm

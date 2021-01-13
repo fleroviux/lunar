@@ -17,7 +17,7 @@
 #include "matrix_stack.hpp"
 #include "renderer_base.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
@@ -45,7 +45,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend struct fauxDS::core::GPU;
+    friend struct Duality::core::GPU;
     
     enum class Shading {
       Toon = 0,
@@ -79,7 +79,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend struct fauxDS::core::GPU;
+    friend struct Duality::core::GPU;
     
     enum class IRQMode {
       Never = 0,
@@ -285,4 +285,4 @@ private:
   std::unique_ptr<GPURendererBase> renderer;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

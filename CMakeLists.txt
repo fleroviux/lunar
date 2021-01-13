@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(fauxDS CXX)
+project(Duality CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
@@ -21,6 +21,6 @@ add_subdirectory(source/common)
 add_subdirectory(source/core)
 add_subdirectory(source/third_party)
 
-add_executable(fauxDS ${SOURCES} ${HEADERS})
-target_include_directories(fauxDS PRIVATE ${SDL2_INCLUDE_DIR})
-target_link_libraries(fauxDS common core ${SDL2_LIBRARY})
+add_executable(Duality ${SOURCES} ${HEADERS})
+target_include_directories(Duality PRIVATE ${SDL2_INCLUDE_DIR})
+target_link_libraries(Duality common core ${SDL2_LIBRARY})

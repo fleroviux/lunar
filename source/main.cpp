@@ -13,8 +13,8 @@
 
 #include <SDL.h>
 
-using namespace fauxDS::core;
-using namespace fauxDS::core::arm;
+using namespace Duality::core;
+using namespace Duality::core::arm;
 
 struct NDSHeader {
   // TODO: add remaining header fields.
@@ -42,7 +42,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
-    "fauxDS",
+    "Duality",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     256 * 2,

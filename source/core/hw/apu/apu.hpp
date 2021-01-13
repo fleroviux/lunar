@@ -9,7 +9,7 @@
 #include <core/scheduler.hpp>
 #include <mutex>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 // FIXME
 void AudioCallback(struct APU* this_, s16* stream, int length);
@@ -23,7 +23,7 @@ struct APU {
   void Write(uint chan_id, uint offset, u8 value);
 
 private:
-  friend void fauxDS::core::AudioCallback(APU* this_, s16* stream, int length);
+  friend void Duality::core::AudioCallback(APU* this_, s16* stream, int length);
 
   static constexpr int kRingBufferSize = 8192;
 
@@ -87,4 +87,4 @@ private:
   arm::MemoryBase* memory = nullptr;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -10,7 +10,7 @@
 #include "tsc/tsc.hpp"
 #include "firmware/firmware.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Serial Peripheral Interface
 struct SPI {
@@ -28,7 +28,7 @@ struct SPI {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::SPI;
+    friend struct Duality::core::SPI;
 
     int  baudrate = 0;
     bool busy = false;
@@ -47,7 +47,7 @@ struct SPI {
     auto ReadByte () -> u8;
     void WriteByte(u8 value);
   private:
-    friend struct fauxDS::core::SPI;
+    friend struct Duality::core::SPI;
 
     u8 value = 0;
     SPI& spi;
@@ -58,4 +58,4 @@ private:
   SPIDevice* devices[4] { nullptr, &firmware, &tsc, nullptr };
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

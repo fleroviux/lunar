@@ -8,7 +8,7 @@
 #include <core/arm/memory.hpp>
 #include <core/interconnect.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct ARM7MemoryBus final : arm::MemoryBase {
   ARM7MemoryBus(Interconnect* interconnect);
@@ -59,4 +59,4 @@ private:
   Interconnect::ExtKeyInput& extkeyinput;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

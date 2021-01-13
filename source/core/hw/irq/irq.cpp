@@ -6,7 +6,7 @@
 
 #include "irq.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 IRQ::IRQ() {
   Reset();
@@ -91,4 +91,4 @@ void IRQ::IF::WriteByte(uint offset, u8 value) {
 }
 
 
-} // namespace fauxDS::core
+} // namespace Duality::core

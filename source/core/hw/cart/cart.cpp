@@ -7,7 +7,7 @@
 
 #include "cart.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 void Cartridge::Reset() {
   if (file.is_open())
@@ -229,4 +229,4 @@ void Cartridge::CARDCMD::WriteByte(uint offset, u8 value) {
 }
 
 
-} // namespace fauxDS::core
+} // namespace Duality::core

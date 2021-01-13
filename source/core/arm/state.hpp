@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core::arm {
+namespace Duality::core::arm {
 
 enum Mode : unsigned int {
   MODE_USR = 0x10,
@@ -123,4 +123,4 @@ struct State {
   }
 };
 
-} // namespace fauxDS::core::arm
+} // namespace Duality::core::arm

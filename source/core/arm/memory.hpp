@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core::arm {
+namespace Duality::core::arm {
 
 /** Base class that memory systems must implement
   * in order to be connected to an ARM core.
@@ -28,4 +28,4 @@ struct MemoryBase {
   virtual void WriteWord(u32 address, u32 value) = 0;
 };
 
-} // namespace fauxDS::core::arm
+} // namespace Duality::core::arm

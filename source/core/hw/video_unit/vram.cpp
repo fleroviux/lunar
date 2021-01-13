@@ -4,7 +4,7 @@
 
 #include "vram.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 VRAM::VRAM() {
   Reset();
@@ -403,4 +403,4 @@ void VRAM::MapToCurrent(Bank bank) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -7,7 +7,7 @@
 #include "../arm.hpp"
 #include "decoder.hpp"
 
-namespace fauxDS::core::arm {
+namespace Duality::core::arm {
 
 using Handler16 = ARM::Handler16;
 using Handler32 = ARM::Handler32;
@@ -63,4 +63,4 @@ struct TableGen {
 std::array<Handler16, 2048> ARM::s_opcode_lut_16 = TableGen::GenerateTableThumb();
 std::array<Handler32, 8192> ARM::s_opcode_lut_32 = TableGen::GenerateTableARM();
 
-} // namespace fauxDS::core::arm
+} // namespace Duality::core::arm

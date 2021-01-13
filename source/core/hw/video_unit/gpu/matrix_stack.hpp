@@ -6,7 +6,7 @@
 
 #include "matrix.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 // TODO: figure out how over- and underflow work on hardware.
 template<int capacity>
@@ -70,5 +70,5 @@ private:
   Matrix4x4 stack[capacity];
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core
 

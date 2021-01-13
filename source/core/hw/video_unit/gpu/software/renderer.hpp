@@ -6,7 +6,7 @@
 
 #include <core/hw/video_unit/gpu/renderer_base.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct GPUSoftwareRenderer final : GPURendererBase {
   auto AddVertex(Vertex const& vertex) -> std::optional<int> override { return {}; }
@@ -19,4 +19,4 @@ struct GPUSoftwareRenderer final : GPURendererBase {
   void Render() override { }
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

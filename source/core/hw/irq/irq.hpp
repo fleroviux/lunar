@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// ARM7 and ARM9 interrupt controller.
 struct IRQ {
@@ -43,7 +43,7 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::IRQ;
+    friend struct Duality::core::IRQ;
 
     bool enabled = false;
   } ime;
@@ -54,7 +54,7 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::IRQ;
+    friend struct Duality::core::IRQ;
 
     u32 value = 0;
   } ie;
@@ -65,10 +65,10 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::IRQ;
+    friend struct Duality::core::IRQ;
 
     u32 value = 0;
   } _if;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

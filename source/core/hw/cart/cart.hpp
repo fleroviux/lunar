@@ -13,7 +13,7 @@
 
 #include "backup.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct Cartridge {
   Cartridge(IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
@@ -37,7 +37,7 @@ struct Cartridge {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::Cartridge;
+    friend struct Duality::core::Cartridge;
 
     int  baudrate = 0;
     bool chipselect_hold = false;
@@ -56,7 +56,7 @@ struct Cartridge {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::Cartridge;
+    friend struct Duality::core::Cartridge;
 
     // TODO: implement the remaining data fields.
     // http://problemkaputt.de/gbatek.htm#dscartridgeioports
@@ -70,7 +70,7 @@ struct Cartridge {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::Cartridge;
+    friend struct Duality::core::Cartridge;
 
     u8 buffer[8] {0};
   } cardcmd;
@@ -107,4 +107,4 @@ private:
   Backup backup;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

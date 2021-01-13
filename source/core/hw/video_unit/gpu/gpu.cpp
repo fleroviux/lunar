@@ -7,7 +7,7 @@
 #include "gpu.hpp"
 #include "software/renderer.hpp"
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 static constexpr int kCmdNumParams[256] {
   // 0x00 - 0x0F (all NOPs)
@@ -563,4 +563,4 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
   }
 }
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -9,7 +9,7 @@
 #include <functional>
 #include <limits>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Manages hardware events in a priority queue based on time (cycles).
 struct Scheduler {
@@ -74,4 +74,4 @@ private:
   u64 timestamp_now;
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core

@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 struct Vector4 {
   Vector4() {}
@@ -84,5 +84,5 @@ private:
   Vector4 data[4] {};
 };
 
-} // namespace fauxDS::core
+} // namespace Duality::core
 

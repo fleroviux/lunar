@@ -6,7 +6,7 @@
 
 #include <common/integer.hpp>
 
-namespace fauxDS::core {
+namespace Duality::core {
 
 /// Hardware accelerated 64-bit division and square root engine.
 struct MathEngine {
@@ -28,7 +28,7 @@ struct MathEngine {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct fauxDS::core::MathEngine;
+    friend struct Duality::core::MathEngine;
 
     DivisionMode mode = DivisionMode::S32_S32;
     bool error_divide_by_zero = false;
@@ -41,7 +41,7 @@ struct MathEngine {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
   private:
-    friend struct fauxDS::core::MathEngine;
+    friend struct Duality::core::MathEngine;
 
     u64 value = 0;
     MathEngine& math_engine;
@@ -58,7 +58,7 @@ struct MathEngine {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
   private:
-    friend struct fauxDS::core::MathEngine;
+    friend struct Duality::core::MathEngine;
 
     bool mode_64bit = false;
     MathEngine& math_engine;
@@ -68,7 +68,7 @@ struct MathEngine {
     auto ReadByte(uint offset) -> u8;
 
   private:
-    friend struct fauxDS::core::MathEngine;
+    friend struct Duality::core::MathEngine;
 
     u32 value = 0;
   } sqrt_result;
@@ -80,7 +80,7 @@ struct MathEngine {
     void WriteByte(uint offset, u8 value);
   
   private:
-    friend struct fauxDS::core::MathEngine;
+    friend struct Duality::core::MathEngine;
 
     u64 value = 0;
     MathEngine& math_engine;
@@ -91,4 +91,4 @@ private:
   void UpdateSquareRoot();
 };
 
-}; // namespace fauxDS::core
+}; // namespace Duality::core
