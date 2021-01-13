@@ -6,6 +6,7 @@ set(SOURCES
   arm9/bus.cpp
   arm9/bus_mmio.cpp
   arm9/cp15.cpp
+  hw/apu/apu.cpp
   hw/cart/cart.cpp
   hw/dma/dma7.cpp
   hw/dma/dma9.cpp
@@ -46,6 +47,7 @@ set(HEADERS
   arm7/bus.hpp
   arm9/bus.hpp
   arm9/cp15.hpp
+  hw/apu/apu.hpp
   hw/cart/backup.hpp
   hw/cart/cart.hpp
   hw/dma/dma7.hpp
@@ -74,3 +76,8 @@ set(HEADERS
 
 add_library(core STATIC ${SOURCES} ${HEADERS})
 target_link_libraries(core common fmt)
+
+# TODO: this is not optimal... move SDL out of the core.
+target_include_directories(core PUBLIC ${SDL2_INCLUDE_DIR})
+target_link_libraries(core ${SDL2_LIBRARY})
+

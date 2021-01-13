@@ -45,6 +45,7 @@ private:
   Interconnect::SWRAM::Alloc const& swram;
 
   /// HW components and I/O registers
+  APU& apu;
   Cartridge& cart;
   IPC& ipc;
   IRQ& irq7;

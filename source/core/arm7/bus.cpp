@@ -14,6 +14,7 @@ namespace fauxDS::core {
 ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect) 
     : ewram(interconnect->ewram)
     , swram(interconnect->swram.arm7)
+    , apu(interconnect->apu)
     , cart(interconnect->cart)
     , ipc(interconnect->ipc)
     , irq7(interconnect->irq7)
@@ -31,6 +32,7 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
   ASSERT(file.good(), "ARM7: failed to read 16384 bytes from bios7.bin");
 
   memset(iwram, 0, sizeof(iwram));
+  apu.SetMemory(this);
 }
 
 template<typename T>

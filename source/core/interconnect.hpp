@@ -6,6 +6,7 @@
 
 #include <common/integer.hpp>
 #include <common/log.hpp>
+#include <core/hw/apu/apu.hpp>
 #include <core/hw/cart/cart.hpp>
 #include <core/hw/dma/dma7.hpp>
 #include <core/hw/dma/dma9.hpp>
@@ -23,7 +24,8 @@ namespace fauxDS::core {
 
 struct Interconnect {
   Interconnect()
-      : cart(irq7, irq9, dma7, dma9) 
+      : apu(scheduler)
+      , cart(irq7, irq9, dma7, dma9) 
       , ipc(irq7, irq9)
       , spi(irq7)
       , timer7(scheduler, irq7)
@@ -40,6 +42,7 @@ struct Interconnect {
     memset(swram.data, 0, sizeof(swram));
     
     scheduler.Reset();
+    apu.Reset();
     cart.Reset();
     irq7.Reset();
     irq9.Reset();
@@ -69,6 +72,7 @@ struct Interconnect {
   } swram;
 
   Scheduler scheduler;
+  APU apu;
   Cartridge cart;
   IRQ irq7;
   IRQ irq9;

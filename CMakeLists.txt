@@ -11,16 +11,16 @@ set(SOURCES
 set(HEADERS
   source/common/integer.hpp)
 
+# TODO: eventually get rid of this....
 include_directories(source)
+
+include(FindSDL2)
+find_package(SDL2 REQUIRED)
 
 add_subdirectory(source/common)
 add_subdirectory(source/core)
 add_subdirectory(source/third_party)
 
-include(FindSDL2)
-find_package(SDL2 REQUIRED)
-
 add_executable(fauxDS ${SOURCES} ${HEADERS})
-message(STATUS ${SDL2_INCLUDE_DIR})
 target_include_directories(fauxDS PRIVATE ${SDL2_INCLUDE_DIR})
-target_link_libraries(fauxDS core ${SDL2_LIBRARY})
+target_link_libraries(fauxDS common core ${SDL2_LIBRARY})

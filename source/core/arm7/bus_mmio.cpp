@@ -331,6 +331,9 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_POSTFLG:
      return 1;
 
+    case 0x0400'0400 ... 0x0400'04FF:
+      return apu.Read((address >> 4) & 15, address & 15);
+
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
   }
@@ -696,6 +699,9 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
         LOG_WARN("ARM7: MMIO: unhandled write to HALTCNT. will not report about this again.");
       gIssuedHaltcntWarning = true;
       break;
+
+    case 0x0400'0400 ... 0x0400'04FF:
+      return apu.Write((address >> 4) & 15, address & 15, value);
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);

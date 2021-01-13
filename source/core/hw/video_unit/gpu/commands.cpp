@@ -640,7 +640,7 @@ void GPU::CMD_SwapBuffers() {
       }
     }
 
-    for (int j = 0; j < poly.count; j++) {
+    /*for (int j = 0; j < poly.count; j++) {
       if (points[j].y < 0 || points[j].y > 191 || points[j].x < 0 || points[j].x > 255) {
         continue;
       }
@@ -653,7 +653,7 @@ void GPU::CMD_SwapBuffers() {
         case 4: color = 0x7FFF; break;
       }
       output[points[j].y * 256 + points[j].x] = color;
-    }
+    }*/
   }
 
   vertex.count = 0;
