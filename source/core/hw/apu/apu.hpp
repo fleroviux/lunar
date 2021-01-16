@@ -65,13 +65,13 @@ private:
     u32 length = 0;
 
     // internal
-    float sample = 0;
-    s32 adpcm_sample = 0;
-    int adpcm_index = 0;
-    u32 adpcm_latch;
+    float sample;
+    s32 adpcm_sample;
+    int adpcm_index;
     u32 adpcm_header;
-    u32 cur_address = 0;
-    int t = 0;
+    u32 cur_address;
+    int t;
+    u32 latch;
     Scheduler::Event* event = nullptr;
   } channels[16];
 
