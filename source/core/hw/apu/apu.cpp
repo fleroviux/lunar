@@ -114,11 +114,8 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
       channel.format = static_cast<Channel::Format>((value >> 5) & 3);
       
       if (!channel.running && (value & 0x80)) {
-        ASSERT(channel.format != Channel::Format::PSG && 
-          channel.repeat_mode != Channel::RepeatMode::Manual,
-          "APU: unimplemented manual repeat mode.");
-        
-        ASSERT(channel.format != Channel::Format::PSG, "APU: unimplemented format: {0}", channel.format);
+        ASSERT(channel.format == Channel::Format::PSG || 
+          channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
 
         channel.running = true;
         channel.cur_address = channel.src_address;
@@ -134,6 +131,10 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
 
           // FIXME
           channel.adpcm_header = value;
+        }
+
+        if (channel.format == Channel::Format::PSG && chan_id >= 14) {
+          channel.noise_lfsr = 0x7FFF;
         }
 
         auto delay = 2 * (0x10000 - channel.timer_duty);
@@ -215,79 +216,98 @@ void APU::StepMixer(int cycles_late) {
 void APU::StepChannel(uint chan_id, int cycles_late) {
   auto& channel = channels[chan_id];
 
-  u32 loop_address = channel.src_address + sizeof(u32) * channel.loop_start;
-  u32 end_address  = loop_address + sizeof(u32) * channel.length;
-
-  if (channel.t == 0) {
-    channel.latch = memory->ReadWord(channel.cur_address, arm::MemoryBase::Bus::Data);
-    channel.cur_address += 4;
-  }
-
-  switch (channel.format) {
-    case Channel::Format::PCM8: {
-      channel.sample = s8(channel.latch & 0xFF) / 128.0;
-      channel.latch >>= 8;
-      channel.t += 2;
-      break;
-    }
-    case Channel::Format::PCM16: {
-      channel.sample = s16(channel.latch & 0xFFFF) / 32768.0;
-      channel.latch >>= 16;
-      channel.t += 4;
-      break;
-    }
-    case Channel::Format::ADPCM: {
-      u8 data = channel.latch & 15;
-      channel.latch >>= 4;
-
-      s16 tab = kAdpcmTable[channel.adpcm_index];
-      s32 diff = tab >> 3;
-      if (data & 1) diff += tab >> 2;
-      if (data & 2) diff += tab >> 1;
-      if (data & 4) diff += tab;
-
-      if (data & 8) {
-        channel.adpcm_sample = std::max(channel.adpcm_sample - diff, -0x7FFF);
+  if (channel.format == Channel::Format::PSG) {
+    ASSERT(chan_id >= 8, "APU: channel #{0} cannot run in PSG mode", chan_id);
+  
+    if (chan_id <= 13) {
+      if (channel.t < (7 - channel.psg_wave_duty)) {
+        channel.sample = -1.0;
       } else {
-        channel.adpcm_sample = std::min(channel.adpcm_sample + diff, +0x7FFF);
+        channel.sample = +1.0;
       }
 
-      channel.adpcm_index = std::clamp(channel.adpcm_index + kAdpcmIndexTab[data & 7], 0, 88);
-      channel.sample = channel.adpcm_sample / 32768.0;
-      channel.t++;
-      break;
+      if (++channel.t == 8) channel.t = 0;
+    } else {
+      int carry = channel.noise_lfsr & 1;
+      channel.noise_lfsr >>= 1;
+      if (carry) {
+        channel.noise_lfsr ^= 0x6000;
+        channel.sample = -1.0;
+      } else {
+        channel.sample = +1.0;
+      }
     }
-    default:
-      channel.sample = 0;
-      channel.running = false; // blargh
-      break;
-  }
+  } else {
+    u32 loop_address = channel.src_address + sizeof(u32) * channel.loop_start;
+    u32 end_address  = loop_address + sizeof(u32) * channel.length;
 
-  if (channel.t == 8) {
-    channel.t = 0;
-
-    if (channel.format == Channel::Format::ADPCM && 
-        channel.repeat_mode == Channel::RepeatMode::Infinite &&
-        channel.cur_address == loop_address) {
-      channel.adpcm_header  = u16(channel.adpcm_sample);
-      channel.adpcm_header |= channel.adpcm_index << 16;
+    if (channel.t == 0) {
+      channel.latch = memory->ReadWord(channel.cur_address, arm::MemoryBase::Bus::Data);
+      channel.cur_address += 4;
     }
 
-    if (channel.cur_address == end_address) {
-      switch (channel.repeat_mode) {
-        case Channel::RepeatMode::Infinite:
-          channel.cur_address = loop_address;
+    switch (channel.format) {
+      case Channel::Format::PCM8: {
+        channel.sample = s8(channel.latch & 0xFF) / 128.0;
+        channel.latch >>= 8;
+        channel.t += 2;
+        break;
+      }
+      case Channel::Format::PCM16: {
+        channel.sample = s16(channel.latch & 0xFFFF) / 32768.0;
+        channel.latch >>= 16;
+        channel.t += 4;
+        break;
+      }
+      case Channel::Format::ADPCM: {
+        u8 data = channel.latch & 15;
+        channel.latch >>= 4;
 
-          if (channel.format == Channel::Format::ADPCM) {
-            // FIXME
-            channel.adpcm_sample = s16(channel.adpcm_header & 0xFFFF);
-            channel.adpcm_index = std::min((channel.adpcm_header >> 16) & 0x7F, 88U);
-          }
-          break;
-        case Channel::RepeatMode::OneShot:
-          channel.running = false;
-          channel.sample = 0;
-          break;
+        s16 tab = kAdpcmTable[channel.adpcm_index];
+        s16 diff = tab >> 3;
+        if (data & 1) diff += tab >> 2;
+        if (data & 2) diff += tab >> 1;
+        if (data & 4) diff += tab;
+
+        if (data & 8) {
+          channel.adpcm_sample = std::max(channel.adpcm_sample - diff, -0x7FFF);
+        } else {
+          channel.adpcm_sample = std::min(channel.adpcm_sample + diff, +0x7FFF);
+        }
+
+        channel.adpcm_index = std::clamp(channel.adpcm_index + kAdpcmIndexTab[data & 7], 0, 88);
+        channel.sample = channel.adpcm_sample / 32768.0;
+        channel.t++;
+        break;
+      }
+    }
+
+    if (channel.t == 8) {
+      channel.t = 0;
+
+      if (channel.format == Channel::Format::ADPCM && 
+          channel.repeat_mode == Channel::RepeatMode::Infinite &&
+          channel.cur_address == loop_address) {
+        channel.adpcm_header  = u16(channel.adpcm_sample);
+        channel.adpcm_header |= channel.adpcm_index << 16;
+      }
+
+      if (channel.cur_address == end_address) {
+        switch (channel.repeat_mode) {
+          case Channel::RepeatMode::Infinite:
+            channel.cur_address = loop_address;
+
+            if (channel.format == Channel::Format::ADPCM) {
+              // FIXME
+              channel.adpcm_sample = s16(channel.adpcm_header & 0xFFFF);
+              channel.adpcm_index = std::min((channel.adpcm_header >> 16) & 0x7F, 88U);
+            }
+            break;
+          case Channel::RepeatMode::OneShot:
+            channel.running = false;
+            channel.sample = 0;
+            break;
+        }
       }
     }
   }
