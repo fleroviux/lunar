@@ -90,6 +90,9 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
           (*pagetable)[address >> kPageShift] = nullptr;
         }
         break;
+      case 0x06:
+        (*pagetable)[address >> kPageShift] = VisitVRAMByAddress<GetUnsafePointerFunctor<u8>>(address);
+        break;
       case 0xFF:
         // TODO: clean up address decoding and figure out out-of-bounds reads.
         if ((address & 0xFFFF0000) == 0xFFFF0000)
@@ -143,36 +146,10 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0x05:
       return *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]);
     case 0x06:
-      switch ((address >> 20) & 15) {
-        /// PPU A - BG VRAM (max 512 KiB)
-        case 0:
-        case 1:
-          return vram.region_ppu_bg[0].Read<T>(address & 0x1FFFFF);
-
-        /// PPU B - BG VRAM (max 512 KiB)
-        case 2:
-        case 3:
-          return vram.region_ppu_bg[1].Read<T>(address & 0x1FFFFF);
-
-        /// PPU A - OBJ VRAM (max 256 KiB)
-        case 4:
-        case 5:
-          return vram.region_ppu_obj[0].Read<T>(address & 0x1FFFFF);
-
-        /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:
-        case 7:
-          return vram.region_ppu_obj[1].Read<T>(address & 0x1FFFFF);
-
-        /// LCDC (max 656 KiB)
-        default:
-          return vram.region_lcdc.Read<T>(address & 0xFFFFF);
-      }
-      return 0;
+      return VisitVRAMByAddress<ReadFunctor<T>>(address);
     case 0x07:
       return *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]);
     case 0x08:
-      LOG_WARN("ARM9: unhandled ROM read!");
       return 0xFF;
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
@@ -231,42 +208,38 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]) = value;
       break;
     case 0x06:
-      switch ((address >> 20) & 15) {
-        /// PPU A - BG VRAM (max 512 KiB)
-        case 0:
-        case 1:
-          vram.region_ppu_bg[0].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU B - BG VRAM (max 512 KiB)
-        case 2:
-        case 3:
-          vram.region_ppu_bg[1].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU A - OBJ VRAM (max 256 KiB)
-        case 4:
-        case 5:
-          vram.region_ppu_obj[0].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:
-        case 7:
-          vram.region_ppu_obj[1].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// LCDC (max 656 KiB)
-        default:
-          vram.region_lcdc.Write<T>(address & 0xFFFFF, value);
-          break;
-      }
+      VisitVRAMByAddress<WriteFunctor<T>>(address, value);
       break;
     case 0x07:
       *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
       break;
     default:
       LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
+  }
+}
+
+template<class Functor, typename... Args>
+auto ARM9MemoryBus::VisitVRAMByAddress(u32 address, Args... args) -> typename Functor::return_type {
+  switch ((address >> 20) & 15) {
+    /// PPU A - BG VRAM (max 512 KiB)
+    case 0 ... 1:
+      return (typename Functor::template value<32>){}(vram.region_ppu_bg[0], address & 0x1FFFFF, args...);
+
+    /// PPU B - BG VRAM (max 512 KiB)
+    case 2 ... 3:
+      return (typename Functor::template value<32>){}(vram.region_ppu_bg[1], address & 0x1FFFFF, args...);
+  
+    /// PPU A - OBJ VRAM (max 256 KiB)
+    case 4 ... 5:
+      return (typename Functor::template value<16>){}(vram.region_ppu_obj[0], address & 0x1FFFFF, args...);
+  
+    /// PPU B - OBJ VRAM (max 128 KiB)
+    case 6 ... 7:
+      return (typename Functor::template value<16>){}(vram.region_ppu_obj[1], address & 0x1FFFFF, args...);
+  
+    /// LCDC (max 656 KiB)
+    default:
+      return (typename Functor::template value<41>){}(vram.region_lcdc, address & 0xFFFFF, args...);
   }
 }
 

@@ -65,6 +65,16 @@ struct Region {
     return nullptr;
   }
 
+  template<typename T>
+  auto GetUnsafePointer(u32 offset) -> T* {
+    auto const& desc = pages[(offset >> kPageShift) & mask];
+    offset &= kPageMask & ~(sizeof(T) - 1);
+    if (likely(desc.page != nullptr)) {
+      return reinterpret_cast<T*>(&desc.page[offset]);
+    }
+    return nullptr;
+  }
+
   template<size_t bank_size>
   void Map(u32 offset, std::array<u8, bank_size>& bank, size_t size = bank_size) {
     auto id = static_cast<size_t>(offset >> kPageShift);
