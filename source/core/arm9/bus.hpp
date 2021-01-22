@@ -21,8 +21,8 @@ struct ARM9MemoryBus final : arm::MemoryBase {
 
   ARM9MemoryBus(Interconnect* interconnect);
 
-  void SetDTCM(TCMConfig& config) { dtcm_config = config; }
-  void SetITCM(TCMConfig& config) { itcm_config = config; }
+  void SetDTCM(TCMConfig const& config);
+  void SetITCM(TCMConfig const& config);
 
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
@@ -33,6 +33,8 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   void WriteWord(u32 address, u32 value) override;
 
 private:
+  void UpdateMemoryMap(u32 address_lo, u64 address_hi);
+
   template<typename T>
   auto Read(u32 address, Bus bus) -> T;
 

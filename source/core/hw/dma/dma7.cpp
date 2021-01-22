@@ -151,15 +151,16 @@ void DMA7::RunChannel(Channel& channel) {
   LOG_INFO("DMA7: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
     channel.latch.src, channel.latch.dst, channel.latch.length, channel.size);
 
+  // TODO: read and write full 64-bit words at once as long as possible?
   if (channel.size == Channel::Size::Word) {
     while (channel.latch.length-- != 0) {
-      memory->WriteWord(channel.latch.dst, memory->ReadWord(channel.latch.src, Bus::Data));
+      memory->FastWrite<u32>(channel.latch.dst, memory->FastRead<u32>(channel.latch.src, Bus::Data));
       channel.latch.dst += dst_offset;
       channel.latch.src += src_offset;
     }
   } else {
     while (channel.latch.length-- != 0) {
-      memory->WriteHalf(channel.latch.dst, memory->ReadHalf(channel.latch.src, Bus::Data));
+      memory->FastWrite<u16>(channel.latch.dst, memory->FastRead<u16>(channel.latch.src, Bus::Data));
       channel.latch.dst += dst_offset;
       channel.latch.src += src_offset;
     }

@@ -13,6 +13,8 @@ namespace Duality::core {
 struct ARM7MemoryBus final : arm::MemoryBase {
   ARM7MemoryBus(Interconnect* interconnect);
 
+  bool& IsHalted() { return halted; }
+
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
@@ -22,6 +24,8 @@ struct ARM7MemoryBus final : arm::MemoryBase {
   void WriteWord(u32 address, u32 value) override;
 
 private:
+  void UpdateMemoryMap(u32 address_lo, u64 address_hi);
+
   template<typename T>
   auto Read(u32 address, Bus bus) -> T;
 
@@ -57,6 +61,7 @@ private:
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   Interconnect::ExtKeyInput& extkeyinput;
+  bool halted;
 };
 
 } // namespace Duality::core

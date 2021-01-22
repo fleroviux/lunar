@@ -71,10 +71,12 @@ enum Registers {
   REG_WRAMSTAT = 0x0400'0241,
 
   REG_POSTFLG = 0x0400'0300,
-  REG_HALTCNT = 0x0400'0301
-};
+  REG_HALTCNT = 0x0400'0301,
 
-static bool gIssuedHaltcntWarning = false;
+  // Sound
+  REG_SOUNDCHAN_LO = 0x0400'0400,
+  REG_SOUNDCHAN_HI = 0x0400'04FF
+};
 
 auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
   switch (address) {
@@ -331,7 +333,7 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_POSTFLG:
      return 1;
 
-    case 0x0400'0400 ... 0x0400'04FF:
+    case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
       return apu.Read((address >> 4) & 15, address & 15);
 
     default:
@@ -694,13 +696,17 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       irq7._if.WriteByte(3, value);
       break;
 
-    case REG_HALTCNT:
-      if (!gIssuedHaltcntWarning)
-        LOG_WARN("ARM7: MMIO: unhandled write to HALTCNT. will not report about this again.");
-      gIssuedHaltcntWarning = true;
+    case REG_HALTCNT: {
+      auto mode = value >> 6;
+      if (mode == 2) {
+        IsHalted() = true;
+      } else if (mode != 0) {
+        LOG_ERROR("ARM7: MMIO: unhandled HALTCNT mode #{0}", mode);
+      }
       break;
+    }
 
-    case 0x0400'0400 ... 0x0400'04FF:
+    case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
       return apu.Write((address >> 4) & 15, address & 15, value);
 
     default:
