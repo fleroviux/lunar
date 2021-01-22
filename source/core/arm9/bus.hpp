@@ -27,10 +27,12 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
+  auto ReadQuad(u32 address, Bus bus) -> u64 override;
 
   void WriteByte(u32 address,  u8 value) override;
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
+  void WriteQuad(u32 address, u64 value) override;
 
 private:
   void UpdateMemoryMap(u32 address_lo, u64 address_hi);
