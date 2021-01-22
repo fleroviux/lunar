@@ -16,7 +16,9 @@
 #include <core/hw/spi/spi.hpp>
 #include <core/hw/timer/timer.hpp>
 #include <core/hw/video_unit/video_unit.hpp>
+#include <functional>
 #include <string.h>
+#include <vector>
 
 #include "scheduler.hpp"
 
@@ -86,7 +88,13 @@ struct Interconnect {
   VideoUnit video_unit;
 
   struct WRAMCNT {
+    using Callback = std::function<void(void)>;
+
     WRAMCNT(SWRAM& swram) : swram(swram) {}
+
+    void AddCallback(Callback callback) {
+      callbacks.push_back(callback);
+    }
 
     auto ReadByte() -> u8 {
       return value;
@@ -94,6 +102,7 @@ struct Interconnect {
 
     void WriteByte(u8 value) {
       this->value = value & 3;
+
       switch (this->value) {
         case 0:
           swram.arm9 = { swram.data, 0x7FFF };
@@ -112,11 +121,14 @@ struct Interconnect {
           swram.arm7 = { swram.data, 0x7FFF };
           break;
       }
+
+      for (auto& callback : callbacks) callback();
     }
 
   private:
     int value = 0;
     SWRAM& swram;
+    std::vector<Callback> callbacks;
   } wramcnt;
 
   struct KeyInput {

@@ -32,6 +32,9 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
   if constexpr (gEnableFastMemory) {
     pagetable = std::make_unique<std::array<u8*, 1048576>>();
     UpdateMemoryMap(0, 0x100000000ULL);
+    interconnect->wramcnt.AddCallback([this]() {
+      UpdateMemoryMap(0x03000000, 0x04000000);
+    });
   }
 }
 
@@ -79,6 +82,13 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
     switch (address >> 24) {
       case 0x02:
         (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+        break;
+      case 0x03:
+        if (swram.data != nullptr) {
+          (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
+        } else {
+          (*pagetable)[address >> kPageShift] = nullptr;
+        }
         break;
       case 0xFF:
         // TODO: clean up address decoding and figure out out-of-bounds reads.

@@ -22,6 +22,8 @@ struct ARM7MemoryBus final : arm::MemoryBase {
   void WriteWord(u32 address, u32 value) override;
 
 private:
+  void UpdateMemoryMap(u32 address_lo, u64 address_hi);
+
   template<typename T>
   auto Read(u32 address, Bus bus) -> T;
 

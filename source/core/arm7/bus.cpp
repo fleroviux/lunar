@@ -36,19 +36,32 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
 
   if constexpr (gEnableFastMemory) {
     pagetable = std::make_unique<std::array<u8*, 1048576>>();
+    UpdateMemoryMap(0, 0x100000000ULL);
+    interconnect->wramcnt.AddCallback([this]() {
+      UpdateMemoryMap(0x03000000, 0x04000000);
+    });
+  }
+}
 
-    for (u64 address = 0; address < 0x100000000UL; address += kPageMask + 1) {
-      switch (address >> 24) {
-        case 0x00:
-          (*pagetable)[address >> kPageShift] = &bios[address & 0x3FFF];
-          break;
-        case 0x02:
-          (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
-          break;
-        default:
-          (*pagetable)[address >> kPageShift] = nullptr;
-          break;
-      }
+void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
+  for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
+    switch (address >> 24) {
+      case 0x00:
+        (*pagetable)[address >> kPageShift] = &bios[address & 0x3FFF];
+        break;
+      case 0x02:
+        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+        break;
+      case 0x03:
+        if ((address & 0x00800000) || swram.data == nullptr) {
+          (*pagetable)[address >> kPageShift] = &iwram[address & 0xFFFF];
+        } else {
+          (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
+        }
+        break;
+      default:
+        (*pagetable)[address >> kPageShift] = nullptr;
+        break;
     }
   }
 }
