@@ -45,6 +45,9 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
         case 0x02:
           (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
           break;
+        default:
+          (*pagetable)[address >> kPageShift] = nullptr;
+          break;
       }
     }
   }

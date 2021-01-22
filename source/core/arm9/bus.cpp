@@ -31,19 +31,63 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
 
   if constexpr (gEnableFastMemory) {
     pagetable = std::make_unique<std::array<u8*, 1048576>>();
+    UpdateMemoryMap(0, 0x100000000ULL);
+  }
+}
 
-    for (u64 address = 0; address < 0x100000000UL; address += kPageMask + 1) {
-      switch (address >> 24) {
-        case 0x02:
-          (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
-          break;
+void ARM9MemoryBus::SetDTCM(TCMConfig const& config) {
+  if (dtcm_config.enable) {
+    dtcm_config.enable = false;
+    UpdateMemoryMap(dtcm_config.base, dtcm_config.limit + 1);
+  }
 
-        case 0xFF:
-          // TODO: clean up address decoding and figure out out-of-bounds reads.
-          if ((address & 0xFFFF0000) == 0xFFFF0000)
-            (*pagetable)[address >> kPageShift] = &bios[address & 0x7FFF];
-          break;
-      }
+  dtcm_config = config;
+
+  if (dtcm_config.enable) {
+    UpdateMemoryMap(dtcm_config.base, dtcm_config.limit + 1);
+  }
+}
+
+void ARM9MemoryBus::SetITCM(TCMConfig const& config) {
+  if (itcm_config.enable) {
+    itcm_config.enable = false;
+    UpdateMemoryMap(itcm_config.base, itcm_config.limit + 1);
+  }
+
+  itcm_config = config;
+
+  if (itcm_config.enable) {
+    UpdateMemoryMap(itcm_config.base, itcm_config.limit + 1);
+  }
+}
+
+void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
+  if constexpr (!gEnableFastMemory)
+    return;
+
+  for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
+    if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
+      (*pagetable)[address >> kPageShift] = nullptr;
+      continue;
+    }
+
+    if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
+      (*pagetable)[address >> kPageShift] = nullptr;
+      continue;
+    }
+
+    switch (address >> 24) {
+      case 0x02:
+        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+        break;
+      case 0xFF:
+        // TODO: clean up address decoding and figure out out-of-bounds reads.
+        if ((address & 0xFFFF0000) == 0xFFFF0000)
+          (*pagetable)[address >> kPageShift] = &bios[address & 0x7FFF];
+        break;
+      default:
+        (*pagetable)[address >> kPageShift] = nullptr;
+        break;
     }
   }
 }
