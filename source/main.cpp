@@ -38,7 +38,7 @@ struct NDSHeader {
   } arm9, arm7;
 } __attribute__((packed));
 
-void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
+void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_mem) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto window = SDL_CreateWindow(
@@ -91,11 +91,18 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
         if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
           arm9->SignalIRQ();
         }
-        if (irq7.IsEnabled() && irq7.HasPendingIRQ()) {
-          arm7->SignalIRQ();
-        }
         arm9->Run(2);
-        arm7->Run(1);
+
+        if (irq7.HasPendingIRQ()) {
+          arm7_mem->IsHalted() = false;
+          if (irq7.IsEnabled()) {
+            arm7->SignalIRQ();
+          }
+        }
+        if (!arm7_mem->IsHalted()) {
+          arm7->Run(1);
+        }
+
         scheduler.AddCycles(1);
       }
 
@@ -282,6 +289,6 @@ auto main(int argc, const char** argv) -> int {
   arm9_mem->WriteHalf(0x027FFC10, 0x5835); // Copy of ARM7 BIOS CRC
   arm9_mem->WriteHalf(0x027FFC40, 0x0001); // Boot indicator
 
-  loop(arm7.get(), arm9.get(), interconnect.get());
+  loop(arm7.get(), arm9.get(), interconnect.get(), arm7_mem.get());
   return 0;
 }
