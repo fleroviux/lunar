@@ -28,6 +28,22 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
   ASSERT(file.good(), "ARM9: failed to open bios9.bin");
   file.read(reinterpret_cast<char*>(bios), 4096);
   ASSERT(file.good(), "ARM9: failed to read 4096 bytes from bios9.bin");
+
+  pagetable = std::make_unique<std::array<u8*, 1048576>>();
+
+  for (u64 address = 0; address < 0x100000000UL; address += kPageMask + 1) {
+    switch (address >> 24) {
+      case 0x02:
+        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+        break;
+
+      case 0xFF:
+        // TODO: clean up address decoding and figure out out-of-bounds reads.
+        if ((address & 0xFFFF0000) == 0xFFFF0000)
+          (*pagetable)[address >> kPageShift] = &bios[address & 0x7FFF];
+        break;
+    }
+  }
 }
 
 template <typename T>

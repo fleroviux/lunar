@@ -48,7 +48,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
     256 * 2,
     384 * 2,
     SDL_WINDOW_ALLOW_HIGHDPI);
-  auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+  auto renderer = SDL_CreateRenderer(window, -1, 0);//SDL_RENDERER_PRESENTVSYNC);
   auto tex_top = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
   auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
 
@@ -88,11 +88,11 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
 
     while (scheduler.GetTimestampNow() < frame_target) {
       while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
-        if (irq7.IsEnabled() && irq7.HasPendingIRQ()) {
-          arm7->SignalIRQ();
-        }
         if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
           arm9->SignalIRQ();
+        }
+        if (irq7.IsEnabled() && irq7.HasPendingIRQ()) {
+          arm7->SignalIRQ();
         }
         arm9->Run(2);
         arm7->Run(1);

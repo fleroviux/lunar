@@ -33,6 +33,19 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
 
   memset(iwram, 0, sizeof(iwram));
   apu.SetMemory(this);
+
+  pagetable = std::make_unique<std::array<u8*, 1048576>>();
+
+  for (u64 address = 0; address < 0x100000000UL; address += kPageMask + 1) {
+    switch (address >> 24) {
+      case 0x00:
+        (*pagetable)[address >> kPageShift] = &bios[address & 0x3FFF];
+        break;
+      case 0x02:
+        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+        break;
+    }
+  }
 }
 
 template<typename T>

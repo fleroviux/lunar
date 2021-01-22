@@ -17,11 +17,11 @@ auto ReadWord(u32 address) -> u32 {
 }
 
 auto ReadHalfCode(u32 address) -> u32 {
-  return memory->ReadHalf(address & ~1, Bus::Code);
+  return memory->FastRead<u16>(address, Bus::Code);
 }
 
 auto ReadWordCode(u32 address) -> u32 {
-  return memory->ReadWord(address & ~3, Bus::Code);
+  return memory->FastRead<u32>(address, Bus::Code);
 }
 
 auto ReadByteSigned(u32 address) -> u32 {
