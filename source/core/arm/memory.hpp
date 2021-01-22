@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <buildconfig.hpp>
 #include <common/integer.hpp>
 #include <common/meta.hpp>
 #include <memory>
@@ -36,7 +37,7 @@ struct MemoryBase {
 
     address &= ~(sizeof(T) - 1);
 
-    if (pagetable != nullptr) {
+    if (gEnableFastMemory && pagetable != nullptr) {
       auto page = (*pagetable)[address >> kPageShift];
       if (page != nullptr) {
         page += address & kPageMask;
@@ -55,7 +56,7 @@ struct MemoryBase {
 
     address &= ~(sizeof(T) - 1);
 
-    if (pagetable != nullptr) {
+    if (gEnableFastMemory && pagetable != nullptr) {
       auto page = (*pagetable)[address >> kPageShift];
       if (page != nullptr) {
         page += address & kPageMask;
