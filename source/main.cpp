@@ -103,9 +103,10 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect) {
     }
 
     auto t1 = SDL_GetTicks();
+    auto t_diff = t1 - t0;
     frames++;
-    if ((t1 - t0) >= 1000) {
-      LOG_INFO("framerate: {0} fps", frames);
+    if (t_diff >= 1000) {
+      LOG_INFO("framerate: {0} fps ({1} ms)", frames, t_diff / float(frames));
       frames = 0;
       t0 = SDL_GetTicks();
     }
