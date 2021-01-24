@@ -35,6 +35,21 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     interconnect->wramcnt.AddCallback([this]() {
       UpdateMemoryMap(0x03000000, 0x04000000);
     });
+    vram.region_ppu_bg[0].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06000000 + offset, 0x06000000 + size);
+    });
+    vram.region_ppu_bg[1].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06200000 + offset, 0x06200000 + size);
+    });
+    vram.region_ppu_obj[0].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06400000 + offset, 0x06400000 + size);
+    });
+    vram.region_ppu_obj[1].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06600000 + offset, 0x06600000 + size);
+    });
+    vram.region_lcdc.AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06800000 + offset, 0x06800000 + size);
+    });
   }
 }
 

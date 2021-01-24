@@ -122,7 +122,7 @@ struct Interconnect {
           break;
       }
 
-      for (auto& callback : callbacks) callback();
+      for (auto const& callback : callbacks) callback();
     }
 
   private:

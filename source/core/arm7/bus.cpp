@@ -41,6 +41,9 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     interconnect->wramcnt.AddCallback([this]() {
       UpdateMemoryMap(0x03000000, 0x04000000);
     });
+    vram.region_arm7_wram.AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06000000, 0x06000000 + size);
+    });
   }
 }
 
@@ -59,6 +62,9 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
         } else {
           (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
         }
+        break;
+      case 0x06:
+        (*pagetable)[address >> kPageShift] = vram.region_arm7_wram.GetUnsafePointer<u8>(address);
         break;
       default:
         (*pagetable)[address >> kPageShift] = nullptr;
