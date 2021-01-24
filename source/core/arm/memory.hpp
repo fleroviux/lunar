@@ -26,14 +26,16 @@ struct MemoryBase {
   virtual auto ReadByte(u32 address, Bus bus) ->  u8 = 0;
   virtual auto ReadHalf(u32 address, Bus bus) -> u16 = 0;
   virtual auto ReadWord(u32 address, Bus bus) -> u32 = 0;
+  virtual auto ReadQuad(u32 address, Bus bus) -> u64 = 0;
   
   virtual void WriteByte(u32 address, u8  value) = 0;
   virtual void WriteHalf(u32 address, u16 value) = 0;
   virtual void WriteWord(u32 address, u32 value) = 0;
+  virtual void WriteQuad(u32 address, u64 value) = 0;
 
   template<typename T>
   auto FastRead(u32 address, Bus bus) -> T {
-    static_assert(common::is_one_of_v<T, u8, u16, u32>);
+    static_assert(common::is_one_of_v<T, u8, u16, u32, u64>);
 
     address &= ~(sizeof(T) - 1);
 
@@ -48,11 +50,12 @@ struct MemoryBase {
     if constexpr (std::is_same_v<T,  u8>) return ReadByte(address, bus);
     if constexpr (std::is_same_v<T, u16>) return ReadHalf(address, bus);
     if constexpr (std::is_same_v<T, u32>) return ReadWord(address, bus);
+    if constexpr (std::is_same_v<T, u64>) return ReadQuad(address, bus);
   }
 
   template<typename T>
   void FastWrite(u32 address, T value) {
-    static_assert(common::is_one_of_v<T, u8, u16, u32>);
+    static_assert(common::is_one_of_v<T, u8, u16, u32, u64>);
 
     address &= ~(sizeof(T) - 1);
 
@@ -68,6 +71,7 @@ struct MemoryBase {
     if constexpr (std::is_same_v<T,  u8>) WriteByte(address, value);
     if constexpr (std::is_same_v<T, u16>) WriteHalf(address, value);
     if constexpr (std::is_same_v<T, u32>) WriteWord(address, value);
+    if constexpr (std::is_same_v<T, u64>) WriteQuad(address, value);
   }
 
   static constexpr int kPageShift = 12; // 2^12 = 4096

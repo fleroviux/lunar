@@ -41,6 +41,9 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     interconnect->wramcnt.AddCallback([this]() {
       UpdateMemoryMap(0x03000000, 0x04000000);
     });
+    vram.region_arm7_wram.AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06000000, 0x06000000 + size);
+    });
   }
 }
 
@@ -60,6 +63,9 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
           (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
         }
         break;
+      case 0x06:
+        (*pagetable)[address >> kPageShift] = vram.region_arm7_wram.GetUnsafePointer<u8>(address);
+        break;
       default:
         (*pagetable)[address >> kPageShift] = nullptr;
         break;
@@ -71,7 +77,7 @@ template<typename T>
 auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
+  static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
     case 0x00:
@@ -85,6 +91,10 @@ auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
     case 0x04:
+      if constexpr (std::is_same<T, u64>::value) {
+        return ReadWordIO(address | 0) |
+          (u64(ReadWordIO(address | 4)) << 32);
+      }
       if constexpr (std::is_same<T, u32>::value) {
         return ReadWordIO(address);
       }
@@ -108,7 +118,7 @@ template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
   
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32"); 
+  static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
     case 0x02:
@@ -122,6 +132,10 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
     case 0x04:
+      if constexpr (std::is_same<T, u64>::value) {
+        WriteWordIO(address | 0, value);
+        WriteWordIO(address | 4, value >> 32);
+      }
       if constexpr (std::is_same<T, u32>::value) {
         WriteWordIO(address, value);
       }
@@ -151,6 +165,10 @@ auto ARM7MemoryBus::ReadHalf(u32 address, Bus bus) -> u16 {
 auto ARM7MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
   return Read<u32>(address, bus);
 }
+
+auto ARM7MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
+  return Read<u64>(address, bus);
+}
   
 void ARM7MemoryBus::WriteByte(u32 address, u8 value) {
   Write<u8>(address, value);
@@ -162,6 +180,10 @@ void ARM7MemoryBus::WriteHalf(u32 address, u16 value) {
 
 void ARM7MemoryBus::WriteWord(u32 address, u32 value) {
   Write<u32>(address, value);
+}
+
+void ARM7MemoryBus::WriteQuad(u32 address, u64 value) {
+  Write<u64>(address, value);
 }
 
 } // namespace Duality::core

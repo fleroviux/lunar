@@ -35,6 +35,21 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     interconnect->wramcnt.AddCallback([this]() {
       UpdateMemoryMap(0x03000000, 0x04000000);
     });
+    vram.region_ppu_bg[0].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06000000 + offset, 0x06000000 + size);
+    });
+    vram.region_ppu_bg[1].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06200000 + offset, 0x06200000 + size);
+    });
+    vram.region_ppu_obj[0].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06400000 + offset, 0x06400000 + size);
+    });
+    vram.region_ppu_obj[1].AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06600000 + offset, 0x06600000 + size);
+    });
+    vram.region_lcdc.AddCallback([this](u32 offset, size_t size) {
+      UpdateMemoryMap(0x06800000 + offset, 0x06800000 + size);
+    });
   }
 }
 
@@ -90,6 +105,9 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
           (*pagetable)[address >> kPageShift] = nullptr;
         }
         break;
+      case 0x06:
+        (*pagetable)[address >> kPageShift] = VisitVRAMByAddress<GetUnsafePointerFunctor<u8>>(address);
+        break;
       case 0xFF:
         // TODO: clean up address decoding and figure out out-of-bounds reads.
         if ((address & 0xFFFF0000) == 0xFFFF0000)
@@ -106,7 +124,7 @@ template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
+  static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (itcm_config.enable_read && address >= itcm_config.base && address <= itcm_config.limit) {
     return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
@@ -126,6 +144,10 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
     case 0x04:
+      if constexpr (std::is_same<T, u64>::value) {
+        return ReadWordIO(address | 0) |
+          (u64(ReadWordIO(address | 4)) << 32);
+      }
       if constexpr (std::is_same<T, u32>::value) {
         return ReadWordIO(address);
       }
@@ -139,36 +161,10 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0x05:
       return *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]);
     case 0x06:
-      switch ((address >> 20) & 15) {
-        /// PPU A - BG VRAM (max 512 KiB)
-        case 0:
-        case 1:
-          return vram.region_ppu_bg[0].Read<T>(address & 0x1FFFFF);
-
-        /// PPU B - BG VRAM (max 512 KiB)
-        case 2:
-        case 3:
-          return vram.region_ppu_bg[1].Read<T>(address & 0x1FFFFF);
-
-        /// PPU A - OBJ VRAM (max 256 KiB)
-        case 4:
-        case 5:
-          return vram.region_ppu_obj[0].Read<T>(address & 0x1FFFFF);
-
-        /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:
-        case 7:
-          return vram.region_ppu_obj[1].Read<T>(address & 0x1FFFFF);
-
-        /// LCDC (max 656 KiB)
-        default:
-          return vram.region_lcdc.Read<T>(address & 0xFFFFF);
-      }
-      return 0;
+      return VisitVRAMByAddress<ReadFunctor<T>>(address);
     case 0x07:
       return *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]);
     case 0x08:
-      LOG_WARN("ARM9: unhandled ROM read!");
       return 0xFF;
     case 0xFF:
       // TODO: clean up address decoding and figure out out-of-bounds reads.
@@ -185,7 +181,7 @@ template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value) {
   auto bitcount = bit::number_of_bits<T>();
 
-  static_assert(common::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
+  static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
     *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
@@ -209,6 +205,10 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
     case 0x04:
+      if constexpr (std::is_same<T, u64>::value) {
+        WriteWordIO(address | 0, value);
+        WriteWordIO(address | 4, value >> 32);
+      }
       if constexpr (std::is_same<T, u32>::value) {
         WriteWordIO(address, value);
       }
@@ -223,42 +223,38 @@ void ARM9MemoryBus::Write(u32 address, T value) {
       *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]) = value;
       break;
     case 0x06:
-      switch ((address >> 20) & 15) {
-        /// PPU A - BG VRAM (max 512 KiB)
-        case 0:
-        case 1:
-          vram.region_ppu_bg[0].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU B - BG VRAM (max 512 KiB)
-        case 2:
-        case 3:
-          vram.region_ppu_bg[1].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU A - OBJ VRAM (max 256 KiB)
-        case 4:
-        case 5:
-          vram.region_ppu_obj[0].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// PPU B - OBJ VRAM (max 128 KiB)
-        case 6:
-        case 7:
-          vram.region_ppu_obj[1].Write<T>(address & 0x1FFFFF, value);
-          break;
-
-        /// LCDC (max 656 KiB)
-        default:
-          vram.region_lcdc.Write<T>(address & 0xFFFFF, value);
-          break;
-      }
+      VisitVRAMByAddress<WriteFunctor<T>>(address, value);
       break;
     case 0x07:
       *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
       break;
     default:
       LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
+  }
+}
+
+template<class Functor, typename... Args>
+auto ARM9MemoryBus::VisitVRAMByAddress(u32 address, Args... args) -> typename Functor::return_type {
+  switch ((address >> 20) & 15) {
+    /// PPU A - BG VRAM (max 512 KiB)
+    case 0 ... 1:
+      return (typename Functor::template value<32>){}(vram.region_ppu_bg[0], address & 0x1FFFFF, args...);
+
+    /// PPU B - BG VRAM (max 512 KiB)
+    case 2 ... 3:
+      return (typename Functor::template value<32>){}(vram.region_ppu_bg[1], address & 0x1FFFFF, args...);
+  
+    /// PPU A - OBJ VRAM (max 256 KiB)
+    case 4 ... 5:
+      return (typename Functor::template value<16>){}(vram.region_ppu_obj[0], address & 0x1FFFFF, args...);
+  
+    /// PPU B - OBJ VRAM (max 128 KiB)
+    case 6 ... 7:
+      return (typename Functor::template value<16>){}(vram.region_ppu_obj[1], address & 0x1FFFFF, args...);
+  
+    /// LCDC (max 656 KiB)
+    default:
+      return (typename Functor::template value<41>){}(vram.region_lcdc, address & 0xFFFFF, args...);
   }
 }
 
@@ -274,6 +270,10 @@ auto ARM9MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
   return Read<u32>(address, bus);
 }
 
+auto ARM9MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
+  return Read<u64>(address, bus);
+}
+
 void ARM9MemoryBus::WriteByte(u32 address, u8 value) {
   Write<u8>(address, value);
 }
@@ -285,5 +285,10 @@ void ARM9MemoryBus::WriteHalf(u32 address, u16 value) {
 void ARM9MemoryBus::WriteWord(u32 address, u32 value) {
   Write<u32>(address, value);
 }
+
+void ARM9MemoryBus::WriteQuad(u32 address, u64 value) {
+  Write<u64>(address, value);
+}
+
 
 } // namespace Duality::core

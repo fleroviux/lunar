@@ -27,10 +27,12 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
+  auto ReadQuad(u32 address, Bus bus) -> u64 override;
 
   void WriteByte(u32 address,  u8 value) override;
   void WriteHalf(u32 address, u16 value) override;
   void WriteWord(u32 address, u32 value) override;
+  void WriteQuad(u32 address, u64 value) override;
 
 private:
   void UpdateMemoryMap(u32 address_lo, u64 address_hi);
@@ -40,6 +42,45 @@ private:
 
   template<typename T>
   void Write(u32 address, T value);
+
+  template<class Functor, typename... Args>
+  auto VisitVRAMByAddress(u32 address, Args... args) -> typename Functor::return_type;
+
+  template<typename T>
+  struct ReadFunctor {
+    using return_type = T;
+
+    template<size_t page_count>
+    struct value {
+      auto operator()(Region<page_count>& region, u32 offset) -> return_type {
+        return region.template Read<T>(offset);
+      }
+    };
+  };
+
+  template<typename T>
+  struct WriteFunctor {
+    using return_type = void;
+
+    template<size_t page_count>
+    struct value {
+      auto operator()(Region<page_count>& region, u32 offset, T value) -> return_type {
+        region.template Write<T>(offset, value);
+      }
+    };
+  };
+
+  template<typename T>
+  struct GetUnsafePointerFunctor {
+    using return_type = T*;
+
+    template<size_t page_count>
+    struct value {
+      auto operator()(Region<page_count>& region, u32 offset) -> return_type {
+        return region.template GetUnsafePointer<T>(offset);
+      }
+    };
+  };
 
   auto ReadByteIO(u32 address) ->  u8;
   auto ReadHalfIO(u32 address) -> u16;

@@ -10,6 +10,7 @@
 #include <common/likely.hpp>
 #include <common/meta.hpp>
 #include <common/log.hpp>
+#include <functional>
 #include <stddef.h>
 #include <vector>
 
@@ -17,7 +18,13 @@ namespace Duality::core {
 
 template<size_t page_count, u32 page_size = 16384>
 struct Region {
+  using Callback = std::function<void(u32, size_t)>;
+
   Region(size_t mask) : mask(mask) {}
+
+  void AddCallback(Callback callback) {
+    callbacks.push_back(callback);
+  }
 
   template<typename T>
   auto Read(u32 offset) const -> T {
@@ -65,6 +72,16 @@ struct Region {
     return nullptr;
   }
 
+  template<typename T>
+  auto GetUnsafePointer(u32 offset) -> T* {
+    auto const& desc = pages[(offset >> kPageShift) & mask];
+    offset &= kPageMask & ~(sizeof(T) - 1);
+    if (likely(desc.page != nullptr)) {
+      return reinterpret_cast<T*>(&desc.page[offset]);
+    }
+    return nullptr;
+  }
+
   template<size_t bank_size>
   void Map(u32 offset, std::array<u8, bank_size>& bank, size_t size = bank_size) {
     auto id = static_cast<size_t>(offset >> kPageShift);
@@ -87,6 +104,8 @@ struct Region {
 
       data += page_size;
     }
+
+    for (auto const& callback : callbacks) callback(offset, size);
   }
 
   template<size_t bank_size>
@@ -116,6 +135,8 @@ struct Region {
 
       data += page_size;
     }
+
+    for (auto const& callback : callbacks) callback(offset, size);
   }
 
 private:
@@ -130,6 +151,7 @@ private:
 
   size_t mask;
   std::array<PageDescriptor, page_count> pages {};
+  std::vector<Callback> callbacks;
 
   static constexpr int kPageShift = []() constexpr -> int {
     for (int i = 0; i < 32; i++)
