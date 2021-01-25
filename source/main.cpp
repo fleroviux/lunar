@@ -217,6 +217,8 @@ auto main(int argc, const char** argv) -> int {
   interconnect->dma7.SetMemory(arm7_mem.get());
   interconnect->dma9.SetMemory(arm9_mem.get());
 
+  using Bus = arm::MemoryBase::Bus;
+
   {
     u8 data;
     u32 dst = header->arm7.load_address;
@@ -227,7 +229,7 @@ auto main(int argc, const char** argv) -> int {
         puts("failed to read ARM7 binary from ROM into ARM7 memory");
         return -3;
       }
-      arm7_mem->WriteByte(dst++, data);
+      arm7_mem->WriteByte(dst++, data, Bus::Data);
     }
 
     arm7->ExceptionBase(0);
@@ -248,7 +250,7 @@ auto main(int argc, const char** argv) -> int {
         puts("failed to read ARM9 binary from ROM into ARM9 memory");
         return -3;
       }
-      arm9_mem->WriteByte(dst++, data);
+      arm9_mem->WriteByte(dst++, data, Bus::Data);
     }
 
     arm9->ExceptionBase(0xFFFF0000);
@@ -270,7 +272,7 @@ auto main(int argc, const char** argv) -> int {
       puts("failed to load cartridge header into memory");
       return -4;
     }
-    arm9_mem->WriteByte(dst++, data);
+    arm9_mem->WriteByte(dst++, data, Bus::Data);
   }
 
   rom.close();
@@ -279,15 +281,15 @@ auto main(int argc, const char** argv) -> int {
   interconnect->cart.Load(rom_path);
 
   // Huge thanks to Hydr8gon for pointing this out:
-  arm9_mem->WriteWord(0x027FF800, 0x1FC2); // Chip ID 1
-  arm9_mem->WriteWord(0x027FF804, 0x1FC2); // Chip ID 2
-  arm9_mem->WriteHalf(0x027FF850, 0x5835); // ARM7 BIOS CRC
-  arm9_mem->WriteHalf(0x027FF880, 0x0007); // Message from ARM9 to ARM7
-  arm9_mem->WriteHalf(0x027FF884, 0x0006); // ARM7 boot task
-  arm9_mem->WriteWord(0x027FFC00, 0x1FC2); // Copy of chip ID 1
-  arm9_mem->WriteWord(0x027FFC04, 0x1FC2); // Copy of chip ID 2
-  arm9_mem->WriteHalf(0x027FFC10, 0x5835); // Copy of ARM7 BIOS CRC
-  arm9_mem->WriteHalf(0x027FFC40, 0x0001); // Boot indicator
+  arm9_mem->WriteWord(0x027FF800, 0x1FC2, Bus::Data); // Chip ID 1
+  arm9_mem->WriteWord(0x027FF804, 0x1FC2, Bus::Data); // Chip ID 2
+  arm9_mem->WriteHalf(0x027FF850, 0x5835, Bus::Data); // ARM7 BIOS CRC
+  arm9_mem->WriteHalf(0x027FF880, 0x0007, Bus::Data); // Message from ARM9 to ARM7
+  arm9_mem->WriteHalf(0x027FF884, 0x0006, Bus::Data); // ARM7 boot task
+  arm9_mem->WriteWord(0x027FFC00, 0x1FC2, Bus::Data); // Copy of chip ID 1
+  arm9_mem->WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
+  arm9_mem->WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
+  arm9_mem->WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
 
   loop(arm7.get(), arm9.get(), interconnect.get(), arm7_mem.get());
   return 0;

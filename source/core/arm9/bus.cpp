@@ -126,7 +126,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
-  if (itcm_config.enable_read && address >= itcm_config.base && address <= itcm_config.limit) {
+  if (itcm_config.enable_read && bus != Bus::System && address >= itcm_config.base && address <= itcm_config.limit) {
     return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
   }
 
@@ -178,19 +178,21 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 }
 
 template<typename T>
-void ARM9MemoryBus::Write(u32 address, T value) {
+void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
   auto bitcount = bit::number_of_bits<T>();
 
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
-  if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
-    *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
-    return;
-  }
+  if (bus != Bus::System) {
+    if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
+      *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
+      return;
+    }
 
-  if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
-    *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]) = value;
-    return;
+    if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
+      *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]) = value;
+      return;
+    }
   }
 
   switch (address >> 24) {
@@ -274,20 +276,20 @@ auto ARM9MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
   return Read<u64>(address, bus);
 }
 
-void ARM9MemoryBus::WriteByte(u32 address, u8 value) {
-  Write<u8>(address, value);
+void ARM9MemoryBus::WriteByte(u32 address, u8 value, Bus bus) {
+  Write<u8>(address, value, bus);
 }
 
-void ARM9MemoryBus::WriteHalf(u32 address, u16 value) {
-  Write<u16>(address, value);
+void ARM9MemoryBus::WriteHalf(u32 address, u16 value, Bus bus) {
+  Write<u16>(address, value, bus);
 }
 
-void ARM9MemoryBus::WriteWord(u32 address, u32 value) {
-  Write<u32>(address, value);
+void ARM9MemoryBus::WriteWord(u32 address, u32 value, Bus bus) {
+  Write<u32>(address, value, bus);
 }
 
-void ARM9MemoryBus::WriteQuad(u32 address, u64 value) {
-  Write<u64>(address, value);
+void ARM9MemoryBus::WriteQuad(u32 address, u64 value, Bus bus) {
+  Write<u64>(address, value, bus);
 }
 
 
