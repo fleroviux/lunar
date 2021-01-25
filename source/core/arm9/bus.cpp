@@ -29,6 +29,11 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
   file.read(reinterpret_cast<char*>(bios), 4096);
   ASSERT(file.good(), "ARM9: failed to read 4096 bytes from bios9.bin");
 
+  itcm.data = &itcm_data[0];
+  dtcm.data = &dtcm_data[0];
+  itcm.mask = 0x7FFF;
+  dtcm.mask = 0x3FFF;
+
   if constexpr (gEnableFastMemory) {
     pagetable = std::make_unique<std::array<u8*, 1048576>>();
     UpdateMemoryMap(0, 0x100000000ULL);
@@ -53,47 +58,10 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
   }
 }
 
-void ARM9MemoryBus::SetDTCM(TCMConfig const& config) {
-  if (dtcm_config.enable) {
-    dtcm_config.enable = false;
-    UpdateMemoryMap(dtcm_config.base, dtcm_config.limit + 1);
-  }
-
-  dtcm_config = config;
-
-  if (dtcm_config.enable) {
-    UpdateMemoryMap(dtcm_config.base, dtcm_config.limit + 1);
-  }
-}
-
-void ARM9MemoryBus::SetITCM(TCMConfig const& config) {
-  if (itcm_config.enable) {
-    itcm_config.enable = false;
-    UpdateMemoryMap(itcm_config.base, itcm_config.limit + 1);
-  }
-
-  itcm_config = config;
-
-  if (itcm_config.enable) {
-    UpdateMemoryMap(itcm_config.base, itcm_config.limit + 1);
-  }
-}
-
 void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
-  if constexpr (!gEnableFastMemory)
-    return;
+  if constexpr (!gEnableFastMemory) return;
 
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
-    if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
-      (*pagetable)[address >> kPageShift] = nullptr;
-      continue;
-    }
-
-    if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
-      (*pagetable)[address >> kPageShift] = nullptr;
-      continue;
-    }
-
     switch (address >> 24) {
       case 0x02:
         (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
@@ -126,12 +94,12 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
-  if (itcm_config.enable_read && bus != Bus::System && address >= itcm_config.base && address <= itcm_config.limit) {
-    return *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]);
+  if (itcm.config.enable_read && bus != Bus::System && address >= itcm.config.base && address <= itcm.config.limit) {
+    return *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]);
   }
 
-  if (dtcm_config.enable_read && bus == Bus::Data && address >= dtcm_config.base && address <= dtcm_config.limit) {
-    return *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]);
+  if (dtcm.config.enable_read && bus == Bus::Data && address >= dtcm.config.base && address <= dtcm.config.limit) {
+    return *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]);
   }
 
   switch (address >> 24) {
@@ -184,13 +152,13 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (bus != Bus::System) {
-    if (itcm_config.enable && address >= itcm_config.base && address <= itcm_config.limit) {
-      *reinterpret_cast<T*>(&itcm[(address - itcm_config.base) & 0x7FFF]) = value;
+    if (itcm.config.enable && address >= itcm.config.base && address <= itcm.config.limit) {
+      *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]) = value;
       return;
     }
 
-    if (dtcm_config.enable && address >= dtcm_config.base && address <= dtcm_config.limit) {
-      *reinterpret_cast<T*>(&dtcm[(address - dtcm_config.base) & 0x3FFF]) = value;
+    if (dtcm.config.enable && address >= dtcm.config.base && address <= dtcm.config.limit) {
+      *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]) = value;
       return;
     }
   }

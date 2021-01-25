@@ -59,8 +59,8 @@ private:
 
   arm::ARM* core;
   ARM9MemoryBus* bus;
-  ARM9MemoryBus::TCMConfig dtcm_config;
-  ARM9MemoryBus::TCMConfig itcm_config;
+  ARM9MemoryBus::TCM::Config dtcm_config;
+  ARM9MemoryBus::TCM::Config itcm_config;
   ReadHandler  handler_rd[kLUTSize];
   WriteHandler handler_wr[kLUTSize];
 };

@@ -173,13 +173,13 @@ void DMA9::RunChannel(Channel& channel) {
   // TODO: read and write full 64-bit words at once as long as possible?
   if (channel.size == Channel::Size::Word) {
     while (channel.latch.length-- != 0) {
-      memory->FastWrite<u32>(channel.latch.dst, memory->FastRead<u32>(channel.latch.src, Bus::System), Bus::System);
+      memory->FastWrite<u32, Bus::System>(channel.latch.dst, memory->FastRead<u32, Bus::System>(channel.latch.src));
       channel.latch.dst += dst_offset;
       channel.latch.src += src_offset;
     }
   } else {
     while (channel.latch.length-- != 0) {
-      memory->FastWrite<u16>(channel.latch.dst, memory->FastRead<u16>(channel.latch.src, Bus::System), Bus::System);
+      memory->FastWrite<u16, Bus::System>(channel.latch.dst, memory->FastRead<u16, Bus::System>(channel.latch.src));
       channel.latch.dst += dst_offset;
       channel.latch.src += src_offset;
     }
