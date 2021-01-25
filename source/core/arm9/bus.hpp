@@ -12,17 +12,10 @@
 namespace Duality::core {
 
 struct ARM9MemoryBus final : arm::MemoryBase {
-  struct TCMConfig {
-    bool enable = false;
-    bool enable_read = false;
-    u32 base  = 0;
-    u32 limit = 0;
-  };
-
   ARM9MemoryBus(Interconnect* interconnect);
 
-  void SetDTCM(TCMConfig const& config);
-  void SetITCM(TCMConfig const& config);
+  void SetDTCM(TCM::Config const& config) { dtcm.config = config; }
+  void SetITCM(TCM::Config const& config) { itcm.config = config; }
 
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
@@ -92,12 +85,8 @@ private:
 
   /// ARM9 internal memory
   u8 bios[0x8000] {0};
-  u8 dtcm[0x4000] {0};
-  u8 itcm[0x8000] {0};
-
-  /// ITCM and DTCM configuration
-  TCMConfig dtcm_config;
-  TCMConfig itcm_config;
+  u8 dtcm_data[0x4000] {0};
+  u8 itcm_data[0x8000] {0};
 
   /// ARM7 and ARM9 shared memory
   u8* ewram;
