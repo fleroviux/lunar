@@ -529,6 +529,7 @@ void GPU::CMD_SwapBuffers() {
       // FIXME
       if (vert.position[3] == 0) {
         skip = true;
+        break;
       }
 
       // TODO: use the provided viewport configuration.
