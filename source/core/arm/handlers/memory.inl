@@ -64,13 +64,13 @@ auto ReadWordRotate(u32 address) -> u32 {
 }
 
 void WriteByte(u32 address, u8  value) {
-  memory->FastWrite<u8>(address, value);
+  memory->FastWrite<u8>(address, value, Bus::Data);
 }
 
 void WriteHalf(u32 address, u16 value) {
-  memory->FastWrite<u16>(address, value);
+  memory->FastWrite<u16>(address, value, Bus::Data);
 }
 
 void WriteWord(u32 address, u32 value) {
-  memory->FastWrite<u32>(address, value);
+  memory->FastWrite<u32>(address, value, Bus::Data);
 }

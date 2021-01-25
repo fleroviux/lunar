@@ -74,7 +74,7 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
 }
 
 template<typename T>
-auto ARM7MemoryBus::Read(u32 address, Bus bus) -> T {
+auto ARM7MemoryBus::Read(u32 address) -> T {
   auto bitcount = bit::number_of_bits<T>();
 
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
@@ -155,34 +155,34 @@ void ARM7MemoryBus::Write(u32 address, T value) {
 }
 
 auto ARM7MemoryBus::ReadByte(u32 address, Bus bus) -> u8 {
-  return Read<u8>(address, bus);
+  return Read<u8>(address);
 }
   
 auto ARM7MemoryBus::ReadHalf(u32 address, Bus bus) -> u16 {
-  return Read<u16>(address, bus);
+  return Read<u16>(address);
 }
   
 auto ARM7MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
-  return Read<u32>(address, bus);
+  return Read<u32>(address);
 }
 
 auto ARM7MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
-  return Read<u64>(address, bus);
+  return Read<u64>(address);
 }
   
-void ARM7MemoryBus::WriteByte(u32 address, u8 value) {
+void ARM7MemoryBus::WriteByte(u32 address, u8 value, Bus bus) {
   Write<u8>(address, value);
 }
   
-void ARM7MemoryBus::WriteHalf(u32 address, u16 value) {
+void ARM7MemoryBus::WriteHalf(u32 address, u16 value, Bus bus) {
   Write<u16>(address, value);
 }
 
-void ARM7MemoryBus::WriteWord(u32 address, u32 value) {
+void ARM7MemoryBus::WriteWord(u32 address, u32 value, Bus bus) {
   Write<u32>(address, value);
 }
 
-void ARM7MemoryBus::WriteQuad(u32 address, u64 value) {
+void ARM7MemoryBus::WriteQuad(u32 address, u64 value, Bus bus) {
   Write<u64>(address, value);
 }
 
