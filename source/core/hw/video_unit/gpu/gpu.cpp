@@ -397,53 +397,58 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
           }
         };
 
-        s64 scale_a;
-        s64 scale_b;
-
-        if (value < w) {
-          scale_a = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a.position[3] + edge_a.position[j]);
-          scale_b = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b.position[3] + edge_b.position[j]);
-        } else {
-          scale_a =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a.position[3] - edge_a.position[j]);
-          scale_b =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b.position[3] - edge_b.position[j]);
-        }
-
         if ((v.position[j] > w && vb.position[j] < w) || (v.position[j] < -w && vb.position[j] > -w)) {
+          s64 scale;
+
+          if (value < w) {
+            scale = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a.position[3] + edge_a.position[j]);
+          } else {
+            scale =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a.position[3] - edge_a.position[j]);
+          }
+
           clipped.push_back({
             {
-              vb.position[0] + s32((edge_a.position[0] * scale_a) >> 32),
-              vb.position[1] + s32((edge_a.position[1] * scale_a) >> 32),
-              vb.position[2] + s32((edge_a.position[2] * scale_a) >> 32),
-              vb.position[3] + s32((edge_a.position[3] * scale_a) >> 32)
+              vb.position[0] + s32((edge_a.position[0] * scale) >> 32),
+              vb.position[1] + s32((edge_a.position[1] * scale) >> 32),
+              vb.position[2] + s32((edge_a.position[2] * scale) >> 32),
+              vb.position[3] + s32((edge_a.position[3] * scale) >> 32)
             },
             {
-              vb.color[0] + s32((edge_a.color[0] * scale_a) >> 32),
-              vb.color[1] + s32((edge_a.color[1] * scale_a) >> 32),
-              vb.color[2] + s32((edge_a.color[2] * scale_a) >> 32)
+              vb.color[0] + s32((edge_a.color[0] * scale) >> 32),
+              vb.color[1] + s32((edge_a.color[1] * scale) >> 32),
+              vb.color[2] + s32((edge_a.color[2] * scale) >> 32)
             },
             {
-              s64(vb.uv[0] + ((edge_a.uv[0] * scale_a) >> 32)), // why
-              s64(vb.uv[1] + ((edge_a.uv[1] * scale_a) >> 32))
+              s64(vb.uv[0] + ((edge_a.uv[0] * scale) >> 32)), // why
+              s64(vb.uv[1] + ((edge_a.uv[1] * scale) >> 32))
             }
           });
         }
 
         if ((v.position[j] > w && vn.position[j] < w) || (v.position[j] < -w && vn.position[j] > -w)) {
+          s64 scale;
+
+          if (value < w) {
+            scale = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b.position[3] + edge_b.position[j]);
+          } else {
+            scale =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b.position[3] - edge_b.position[j]);
+          }
+
           clipped.push_back({
             {
-              vn.position[0] + s32((edge_b.position[0] * scale_b) >> 32),
-              vn.position[1] + s32((edge_b.position[1] * scale_b) >> 32),
-              vn.position[2] + s32((edge_b.position[2] * scale_b) >> 32),
-              vn.position[3] + s32((edge_b.position[3] * scale_b) >> 32)
+              vn.position[0] + s32((edge_b.position[0] * scale) >> 32),
+              vn.position[1] + s32((edge_b.position[1] * scale) >> 32),
+              vn.position[2] + s32((edge_b.position[2] * scale) >> 32),
+              vn.position[3] + s32((edge_b.position[3] * scale) >> 32)
             },
             {
-              vn.color[0] + s32((edge_b.color[0] * scale_b) >> 32),
-              vn.color[1] + s32((edge_b.color[1] * scale_b) >> 32),
-              vn.color[2] + s32((edge_b.color[2] * scale_b) >> 32)
+              vn.color[0] + s32((edge_b.color[0] * scale) >> 32),
+              vn.color[1] + s32((edge_b.color[1] * scale) >> 32),
+              vn.color[2] + s32((edge_b.color[2] * scale) >> 32)
             },
             {
-              s64(vn.uv[0] + ((edge_b.uv[0] * scale_b) >> 32)), // why
-              s64(vn.uv[1] + ((edge_b.uv[1] * scale_b) >> 32))
+              s64(vn.uv[0] + ((edge_b.uv[0] * scale) >> 32)), // why
+              s64(vn.uv[1] + ((edge_b.uv[1] * scale) >> 32))
             }
           });
         }
