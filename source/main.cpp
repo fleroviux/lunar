@@ -87,25 +87,31 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     auto frame_target = scheduler.GetTimestampNow() + kCyclesPerFrame;
 
     while (scheduler.GetTimestampNow() < frame_target) {
-      while (scheduler.GetTimestampNow() < std::min(frame_target, scheduler.GetTimestampTarget())) {
-        if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
-          arm9->SignalIRQ();
-        }
-        arm9->Run(2);
+      int cycles = 1;
 
-        if (irq7.HasPendingIRQ()) {
-          arm7_mem->IsHalted() = false;
-          if (irq7.IsEnabled()) {
-            arm7->SignalIRQ();
-          }
-        }
-        if (!arm7_mem->IsHalted()) {
-          arm7->Run(1);
-        }
-
-        scheduler.AddCycles(1);
+      // Run both CPUs individually for up to 32 cycles, but make sure
+      // that we do not run past any hardware event.
+      if (gLooselySynchronizeCPUs) {
+        u64 target = std::min(frame_target, scheduler.GetTimestampTarget());
+        cycles = std::min(32ULL, target - scheduler.GetTimestampNow());
       }
 
+      if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
+        arm9->SignalIRQ();
+      }
+      arm9->Run(cycles << 1);
+
+      if (irq7.HasPendingIRQ()) {
+        arm7_mem->IsHalted() = false;
+        if (irq7.IsEnabled()) {
+          arm7->SignalIRQ();
+        }
+      }
+      if (!arm7_mem->IsHalted()) {
+        arm7->Run(cycles);
+      }
+
+      scheduler.AddCycles(cycles);
       scheduler.Step();
     }
 
