@@ -124,7 +124,12 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     auto t_diff = t1 - t0;
     frames++;
     if (t_diff >= 1000) {
-      LOG_INFO("framerate: {0} fps ({1} ms)", frames, t_diff / float(frames));
+      auto percent = frames / 60.0 * 100.0;
+      auto ms = t_diff / float(frames);
+      SDL_SetWindowTitle(window, fmt::format("Duality [{0} fps | {1:.2f} ms]",
+        frames,
+        ms).c_str());
+      fmt::print("framerate: {0} fps, {1} ms, {2}%\n", frames, ms, percent);
       frames = 0;
       t0 = SDL_GetTicks();
     }
