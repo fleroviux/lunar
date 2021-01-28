@@ -35,6 +35,7 @@ struct ARM {
   void AttachCoprocessor(uint id, Coprocessor* coprocessor);
   void SignalIRQ();
   void WaitForIRQ() { wait_for_irq = true; }
+  bool IsWaitingForIRQ() { return wait_for_irq; }
 
   // TODO: implement a cleaner interface to modify the execution state.
   auto GetState() -> State& { return state; }

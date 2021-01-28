@@ -93,7 +93,12 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
       // that we do not run past any hardware event.
       if (gLooselySynchronizeCPUs) {
         u64 target = std::min(frame_target, scheduler.GetTimestampTarget());
-        cycles = std::min(32ULL, target - scheduler.GetTimestampNow());
+        cycles = target - scheduler.GetTimestampNow();
+
+        // Run to the next event if at most one CPU is running.
+        if (!arm9->IsWaitingForIRQ() && !arm7_mem->IsHalted()) {
+          cycles = std::min(32, cycles);
+        }
       }
 
       if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
