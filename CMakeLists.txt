@@ -16,11 +16,13 @@ include_directories(source)
 
 include(FindSDL2)
 find_package(SDL2 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
 
 add_subdirectory(source/common)
 add_subdirectory(source/core)
 add_subdirectory(source/third_party)
 
 add_executable(Duality ${SOURCES} ${HEADERS})
-target_include_directories(Duality PRIVATE ${SDL2_INCLUDE_DIR})
-target_link_libraries(Duality common core ${SDL2_LIBRARY})
+target_include_directories(Duality PRIVATE ${SDL2_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
+target_link_libraries(Duality common core ${SDL2_LIBRARY} OpenGL::GL GLEW::GLEW)

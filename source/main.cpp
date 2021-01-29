@@ -12,6 +12,7 @@
 #include <core/arm9/cp15.hpp>
 
 #include <SDL.h>
+#include <GL/glew.h>
 
 using namespace Duality::core;
 using namespace Duality::core::arm;
@@ -41,32 +42,42 @@ struct NDSHeader {
 void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_mem) {
   SDL_Init(SDL_INIT_VIDEO);
 
+  auto scale = 2;
   auto window = SDL_CreateWindow(
     "Duality",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
-    256 * 2,
-    384 * 2,
-    SDL_WINDOW_ALLOW_HIGHDPI);
-  auto renderer = SDL_CreateRenderer(window, -1, 0);//SDL_RENDERER_PRESENTVSYNC);
-  auto tex_top = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
-  auto tex_bottom = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
+    256 * scale,
+    384 * scale,
+    SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
 
-  SDL_Rect dest_top {
-    .x = 0,
-    .y = 0,
-    .w = 256,
-    .h = 192
-  };
+  auto gl_context = SDL_GL_CreateContext(window);
 
-  SDL_Rect dest_bottom {
-    .x = 0,
-    .y = 192,
-    .w = 256,
-    .h = 192
-  };
+  glewInit();
 
-  SDL_RenderSetLogicalSize(renderer, 256, 384);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+  SDL_GL_SetSwapInterval(1);
+
+  // TODO: replace legacy OpenGL jank with more modern code.
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glEnable(GL_TEXTURE_2D);
+
+  GLuint textures[2];
+  glGenTextures(2, &textures[0]);
+
+  for (int i = 0; i < 2; i++) {
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  }
+
+  glClearColor(0, 0, 0, 1);
 
   SDL_Event event;
 
@@ -79,6 +90,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
+  bool fastforward = false;
 
   for (;;) {
     // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
@@ -137,12 +149,37 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     u32 const* output_top = interconnect->video_unit.GetOutput(VideoUnit::Screen::Top);
     u32 const* output_bottom = interconnect->video_unit.GetOutput(VideoUnit::Screen::Bottom);
 
-    SDL_UpdateTexture(tex_top, nullptr, output_top, sizeof(u32) * 256);
-    SDL_UpdateTexture(tex_bottom, nullptr, output_bottom, sizeof(u32) * 256);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, tex_top, nullptr, &dest_top);
-    SDL_RenderCopy(renderer, tex_bottom, nullptr, &dest_bottom);
-    SDL_RenderPresent(renderer);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, output_top);
+    
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(-1.0f,  1.0f);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2f( 1.0f,  1.0f);
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f( 1.0f,  0.0f);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(-1.0f,  0.0f);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, output_bottom);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(-1.0f,  0.0f);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2f( 1.0f,  0.0f);
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f( 1.0f, -1.0f);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(-1.0f, -1.0f);
+    glEnd();
+
+    SDL_GL_SwapWindow(window);
 
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT)
@@ -164,12 +201,21 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
           case SDLK_f: keyinput.r = pressed; break;
           case SDLK_q: extkeyinput.x = pressed; break;
           case SDLK_w: extkeyinput.y = pressed; break;
+          case SDLK_SPACE: {
+            fastforward = pressed;
+            if (fastforward) {
+              SDL_GL_SetSwapInterval(0);
+            } else {
+              SDL_GL_SetSwapInterval(1);
+            }
+            break;
+          }
         }
       }
-      if (event.type == SDL_MOUSEMOTION) {
+      if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
         auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
-        s32 x = mouse_event->x;
-        s32 y = mouse_event->y - 192;
+        s32 x = mouse_event->x / scale;
+        s32 y = mouse_event->y / scale - 192;
         bool down = (mouse_event->state & SDL_BUTTON_LMASK) && y >= 0;
         tsc.SetTouchState(down, x, y);
         extkeyinput.pen_down = down;
@@ -178,9 +224,8 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
   }
 
 cleanup:
-  SDL_DestroyTexture(tex_top);
-  SDL_DestroyTexture(tex_bottom);
-  SDL_DestroyRenderer(renderer);
+  glDeleteTextures(2, &textures[0]);
+  SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
 }
 
