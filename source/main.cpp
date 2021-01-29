@@ -14,6 +14,8 @@
 #include <SDL.h>
 #include <GL/glew.h>
 
+#undef main
+
 using namespace Duality::core;
 using namespace Duality::core::arm;
 
@@ -236,7 +238,7 @@ struct CP14Stub : arm::Coprocessor {
   void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override {}
 };
 
-auto main(int argc, const char* argv[]) -> int {
+auto main(int argc, const char** argv) -> int {
   const char* rom_path;
 
   if (argc <= 1) {
