@@ -84,6 +84,7 @@ private:
     bool enable_recv_irq = false;
     bool error = false;
     bool enable = false;
+    u32 latch = 0;
   } fifo[2];
 
   IRQ* irq[2];

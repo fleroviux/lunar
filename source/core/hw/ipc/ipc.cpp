@@ -164,20 +164,22 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
 
   if (!fifo_tx.enable) {
     LOG_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", client);
+    // TODO: figure out if this read should update the latch.
     return fifo_rx.send.Peek();
   }
 
   if (fifo_rx.send.IsEmpty()) {
     fifo_tx.error = true;
     LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", client);
-    return fifo_rx.send.Peek();
+    return fifo_tx.latch;
   }
 
   if (fifo_rx.enable_send_irq && fifo_rx.send.Count() == 1) {
     ipc.RequestIRQ(GetRemote(client), IRQ::Source::IPC_SendEmpty);
   }
 
-  return fifo_rx.send.Read();
+  fifo_tx.latch = fifo_rx.send.Read();
+  return fifo_tx.latch;
 }
 
 } // namespace Duality::core
