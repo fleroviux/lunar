@@ -115,14 +115,12 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
         }
       }
 
-      //arm9->IRQLine() = irq9.IsEnabled() && irq9.HasPendingIRQ();
       arm9->Run(cycles << 1);
 
-      if (irq7.HasPendingIRQ()) {
-        arm7_mem->IsHalted() = false;
-      }
-      //arm7->IRQLine() = irq7.IsEnabled() && irq7.HasPendingIRQ();
       if (!arm7_mem->IsHalted()) {
+        arm7->Run(cycles);
+      } else if (irq7.HasPendingIRQ()) {
+        arm7_mem->IsHalted() = false;
         arm7->Run(cycles);
       }
 
@@ -147,7 +145,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     u32 const* output_top = interconnect->video_unit.GetOutput(VideoUnit::Screen::Top);
     u32 const* output_bottom = interconnect->video_unit.GetOutput(VideoUnit::Screen::Bottom);
 
-    /*glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     glBindTexture(GL_TEXTURE_2D, textures[0]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, output_top);
@@ -177,7 +175,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     glVertex2f(-1.0f, -1.0f);
     glEnd();
 
-    SDL_GL_SwapWindow(window);*/
+    SDL_GL_SwapWindow(window);
 
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT)
