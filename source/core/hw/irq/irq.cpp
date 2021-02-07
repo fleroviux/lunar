@@ -16,10 +16,16 @@ void IRQ::Reset() {
   ime = {};
   ie = {};
   _if = {};
+
+  ime.irq = this;
+   ie.irq = this;
+  _if.irq = this;
+  UpdateIRQLine();
 }
 
 void IRQ::Raise(Source source) {
   _if.value |= static_cast<u32>(source);
+  UpdateIRQLine();
 }
 
 bool IRQ::IsEnabled() {
@@ -28,6 +34,12 @@ bool IRQ::IsEnabled() {
 
 bool IRQ::HasPendingIRQ() {
   return (ie.value & _if.value) != 0;
+}
+
+void IRQ::UpdateIRQLine() {
+  if (core != nullptr) {
+    core->IRQLine() = IsEnabled() && HasPendingIRQ();
+  }
 }
 
 auto IRQ::IME::ReadByte(uint offset) -> u8 {
@@ -47,6 +59,9 @@ void IRQ::IME::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0:
       enabled = value & 1;
+      if (irq != nullptr) {
+        irq->UpdateIRQLine();
+      }
       break;
     case 1:
     case 2:
@@ -72,6 +87,9 @@ void IRQ::IE::WriteByte(uint offset, u8 value) {
 
   this->value &= ~(0xFF << (offset * 8));
   this->value |= value << (offset * 8);
+  if (irq != nullptr) {
+    irq->UpdateIRQLine();
+  }
 }
 
 auto IRQ::IF::ReadByte(uint offset) -> u8 {
@@ -88,6 +106,9 @@ void IRQ::IF::WriteByte(uint offset, u8 value) {
   }
 
   this->value &= ~(value << (offset * 8));
+  if (irq != nullptr) {
+    irq->UpdateIRQLine();
+  }
 }
 
 

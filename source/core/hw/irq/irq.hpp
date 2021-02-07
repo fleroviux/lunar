@@ -5,6 +5,7 @@
 #pragma once
 
 #include <common/integer.hpp>
+#include <core/arm/arm.hpp>
 
 namespace Duality::core {
 
@@ -33,6 +34,7 @@ struct IRQ {
   IRQ();
 
   void Reset();
+  void SetCore(arm::ARM& core) { this->core = &core; UpdateIRQLine(); }
   void Raise(Source source);
   bool IsEnabled();
   bool HasPendingIRQ();
@@ -46,6 +48,7 @@ struct IRQ {
     friend struct Duality::core::IRQ;
 
     bool enabled = false;
+    IRQ* irq = nullptr;
   } ime;
 
   /// Interrupt Enable
@@ -57,6 +60,7 @@ struct IRQ {
     friend struct Duality::core::IRQ;
 
     u32 value = 0;
+    IRQ* irq = nullptr;
   } ie;
 
   /// Interrupt Flag / Acknowledge
@@ -68,7 +72,13 @@ struct IRQ {
     friend struct Duality::core::IRQ;
 
     u32 value = 0;
+    IRQ* irq = nullptr;
   } _if;
+
+private:
+  void UpdateIRQLine();
+
+  arm::ARM* core = nullptr;
 };
 
 } // namespace Duality::core

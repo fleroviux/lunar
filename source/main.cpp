@@ -115,17 +115,13 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
         }
       }
 
-      if (irq9.IsEnabled() && irq9.HasPendingIRQ()) {
-        arm9->SignalIRQ();
-      }
+      //arm9->IRQLine() = irq9.IsEnabled() && irq9.HasPendingIRQ();
       arm9->Run(cycles << 1);
 
       if (irq7.HasPendingIRQ()) {
         arm7_mem->IsHalted() = false;
-        if (irq7.IsEnabled()) {
-          arm7->SignalIRQ();
-        }
       }
+      //arm7->IRQLine() = irq7.IsEnabled() && irq7.HasPendingIRQ();
       if (!arm7_mem->IsHalted()) {
         arm7->Run(cycles);
       }
@@ -277,6 +273,8 @@ auto main(int argc, const char** argv) -> int {
   arm7->AttachCoprocessor(14, arm7_cp14.get());
   arm9->AttachCoprocessor(15, arm9_cp15.get());
 
+  interconnect->irq7.SetCore(*arm7.get());
+  interconnect->irq9.SetCore(*arm9.get());
   interconnect->dma7.SetMemory(arm7_mem.get());
   interconnect->dma9.SetMemory(arm9_mem.get());
 
