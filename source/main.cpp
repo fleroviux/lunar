@@ -101,7 +101,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
     auto frame_target = scheduler.GetTimestampNow() + kCyclesPerFrame;
 
     while (scheduler.GetTimestampNow() < frame_target) {
-      int cycles = 1;
+      uint cycles = 1;
 
       // Run both CPUs individually for up to 32 cycles, but make sure
       // that we do not run past any hardware event.
@@ -111,11 +111,11 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
         // Otherwise run each CPU for up to 32 cycles.
         cycles = target - scheduler.GetTimestampNow();
         if (!arm9->IsWaitingForIRQ() || !arm7_mem->IsHalted()) {
-          cycles = std::min(32, cycles);
+          cycles = std::min(32U, cycles);
         }
       }
 
-      arm9->Run(cycles << 1);
+      arm9->Run(cycles * 2);
 
       if (!arm7_mem->IsHalted()) {
         arm7->Run(cycles);

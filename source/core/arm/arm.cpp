@@ -30,9 +30,6 @@ void ARM::Run(int instructions) {
   }
 
   while (instructions-- > 0) {
-    // TODO: only check for IRQs in these cases:
-    // - the IRQ line changed
-    // - CPSR changed
     if (IRQLine()) SignalIRQ();
 
     auto instruction = opcode[0];

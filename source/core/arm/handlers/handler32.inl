@@ -285,6 +285,7 @@ void ARM_MultiplyLong(u32 instruction) {
 template <bool accumulate, bool x, bool y>
 void ARM_SignedHalfwordMultiply(u32 instruction) {
   if (arch == Architecture::ARMv4T) {
+    // TODO: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
   }
@@ -325,6 +326,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 template <bool accumulate, bool y>
 void ARM_SignedWordHalfwordMultiply(u32 instruction) {
   if (arch == Architecture::ARMv4T) {
+    // TODO: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
   }
@@ -359,6 +361,7 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 template <bool x, bool y>
 void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
   if (arch == Architecture::ARMv4T) {
+    // TODO: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
   }
