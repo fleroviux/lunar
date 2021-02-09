@@ -117,9 +117,7 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
 
       arm9->Run(cycles * 2);
 
-      if (!arm7_mem->IsHalted()) {
-        arm7->Run(cycles);
-      } else if (irq7.HasPendingIRQ()) {
+      if (!arm7_mem->IsHalted() || irq7.HasPendingIRQ()) {
         arm7_mem->IsHalted() = false;
         arm7->Run(cycles);
       }
