@@ -230,100 +230,81 @@ void GPU::AddVertex(Vector4 const& position) {
 
     auto& poly = polygon.data[polygon.count];
 
-    // Determine if any or all vertices require clipping.
-    // TODO: remove fully clipped, it is buggy and not needed anymore.
+    // Determine if the polygon must be clipped.
     bool needs_clipping = false;
-    bool fully_clipped = true;
     for (auto const& v : vertices) {
       auto w = v.position[3];
-      bool clip = false;
       for (int i = 0; i < 3; i++) {
         if (v.position[i] < -w || v.position[i] > w) {
-          clip = true;
+          needs_clipping = true;
           break;
         }
       }
-      needs_clipping |= clip;
-      fully_clipped &= clip;
     }
 
-    // !!!!!!!!!!!!!!!!!!!!!!
-    fully_clipped = false;
+    if (needs_clipping) {
+      poly.count = 0;
 
-    if (!fully_clipped) {
-      if (needs_clipping) {
-        poly.count = 0;
+      // TODO: this isn't going to cut it efficiency-wise.
+      if (is_strip && !is_first) {
+        vertices.insert(vertices.begin(), vertex.data[vertex.count - 1]);
+        vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
+      }
 
-        // TODO: this isn't going to cut it efficiency-wise.
-        if (is_strip && !is_first) {
-          vertices.insert(vertices.begin(), vertex.data[vertex.count - 1]);
-          vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
+      for (auto const& v : ClipPolygon(vertices)) {
+        // FIXME: this is disgusting.
+        if (vertex.count == 6144) {
+          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+          break;
         }
+        auto index = vertex.count++;
+        vertex.data[index] = v;
+        poly.indices[poly.count++] = index;
+      }
 
-        for (auto const& v : ClipPolygon(vertices)) {
-          // FIXME: this is disgusting.
-          if (vertex.count == 6144) {
-            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-            break;
-          }
-          auto index = vertex.count++;
-          vertex.data[index] = v;
-          poly.indices[poly.count++] = index;
-        }
-
-        // Restart polygon strip based on the last two unclipped vertifces.
-        if (is_strip) {
-          is_first = true;
+      // Restart polygon strip based on the last two unclipped vertifces.
+      if (is_strip) {
+        is_first = true;
+        vertices.erase(vertices.begin());
+        if (is_quad)
           vertices.erase(vertices.begin());
-          if (is_quad)
-            vertices.erase(vertices.begin());
-        } else {
-          vertices.clear();
-          // TODO: is this even necessary?
-          // "is_first" should be "don't care" for non-strips.
-          is_first = false;
-        }
       } else {
-        if (is_strip && !is_first) {
-          poly.indices[0] = vertex.count - 2;
-          poly.indices[1] = vertex.count - 1;
-          poly.count = 2;
-        } else {
-          poly.count = 0;
-        }
-
-        for (auto const& v : vertices) {
-          // FIXME: this is disgusting.
-          if (vertex.count == 6144) {
-            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-            break;
-          }
-          auto index = vertex.count++;
-          vertex.data[index] = v;
-          poly.indices[poly.count++] = index;
-        }
-
-        if (is_strip && is_quad) {
-          std::swap(poly.indices[2], poly.indices[3]);
-        }
-
         vertices.clear();
+        // TODO: is this even necessary?
+        // "is_first" should be "don't care" for non-strips.
         is_first = false;
       }
-
-      poly.texture_params = texture_params;
-      if (poly.count != 0)
-        polygon.count++;
-    } else if (is_strip) {
-      // Restart polygon strip based on the last two unclipped vertifces.
-      if (is_first) {
-        vertices.erase(vertices.begin(), vertices.begin() + 1);
-      } else {
-        is_first = true;
-      }
     } else {
-      vertices.clear(); // ???
+      if (is_strip && !is_first) {
+        poly.indices[0] = vertex.count - 2;
+        poly.indices[1] = vertex.count - 1;
+        poly.count = 2;
+      } else {
+        poly.count = 0;
+      }
+
+      for (auto const& v : vertices) {
+        // FIXME: this is disgusting.
+        if (vertex.count == 6144) {
+          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+          break;
+        }
+        auto index = vertex.count++;
+        vertex.data[index] = v;
+        poly.indices[poly.count++] = index;
+      }
+
+      if (is_strip && is_quad) {
+        std::swap(poly.indices[2], poly.indices[3]);
+      }
+
+      vertices.clear();
+      is_first = false;
     }
+
+    poly.texture_params = texture_params;
+    if (poly.count != 0)
+      polygon.count++;
   }
 }
 
