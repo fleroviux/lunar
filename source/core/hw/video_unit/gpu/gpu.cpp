@@ -378,7 +378,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
           }
         };
 
-        if ((v.position[j] > w && vb.position[j] < w) || (v.position[j] < -w && vb.position[j] > -w)) {
+        if ((v.position[j] > w && vb.position[j] <= vb.position[3]) || (v.position[j] < -w && vb.position[j] >= -vb.position[3])) {
           s64 scale;
 
           if (value < w) {
@@ -406,7 +406,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
           });
         }
 
-        if ((v.position[j] > w && vn.position[j] < w) || (v.position[j] < -w && vn.position[j] > -w)) {
+        if ((v.position[j] > w && vn.position[j] <= vn.position[3]) || (v.position[j] < -w && vn.position[j] >= -vn.position[3])) {
           s64 scale;
 
           if (value < w) {
