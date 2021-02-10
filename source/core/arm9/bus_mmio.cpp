@@ -165,7 +165,8 @@ enum Registers {
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
   REG_POWCNT1 = 0x0400'0304,
-  REG_GXFIFO = 0x0400'0400,
+  REG_GXFIFO_LO = 0x0400'0400,
+  REG_GXFIFO_HI = 0x0400'043F,
   REG_GXCMDPORT_LO = 0x0400'0440,
   REG_GXCMDPORT_HI = 0x0400'05C8,
   REG_GXSTAT = 0x0400'0600,
@@ -1710,7 +1711,7 @@ void ARM9MemoryBus::WriteWordIO(u32 address, u32 value) {
       break;
       
     // GPU
-    case REG_GXFIFO:
+    case REG_GXFIFO_LO ... REG_GXFIFO_HI:
       video_unit.gpu.WriteGXFIFO(value);
       break;
     case REG_GXCMDPORT_LO ... REG_GXCMDPORT_HI:
