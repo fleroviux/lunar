@@ -138,7 +138,7 @@ private:
   struct Vertex {
     Vector4 position;
     s32 color[3];
-    s64 uv[2];
+    s16 uv[2];
     // ...
   };
 

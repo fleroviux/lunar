@@ -309,142 +309,87 @@ void GPU::AddVertex(Vector4 const& position) {
 }
 
 auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex> {
-  // TODO: "vertices" clashes with the member variable.
-  // TODO: we might be able to get rid of the middle index.
-  int size = vertices.size();
-  int indices[3] { size - 1, 0, 1 };
-  std::vector<Vertex> clipped;
+  int a = 0;
+  int b = 1;
+  std::vector<Vertex> clipped[2];
 
-  for (int i = 0; i < size; i++) {
-    // Blargh, clean this mess up.
-    indices[1] = i;
-    indices[0] = indices[1] - 1;
-    indices[2] = indices[1] + 1;
-    if (indices[0] == -1) indices[0] = size - 1;
-    if (indices[2] == size) indices[2] = 0;
-    
-    if (is_quad && is_strip) {
-      for (int j = 0; j < 3; j++) {
-        if (indices[j] == 2) indices[j] = 3;
-        else if (indices[j] == 3) indices[j] = 2;
-      }
-    }
+  clipped[a] = vertices;
 
-    auto& v = vertices[indices[1]];
-    auto& vb = vertices[indices[0]];
-    auto& vn = vertices[indices[2]];
-
-    auto w = v.position[3];
-    bool did_clip = false;
-
-    // TODO: find the lowest clip factor instead of clipping immediately?
-    for (int j = 0; j < 3; j++) {
-      auto value = v.position[j];
-
-      if (value < -w || value > w) {
-        Vertex edge_a {
-          {
-            v.position[0] - vb.position[0],
-            v.position[1] - vb.position[1],
-            v.position[2] - vb.position[2],
-            v.position[3] - vb.position[3]
-          },
-          {
-            v.color[0] - vb.color[0],
-            v.color[1] - vb.color[1],
-            v.color[2] - vb.color[2]
-          },
-          {
-            s64(v.uv[0] - vb.uv[0]), // why?
-            s64(v.uv[1] - vb.uv[1])
-          }
-        };
-
-        Vertex edge_b {
-          {
-            v.position[0] - vn.position[0],
-            v.position[1] - vn.position[1],
-            v.position[2] - vn.position[2],
-            v.position[3] - vn.position[3]
-          },
-          {
-            v.color[0] - vn.color[0],
-            v.color[1] - vn.color[1],
-            v.color[2] - vn.color[2]
-          },
-          {
-            s64(v.uv[0] - vn.uv[0]), // why?
-            s64(v.uv[1] - vn.uv[1])
-          }
-        };
-
-        if ((v.position[j] > w && vb.position[j] <= vb.position[3]) || (v.position[j] < -w && vb.position[j] >= -vb.position[3])) {
-          s64 scale;
-
-          if (value < w) {
-            scale = -(s64(vb.position[j] + vb.position[3]) << 32) / (edge_a.position[3] + edge_a.position[j]);
-          } else {
-            scale =  (s64(vb.position[j] - vb.position[3]) << 32) / (edge_a.position[3] - edge_a.position[j]);
-          }
-
-          clipped.push_back({
-            {
-              vb.position[0] + s32((edge_a.position[0] * scale) >> 32),
-              vb.position[1] + s32((edge_a.position[1] * scale) >> 32),
-              vb.position[2] + s32((edge_a.position[2] * scale) >> 32),
-              vb.position[3] + s32((edge_a.position[3] * scale) >> 32)
-            },
-            {
-              vb.color[0] + s32((edge_a.color[0] * scale) >> 32),
-              vb.color[1] + s32((edge_a.color[1] * scale) >> 32),
-              vb.color[2] + s32((edge_a.color[2] * scale) >> 32)
-            },
-            {
-              s64(vb.uv[0] + ((edge_a.uv[0] * scale) >> 32)), // why
-              s64(vb.uv[1] + ((edge_a.uv[1] * scale) >> 32))
-            }
-          });
-        }
-
-        if ((v.position[j] > w && vn.position[j] <= vn.position[3]) || (v.position[j] < -w && vn.position[j] >= -vn.position[3])) {
-          s64 scale;
-
-          if (value < w) {
-            scale = -(s64(vn.position[j] + vn.position[3]) << 32) / (edge_b.position[3] + edge_b.position[j]);
-          } else {
-            scale =  (s64(vn.position[j] - vn.position[3]) << 32) / (edge_b.position[3] - edge_b.position[j]);
-          }
-
-          clipped.push_back({
-            {
-              vn.position[0] + s32((edge_b.position[0] * scale) >> 32),
-              vn.position[1] + s32((edge_b.position[1] * scale) >> 32),
-              vn.position[2] + s32((edge_b.position[2] * scale) >> 32),
-              vn.position[3] + s32((edge_b.position[3] * scale) >> 32)
-            },
-            {
-              vn.color[0] + s32((edge_b.color[0] * scale) >> 32),
-              vn.color[1] + s32((edge_b.color[1] * scale) >> 32),
-              vn.color[2] + s32((edge_b.color[2] * scale) >> 32)
-            },
-            {
-              s64(vn.uv[0] + ((edge_b.uv[0] * scale) >> 32)), // why
-              s64(vn.uv[1] + ((edge_b.uv[1] * scale) >> 32))
-            }
-          });
-        }
-
-        did_clip = true;
-        break;
-      }
-    }
-
-    if (!did_clip) {
-      clipped.push_back(v);
-    }
+  if (is_strip && is_quad) {
+    std::swap(clipped[a][2], clipped[a][3]);
   }
 
-  return clipped;
+  for (int i = 0; i < 3; i++) {
+    auto size = clipped[a].size();
+
+    for (int j = 0; j < size; j++) {
+      auto& v0 = clipped[a][j];
+  
+      if (std::abs(v0.position[i]) > std::abs(v0.position[3])) {
+        int c = j - 1;
+        int d = j + 1;
+        if (c == -1) c = size - 1;
+        if (d == size) d = 0;
+
+        for (int k : { c, d }) {
+          auto& v1 = clipped[a][k];
+
+          if ((v0.position[i] > v0.position[3] && v1.position[i] <= v1.position[3]) || (v0.position[i] < -v0.position[3] && v1.position[i] >= -v1.position[3])) {
+            Vertex edge {
+              {
+                v0.position[0] - v1.position[0],
+                v0.position[1] - v1.position[1],
+                v0.position[2] - v1.position[2],
+                v0.position[3] - v1.position[3]
+              },
+              {
+                v0.color[0] - v1.color[0],
+                v0.color[1] - v1.color[1],
+                v0.color[2] - v1.color[2]
+              },
+              {
+                s16(v0.uv[0] - v1.uv[0]),
+                s16(v0.uv[1] - v1.uv[1])
+              }
+            };
+
+            s64 scale;
+            if (v0.position[i] < v0.position[3]) {
+              scale = -(s64(v1.position[i] + v1.position[3]) << 32) / (edge.position[3] + edge.position[i]);
+            } else {
+              scale =  (s64(v1.position[i] - v1.position[3]) << 32) / (edge.position[3] - edge.position[i]);
+            }
+
+            clipped[b].push_back({
+              {
+                v1.position[0] + s32((edge.position[0] * scale) >> 32),
+                v1.position[1] + s32((edge.position[1] * scale) >> 32),
+                v1.position[2] + s32((edge.position[2] * scale) >> 32),
+                v1.position[3] + s32((edge.position[3] * scale) >> 32)
+              },
+              {
+                v1.color[0] + s32((edge.color[0] * scale) >> 32),
+                v1.color[1] + s32((edge.color[1] * scale) >> 32),
+                v1.color[2] + s32((edge.color[2] * scale) >> 32)
+              },
+              {
+                s16(v1.uv[0] + ((edge.uv[0] * scale) >> 32)),
+                s16(v1.uv[1] + ((edge.uv[1] * scale) >> 32))
+              }
+            });
+          }
+        }
+      } else {
+        clipped[b].push_back(v0);
+      }
+    }
+
+    clipped[a].clear();
+    a ^= 1;
+    b ^= 1;
+  }
+
+  return clipped[a];
 }
 
 void GPU::CheckGXFIFO_IRQ() {
