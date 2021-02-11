@@ -334,7 +334,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
         for (int k : { c, d }) {
           auto& v1 = clipped[a][k];
 
-          if ((v0.position[i] > v0.position[3] && v1.position[i] <= v1.position[3]) || (v0.position[i] < -v0.position[3] && v1.position[i] >= -v1.position[3])) {
+          if ((v0.position[i] > v0.position[3] && v1.position[i] < v1.position[3]) || (v0.position[i] < -v0.position[3] && v1.position[i] > -v1.position[3])) {
             Vertex edge {
               {
                 v0.position[0] - v1.position[0],
@@ -354,7 +354,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
             };
 
             s64 scale;
-            if (v0.position[i] < v0.position[3]) {
+            if (v0.position[i] < -v0.position[3]) {
               scale = -(s64(v1.position[i] + v1.position[3]) << 32) / (edge.position[3] + edge.position[i]);
             } else {
               scale =  (s64(v1.position[i] - v1.position[3]) << 32) / (edge.position[3] - edge.position[i]);
