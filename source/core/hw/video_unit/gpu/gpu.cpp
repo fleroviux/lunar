@@ -334,47 +334,35 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
         for (int k : { c, d }) {
           auto& v1 = clipped[a][k];
 
-          if ((v0.position[i] > v0.position[3] && v1.position[i] < v1.position[3]) || (v0.position[i] < -v0.position[3] && v1.position[i] > -v1.position[3])) {
-            Vertex edge {
-              {
-                v0.position[0] - v1.position[0],
-                v0.position[1] - v1.position[1],
-                v0.position[2] - v1.position[2],
-                v0.position[3] - v1.position[3]
-              },
-              {
-                v0.color[0] - v1.color[0],
-                v0.color[1] - v1.color[1],
-                v0.color[2] - v1.color[2]
-              },
-              {
-                s16(v0.uv[0] - v1.uv[0]),
-                s16(v0.uv[1] - v1.uv[1])
-              }
+          if ((v0.position[i] >  v0.position[3] && v1.position[i] <  v1.position[3]) ||
+              (v0.position[i] < -v0.position[3] && v1.position[i] > -v1.position[3])) {
+            auto edge = Vector4{
+              v0.position[0] - v1.position[0],
+              v0.position[1] - v1.position[1],
+              v0.position[2] - v1.position[2],
+              v0.position[3] - v1.position[3]
             };
 
-            s64 scale;
-            if (v0.position[i] < -v0.position[3]) {
-              scale = -(s64(v1.position[i] + v1.position[3]) << 32) / (edge.position[3] + edge.position[i]);
-            } else {
-              scale =  (s64(v1.position[i] - v1.position[3]) << 32) / (edge.position[3] - edge.position[i]);
-            }
+            auto sign = v0.position[i] < -v0.position[3] ? 1 : -1;
+            auto numer = s64(v1.position[i] + sign * v1.position[3]) << 32;
+            auto denom = edge[3] + sign * edge[i];
+            auto scale = -1 * sign * numer / denom;
 
             clipped[b].push_back({
               {
-                v1.position[0] + s32((edge.position[0] * scale) >> 32),
-                v1.position[1] + s32((edge.position[1] * scale) >> 32),
-                v1.position[2] + s32((edge.position[2] * scale) >> 32),
-                v1.position[3] + s32((edge.position[3] * scale) >> 32)
+                v1.position[0] + s32((edge[0] * scale) >> 32),
+                v1.position[1] + s32((edge[1] * scale) >> 32),
+                v1.position[2] + s32((edge[2] * scale) >> 32),
+                v1.position[3] + s32((edge[3] * scale) >> 32)
               },
               {
-                v1.color[0] + s32((edge.color[0] * scale) >> 32),
-                v1.color[1] + s32((edge.color[1] * scale) >> 32),
-                v1.color[2] + s32((edge.color[2] * scale) >> 32)
+                v1.color[0] + s32(((v0.color[0] - v1.color[0]) * scale) >> 32),
+                v1.color[1] + s32(((v0.color[1] - v1.color[1]) * scale) >> 32),
+                v1.color[2] + s32(((v0.color[2] - v1.color[2]) * scale) >> 32)
               },
               {
-                s16(v1.uv[0] + ((edge.uv[0] * scale) >> 32)),
-                s16(v1.uv[1] + ((edge.uv[1] * scale) >> 32))
+                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale) >> 32)),
+                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale) >> 32))
               }
             });
           }
