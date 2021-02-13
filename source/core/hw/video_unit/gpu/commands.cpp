@@ -533,9 +533,8 @@ void GPU::CMD_SwapBuffers() {
       }
 
       // TODO: use the provided viewport configuration.
-      // FIXME: have some kind of way to handle fixed-point constants.
-      point.x = ( vert.position.x() / vert.position.w() * (128 << 12)).integer() + 128;
-      point.y = (-vert.position.y() / vert.position.w() * ( 96 << 12)).integer() +  96;
+      point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
+      point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
       point.depth = (vert.position.z() / vert.position.w()).raw();
       point.vertex = &vert;
 

@@ -336,8 +336,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
 
           if ((v0.position[i] >  v0.position.w() && v1.position[i] <  v1.position.w()) ||
               (v0.position[i] < -v0.position.w() && v1.position[i] > -v1.position.w())) {
-            // FIXME: have some kind of way to handle fixed-point constants.
-            auto sign  = (v0.position[i] < -v0.position.w()) ? Fixed20x12{0x1000} : Fixed20x12{-0x1000};
+            auto sign  = Fixed20x12::from_int((v0.position[i] < -v0.position.w()) ? 1 : -1);
             auto numer = v1.position[i] + sign * v1.position[3];
             auto denom = (v0.position.w() - v1.position.w()) + (v0.position[i] - v1.position[i]) * sign;
             auto scale = -sign * numer / denom;

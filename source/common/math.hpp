@@ -261,6 +261,10 @@ struct Fixed20x12 {
   constexpr Fixed20x12() {}
   constexpr Fixed20x12(s32 value) : value(value) {}
 
+  static auto from_int(int value) -> Fixed20x12 {
+    return { s32(value) << 12 };
+  }
+
   auto integer() -> s32 { return value >> 12; }
   auto raw() -> s32 { return value; }
   auto absolute() -> Fixed20x12 { return value < 0 ? -value : value; }
