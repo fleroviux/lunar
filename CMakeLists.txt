@@ -3,25 +3,25 @@ cmake_minimum_required(VERSION 3.2)
 project(Duality CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/modules)
 
 set(SOURCES
-  source/main.cpp)
+  src/main.cpp)
 
 set(HEADERS
-  source/common/integer.hpp)
+  src/common/integer.hpp)
 
 # TODO: eventually get rid of this....
-include_directories(source)
+include_directories(src)
 
 include(FindSDL2)
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
-add_subdirectory(source/common)
-add_subdirectory(source/core)
-add_subdirectory(source/third_party)
+add_subdirectory(src/common)
+add_subdirectory(src/core)
+add_subdirectory(src/third_party)
 
 add_executable(Duality ${SOURCES} ${HEADERS})
 target_include_directories(Duality PRIVATE ${SDL2_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
