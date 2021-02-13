@@ -64,7 +64,7 @@ void GPU::Reset() {
   modelview.Reset();
   direction.Reset();
   texture.Reset();
-  clip_matrix.LoadIdentity();
+  clip_matrix.identity();
   
   for (uint i = 0; i < 256 * 192; i++)
     output[i] = 0x8000;
@@ -385,7 +385,7 @@ void GPU::CheckGXFIFO_IRQ() {
 }
 
 void GPU::UpdateClipMatrix() {
-  clip_matrix = modelview.current * projection.current;
+  clip_matrix = projection.current * modelview.current;
 }
 
 auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {

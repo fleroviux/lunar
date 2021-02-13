@@ -97,19 +97,19 @@ void GPU::CMD_LoadIdentity() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current.LoadIdentity();
+      projection.current.identity();
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
-      modelview.current.LoadIdentity();
+      modelview.current.identity();
       UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
-      modelview.current.LoadIdentity();
-      direction.current.LoadIdentity();
+      modelview.current.identity();
+      direction.current.identity();
       break;
     case MatrixMode::Texture:
-      texture.current.LoadIdentity();
+      texture.current.identity();
       break;
   }
 }
@@ -165,20 +165,20 @@ void GPU::CMD_MatrixMultiply4x4() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current *= mat;
+      projection.current = projection.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
-      modelview.current *= mat;
+      modelview.current = modelview.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
-      modelview.current *= mat;
-      direction.current *= mat;
+      modelview.current = modelview.current * mat;
+      direction.current = direction.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
-      texture.current *= mat;
+      texture.current = texture.current * mat;
       break;
   }
 }
@@ -188,20 +188,20 @@ void GPU::CMD_MatrixMultiply4x3() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current *= mat;
+      projection.current = projection.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
-      modelview.current *= mat;
+      modelview.current = modelview.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
-      modelview.current *= mat;
-      direction.current *= mat;
+      modelview.current = modelview.current * mat;
+      direction.current = direction.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
-      texture.current *= mat;
+      texture.current = texture.current * mat;
       break;
   }
 }
@@ -211,20 +211,20 @@ void GPU::CMD_MatrixMultiply3x3() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current *= mat;
+      projection.current = projection.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
-      modelview.current *= mat;
+      modelview.current = modelview.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Simultaneous:
-      modelview.current *= mat;
-      direction.current *= mat;
+      modelview.current = modelview.current * mat;
+      direction.current = direction.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
-      texture.current *= mat;
+      texture.current = texture.current * mat;
       break;
   }
 }
@@ -233,7 +233,7 @@ void GPU::CMD_MatrixScale() {
   // TODO: this implementation is unoptimized.
   // A matrix multiplication is complete overkill for scaling.
   
-  Matrix4x4 mat;
+  Matrix4<Fixed20x12> mat;
   for (int i = 0; i < 3; i++) {
     mat[i][i] = Dequeue().argument;
   }
@@ -241,39 +241,39 @@ void GPU::CMD_MatrixScale() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current *= mat;
+      projection.current = projection.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
-      modelview.current *= mat;
+      modelview.current = modelview.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
-      texture.current *= mat;
+      texture.current = texture.current * mat;
       break;
   }
 }
 
 void GPU::CMD_MatrixTranslate() {
-  Matrix4x4 mat;
-  mat.LoadIdentity();
+  Matrix4<Fixed20x12> mat;
+  mat.identity();
   for (int i = 0; i < 3; i++) {
     mat[3][i] = Dequeue().argument;
   }
   
   switch (matrix_mode) {
     case MatrixMode::Projection:
-      projection.current *= mat;
+      projection.current = projection.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
-      modelview.current *= mat;
+      modelview.current = modelview.current * mat;
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
-      texture.current *= mat;
+      texture.current = texture.current * mat;
       break;
   }
 }

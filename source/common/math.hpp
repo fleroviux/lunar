@@ -231,6 +231,18 @@ struct Matrix4 {
       data[i & 3][i >> 2] = elements[i];
   }
 
+  void identity() {
+    for (uint row = 0; row < 4; row++) {
+      for (uint col = 0; col < 4; col++) {
+        if (row == col) {
+          data[col][row] = NumericConstants<T>::one();
+        } else {
+          data[col][row] = NumericConstants<T>::zero();
+        }
+      }
+    }
+  }
+
   auto operator[](int i) -> Vector4<T>& {
     return data[i];
   }

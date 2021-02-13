@@ -154,8 +154,8 @@ private:
   void CheckGXFIFO_IRQ();
   void UpdateClipMatrix();
   
-  auto DequeueMatrix4x4() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix4x4() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 4; col++) {
       for (int row = 0; row < 4; row++) {
         mat[col][row] = Dequeue().argument;
@@ -164,25 +164,25 @@ private:
     return mat;
   }
   
-  auto DequeueMatrix4x3() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix4x3() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 4; col++) {
       for (int row = 0; row < 3; row++) {
         mat[col][row] = Dequeue().argument;
       }
     }
-    mat[3][3] = 0x1000;
+    mat[3][3] = Fixed20x12::from_int(1);
     return mat;
   }
 
-  auto DequeueMatrix3x3() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix3x3() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 3; col++) {
       for (int row = 0; row < 3; row++) {
         mat[col][row] = Dequeue().argument;
       }
     }
-    mat[3][3] = 0x1000;
+    mat[3][3] = Fixed20x12::from_int(1);
     return mat;
   }
 
@@ -279,7 +279,7 @@ private:
   MatrixStack<31> modelview;
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
-  Matrix4x4 clip_matrix;
+  Matrix4<Fixed20x12> clip_matrix;
 
   /// Renderer backend
   std::unique_ptr<GPURendererBase> renderer;
