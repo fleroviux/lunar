@@ -4,12 +4,11 @@
 
 #pragma once
 
+#include <array>
 #include <common/integer.hpp>
 
 template<typename T, uint n>
 struct Vector {
-  using Self = Vector<T, n>;
-
   Vector() {}
 
   auto operator[](int i) -> T& {
@@ -20,46 +19,66 @@ struct Vector {
     return data[i];
   }
 
-  auto operator+(Self const& other) -> Self {
-    Self result{};
+  auto operator+(Vector const& other) -> Vector {
+    Vector result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] + other[i];
     return result;
   }
 
-  auto operator-(Self const& other) -> Self {
-    Self result{};
+  auto operator-(Vector const& other) -> Vector {
+    Vector result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] - other[i];
     return result;
   }
 
-  auto operator*(T value) -> Self {
-    Self result{};
+  auto operator*(T value) const -> Vector {
+    Vector result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] * value;
     return result;
   }
 
-  auto operator+=(Self const& other) -> Self& {
+  auto operator/(T value) const -> Vector {
+    Vector result{};
+    for (uint i = 0; i < n; i++)
+      result[i] = data[i] / value;
+    return result;
+  }
+
+  auto operator+=(Vector const& other) -> Vector& {
     for (uint i = 0; i < n; i++)
       data[i] += other[i];
     return *this;
   }
 
-  auto operator-=(Self const& other) -> Self& {
+  auto operator-=(Vector const& other) -> Vector& {
     for (uint i = 0; i < n; i++)
       data[i] -= other[i];
     return *this;
   }
 
-  auto operator*=(T value) -> Self& {
+  auto operator*=(T value) -> Vector& {
     for (uint i = 0; i < n; i++)
       data[i] *= value;
     return *this;
   }
 
-  auto dot(Self const& other) const -> T {
+  auto operator/=(T value) -> Vector& {
+    for (uint i = 0; i < n; i++)
+      data[i] /= value;
+    return *this;
+  }
+
+  auto operator-() const -> Vector {
+    Vector result{};
+    for (uint i = 0; i < n; i++)
+      result[i] = -data[i];
+    return result;
+  }
+
+  auto dot(Vector const& other) const -> T {
     T result{};
     for (uint i = 0; i < n; i++)
       result += data[i] * other[i];
@@ -72,6 +91,8 @@ protected:
 
 template<typename T>
 struct Vector2 : Vector<T, 2> {
+  Vector2() {}
+
   Vector2(T x, T y) {
     this->data[0] = x;
     this->data[1] = y;
@@ -91,6 +112,8 @@ struct Vector2 : Vector<T, 2> {
 
 template<typename T>
 struct Vector3 : Vector<T, 3> {
+  Vector3() {}
+
   Vector3(T x, T y, T z) {
     this->data[0] = x;
     this->data[1] = y;
@@ -121,12 +144,20 @@ struct Vector3 : Vector<T, 3> {
 
 template<typename T>
 struct Vector4 : Vector<T, 4> {
+  Vector4() {}
+
   Vector4(T x, T y, T z, T w) {
     this->data[0] = x;
     this->data[1] = y;
     this->data[2] = z;
     this->data[3] = w;
   }
+
+  // Vector4(Vector<T, 3> const& other) {
+  //   for (uint i = 0; i < 3; i++)
+  //     this->data[i] = other[i];
+  //   // FIXME
+  // }
 
   Vector4(Vector<T, 4> const& other) {
     for (uint i = 0; i < 4; i++)
@@ -142,4 +173,89 @@ struct Vector4 : Vector<T, 4> {
   auto y() const -> T { return this->data[1]; }
   auto z() const -> T { return this->data[2]; }
   auto w() const -> T { return this->data[3]; }
+};
+
+template<typename T>
+struct Matrix4 {
+  Matrix4() {};
+
+  Matrix4(std::array<T, 16> const& elements) {
+    for (uint i = 0; i < 16; i++)
+      data[i & 3][i >> 2] = elements[i];
+  }
+
+  auto operator[](int i) -> Vector4<T>& {
+    return data[i];
+  }
+  
+  auto operator[](int i) const -> Vector4<T> const& {
+    return data[i];
+  }
+
+  auto operator*(Vector<T, 4> const& vec) const -> Vector<T, 4> {
+    Vector<T, 4> result{};
+    for (uint i = 0; i < 4; i++)
+      result += data[i] * vec[i];
+    return result;
+  }
+
+  auto operator*(Matrix4 const& other) const -> Matrix4 {
+    Matrix4 result{};
+    for (uint i = 0; i < 4; i++)
+      result[i] = *this * other[i];
+    return result;
+  }
+
+private:
+  Vector4<T> data[4] {};
+};
+
+struct Fixed20x12 {
+  Fixed20x12() {}
+  Fixed20x12(s32 value) : value(value) {}
+
+  auto integer() -> s32 { return value >> 12; }
+
+  auto operator+(Fixed20x12 other) const -> Fixed20x12 {
+    return value + other.value;
+  }
+
+  auto operator-(Fixed20x12 other) const -> Fixed20x12 {
+    return value - other.value;
+  }
+
+  auto operator*(Fixed20x12 other) const -> Fixed20x12 {
+    return s32((s64(value) * s64(other.value)) >> 12);
+  }
+
+  auto operator/(Fixed20x12 other) const -> Fixed20x12 {
+    return s32((s64(value) << 12) / s64(other.value));
+  }
+
+  auto operator+=(Fixed20x12 other) -> Fixed20x12& {
+    value += other.value;
+    return *this;
+  }
+
+  auto operator-=(Fixed20x12 other) -> Fixed20x12& {
+    value -= other.value;
+    return *this;
+  }
+
+  auto operator*=(Fixed20x12 other) -> Fixed20x12& {
+    value = s32((s64(value) * s64(other.value)) >> 12);
+    return *this;
+  }
+
+  auto operator/=(Fixed20x12 other) -> Fixed20x12 {
+    value = s32((s64(value) << 12) / s64(other.value));
+    return *this;
+  }
+
+  auto operator-() const -> Fixed20x12 {
+    return -value;
+  }
+
+private:
+  s32 value = 0;
 };
