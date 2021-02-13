@@ -9,6 +9,8 @@
 
 template<typename T>
 struct NumericConstants {
+  // static constexpr auto zero() -> T;
+  // static constexpr auto one()  -> T;
 };
 
 template<>
@@ -102,6 +104,17 @@ struct Vector {
     for (uint i = 0; i < n; i++)
       result[i] = -data[i];
     return result;
+  }
+
+  bool operator==(Vector const& other) {
+    for (uint i = 0; i < n; i++)
+      if (data[i] != other[i])
+        return false;
+    return true;
+  }
+
+  bool operator!=(Vector const& other) {
+    return !(*this == other);
   }
 
   auto dot(Vector const& other) const -> T {
@@ -288,6 +301,30 @@ struct Fixed20x12 {
 
   auto operator-() const -> Fixed20x12 {
     return -value;
+  }
+
+  bool operator==(Fixed20x12 other) {
+    return value == other.value;
+  }
+
+  bool operator!=(Fixed20x12 other) {
+    return value != other.value;
+  }
+
+  bool operator<=(Fixed20x12 other) {
+    return value <= other.value;
+  }
+
+  bool operator>=(Fixed20x12 other) {
+    return value >= other.value;
+  }
+
+  bool operator<(Fixed20x12 other) {
+    return value < other.value;
+  }
+
+  bool operator>(Fixed20x12 other) {
+    return value > other.value;
   }
 
 private:
