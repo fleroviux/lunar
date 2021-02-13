@@ -64,7 +64,7 @@ void GPU::Reset() {
   modelview.Reset();
   direction.Reset();
   texture.Reset();
-  clip_matrix.LoadIdentity();
+  clip_matrix.identity();
   
   for (uint i = 0; i < 256 * 192; i++)
     output[i] = 0x8000;
@@ -200,7 +200,7 @@ void GPU::ProcessCommands() {
   }
 }
 
-void GPU::AddVertex(Vector4 const& position) {
+void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
   if (!in_vertex_list) {
     LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
     return;
@@ -251,7 +251,7 @@ void GPU::AddVertex(Vector4 const& position) {
         vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
       }
 
-      for (auto const& v : ClipPolygon(vertices)) {
+      for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
         // FIXME: this is disgusting.
         if (vertex.count == 6144) {
           LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
@@ -266,13 +266,11 @@ void GPU::AddVertex(Vector4 const& position) {
       if (is_strip) {
         is_first = true;
         vertices.erase(vertices.begin());
-        if (is_quad)
+        if (is_quad) {
           vertices.erase(vertices.begin());
+        }
       } else {
         vertices.clear();
-        // TODO: is this even necessary?
-        // "is_first" should be "don't care" for non-strips.
-        is_first = false;
       }
     } else {
       if (is_strip && !is_first) {
@@ -294,7 +292,7 @@ void GPU::AddVertex(Vector4 const& position) {
         poly.indices[poly.count++] = index;
       }
 
-      if (is_strip && is_quad) {
+      if (is_quad && is_strip) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
 
@@ -303,19 +301,20 @@ void GPU::AddVertex(Vector4 const& position) {
     }
 
     poly.texture_params = texture_params;
-    if (poly.count != 0)
+    if (poly.count != 0) {
       polygon.count++;
+    }
   }
 }
 
-auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex> {
+auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {
   int a = 0;
   int b = 1;
   std::vector<Vertex> clipped[2];
 
   clipped[a] = vertices;
 
-  if (is_strip && is_quad) {
+  if (quadstrip) {
     std::swap(clipped[a][2], clipped[a][3]);
   }
 
@@ -325,7 +324,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
     for (int j = 0; j < size; j++) {
       auto& v0 = clipped[a][j];
   
-      if (std::abs(v0.position[i]) > std::abs(v0.position[3])) {
+      if (v0.position[i].absolute() > v0.position.w().absolute()) {
         int c = j - 1;
         int d = j + 1;
         if (c == -1) c = size - 1;
@@ -334,35 +333,23 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
         for (int k : { c, d }) {
           auto& v1 = clipped[a][k];
 
-          if ((v0.position[i] >  v0.position[3] && v1.position[i] <  v1.position[3]) ||
-              (v0.position[i] < -v0.position[3] && v1.position[i] > -v1.position[3])) {
-            auto edge = Vector4{
-              v0.position[0] - v1.position[0],
-              v0.position[1] - v1.position[1],
-              v0.position[2] - v1.position[2],
-              v0.position[3] - v1.position[3]
-            };
-
-            auto sign = v0.position[i] < -v0.position[3] ? 1 : -1;
-            auto numer = s64(v1.position[i] + sign * v1.position[3]) << 32;
-            auto denom = edge[3] + sign * edge[i];
-            auto scale = -1 * sign * numer / denom;
+          if ((v0.position[i] >  v0.position.w() && v1.position[i] <  v1.position.w()) ||
+              (v0.position[i] < -v0.position.w() && v1.position[i] > -v1.position.w())) {
+            auto sign  = Fixed20x12::from_int((v0.position[i] < -v0.position.w()) ? 1 : -1);
+            auto numer = v1.position[i] + sign * v1.position[3];
+            auto denom = (v0.position.w() - v1.position.w()) + (v0.position[i] - v1.position[i]) * sign;
+            auto scale = -sign * numer / denom;
 
             clipped[b].push_back({
-              {
-                v1.position[0] + s32((edge[0] * scale) >> 32),
-                v1.position[1] + s32((edge[1] * scale) >> 32),
-                v1.position[2] + s32((edge[2] * scale) >> 32),
-                v1.position[3] + s32((edge[3] * scale) >> 32)
+              .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
+              .color = {
+                v1.color[0] + (((v0.color[0] - v1.color[0]) * scale.raw()) >> 12),
+                v1.color[1] + (((v0.color[1] - v1.color[1]) * scale.raw()) >> 12),
+                v1.color[2] + (((v0.color[2] - v1.color[2]) * scale.raw()) >> 12)
               },
-              {
-                v1.color[0] + s32(((v0.color[0] - v1.color[0]) * scale) >> 32),
-                v1.color[1] + s32(((v0.color[1] - v1.color[1]) * scale) >> 32),
-                v1.color[2] + s32(((v0.color[2] - v1.color[2]) * scale) >> 32)
-              },
-              {
-                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale) >> 32)),
-                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale) >> 32))
+              .uv = {
+                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale.raw()) >> 12)),
+                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale.raw()) >> 12))
               }
             });
           }
@@ -397,7 +384,7 @@ void GPU::CheckGXFIFO_IRQ() {
 }
 
 void GPU::UpdateClipMatrix() {
-  clip_matrix = modelview.current * projection.current;
+  clip_matrix = projection.current * modelview.current;
 }
 
 auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {

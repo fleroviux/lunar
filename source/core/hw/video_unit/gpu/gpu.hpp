@@ -35,7 +35,7 @@ struct GPU {
     }
     auto row = (offset >> 2) & 3;
     auto col =  offset >> 4;
-    return static_cast<T>(clip_matrix[col][row] >> ((offset & 3) * 8));
+    return static_cast<T>(clip_matrix[col][row].raw() >> ((offset & 3) * 8));
   }
 
   auto GetOutput() -> u16 const* { return &output[0]; }
@@ -136,7 +136,7 @@ private:
   };
 
   struct Vertex {
-    Vector4 position;
+    Vector4<Fixed20x12> position;
     s32 color[3];
     s16 uv[2];
     // ...
@@ -154,8 +154,8 @@ private:
   void CheckGXFIFO_IRQ();
   void UpdateClipMatrix();
   
-  auto DequeueMatrix4x4() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix4x4() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 4; col++) {
       for (int row = 0; row < 4; row++) {
         mat[col][row] = Dequeue().argument;
@@ -164,30 +164,30 @@ private:
     return mat;
   }
   
-  auto DequeueMatrix4x3() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix4x3() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 4; col++) {
       for (int row = 0; row < 3; row++) {
         mat[col][row] = Dequeue().argument;
       }
     }
-    mat[3][3] = 0x1000;
+    mat[3][3] = Fixed20x12::from_int(1);
     return mat;
   }
 
-  auto DequeueMatrix3x3() -> Matrix4x4 {
-    Matrix4x4 mat;
+  auto DequeueMatrix3x3() -> Matrix4<Fixed20x12> {
+    Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 3; col++) {
       for (int row = 0; row < 3; row++) {
         mat[col][row] = Dequeue().argument;
       }
     }
-    mat[3][3] = 0x1000;
+    mat[3][3] = Fixed20x12::from_int(1);
     return mat;
   }
 
-  void AddVertex(Vector4 const& position);
-  auto ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex>;
+  void AddVertex(Vector4<Fixed20x12> const& position);
+  auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
 
   /// Matrix commands
   void CMD_SetMatrixMode();
@@ -245,7 +245,7 @@ private:
   std::vector<Vertex> vertices;
 
   /// Untransformed vertex from the previous vertex submission command.
-  Vector4 position_old;
+  Vector4<Fixed20x12> position_old;
 
   /// Current vertex color
   s32 vertex_color[3];
@@ -279,7 +279,7 @@ private:
   MatrixStack<31> modelview;
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
-  Matrix4x4 clip_matrix;
+  Matrix4<Fixed20x12> clip_matrix;
 
   /// Renderer backend
   std::unique_ptr<GPURendererBase> renderer;

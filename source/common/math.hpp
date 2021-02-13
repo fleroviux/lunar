@@ -231,6 +231,18 @@ struct Matrix4 {
       data[i & 3][i >> 2] = elements[i];
   }
 
+  void identity() {
+    for (uint row = 0; row < 4; row++) {
+      for (uint col = 0; col < 4; col++) {
+        if (row == col) {
+          data[col][row] = NumericConstants<T>::one();
+        } else {
+          data[col][row] = NumericConstants<T>::zero();
+        }
+      }
+    }
+  }
+
   auto operator[](int i) -> Vector4<T>& {
     return data[i];
   }
@@ -261,7 +273,13 @@ struct Fixed20x12 {
   constexpr Fixed20x12() {}
   constexpr Fixed20x12(s32 value) : value(value) {}
 
+  static auto from_int(int value) -> Fixed20x12 {
+    return { s32(value) << 12 };
+  }
+
   auto integer() -> s32 { return value >> 12; }
+  auto raw() -> s32 { return value; }
+  auto absolute() -> Fixed20x12 { return value < 0 ? -value : value; }
 
   auto operator+(Fixed20x12 other) const -> Fixed20x12 {
     return value + other.value;
@@ -341,4 +359,3 @@ struct NumericConstants<Fixed20x12> {
     return Fixed20x12{1 << 12};
   }
 };
-

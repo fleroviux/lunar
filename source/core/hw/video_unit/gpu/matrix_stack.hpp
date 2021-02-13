@@ -14,7 +14,7 @@ struct MatrixStack {
   void Reset() {
     error = false;
     index = 0;
-    current.LoadIdentity();
+    current.identity();
   }
   
   void Push() {
@@ -62,12 +62,12 @@ struct MatrixStack {
   
   bool error;
   
-  Matrix4x4 current;
+  Matrix4<Fixed20x12> current;
 
 private:
   int index;
   
-  Matrix4x4 stack[capacity];
+  Matrix4<Fixed20x12> stack[capacity];
 };
 
 } // namespace Duality::core
