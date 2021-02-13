@@ -111,6 +111,14 @@ struct Vector {
     return result;
   }
 
+  static auto interpolate(Vector const& a, Vector const& b, T factor) -> Vector {
+    Vector result{};
+    T one_minus_factor = NumericConstants<T>::one() - factor;
+    for (uint i = 0; i < n; i++)
+      result[i] = a[i] * one_minus_factor + b[i] * factor;
+    return result;
+  }
+
 protected:
   T data[n] { NumericConstants<T>::zero() };
 };
