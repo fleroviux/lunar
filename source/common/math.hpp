@@ -7,6 +7,32 @@
 #include <array>
 #include <common/integer.hpp>
 
+template<typename T>
+struct NumericConstants {
+};
+
+template<>
+struct NumericConstants<float> {
+  static constexpr auto zero() -> float {
+    return 0;
+  }
+  
+  static constexpr auto one() -> float {
+    return 1;
+  }
+};
+
+template<>
+struct NumericConstants<double> {
+  static constexpr auto zero() -> double {
+    return 0;
+  }
+  
+  static constexpr auto one() -> double {
+    return 1;
+  }
+};
+
 template<typename T, uint n>
 struct Vector {
   Vector() {}
@@ -86,7 +112,7 @@ struct Vector {
   }
 
 protected:
-  T data[n] {};
+  T data[n] { NumericConstants<T>::zero() };
 };
 
 template<typename T>
@@ -153,11 +179,11 @@ struct Vector4 : Vector<T, 4> {
     this->data[3] = w;
   }
 
-  // Vector4(Vector<T, 3> const& other) {
-  //   for (uint i = 0; i < 3; i++)
-  //     this->data[i] = other[i];
-  //   // FIXME
-  // }
+  Vector4(Vector<T, 3> const& other) {
+    for (uint i = 0; i < 3; i++)
+      this->data[i] = other[i];
+    this->data[3] = NumericConstants<T>::one();
+  }
 
   Vector4(Vector<T, 4> const& other) {
     for (uint i = 0; i < 4; i++)
@@ -211,8 +237,8 @@ private:
 };
 
 struct Fixed20x12 {
-  Fixed20x12() {}
-  Fixed20x12(s32 value) : value(value) {}
+  constexpr Fixed20x12() {}
+  constexpr Fixed20x12(s32 value) : value(value) {}
 
   auto integer() -> s32 { return value >> 12; }
 
@@ -259,3 +285,15 @@ struct Fixed20x12 {
 private:
   s32 value = 0;
 };
+
+template<>
+struct NumericConstants<Fixed20x12> {
+  static constexpr auto zero() -> Fixed20x12 {
+    return Fixed20x12{};
+  }
+  
+  static constexpr auto one() -> Fixed20x12 {
+    return Fixed20x12{1 << 12};
+  }
+};
+
