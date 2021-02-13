@@ -187,7 +187,7 @@ private:
   }
 
   void AddVertex(Vector4<Fixed20x12> const& position);
-  auto ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex>;
+  auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
 
   /// Matrix commands
   void CMD_SetMatrixMode();

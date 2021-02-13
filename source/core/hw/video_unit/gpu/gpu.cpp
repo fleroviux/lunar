@@ -251,7 +251,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
       }
 
-      for (auto const& v : ClipPolygon(vertices)) {
+      for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
         // FIXME: this is disgusting.
         if (vertex.count == 6144) {
           LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
@@ -266,13 +266,11 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       if (is_strip) {
         is_first = true;
         vertices.erase(vertices.begin());
-        if (is_quad)
+        if (is_quad) {
           vertices.erase(vertices.begin());
+        }
       } else {
         vertices.clear();
-        // TODO: is this even necessary?
-        // "is_first" should be "don't care" for non-strips.
-        is_first = false;
       }
     } else {
       if (is_strip && !is_first) {
@@ -294,7 +292,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         poly.indices[poly.count++] = index;
       }
 
-      if (is_strip && is_quad) {
+      if (is_quad && is_strip) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
 
@@ -303,19 +301,20 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     }
 
     poly.texture_params = texture_params;
-    if (poly.count != 0)
+    if (poly.count != 0) {
       polygon.count++;
+    }
   }
 }
 
-auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex> {
+auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {
   int a = 0;
   int b = 1;
   std::vector<Vertex> clipped[2];
 
   clipped[a] = vertices;
 
-  if (is_strip && is_quad) {
+  if (quadstrip) {
     std::swap(clipped[a][2], clipped[a][3]);
   }
 

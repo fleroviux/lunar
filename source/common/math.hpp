@@ -359,4 +359,3 @@ struct NumericConstants<Fixed20x12> {
     return Fixed20x12{1 << 12};
   }
 };
-
