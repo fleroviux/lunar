@@ -1,83 +1,95 @@
+cmake_minimum_required(VERSION 3.2)
+project(Duality-Core CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(SOURCES
-  arm/arm.cpp
-  arm/tablegen/tablegen.cpp
-  arm7/bus.cpp
-  arm7/bus_mmio.cpp
-  arm9/bus.cpp
-  arm9/bus_mmio.cpp
-  arm9/cp15.cpp
-  hw/apu/apu.cpp
-  hw/cart/cart.cpp
-  hw/dma/dma7.cpp
-  hw/dma/dma9.cpp
-  hw/ipc/ipc.cpp
-  hw/irq/irq.cpp
-  hw/math/math_engine.cpp
-  hw/spi/firmware/firmware.cpp
-  hw/spi/tsc/tsc.cpp
-  hw/spi/spi.cpp
-  hw/timer/timer.cpp
-  hw/video_unit/gpu/software/renderer.cpp
-  hw/video_unit/gpu/commands.cpp
-  hw/video_unit/gpu/gpu.cpp
-  hw/video_unit/ppu/render/affine.cpp
-  hw/video_unit/ppu/render/oam.cpp
-  hw/video_unit/ppu/render/text.cpp
-  hw/video_unit/ppu/render/window.cpp
-  hw/video_unit/ppu/composer.cpp
-  hw/video_unit/ppu/ppu.cpp
-  hw/video_unit/ppu/registers.cpp
-  hw/video_unit/video_unit.cpp
-  hw/video_unit/vram.cpp
-  core.cpp
-  scheduler.cpp)
+  src/arm/arm.cpp
+  src/arm/tablegen/tablegen.cpp
+  src/arm7/bus.cpp
+  src/arm7/bus_mmio.cpp
+  src/arm9/bus.cpp
+  src/arm9/bus_mmio.cpp
+  src/arm9/cp15.cpp
+  src/hw/apu/apu.cpp
+  src/hw/cart/cart.cpp
+  src/hw/dma/dma7.cpp
+  src/hw/dma/dma9.cpp
+  src/hw/ipc/ipc.cpp
+  src/hw/irq/irq.cpp
+  src/hw/math/math_engine.cpp
+  src/hw/spi/firmware/firmware.cpp
+  src/hw/spi/tsc/tsc.cpp
+  src/hw/spi/spi.cpp
+  src/hw/timer/timer.cpp
+  src/hw/video_unit/gpu/software/renderer.cpp
+  src/hw/video_unit/gpu/commands.cpp
+  src/hw/video_unit/gpu/gpu.cpp
+  src/hw/video_unit/ppu/render/affine.cpp
+  src/hw/video_unit/ppu/render/oam.cpp
+  src/hw/video_unit/ppu/render/text.cpp
+  src/hw/video_unit/ppu/render/window.cpp
+  src/hw/video_unit/ppu/composer.cpp
+  src/hw/video_unit/ppu/ppu.cpp
+  src/hw/video_unit/ppu/registers.cpp
+  src/hw/video_unit/video_unit.cpp
+  src/hw/video_unit/vram.cpp
+  src/core.cpp
+  src/scheduler.cpp)
 
 set(HEADERS
-  arm/handlers/arithmetic.inl
-  arm/handlers/handler16.inl
-  arm/handlers/handler32.inl
-  arm/handlers/memory.inl
-  arm/tablegen/decoder.hpp
-  arm/tablegen/gen_arm.hpp
-  arm/tablegen/gen_thumb.hpp
-  arm/arm.hpp
-  arm/coprocessor.hpp
-  arm/state.hpp
-  arm/memory.hpp
-  arm7/bus.hpp
-  arm9/bus.hpp
-  arm9/cp15.hpp
-  hw/apu/apu.hpp
-  hw/cart/backup.hpp
-  hw/cart/cart.hpp
-  hw/dma/dma7.hpp
-  hw/dma/dma9.hpp
-  hw/ipc/ipc.hpp
-  hw/irq/irq.hpp
-  hw/math/math_engine.hpp
-  hw/spi/firmware/firmware.hpp
-  hw/spi/tsc/tsc.hpp
-  hw/spi/spi.hpp
-  hw/spi/spi_device.hpp
-  hw/timer/timer.cpp
-  hw/video_unit/gpu/software/renderer.hpp
-  hw/video_unit/gpu/gpu.hpp
-  hw/video_unit/gpu/matrix.hpp
-  hw/video_unit/gpu/matrix_stack.hpp
-  hw/video_unit/gpu/renderer_base.hpp
-  hw/video_unit/ppu/ppu.hpp
-  hw/video_unit/ppu/registers.hpp
-  hw/video_unit/video_unit.hpp
-  hw/video_unit/vram.hpp
-  hw/video_unit/vram_region.hpp
-  core.hpp
-  interconnect.hpp
-  scheduler.hpp)
+  src/arm/handlers/arithmetic.inl
+  src/arm/handlers/handler16.inl
+  src/arm/handlers/handler32.inl
+  src/arm/handlers/memory.inl
+  src/arm/tablegen/decoder.hpp
+  src/arm/tablegen/gen_arm.hpp
+  src/arm/tablegen/gen_thumb.hpp
+  src/arm/arm.hpp
+  src/arm/coprocessor.hpp
+  src/arm/state.hpp
+  src/arm/memory.hpp
+  src/arm7/bus.hpp
+  src/arm9/bus.hpp
+  src/arm9/cp15.hpp
+  src/hw/apu/apu.hpp
+  src/hw/cart/backup.hpp
+  src/hw/cart/cart.hpp
+  src/hw/dma/dma7.hpp
+  src/hw/dma/dma9.hpp
+  src/hw/ipc/ipc.hpp
+  src/hw/irq/irq.hpp
+  src/hw/math/math_engine.hpp
+  src/hw/spi/firmware/firmware.hpp
+  src/hw/spi/tsc/tsc.hpp
+  src/hw/spi/spi.hpp
+  src/hw/spi/spi_device.hpp
+  src/hw/timer/timer.cpp
+  src/hw/video_unit/gpu/software/renderer.hpp
+  src/hw/video_unit/gpu/gpu.hpp
+  src/hw/video_unit/gpu/matrix.hpp
+  src/hw/video_unit/gpu/matrix_stack.hpp
+  src/hw/video_unit/gpu/renderer_base.hpp
+  src/hw/video_unit/ppu/ppu.hpp
+  src/hw/video_unit/ppu/registers.hpp
+  src/hw/video_unit/video_unit.hpp
+  src/hw/video_unit/vram.hpp
+  src/hw/video_unit/vram_region.hpp
+  src/core.hpp
+  src/interconnect.hpp
+  src/scheduler.hpp)
 
-add_library(core STATIC ${SOURCES} ${HEADERS})
-target_link_libraries(core duality-util fmt)
+set(HEADERS_PUBLIC
+)
 
-# TODO: this is not optimal... move SDL out of the core.
-target_include_directories(core PUBLIC ${SDL2_INCLUDE_DIR})
-target_link_libraries(core ${SDL2_LIBRARY})
+add_library(duality-core STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
+target_link_libraries(duality-core duality-util fmt)
+# TODO: change all private includes from <> to ""
+target_include_directories(duality-core PRIVATE src)
+target_include_directories(duality-core PUBLIC include)
+
+## TODO: this is not optimal... move SDL out of the core.
+#target_include_directories(core PUBLIC ${SDL2_INCLUDE_DIR})
+#target_link_libraries(core ${SDL2_LIBRARY})
 

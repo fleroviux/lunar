@@ -20,7 +20,7 @@ set(HEADERS_PUBLIC
   include/util/math.hpp
   include/util/meta.hpp)
 
-add_library(duality-util ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
+add_library(duality-util STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(duality-util PUBLIC include)
 target_link_libraries(duality-util fmt)
  
