@@ -5,7 +5,7 @@
 
 #include <algorithm>
 #include <common/log.hpp>
-#include <SDL.h>
+//#include <SDL.h>
 #include <string.h>
 
 #include "apu.hpp"
@@ -35,28 +35,28 @@ void APU::Reset() {
   for (int i = 0; i < 16; i++)
     channels[i] = {};
 
-  auto want = SDL_AudioSpec{};
+  // auto want = SDL_AudioSpec{};
 
-  if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-    LOG_ERROR("APU: failed to initialize SDL audio.");
-    return;
-  }
+  // if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+  //   LOG_ERROR("APU: failed to initialize SDL audio.");
+  //   return;
+  // }
 
-  want.freq = 32768;
-  want.samples = 2048;
-  want.format = AUDIO_S16;
-  want.channels = 2;
-  want.callback = (SDL_AudioCallback)&AudioCallback;
-  want.userdata = this;
+  // want.freq = 32768;
+  // want.samples = 2048;
+  // want.format = AUDIO_S16;
+  // want.channels = 2;
+  // want.callback = (SDL_AudioCallback)&AudioCallback;
+  // want.userdata = this;
 
-  auto device = SDL_OpenAudioDevice(nullptr, 0, &want, nullptr, 0);
-  if (device == 0) {
-    LOG_ERROR("APU: failed to open audio device.");
-    return;
-  }
+  // auto device = SDL_OpenAudioDevice(nullptr, 0, &want, nullptr, 0);
+  // if (device == 0) {
+  //   LOG_ERROR("APU: failed to open audio device.");
+  //   return;
+  // }
 
-  // TODO: close audio device when we are done.
-  SDL_PauseAudioDevice(device, 0);
+  // // TODO: close audio device when we are done.
+  // SDL_PauseAudioDevice(device, 0);
 
   memset(&buffer, 0, sizeof(buffer));
   buffer_rd_pos = 0;
