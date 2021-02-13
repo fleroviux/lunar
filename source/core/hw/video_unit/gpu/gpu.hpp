@@ -35,7 +35,7 @@ struct GPU {
     }
     auto row = (offset >> 2) & 3;
     auto col =  offset >> 4;
-    return static_cast<T>(clip_matrix[col][row] >> ((offset & 3) * 8));
+    return static_cast<T>(clip_matrix[col][row].raw() >> ((offset & 3) * 8));
   }
 
   auto GetOutput() -> u16 const* { return &output[0]; }
@@ -136,7 +136,7 @@ private:
   };
 
   struct Vertex {
-    Vector4 position;
+    Vector4<Fixed20x12> position;
     s32 color[3];
     s16 uv[2];
     // ...
@@ -186,7 +186,7 @@ private:
     return mat;
   }
 
-  void AddVertex(Vector4 const& position);
+  void AddVertex(Vector4<Fixed20x12> const& position);
   auto ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex>;
 
   /// Matrix commands
@@ -245,7 +245,7 @@ private:
   std::vector<Vertex> vertices;
 
   /// Untransformed vertex from the previous vertex submission command.
-  Vector4 position_old;
+  Vector4<Fixed20x12> position_old;
 
   /// Current vertex color
   s32 vertex_color[3];

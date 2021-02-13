@@ -14,7 +14,7 @@ namespace Duality::core {
 
 struct GPURendererBase {
   struct Vertex {
-    Vector4 position;
+    Vector4<Fixed20x12> position;
     s32 color[3];
     s16 uv[2];
   };

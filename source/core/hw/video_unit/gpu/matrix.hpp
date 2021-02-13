@@ -4,39 +4,9 @@
 
 #pragma once
 
-#include <common/integer.hpp>
+#include <common/math.hpp>
 
 namespace Duality::core {
-
-struct Vector4 {
-  Vector4() {}
-  
-  Vector4(s32 x, s32 y, s32 z, s32 w) {
-    data[0] = x;
-    data[1] = y;
-    data[2] = z;
-    data[3] = w;
-  }
-
-  auto operator[](int i) -> s32& {
-    return data[i];
-  }
-  
-  auto operator[](int i) const -> s32 {
-    return data[i];
-  }
-  
-  auto operator+=(Vector4 const& vec) -> Vector4& {
-    data[0] += vec.data[0];
-    data[1] += vec.data[1];
-    data[2] += vec.data[2];
-    data[3] += vec.data[3];
-    return *this;
-  }
-
-private:
-  s32 data[4] {};
-};
 
 struct Matrix4x4 {
   void LoadIdentity() {
@@ -47,22 +17,20 @@ struct Matrix4x4 {
     }
   }
 
-  auto operator[](int i) -> Vector4& {
+  auto operator[](int i) -> Vector4<Fixed20x12>& {
     return data[i];
   }
   
-  auto operator[](int i) const -> Vector4 const& {
+  auto operator[](int i) const -> Vector4<Fixed20x12> const& {
     return data[i];
   }
   
-  auto operator*(Vector4 const& vec) const -> Vector4 {
-    Vector4 out;
+  auto operator*(Vector4<Fixed20x12> const& vec) const -> Vector4<Fixed20x12> {
+    Vector4<Fixed20x12> out;
     for (int row = 0; row < 4; row++) {
-      s64 tmp = 0;
       for (int col = 0; col < 4; col++) {
-        tmp += s64(data[col][row]) * s64(vec[col]);
+        out[row] += data[col][row] * vec[col];
       }
-      out[row] = tmp >> 12;
     }
     return out;
   }
@@ -81,7 +49,7 @@ struct Matrix4x4 {
   }
   
 private:
-  Vector4 data[4] {};
+  Vector4<Fixed20x12> data[4] {};
 };
 
 } // namespace Duality::core

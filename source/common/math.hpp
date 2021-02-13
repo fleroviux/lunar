@@ -262,6 +262,8 @@ struct Fixed20x12 {
   constexpr Fixed20x12(s32 value) : value(value) {}
 
   auto integer() -> s32 { return value >> 12; }
+  auto raw() -> s32 { return value; }
+  auto absolute() -> Fixed20x12 { return value < 0 ? -value : value; }
 
   auto operator+(Fixed20x12 other) const -> Fixed20x12 {
     return value + other.value;

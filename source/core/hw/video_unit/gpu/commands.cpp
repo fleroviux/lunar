@@ -533,9 +533,10 @@ void GPU::CMD_SwapBuffers() {
       }
 
       // TODO: use the provided viewport configuration.
-      point.x = (( (s64(vert.position[0]) << 12) / vert.position[3] * 128) >> 12) + 128;
-      point.y = ((-(s64(vert.position[1]) << 12) / vert.position[3] *  96) >> 12) +  96;
-      point.depth = (s64(vert.position[2]) << 12) / vert.position[3];
+      // FIXME: have some kind of way to handle fixed-point constants.
+      point.x = ( vert.position.x() / vert.position.w() * (128 << 12)).integer() + 128;
+      point.y = (-vert.position.y() / vert.position.w() * ( 96 << 12)).integer() +  96;
+      point.depth = (vert.position.z() / vert.position.w()).raw();
       point.vertex = &vert;
 
       // TODO: it is unclear how exactly the first vertex is selected,
@@ -550,7 +551,7 @@ void GPU::CMD_SwapBuffers() {
     }
 
     // FIXME
-    if (skip /*|| y_max - y_min >= 256*/) {
+    if (skip) {
       continue;
     }
 

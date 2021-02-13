@@ -200,7 +200,7 @@ void GPU::ProcessCommands() {
   }
 }
 
-void GPU::AddVertex(Vector4 const& position) {
+void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
   if (!in_vertex_list) {
     LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
     return;
@@ -325,7 +325,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
     for (int j = 0; j < size; j++) {
       auto& v0 = clipped[a][j];
   
-      if (std::abs(v0.position[i]) > std::abs(v0.position[3])) {
+      if (v0.position[i].absolute() > v0.position.w().absolute()) {
         int c = j - 1;
         int d = j + 1;
         if (c == -1) c = size - 1;
@@ -334,35 +334,24 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices) -> std::vector<Vertex
         for (int k : { c, d }) {
           auto& v1 = clipped[a][k];
 
-          if ((v0.position[i] >  v0.position[3] && v1.position[i] <  v1.position[3]) ||
-              (v0.position[i] < -v0.position[3] && v1.position[i] > -v1.position[3])) {
-            auto edge = Vector4{
-              v0.position[0] - v1.position[0],
-              v0.position[1] - v1.position[1],
-              v0.position[2] - v1.position[2],
-              v0.position[3] - v1.position[3]
-            };
-
-            auto sign = v0.position[i] < -v0.position[3] ? 1 : -1;
-            auto numer = s64(v1.position[i] + sign * v1.position[3]) << 32;
-            auto denom = edge[3] + sign * edge[i];
-            auto scale = -1 * sign * numer / denom;
+          if ((v0.position[i] >  v0.position.w() && v1.position[i] <  v1.position.w()) ||
+              (v0.position[i] < -v0.position.w() && v1.position[i] > -v1.position.w())) {
+            // FIXME: have some kind of way to handle fixed-point constants.
+            auto sign  = (v0.position[i] < -v0.position.w()) ? Fixed20x12{0x1000} : Fixed20x12{-0x1000};
+            auto numer = v1.position[i] + sign * v1.position[3];
+            auto denom = (v0.position.w() - v1.position.w()) + (v0.position[i] - v1.position[i]) * sign;
+            auto scale = -sign * numer / denom;
 
             clipped[b].push_back({
-              {
-                v1.position[0] + s32((edge[0] * scale) >> 32),
-                v1.position[1] + s32((edge[1] * scale) >> 32),
-                v1.position[2] + s32((edge[2] * scale) >> 32),
-                v1.position[3] + s32((edge[3] * scale) >> 32)
+              .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
+              .color = {
+                v1.color[0] + (((v0.color[0] - v1.color[0]) * scale.raw()) >> 12),
+                v1.color[1] + (((v0.color[1] - v1.color[1]) * scale.raw()) >> 12),
+                v1.color[2] + (((v0.color[2] - v1.color[2]) * scale.raw()) >> 12)
               },
-              {
-                v1.color[0] + s32(((v0.color[0] - v1.color[0]) * scale) >> 32),
-                v1.color[1] + s32(((v0.color[1] - v1.color[1]) * scale) >> 32),
-                v1.color[2] + s32(((v0.color[2] - v1.color[2]) * scale) >> 32)
-              },
-              {
-                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale) >> 32)),
-                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale) >> 32))
+              .uv = {
+                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale.raw()) >> 12)),
+                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale.raw()) >> 12))
               }
             });
           }
