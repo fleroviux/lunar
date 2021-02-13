@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <hw/spi/spi_device.hpp>
-#include <hw/spi/firmware/firmware.hpp>
+#include "hw/spi/spi_device.hpp"
+#include "hw/spi/firmware/firmware.hpp"
 
 namespace Duality::core {
 

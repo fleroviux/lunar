@@ -4,17 +4,17 @@
 
 #pragma once
 
+#include <functional>
 #include <util/integer.hpp>
 #include <util/log.hpp>
-#include <hw/dma/dma7.hpp>
-#include <hw/dma/dma9.hpp>
-#include <hw/irq/irq.hpp>
-#include <scheduler.hpp>
-#include <functional>
 
 #include "gpu/gpu.hpp"
 #include "ppu/ppu.hpp"
 #include "vram.hpp"
+#include "hw/dma/dma7.hpp"
+#include "hw/dma/dma9.hpp"
+#include "hw/irq/irq.hpp"
+#include "scheduler.hpp"
 
 namespace Duality::core {
 

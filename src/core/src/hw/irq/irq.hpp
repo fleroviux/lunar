@@ -5,7 +5,8 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <arm/arm.hpp>
+
+#include "arm/arm.hpp"
 
 namespace Duality::core {
 

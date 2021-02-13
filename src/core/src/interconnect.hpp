@@ -6,20 +6,20 @@
 
 #include <util/integer.hpp>
 #include <util/log.hpp>
-#include <hw/apu/apu.hpp>
-#include <hw/cart/cart.hpp>
-#include <hw/dma/dma7.hpp>
-#include <hw/dma/dma9.hpp>
-#include <hw/ipc/ipc.hpp>
-#include <hw/math/math_engine.hpp>
-#include <hw/irq/irq.hpp>
-#include <hw/spi/spi.hpp>
-#include <hw/timer/timer.hpp>
-#include <hw/video_unit/video_unit.hpp>
 #include <functional>
 #include <string.h>
 #include <vector>
 
+#include "hw/apu/apu.hpp"
+#include "hw/cart/cart.hpp"
+#include "hw/dma/dma7.hpp"
+#include "hw/dma/dma9.hpp"
+#include "hw/ipc/ipc.hpp"
+#include "hw/math/math_engine.hpp"
+#include "hw/irq/irq.hpp"
+#include "hw/spi/spi.hpp"
+#include "hw/timer/timer.hpp"
+#include "hw/video_unit/video_unit.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::core {

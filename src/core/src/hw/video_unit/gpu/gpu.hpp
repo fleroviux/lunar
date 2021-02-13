@@ -7,13 +7,13 @@
 #include <util/integer.hpp>
 #include <util/meta.hpp>
 #include <util/fifo.hpp>
-#include <hw/dma/dma9.hpp>
-#include <hw/irq/irq.hpp>
-#include <hw/video_unit/vram.hpp>
-#include <scheduler.hpp>
 #include <memory>
 #include <vector>
 
+#include "hw/dma/dma9.hpp"
+#include "hw/irq/irq.hpp"
+#include "hw/video_unit/vram.hpp"
+#include "scheduler.hpp"
 #include "matrix_stack.hpp"
 #include "renderer_base.hpp"
 

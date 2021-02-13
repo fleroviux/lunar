@@ -5,13 +5,13 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <hw/dma/dma7.hpp>
-#include <hw/dma/dma9.hpp>
-#include <hw/irq/irq.hpp>
 #include <fstream>
 #include <string>
 
 #include "backup.hpp"
+#include "hw/dma/dma7.hpp"
+#include "hw/dma/dma9.hpp"
+#include "hw/irq/irq.hpp"
 
 namespace Duality::core {
 

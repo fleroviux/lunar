@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <hw/video_unit/gpu/renderer_base.hpp>
+#include "hw/video_unit/gpu/renderer_base.hpp"
 
 namespace Duality::core {
 

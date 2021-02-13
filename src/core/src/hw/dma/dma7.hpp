@@ -5,8 +5,9 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <arm/memory.hpp>
-#include <hw/irq/irq.hpp>
+
+#include "arm/memory.hpp"
+#include "hw/irq/irq.hpp"
 
 namespace Duality::core {
 

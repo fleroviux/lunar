@@ -2,8 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <hw/video_unit/ppu/ppu.hpp>
-#include <util/log.hpp>
+#include "hw/video_unit/ppu/ppu.hpp"
 
 namespace Duality::core {
 

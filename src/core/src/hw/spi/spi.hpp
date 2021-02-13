@@ -5,10 +5,10 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <hw/irq/irq.hpp>
 
 #include "tsc/tsc.hpp"
 #include "firmware/firmware.hpp"
+#include "hw/irq/irq.hpp"
 
 namespace Duality::core {
 

@@ -5,8 +5,9 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <hw/irq/irq.hpp>
-#include <scheduler.hpp>
+
+#include "hw/irq/irq.hpp"
+#include "scheduler.hpp"
 
 namespace Duality::core {
 

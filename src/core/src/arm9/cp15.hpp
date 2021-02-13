@@ -6,9 +6,9 @@
 
 #include <util/integer.hpp>
 #include <util/log.hpp>
-#include <arm/arm.hpp>
-#include <arm/coprocessor.hpp>
 
+#include "arm/arm.hpp"
+#include "arm/coprocessor.hpp"
 #include "bus.hpp"
 
 namespace Duality::core {

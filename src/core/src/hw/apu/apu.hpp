@@ -5,9 +5,10 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <arm/memory.hpp>
-#include <scheduler.hpp>
 #include <mutex>
+
+#include "arm/memory.hpp"
+#include "scheduler.hpp"
 
 namespace Duality::core {
 

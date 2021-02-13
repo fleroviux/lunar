@@ -6,7 +6,8 @@
 
 #include <util/fifo.hpp>
 #include <util/integer.hpp>
-#include <hw/irq/irq.hpp>
+
+#include "hw/irq/irq.hpp"
 
 namespace Duality::core {
 

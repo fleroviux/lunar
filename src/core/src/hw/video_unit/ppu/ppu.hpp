@@ -5,9 +5,9 @@
 #pragma once
 
 #include <util/integer.hpp>
-#include <hw/video_unit/vram.hpp>
 #include <functional>
 
+#include "hw/video_unit/vram.hpp"
 #include "registers.hpp"
 
 namespace Duality::core {
