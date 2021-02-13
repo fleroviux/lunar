@@ -3,7 +3,7 @@
  */
 
 #include <core/hw/video_unit/ppu/ppu.hpp>
-#include <common/log.hpp>
+#include <util/log.hpp>
 
 namespace Duality::core {
 

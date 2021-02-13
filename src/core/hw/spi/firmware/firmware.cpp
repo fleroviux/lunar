@@ -2,7 +2,7 @@
  * Copyright (C) fleroviux
  */
 
-#include <common/log.hpp>
+#include <util/log.hpp>
 
 #include "firmware.hpp"
 

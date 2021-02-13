@@ -2,8 +2,8 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/bit.hpp>
-#include <common/log.hpp>
+#include <util/bit.hpp>
+#include <util/log.hpp>
 #include <fstream>
 #include <string.h>
 

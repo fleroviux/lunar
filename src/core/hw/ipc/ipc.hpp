@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <common/fifo.hpp>
-#include <common/integer.hpp>
+#include <util/fifo.hpp>
+#include <util/integer.hpp>
 #include <core/hw/irq/irq.hpp>
 
 namespace Duality::core {

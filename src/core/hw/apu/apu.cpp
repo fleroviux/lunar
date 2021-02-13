@@ -4,7 +4,7 @@
 
 
 #include <algorithm>
-#include <common/log.hpp>
+#include <util/log.hpp>
 //#include <SDL.h>
 #include <string.h>
 

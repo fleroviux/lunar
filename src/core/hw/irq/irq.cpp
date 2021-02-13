@@ -2,7 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/log.hpp>
+#include <util/log.hpp>
 
 #include "irq.hpp"
 

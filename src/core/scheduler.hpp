@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <common/integer.hpp>
-#include <common/log.hpp>
+#include <util/integer.hpp>
+#include <util/log.hpp>
 #include <functional>
 #include <limits>
 

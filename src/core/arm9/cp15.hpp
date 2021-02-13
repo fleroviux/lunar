@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <common/integer.hpp>
-#include <common/log.hpp>
+#include <util/integer.hpp>
+#include <util/log.hpp>
 #include <core/arm/arm.hpp>
 #include <core/arm/coprocessor.hpp>
 

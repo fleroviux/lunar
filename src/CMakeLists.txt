@@ -10,5 +10,5 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../modules)
 include_directories(.)
 
 add_subdirectory(../external ${CMAKE_CURRENT_BINARY_DIR}/external)
-add_subdirectory(common)
 add_subdirectory(core)
+add_subdirectory(util)

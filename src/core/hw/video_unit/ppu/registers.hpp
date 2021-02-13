@@ -2,7 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 
 namespace Duality::core {
 

@@ -5,7 +5,7 @@
 #pragma once
 
 #include <array>
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 
 template<typename T>
 struct NumericConstants {

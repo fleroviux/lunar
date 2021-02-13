@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <common/integer.hpp>
-#include <common/log.hpp>
+#include <util/integer.hpp>
+#include <util/log.hpp>
 #include <core/hw/dma/dma7.hpp>
 #include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>

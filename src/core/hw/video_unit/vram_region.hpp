@@ -6,10 +6,10 @@
 
 #include <algorithm>
 #include <array>
-#include <common/integer.hpp>
-#include <common/likely.hpp>
-#include <common/meta.hpp>
-#include <common/log.hpp>
+#include <util/integer.hpp>
+#include <util/likely.hpp>
+#include <util/meta.hpp>
+#include <util/log.hpp>
 #include <functional>
 #include <stddef.h>
 #include <vector>

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 #include <optional>
 #include <vector>
 

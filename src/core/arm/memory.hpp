@@ -6,9 +6,9 @@
 
 #include <array>
 #include <buildconfig.hpp>
-#include <common/integer.hpp>
-#include <common/likely.hpp>
-#include <common/meta.hpp>
+#include <util/integer.hpp>
+#include <util/likely.hpp>
+#include <util/meta.hpp>
 #include <memory>
 
 namespace Duality::core::arm {

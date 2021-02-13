@@ -75,7 +75,7 @@ set(HEADERS
   scheduler.hpp)
 
 add_library(core STATIC ${SOURCES} ${HEADERS})
-target_link_libraries(core common fmt)
+target_link_libraries(core duality-util fmt)
 
 # TODO: this is not optimal... move SDL out of the core.
 target_include_directories(core PUBLIC ${SDL2_INCLUDE_DIR})

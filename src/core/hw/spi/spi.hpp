@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 #include <core/hw/irq/irq.hpp>
 
 #include "tsc/tsc.hpp"

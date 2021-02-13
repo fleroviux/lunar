@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 #include <core/hw/video_unit/vram.hpp>
 #include <functional>
 

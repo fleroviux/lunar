@@ -2,9 +2,9 @@
  * Copyright (C) 2020 fleroviux
  */
 
-#include <common/bit.hpp>
-#include <common/log.hpp>
-#include <common/meta.hpp>
+#include <util/bit.hpp>
+#include <util/log.hpp>
+#include <util/meta.hpp>
 #include <fstream>
 
 #include "bus.hpp"

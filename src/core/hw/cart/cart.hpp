@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 #include <core/hw/dma/dma7.hpp>
 #include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>

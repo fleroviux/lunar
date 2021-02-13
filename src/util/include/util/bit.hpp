@@ -5,7 +5,7 @@
 #pragma once
 
 #include <climits>
-#include <common/integer.hpp>
+#include <util/integer.hpp>
 
 namespace bit {
 

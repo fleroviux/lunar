@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <common/integer.hpp>
-#include <common/likely.hpp>
+#include <util/integer.hpp>
+#include <util/likely.hpp>
 
 #include "vram_region.hpp"
 

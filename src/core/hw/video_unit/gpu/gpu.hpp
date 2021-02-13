@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <common/integer.hpp>
-#include <common/meta.hpp>
-#include <common/fifo.hpp>
+#include <util/integer.hpp>
+#include <util/meta.hpp>
+#include <util/fifo.hpp>
 #include <core/hw/dma/dma9.hpp>
 #include <core/hw/irq/irq.hpp>
 #include <core/hw/video_unit/vram.hpp>

@@ -5,7 +5,7 @@
 #pragma once
 
 #include <array>
-#include <common/log.hpp>
+#include <util/log.hpp>
 
 #include "coprocessor.hpp"
 #include "state.hpp"
