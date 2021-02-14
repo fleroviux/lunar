@@ -7,10 +7,8 @@
 
 #include <core/core.hpp>
 
-#include <SDL.h>
-#include <GL/glew.h>
-
 #include "audio_device.hpp"
+#include "video_device.hpp"
 
 #undef main
 
@@ -36,26 +34,10 @@ void loop(Duality::core::Core& core) {
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetSwapInterval(1);
 
-  // TODO: replace legacy OpenGL jank with more modern code.
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glEnable(GL_TEXTURE_2D);
-
-  GLuint textures[2];
-  glGenTextures(2, &textures[0]);
-
-  for (int i = 0; i < 2; i++) {
-    glBindTexture(GL_TEXTURE_2D, textures[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  }
-
-  glClearColor(0, 0, 0, 1);
-
   auto audio_device = SDL2AudioDevice{};
+  auto video_device = SDL2VideoDevice{window};
   core.SetAudioDevice(audio_device);
+  core.SetVideoDevice(video_device);
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
@@ -81,41 +63,6 @@ void loop(Duality::core::Core& core) {
       frames = 0;
       t0 = SDL_GetTicks();
     }
-
-    // u32 const* output_top = interconnect->video_unit.GetOutput(VideoUnit::Screen::Top);
-    // u32 const* output_bottom = interconnect->video_unit.GetOutput(VideoUnit::Screen::Bottom);
-
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // glBindTexture(GL_TEXTURE_2D, textures[0]);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, output_top);
-    
-    // glBegin(GL_QUADS);
-    // glTexCoord2f(0.0f, 0.0f);
-    // glVertex2f(-1.0f,  1.0f);
-    // glTexCoord2f(1.0f, 0.0f);
-    // glVertex2f( 1.0f,  1.0f);
-    // glTexCoord2f(1.0f, 1.0f);
-    // glVertex2f( 1.0f,  0.0f);
-    // glTexCoord2f(0.0f, 1.0f);
-    // glVertex2f(-1.0f,  0.0f);
-    // glEnd();
-
-    // glBindTexture(GL_TEXTURE_2D, textures[1]);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, output_bottom);
-
-    // glBegin(GL_QUADS);
-    // glTexCoord2f(0.0f, 0.0f);
-    // glVertex2f(-1.0f,  0.0f);
-    // glTexCoord2f(1.0f, 0.0f);
-    // glVertex2f( 1.0f,  0.0f);
-    // glTexCoord2f(1.0f, 1.0f);
-    // glVertex2f( 1.0f, -1.0f);
-    // glTexCoord2f(0.0f, 1.0f);
-    // glVertex2f(-1.0f, -1.0f);
-    // glEnd();
-
-    SDL_GL_SwapWindow(window);
 
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT)
@@ -160,7 +107,6 @@ void loop(Duality::core::Core& core) {
   }
 
 cleanup:
-  glDeleteTextures(2, &textures[0]);
   SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
 }

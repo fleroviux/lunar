@@ -80,7 +80,7 @@ struct CoreImpl {
   }
 
   void SetVideoDevice(VideoDevice& device) {
-    
+    interconnect.video_unit.SetVideoDevice(device);
   }
 
   void Run(uint cycles) {

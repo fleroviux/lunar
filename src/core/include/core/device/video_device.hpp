@@ -11,7 +11,7 @@ namespace Duality::core {
 struct VideoDevice {
   virtual ~VideoDevice() = default;
 
-  virtual void Draw(uint screen, u32* data) = 0;
+  virtual void Draw(u32 const* top, u32 const* bottom) = 0;
 };
 
 } // namespace Duality::core

@@ -100,6 +100,10 @@ void VideoUnit::OnHdrawBegin(int late) {
 
     dispstat7.vblank.flag = true;
     dispstat9.vblank.flag = true;
+
+    if (video_device != nullptr) {
+      video_device->Draw(GetOutput(Screen::Top), GetOutput(Screen::Bottom));
+    }
   }
   
   if (vcount.value == kTotalLines - 1) {
