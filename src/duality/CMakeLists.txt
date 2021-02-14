@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../modules)
 
 set(SOURCES
-  src/audio_device.cpp
-  src/main.cpp
-  src/video_device.cpp)
+  src/device/audio_device.cpp
+  src/device/video_device.cpp
+  src/main.cpp)
 
 set(HEADERS
-  src/audio_device.hpp
-  src/video_device.hpp)
+  src/device/audio_device.hpp
+  src/device/video_device.hpp)
 
 include(FindSDL2)
 find_package(SDL2 REQUIRED)

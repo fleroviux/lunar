@@ -49,26 +49,25 @@ void TSC::Reset(Firmware& firmware) {
   firmware.Deselect();
 }
 
-void TSC::SetTouchState(bool pressed, int x, int y) {
-  if (pressed) {
-    position_x = (x - scr_x1 + 1) * (adc_x2 - adc_x1) / (scr_x2 - scr_x1) + adc_x1;
-    position_y = (y - scr_y1 + 1) * (adc_y2 - adc_y1) / (scr_y2 - scr_y1) + adc_y1;
-} else {
-    position_x = 0;
-    position_y = 0xFFF;
-  }
+void TSC::SetInputDevice(InputDevice& device) {
+  input_device = &device;
 }
 
 auto TSC::Transfer(u8 data) -> u8 {
-  ASSERT(data == 0 || (data & 128) != 0, "SPI: TSC: unhandled attempt to start command mid-byte.");
-
   u8 out = data_reg >> 8;
   data_reg <<= 8;
 
   if (data & 128) {
     auto channel = (data >> 4) & 7;
+    
+    u16 position_x = 0;
+    u16 position_y = 0xFFF;
 
-    ASSERT(data_reg == 0, "SPI: TSC: attempted to send next command before all data was read.");
+    if (input_device != nullptr && input_device->IsKeyDown(InputDevice::Key::TouchPen)) {
+      auto point = input_device->GetTouchPoint();
+      position_x = (point.x - scr_x1 + 1) * (adc_x2 - adc_x1) / (scr_x2 - scr_x1) + adc_x1;
+      position_y = (point.y - scr_y1 + 1) * (adc_y2 - adc_y1) / (scr_y2 - scr_y1) + adc_y1;
+    }
 
     switch (channel) {
       /// Y position

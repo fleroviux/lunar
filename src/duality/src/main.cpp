@@ -4,11 +4,10 @@
 #include <stdio.h>
 #include <util/integer.hpp>
 #include <util/log.hpp>
-
 #include <core/core.hpp>
 
-#include "audio_device.hpp"
-#include "video_device.hpp"
+#include "device/audio_device.hpp"
+#include "device/video_device.hpp"
 
 #undef main
 
@@ -35,8 +34,10 @@ void loop(Duality::core::Core& core) {
   SDL_GL_SetSwapInterval(1);
 
   auto audio_device = SDL2AudioDevice{};
+  auto input_device = Duality::core::BasicInputDevice{};
   auto video_device = SDL2VideoDevice{window};
   core.SetAudioDevice(audio_device);
+  core.SetInputDevice(input_device);
   core.SetVideoDevice(video_device);
 
   int frames = 0;
@@ -65,44 +66,47 @@ void loop(Duality::core::Core& core) {
     }
 
     while (SDL_PollEvent(&event)) {
+      using Key = Duality::core::InputDevice::Key;
+
       if (event.type == SDL_QUIT)
         goto cleanup;
-      // if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) {
-      //   int key = -1;
-      //   bool pressed = event.type == SDL_KEYDOWN;
+      if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) {
+        int key = -1;
+        bool down = event.type == SDL_KEYDOWN;
 
-      //   switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
-      //     case SDLK_a: keyinput.a = pressed; break;
-      //     case SDLK_s: keyinput.b = pressed; break;
-      //     case SDLK_BACKSPACE: keyinput.select = pressed; break;
-      //     case SDLK_RETURN: keyinput.start = pressed; break;
-      //     case SDLK_RIGHT: keyinput.right = pressed; break;
-      //     case SDLK_LEFT: keyinput.left = pressed; break;
-      //     case SDLK_UP: keyinput.up = pressed; break;
-      //     case SDLK_DOWN: keyinput.down = pressed; break;
-      //     case SDLK_d: keyinput.l = pressed; break;
-      //     case SDLK_f: keyinput.r = pressed; break;
-      //     case SDLK_q: extkeyinput.x = pressed; break;
-      //     case SDLK_w: extkeyinput.y = pressed; break;
-      //     case SDLK_SPACE: {
-      //       fastforward = pressed;
-      //       if (fastforward) {
-      //         SDL_GL_SetSwapInterval(0);
-      //       } else {
-      //         SDL_GL_SetSwapInterval(1);
-      //       }
-      //       break;
-      //     }
-      //   }
-      // }
-      // if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
-      //   auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
-      //   s32 x = mouse_event->x / scale;
-      //   s32 y = mouse_event->y / scale - 192;
-      //   bool down = (mouse_event->state & SDL_BUTTON_LMASK) && y >= 0;
-      //   tsc.SetTouchState(down, x, y);
-      //   extkeyinput.pen_down = down;
-      // }
+        switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
+          case SDLK_a: input_device.SetKeyDown(Key::A, down); break;
+          case SDLK_s: input_device.SetKeyDown(Key::B, down); break;
+          case SDLK_BACKSPACE: input_device.SetKeyDown(Key::Select, down); break;
+          case SDLK_RETURN: input_device.SetKeyDown(Key::Start, down); break;
+          case SDLK_RIGHT: input_device.SetKeyDown(Key::Right, down); break;
+          case SDLK_LEFT: input_device.SetKeyDown(Key::Left, down); break;
+          case SDLK_UP: input_device.SetKeyDown(Key::Up, down); break;
+          case SDLK_DOWN: input_device.SetKeyDown(Key::Down, down); break;
+          case SDLK_d: input_device.SetKeyDown(Key::L, down); break;
+          case SDLK_f: input_device.SetKeyDown(Key::R, down); break;
+          case SDLK_q: input_device.SetKeyDown(Key::X, down); break;
+          case SDLK_w: input_device.SetKeyDown(Key::Y, down); break;
+          case SDLK_SPACE: {
+            fastforward = down;
+            if (fastforward) {
+              SDL_GL_SetSwapInterval(0);
+            } else {
+              SDL_GL_SetSwapInterval(1);
+            }
+            break;
+          }
+        }
+      }
+      if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
+        auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
+        int x = mouse_event->x / scale;
+        int y = mouse_event->y / scale - 192;
+        bool down = (mouse_event->state & SDL_BUTTON_LMASK) && y >= 0;
+        input_device.SetKeyDown(Key::TouchPen, down);
+        input_device.GetTouchPoint().x = x;
+        input_device.GetTouchPoint().y = y;
+      }
     }
   }
 

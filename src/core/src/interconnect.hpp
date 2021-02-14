@@ -6,6 +6,7 @@
 
 #include <util/integer.hpp>
 #include <util/log.hpp>
+#include <core/device/input_device.hpp>
 #include <functional>
 #include <string.h>
 #include <vector>
@@ -24,6 +25,7 @@
 
 namespace Duality::core {
 
+// TODO: this whole construct really needs to go away :methharold:
 struct Interconnect {
   Interconnect()
       : apu(scheduler)
@@ -60,6 +62,12 @@ struct Interconnect {
     // TODO: this is the value for direct boot,
     // which value is correct for firmware boot?
     wramcnt.WriteByte(3);
+  }
+
+  void SetInputDevice(InputDevice& device) {
+    keyinput.SetInputDevice(device);
+    extkeyinput.SetInputDevice(device);
+    spi.tsc.SetInputDevice(device);
   }
 
   u8 ewram[0x400000];
@@ -132,47 +140,54 @@ struct Interconnect {
   } wramcnt;
 
   struct KeyInput {
-    bool a = false;
-    bool b = false;
-    bool select = false;
-    bool start = false;
-    bool right = false;
-    bool left = false;
-    bool up = false;
-    bool down = false;
-    bool r = false;
-    bool l = false;
+    void SetInputDevice(InputDevice& device) {
+      input_device = &device;
+    }
 
     auto ReadByte(uint offset) -> u8 {
+      using Key = InputDevice::Key;
+
       switch (offset) {
         case 0:
-          return (a      ? 0 :   1) |
-                 (b      ? 0 :   2) |
-                 (select ? 0 :   4) |
-                 (start  ? 0 :   8) |
-                 (right  ? 0 :  16) |
-                 (left   ? 0 :  32) |
-                 (up     ? 0 :  64) |
-                 (down   ? 0 : 128);
+          if (input_device == nullptr) return 0xFF;
+
+          return (input_device->IsKeyDown(Key::A)      ? 0 :   1) |
+                 (input_device->IsKeyDown(Key::B)      ? 0 :   2) |
+                 (input_device->IsKeyDown(Key::Select) ? 0 :   4) |
+                 (input_device->IsKeyDown(Key::Start)  ? 0 :   8) |
+                 (input_device->IsKeyDown(Key::Right)  ? 0 :  16) |
+                 (input_device->IsKeyDown(Key::Left)   ? 0 :  32) |
+                 (input_device->IsKeyDown(Key::Up)     ? 0 :  64) |
+                 (input_device->IsKeyDown(Key::Down)   ? 0 : 128);
         case 1:
-          return (r ? 0 : 1) |
-                 (l ? 0 : 2);
+          if (input_device == nullptr) return 3;
+
+          return (input_device->IsKeyDown(Key::R) ? 0 : 1) |
+                 (input_device->IsKeyDown(Key::L) ? 0 : 2);
       }
 
       UNREACHABLE;
     }
+
+    InputDevice* input_device = nullptr;
   } keyinput = {};
 
   struct ExtKeyInput {
-    bool x = false;
-    bool y = false;
-    bool pen_down = false;
+    void SetInputDevice(InputDevice& device) {
+      input_device = &device;
+    }
 
     auto ReadByte() -> u8 {
-      return (x ? 0 : 1) |
-             (y ? 0 : 2) |
-             (pen_down ? 0 : 64);
+      using Key = InputDevice::Key;
+
+      if (input_device == nullptr) return 67;
+
+      return (input_device->IsKeyDown(Key::X) ? 0 : 1) |
+             (input_device->IsKeyDown(Key::Y) ? 0 : 2) |
+             (input_device->IsKeyDown(Key::TouchPen) ? 0 : 64);
     }
+
+    InputDevice* input_device = nullptr;
   } extkeyinput = {};
 };
 

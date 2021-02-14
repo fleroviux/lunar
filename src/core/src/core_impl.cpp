@@ -79,6 +79,10 @@ struct CoreImpl {
     interconnect.apu.SetAudioDevice(device);
   }
 
+  void SetInputDevice(InputDevice& device) {
+    interconnect.SetInputDevice(device);
+  }
+
   void SetVideoDevice(VideoDevice& device) {
     interconnect.video_unit.SetVideoDevice(device);
   }
@@ -88,8 +92,6 @@ struct CoreImpl {
     auto& irq7 = interconnect.irq7;
     auto& irq9 = interconnect.irq9;
     auto& tsc = interconnect.spi.tsc;
-    //auto& keyinput = interconnect.keyinput;
-    //auto& extkeyinput = interconnect.extkeyinput;
 
     auto frame_target = scheduler.GetTimestampNow() + cycles - overshoot;
 
@@ -227,6 +229,10 @@ Core::~Core() {
 
 void Core::SetAudioDevice(AudioDevice& device) {
   pimpl->SetAudioDevice(device);
+}
+
+void Core::SetInputDevice(InputDevice& device) {
+  pimpl->SetInputDevice(device);
 }
 
 void Core::SetVideoDevice(VideoDevice& device) {
