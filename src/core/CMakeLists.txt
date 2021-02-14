@@ -85,8 +85,8 @@ set(HEADERS_PUBLIC
 
 add_library(duality-core STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_link_libraries(duality-core duality-util fmt)
-# TODO: change all private includes from <> to ""
-target_include_directories(duality-core PRIVATE src)
+# TODO: change visibility to PRIVATE!
+target_include_directories(duality-core PUBLIC src)
 target_include_directories(duality-core PUBLIC include)
 
 ## TODO: this is not optimal... move SDL out of the core.

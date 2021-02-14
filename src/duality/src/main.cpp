@@ -2,14 +2,14 @@
 #include <fstream>
 #include <memory>
 #include <stdio.h>
+#include <util/integer.hpp>
+#include <util/log.hpp>
 
-#include <common/integer.hpp>
-#include <common/log.hpp>
-#include <core/arm/arm.hpp>
-#include <core/interconnect.hpp>
-#include <core/arm7/bus.hpp>
-#include <core/arm9/bus.hpp>
-#include <core/arm9/cp15.hpp>
+#include <arm/arm.hpp>
+#include <interconnect.hpp>
+#include <arm7/bus.hpp>
+#include <arm9/bus.hpp>
+#include <arm9/cp15.hpp>
 
 #include <SDL.h>
 #include <GL/glew.h>
