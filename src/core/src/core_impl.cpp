@@ -75,6 +75,9 @@ struct CoreImpl {
     Load(rom_path);
   }
 
+  void SetAudioDevice(AudioDevice& device) {
+  }
+
   void Run(uint cycles) {
     auto& scheduler = interconnect.scheduler;
     auto& irq7 = interconnect.irq7;
@@ -213,6 +216,10 @@ Core::Core(std::string_view rom_path) {
 
 Core::~Core() {
   delete pimpl;
+}
+
+void Core::SetAudioDevice(AudioDevice& device) {
+  pimpl->SetAudioDevice(device);
 }
 
 void Core::Run(uint cycles) {

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <util/integer.hpp>
+#include <core/device/audio_device.hpp>
 #include <mutex>
 
 #include "arm/memory.hpp"
@@ -12,7 +13,6 @@
 
 namespace Duality::core {
 
-// FIXME
 void AudioCallback(struct APU* this_, s16* stream, int length);
 
 struct APU {
@@ -20,6 +20,7 @@ struct APU {
 
   void Reset();
   void SetMemory(arm::MemoryBase* memory) { this->memory = memory; }
+  void SetAudioDevice(AudioDevice& device);
   auto Read (uint chan_id, uint offset) -> u8;
   void Write(uint chan_id, uint offset, u8 value);
 
@@ -87,6 +88,7 @@ private:
   std::mutex buffer_lock;
   Scheduler& scheduler;
   arm::MemoryBase* memory = nullptr;
+  AudioDevice* audio_device = nullptr;
 };
 
 } // namespace Duality::core

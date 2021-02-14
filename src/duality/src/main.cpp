@@ -14,6 +14,8 @@
 #include <SDL.h>
 #include <GL/glew.h>
 
+#include "audio_device.hpp"
+
 #undef main
 
 using namespace Duality::core;
@@ -80,6 +82,9 @@ void loop(ARM* arm7, ARM* arm9, Interconnect* interconnect, ARM7MemoryBus* arm7_
   }
 
   glClearColor(0, 0, 0, 1);
+
+  auto audio_device = SDL2AudioDevice{};
+  interconnect->apu.SetAudioDevice(audio_device);
 
   SDL_Event event;
 
