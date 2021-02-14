@@ -75,6 +75,45 @@ struct CoreImpl {
     Load(rom_path);
   }
 
+  void Run(uint cycles) {
+    auto& scheduler = interconnect.scheduler;
+    auto& irq7 = interconnect.irq7;
+    auto& irq9 = interconnect.irq9;
+    auto& tsc = interconnect.spi.tsc;
+    //auto& keyinput = interconnect.keyinput;
+    //auto& extkeyinput = interconnect.extkeyinput;
+
+    auto frame_target = scheduler.GetTimestampNow() + cycles;
+
+    // TODO: handle frame target overshoot.
+    while (scheduler.GetTimestampNow() < frame_target) {
+      uint cycles = 1;
+
+      // Run both CPUs individually for up to 32 cycles, but make sure
+      // that we do not run past any hardware event.
+      if (gLooselySynchronizeCPUs) {
+        u64 target = std::min(frame_target, scheduler.GetTimestampTarget());
+        // Run to the next event if both CPUs are halted.
+        // Otherwise run each CPU for up to 32 cycles.
+        cycles = target - scheduler.GetTimestampNow();
+        if (!arm9.IsWaitingForIRQ() || !arm7_mem.IsHalted()) {
+          cycles = std::min(32U, cycles);
+        }
+      }
+
+      arm9.Run(cycles * 2);
+
+      if (!arm7_mem.IsHalted() || irq7.HasPendingIRQ()) {
+        arm7_mem.IsHalted() = false;
+        arm7.Run(cycles);
+      }
+
+      scheduler.AddCycles(cycles);
+      scheduler.Step();
+    }
+
+  }
+
   void Load(std::string_view rom_path) {
     using Bus = arm::MemoryBase::Bus;
 
@@ -174,6 +213,10 @@ Core::Core(std::string_view rom_path) {
 
 Core::~Core() {
   delete pimpl;
+}
+
+void Core::Run(uint cycles) {
+  pimpl->Run(cycles);
 }
 
 } // namespace Duality::core
