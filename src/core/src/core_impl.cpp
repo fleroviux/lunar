@@ -91,9 +91,8 @@ struct CoreImpl {
     //auto& keyinput = interconnect.keyinput;
     //auto& extkeyinput = interconnect.extkeyinput;
 
-    auto frame_target = scheduler.GetTimestampNow() + cycles;
+    auto frame_target = scheduler.GetTimestampNow() + cycles - overshoot;
 
-    // TODO: handle frame target overshoot.
     while (scheduler.GetTimestampNow() < frame_target) {
       uint cycles = 1;
 
@@ -120,6 +119,7 @@ struct CoreImpl {
       scheduler.Step();
     }
 
+    overshoot = scheduler.GetTimestampNow() - frame_target;
   }
 
   void Load(std::string_view rom_path) {
@@ -206,13 +206,15 @@ struct CoreImpl {
     arm9_mem.WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
   }
 
+  u64 overshoot = 0;
+
   Interconnect interconnect;
   ARM7MemoryBus arm7_mem;
   ARM9MemoryBus arm9_mem;
   arm::ARM arm7;
   arm::ARM arm9;
   CP14 cp14;
-  CP15 cp15; 
+  CP15 cp15;
 };
 
 Core::Core(std::string_view rom_path) {
