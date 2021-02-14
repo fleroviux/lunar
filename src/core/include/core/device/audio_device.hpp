@@ -9,7 +9,7 @@
 namespace Duality::core {
   
 struct AudioDevice {
-  virtual ~AudioDevice() {}
+  virtual ~AudioDevice() = default;
 
   using Callback = void (*)(void* userdata, s16* stream, int byte_len);
 

@@ -76,6 +76,11 @@ struct CoreImpl {
   }
 
   void SetAudioDevice(AudioDevice& device) {
+    interconnect.apu.SetAudioDevice(device);
+  }
+
+  void SetVideoDevice(VideoDevice& device) {
+    
   }
 
   void Run(uint cycles) {
@@ -220,6 +225,10 @@ Core::~Core() {
 
 void Core::SetAudioDevice(AudioDevice& device) {
   pimpl->SetAudioDevice(device);
+}
+
+void Core::SetVideoDevice(VideoDevice& device) {
+  pimpl->SetVideoDevice(device);
 }
 
 void Core::Run(uint cycles) {

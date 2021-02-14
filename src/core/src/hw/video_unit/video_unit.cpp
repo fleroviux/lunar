@@ -47,6 +47,10 @@ void VideoUnit::Reset() {
   OnHdrawBegin(0);
 }
 
+void VideoUnit::SetVideoDevice(VideoDevice& device) {
+  video_device = &device;
+}
+
 auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
   switch (screen) {
     case Screen::Top:

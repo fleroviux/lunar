@@ -319,14 +319,12 @@ void AudioCallback(APU* this_, s16* stream, int length) {
       this_->buffer_count--;
     }
   } else {
-    //int j = 0;
+    int j = 0;
 
     for (int i = 0; i < num_samples; i++) {
-      *stream++ = 0;
-      *stream++ = 0;
-      //*stream++ = this_->buffer[0][this_->buffer_rd_pos + j];
-      //*stream++ = this_->buffer[1][this_->buffer_rd_pos + j];
-      //if (++j == this_->buffer_count) j = 0;
+      *stream++ = this_->buffer[0][this_->buffer_rd_pos + j];
+      *stream++ = this_->buffer[1][this_->buffer_rd_pos + j];
+      if (++j == this_->buffer_count) j = 0;
     }
   }
 }

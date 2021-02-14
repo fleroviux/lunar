@@ -80,6 +80,8 @@ set(HEADERS
   src/scheduler.hpp)
 
 set(HEADERS_PUBLIC
+  include/core/device/audio_device.hpp
+  include/core/device/video_device.hpp
   include/core/core.hpp)
 
 add_library(duality-core STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})

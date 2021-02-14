@@ -5,6 +5,7 @@
 #pragma once
 
 #include <core/device/audio_device.hpp>
+#include <core/device/video_device.hpp>
 #include <util/integer.hpp>
 #include <string_view>
 
@@ -15,6 +16,8 @@ struct Core {
  ~Core();
 
  void SetAudioDevice(AudioDevice& device);
+ void SetVideoDevice(VideoDevice& device);
+
  void Run(uint cycles);
 
 private:

@@ -7,6 +7,7 @@
 #include <functional>
 #include <util/integer.hpp>
 #include <util/log.hpp>
+#include <core/device/video_device.hpp>
 
 #include "gpu/gpu.hpp"
 #include "ppu/ppu.hpp"
@@ -25,6 +26,7 @@ struct VideoUnit {
   VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9);
 
   void Reset();
+  void SetVideoDevice(VideoDevice& device);
   auto GetOutput(Screen screen) -> u32 const*;
 
   /// Graphics status and IRQ control.
@@ -89,6 +91,7 @@ private:
   IRQ& irq9;
   DMA7& dma7;
   DMA9& dma9;
+  VideoDevice* video_device = nullptr;
 };
 
 } // namespace Duality::core
