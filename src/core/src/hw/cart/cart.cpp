@@ -20,7 +20,7 @@ void Cartridge::Reset() {
   spidata = 0;
 }
 
-void Cartridge::Load(std::string const& path) {
+void Cartridge::Load(std::string_view path) {
   u32 file_size;
 
   if (file.is_open())

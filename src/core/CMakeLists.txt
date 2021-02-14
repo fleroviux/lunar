@@ -35,7 +35,7 @@ set(SOURCES
   src/hw/video_unit/ppu/registers.cpp
   src/hw/video_unit/video_unit.cpp
   src/hw/video_unit/vram.cpp
-  src/core.cpp
+  src/core_impl.cpp
   src/scheduler.cpp)
 
 set(HEADERS
@@ -76,12 +76,11 @@ set(HEADERS
   src/hw/video_unit/video_unit.hpp
   src/hw/video_unit/vram.hpp
   src/hw/video_unit/vram_region.hpp
-  src/core.hpp
   src/interconnect.hpp
   src/scheduler.hpp)
 
 set(HEADERS_PUBLIC
-)
+  include/core/core.hpp)
 
 add_library(duality-core STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_link_libraries(duality-core duality-util fmt)
