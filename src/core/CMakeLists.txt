@@ -23,7 +23,6 @@ set(SOURCES
   src/hw/spi/tsc/tsc.cpp
   src/hw/spi/spi.cpp
   src/hw/timer/timer.cpp
-  src/hw/video_unit/gpu/software/renderer.cpp
   src/hw/video_unit/gpu/commands.cpp
   src/hw/video_unit/gpu/gpu.cpp
   src/hw/video_unit/ppu/render/affine.cpp
@@ -66,11 +65,9 @@ set(HEADERS
   src/hw/spi/spi.hpp
   src/hw/spi/spi_device.hpp
   src/hw/timer/timer.cpp
-  src/hw/video_unit/gpu/software/renderer.hpp
   src/hw/video_unit/gpu/fixed_point.hpp
   src/hw/video_unit/gpu/gpu.hpp
   src/hw/video_unit/gpu/matrix_stack.hpp
-  src/hw/video_unit/gpu/renderer_base.hpp
   src/hw/video_unit/ppu/ppu.hpp
   src/hw/video_unit/ppu/registers.hpp
   src/hw/video_unit/video_unit.hpp

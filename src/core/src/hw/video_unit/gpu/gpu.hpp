@@ -15,7 +15,6 @@
 #include "hw/video_unit/vram.hpp"
 #include "scheduler.hpp"
 #include "matrix_stack.hpp"
-#include "renderer_base.hpp"
 
 namespace Duality::core {
 
@@ -280,9 +279,6 @@ private:
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
   Matrix4<Fixed20x12> clip_matrix;
-
-  /// Renderer backend
-  std::unique_ptr<GPURendererBase> renderer;
 };
 
 } // namespace Duality::core

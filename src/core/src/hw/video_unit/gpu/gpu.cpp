@@ -5,7 +5,6 @@
 #include <util/log.hpp>
 
 #include "gpu.hpp"
-#include "software/renderer.hpp"
 
 namespace Duality::core {
 
@@ -41,7 +40,6 @@ GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
     , dma9(dma9)
     , vram_texture(vram.region_gpu_texture)
     , vram_palette(vram.region_gpu_palette) {
-  renderer = std::make_unique<GPUSoftwareRenderer>();
   Reset();
 }
 
