@@ -67,8 +67,8 @@ set(HEADERS
   src/hw/spi/spi_device.hpp
   src/hw/timer/timer.cpp
   src/hw/video_unit/gpu/software/renderer.hpp
+  src/hw/video_unit/gpu/fixed_point.hpp
   src/hw/video_unit/gpu/gpu.hpp
-  src/hw/video_unit/gpu/matrix.hpp
   src/hw/video_unit/gpu/matrix_stack.hpp
   src/hw/video_unit/gpu/renderer_base.hpp
   src/hw/video_unit/ppu/ppu.hpp

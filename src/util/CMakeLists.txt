@@ -12,12 +12,14 @@ set(HEADERS
 )
 
 set(HEADERS_PUBLIC
+  include/util/math/matrix.hpp
+  include/util/math/numeric_traits.hpp
+  include/util/math/vector.hpp
   include/util/bit.hpp
   include/util/fifo.hpp
   include/util/integer.hpp
   include/util/likely.hpp
   include/util/log.hpp
-  include/util/math.hpp
   include/util/meta.hpp)
 
 add_library(duality-util STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})

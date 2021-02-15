@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "matrix.hpp"
+#include <util/math/matrix.hpp>
+
+#include "fixed_point.hpp"
 
 namespace Duality::core {
 

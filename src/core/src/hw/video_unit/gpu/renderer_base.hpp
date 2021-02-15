@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <util/math/matrix.hpp>
 #include <util/integer.hpp>
 #include <optional>
 #include <vector>
 
-#include "matrix.hpp"
+#include "fixed_point.hpp"
 
 namespace Duality::core {
 
