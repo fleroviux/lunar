@@ -116,6 +116,10 @@ cleanup:
 }
 
 auto main(int argc, const char** argv) -> int {
+  if (argc != 2) {
+    printf("%s rom_path\n", argv[0]);
+    return -1;
+  }
   auto core = Duality::core::Core{argv[1]};
   loop(core);
   return 0;
