@@ -8,12 +8,12 @@
 #include <core/device/input_device.hpp>
 #include <core/device/video_device.hpp>
 #include <util/integer.hpp>
-#include <string_view>
+#include <string>
 
 namespace Duality::core {
 
 struct Core {
-  Core(std::string_view rom_path);
+  Core(std::string const& rom_path);
  ~Core();
 
  void SetAudioDevice(AudioDevice& device);

@@ -1,3 +1,4 @@
+project(Duality)
 
 # TODO: remove this and let each component bring its own headers instead.
 include_directories(.)

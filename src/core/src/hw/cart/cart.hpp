@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 #include <fstream>
-#include <string_view>
+#include <string>
 
 #include "backup.hpp"
 #include "hw/dma/dma7.hpp"
@@ -25,7 +25,7 @@ struct Cartridge {
   }
 
   void Reset();
-  void Load(std::string_view path);
+  void Load(std::string const& path);
   auto ReadSPI() -> u8;
   void WriteSPI(u8 value);
   auto ReadROM() -> u32;

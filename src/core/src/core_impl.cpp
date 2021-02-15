@@ -58,7 +58,7 @@ struct CP14 : arm::Coprocessor {
 };
 
 struct CoreImpl {
-  CoreImpl(std::string_view rom_path) 
+  CoreImpl(std::string const& rom_path) 
       : arm7_mem(&interconnect)
       , arm9_mem(&interconnect)
       , arm7(arm::ARM::Architecture::ARMv4T, &arm7_mem)
@@ -124,7 +124,7 @@ struct CoreImpl {
     overshoot = scheduler.GetTimestampNow() - frame_target;
   }
 
-  void Load(std::string_view rom_path) {
+  void Load(std::string const& rom_path) {
     using Bus = arm::MemoryBase::Bus;
 
     std::ifstream rom { rom_path, std::ios::in | std::ios::binary };
@@ -219,7 +219,7 @@ struct CoreImpl {
   CP15 cp15;
 };
 
-Core::Core(std::string_view rom_path) {
+Core::Core(std::string const& rom_path) {
   pimpl = new CoreImpl(rom_path);
 }
 
