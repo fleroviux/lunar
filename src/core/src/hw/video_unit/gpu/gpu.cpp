@@ -209,7 +209,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
   vertices.push_back({
     clip_position,
     { vertex_color[0], vertex_color[1], vertex_color[2] },
-    { vertex_uv[0], vertex_uv[1] }
+    vertex_uv
   });
 
   position_old = position;
@@ -345,10 +345,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
                 v1.color[1] + (((v0.color[1] - v1.color[1]) * scale.raw()) >> 12),
                 v1.color[2] + (((v0.color[2] - v1.color[2]) * scale.raw()) >> 12)
               },
-              .uv = {
-                s16(v1.uv[0] + (((v0.uv[0] - v1.uv[0]) * scale.raw()) >> 12)),
-                s16(v1.uv[1] + (((v0.uv[1] - v1.uv[1]) * scale.raw()) >> 12))
-              }
+              .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
             });
           }
         }

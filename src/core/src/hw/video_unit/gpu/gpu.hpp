@@ -137,7 +137,7 @@ private:
   struct Vertex {
     Vector4<Fixed20x12> position;
     s32 color[3];
-    s16 uv[2];
+    Vector2<Fixed12x4> uv;
     // ...
   };
 
@@ -250,7 +250,7 @@ private:
   s32 vertex_color[3];
 
   /// Current vertex UV
-  s16 vertex_uv[2];
+  Vector2<Fixed12x4> vertex_uv;
 
   /// Current texture parameters
   TextureParams texture_params;

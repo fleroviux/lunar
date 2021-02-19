@@ -297,8 +297,7 @@ void GPU::CMD_SetNormal() {
 
 void GPU::CMD_SetUV() {
   auto arg = Dequeue().argument;
-  vertex_uv[0] = s16(arg & 0xFFFF);
-  vertex_uv[1] = s16(arg >> 16);
+  vertex_uv = Vector2<Fixed12x4>{arg & 0xFFFF, arg >> 16};
 }
 
 void GPU::CMD_SubmitVertex_16() {
@@ -395,9 +394,7 @@ void GPU::CMD_BeginVertexList() {
   for (int i = 0; i < 3; i++) {
     vertex_color[i] = 63;
   }
-  for (int i = 0; i < 2; i++) {
-    vertex_uv[i] = 0;
-  }
+  vertex_uv = {};
 }
 
 void GPU::CMD_EndVertexList() {
@@ -588,8 +585,8 @@ void GPU::CMD_SwapBuffers() {
       s16 uv0[2];
       s16 uv1[2];
       for (int j = 0; j < 2; j++) {
-        uv0[j] = lerp(points[s0].vertex->uv[j], points[e0].vertex->uv[j], y - points[s0].y, points[e0].y - points[s0].y);
-        uv1[j] = lerp(points[s1].vertex->uv[j], points[e1].vertex->uv[j], y - points[s1].y, points[e1].y - points[s1].y);
+        uv0[j] = lerp(points[s0].vertex->uv[j].raw(), points[e0].vertex->uv[j].raw(), y - points[s0].y, points[e0].y - points[s0].y);
+        uv1[j] = lerp(points[s1].vertex->uv[j].raw(), points[e1].vertex->uv[j].raw(), y - points[s1].y, points[e1].y - points[s1].y);
       }
 
       s32 depth0 = lerp(points[s0].depth, points[e0].depth, y - points[s0].y, points[e0].y - points[s0].y);

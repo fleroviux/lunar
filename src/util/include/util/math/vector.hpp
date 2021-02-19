@@ -79,14 +79,14 @@ struct Vector {
     return result;
   }
 
-  bool operator==(Vector const& other) {
+  bool operator==(Vector const& other) const {
     for (uint i = 0; i < n; i++)
       if (data[i] != other[i])
         return false;
     return true;
   }
 
-  bool operator!=(Vector const& other) {
+  bool operator!=(Vector const& other) const {
     return !(*this == other);
   }
 
@@ -97,9 +97,10 @@ struct Vector {
     return result;
   }
 
-  static auto interpolate(Vector const& a, Vector const& b, T factor) -> Vector {
+  template<typename U>
+  static auto interpolate(Vector const& a, Vector const& b, U factor) -> Vector {
     Vector result{};
-    T one_minus_factor = NumericConstants<T>::one() - factor;
+    U one_minus_factor = NumericConstants<U>::one() - factor;
     for (uint i = 0; i < n; i++)
       result[i] = a[i] * one_minus_factor + b[i] * factor;
     return result;
