@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 #include "arm/arm.hpp"
-#include "arm7/bus.hpp"
+#include "arm7/arm7.hpp"
 #include "arm9/bus.hpp"
 #include "arm9/cp15.hpp"
 #include "interconnect.hpp"
@@ -37,39 +37,14 @@ struct Header {
   } arm9, arm7;
 } __attribute__((packed));
 
-/// No-operation stub for the CP14 coprocessor
-struct CP14 : arm::Coprocessor {
-  void Reset() override {}
-
-  auto Read(
-    int opcode1,
-    int cn,
-    int cm,
-    int opcode2
-  ) -> u32 override { return 0; }
-  
-  void Write(
-    int opcode1,
-    int cn,
-    int cm,
-    int opcode2,
-    u32 value
-  ) override {}
-};
-
 struct CoreImpl {
-  CoreImpl(std::string const& rom_path) 
-      : arm7_mem(&interconnect)
+  CoreImpl(std::string const& rom_path)
+      : arm7(interconnect)
       , arm9_mem(&interconnect)
-      , arm7(arm::ARM::Architecture::ARMv4T, &arm7_mem)
       , arm9(arm::ARM::Architecture::ARMv5TE, &arm9_mem)
       , cp15(&arm9, &arm9_mem) {
-    arm7.AttachCoprocessor(14, &cp14);
     arm9.AttachCoprocessor(15, &cp15);
-
-    interconnect.irq7.SetCore(arm7);
     interconnect.irq9.SetCore(arm9);
-    interconnect.dma7.SetMemory(&arm7_mem);
     interconnect.dma9.SetMemory(&arm9_mem);
 
     Load(rom_path);
@@ -89,9 +64,8 @@ struct CoreImpl {
 
   void Run(uint cycles) {
     auto& scheduler = interconnect.scheduler;
-    auto& irq7 = interconnect.irq7;
     auto& irq9 = interconnect.irq9;
-    auto& tsc = interconnect.spi.tsc;
+    //auto& tsc = interconnect.spi.tsc;
 
     auto frame_target = scheduler.GetTimestampNow() + cycles - overshoot;
 
@@ -105,17 +79,13 @@ struct CoreImpl {
         // Run to the next event if both CPUs are halted.
         // Otherwise run each CPU for up to 32 cycles.
         cycles = target - scheduler.GetTimestampNow();
-        if (!arm9.IsWaitingForIRQ() || !arm7_mem.IsHalted()) {
+        if (!arm9.IsWaitingForIRQ() || !arm7.IsHalted()) {
           cycles = std::min(32U, cycles);
         }
       }
 
       arm9.Run(cycles * 2);
-
-      if (!arm7_mem.IsHalted() || irq7.HasPendingIRQ()) {
-        arm7_mem.IsHalted() = false;
-        arm7.Run(cycles);
-      }
+      arm7.Run(cycles);
 
       scheduler.AddCycles(cycles);
       scheduler.Step();
@@ -147,15 +117,10 @@ struct CoreImpl {
         if (!rom.good()) {
           throw std::runtime_error("failed to read ARM7 binary from ROM into ARM7 memory");
         }
-        arm7_mem.WriteByte(dst++, data, Bus::Data);
+        arm7.Bus().WriteByte(dst++, data, Bus::Data);
       }
 
-      arm7.ExceptionBase(0);
-      arm7.Reset();
-      arm7.GetState().r13 = 0x0380FD80;
-      arm7.GetState().bank[arm::BANK_IRQ][arm::BANK_R13] = 0x0380FF80;
-      arm7.GetState().bank[arm::BANK_SVC][arm::BANK_R13] = 0x0380FFC0;
-      arm7.SetPC(header.arm7.entrypoint);
+      arm7.Reset(header.arm7.entrypoint);
     }
 
     {
@@ -211,11 +176,9 @@ struct CoreImpl {
   u64 overshoot = 0;
 
   Interconnect interconnect;
-  ARM7MemoryBus arm7_mem;
+  ARM7 arm7;
   ARM9MemoryBus arm9_mem;
-  arm::ARM arm7;
   arm::ARM arm9;
-  CP14 cp14;
   CP15 cp15;
 };
 
