@@ -52,8 +52,8 @@ struct Scheduler {
   void Cancel(Event* event) { Remove(event->handle); }
 
   template<class T>
-  void Add(std::uint64_t delay, T* object, EventMethod<T> method) {
-    Add(delay, [object, method](int cycles_late) {
+  auto Add(std::uint64_t delay, T* object, EventMethod<T> method) -> Event* {
+    return Add(delay, [object, method](int cycles_late) {
       (object->*method)(cycles_late);
     });
   }

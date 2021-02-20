@@ -297,7 +297,10 @@ void GPU::CMD_SetNormal() {
 
 void GPU::CMD_SetUV() {
   auto arg = Dequeue().argument;
-  vertex_uv = Vector2<Fixed12x4>{arg & 0xFFFF, arg >> 16};
+  vertex_uv = Vector2<Fixed12x4>{
+    s16(arg & 0xFFFF),
+    s16(arg >> 16)
+  };
 }
 
 void GPU::CMD_SubmitVertex_16() {

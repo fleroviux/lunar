@@ -36,6 +36,7 @@ void loop(Duality::core::Core& core) {
   auto audio_device = SDL2AudioDevice{};
   auto input_device = Duality::core::BasicInputDevice{};
   auto video_device = SDL2VideoDevice{window};
+
   core.SetAudioDevice(audio_device);
   core.SetInputDevice(input_device);
   core.SetVideoDevice(video_device);
