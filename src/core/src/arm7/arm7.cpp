@@ -13,6 +13,7 @@ ARM7::ARM7(Interconnect& interconnect)
   core.AttachCoprocessor(14, &cp14);
   irq.SetCore(core);
   interconnect.dma7.SetMemory(&bus);
+  interconnect.apu.SetMemory(&bus);
   Reset(0);
 }
 

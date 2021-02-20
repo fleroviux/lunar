@@ -32,7 +32,6 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
   ASSERT(file.good(), "ARM7: failed to read 16384 bytes from bios7.bin");
 
   memset(iwram, 0, sizeof(iwram));
-  apu.SetMemory(this);
   halted = false;
 
   if constexpr (gEnableFastMemory) {

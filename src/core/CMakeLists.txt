@@ -10,6 +10,7 @@ set(SOURCES
   src/arm7/arm7.cpp
   src/arm7/bus.cpp
   src/arm7/bus_mmio.cpp
+  src/arm9/arm9.cpp
   src/arm9/bus.cpp
   src/arm9/bus_mmio.cpp
   src/arm9/cp15.cpp
@@ -52,6 +53,7 @@ set(HEADERS
   src/arm/memory.hpp
   src/arm7/arm7.hpp
   src/arm7/bus.hpp
+  src/arm9/arm9.hpp
   src/arm9/bus.hpp
   src/arm9/cp15.hpp
   src/hw/apu/apu.hpp

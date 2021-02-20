@@ -8,8 +8,7 @@
 
 #include "arm/arm.hpp"
 #include "arm7/arm7.hpp"
-#include "arm9/bus.hpp"
-#include "arm9/cp15.hpp"
+#include "arm9/arm9.hpp"
 #include "interconnect.hpp"
 
 namespace Duality::core {
@@ -40,13 +39,7 @@ struct Header {
 struct CoreImpl {
   CoreImpl(std::string const& rom_path)
       : arm7(interconnect)
-      , arm9_mem(&interconnect)
-      , arm9(arm::ARM::Architecture::ARMv5TE, &arm9_mem)
-      , cp15(&arm9, &arm9_mem) {
-    arm9.AttachCoprocessor(15, &cp15);
-    interconnect.irq9.SetCore(arm9);
-    interconnect.dma9.SetMemory(&arm9_mem);
-
+      , arm9(interconnect) {
     Load(rom_path);
   }
 
@@ -65,7 +58,6 @@ struct CoreImpl {
   void Run(uint cycles) {
     auto& scheduler = interconnect.scheduler;
     auto& irq9 = interconnect.irq9;
-    //auto& tsc = interconnect.spi.tsc;
 
     auto frame_target = scheduler.GetTimestampNow() + cycles - overshoot;
 
@@ -79,7 +71,7 @@ struct CoreImpl {
         // Run to the next event if both CPUs are halted.
         // Otherwise run each CPU for up to 32 cycles.
         cycles = target - scheduler.GetTimestampNow();
-        if (!arm9.IsWaitingForIRQ() || !arm7.IsHalted()) {
+        if (!arm9.IsHalted() || !arm7.IsHalted()) {
           cycles = std::min(32U, cycles);
         }
       }
@@ -132,17 +124,10 @@ struct CoreImpl {
         if (!rom.good()) {
           throw std::runtime_error("failed to read ARM9 binary from ROM into ARM9 memory");
         }
-        arm9_mem.WriteByte(dst++, data, Bus::Data);
+        arm9.Bus().WriteByte(dst++, data, Bus::Data);
       }
 
-      arm9.ExceptionBase(0xFFFF0000);
-      arm9.Reset();
-      // TODO: ARM9 stack is in shared WRAM by default,
-      // but afaik at cartridge boot time all of SWRAM is mapped to NDS7?
-      arm9.GetState().r13 = 0x03002F7C;
-      arm9.GetState().bank[arm::BANK_IRQ][arm::BANK_R13] = 0x03003F80;
-      arm9.GetState().bank[arm::BANK_SVC][arm::BANK_R13] = 0x03003FC0;
-      arm9.SetPC(header.arm9.entrypoint);
+      arm9.Reset(header.arm9.entrypoint);
     }
 
     u8 data;
@@ -153,7 +138,7 @@ struct CoreImpl {
       if (!rom.good()) {
         throw std::runtime_error("failed to load cartridge header into memory");
       }
-      arm9_mem.WriteByte(dst++, data, Bus::Data);
+      arm9.Bus().WriteByte(dst++, data, Bus::Data);
     }
 
     rom.close();
@@ -162,24 +147,22 @@ struct CoreImpl {
     interconnect.cart.Load(rom_path);
 
     // Huge thanks to Hydr8gon for pointing this out:
-    arm9_mem.WriteWord(0x027FF800, 0x1FC2, Bus::Data); // Chip ID 1
-    arm9_mem.WriteWord(0x027FF804, 0x1FC2, Bus::Data); // Chip ID 2
-    arm9_mem.WriteHalf(0x027FF850, 0x5835, Bus::Data); // ARM7 BIOS CRC
-    arm9_mem.WriteHalf(0x027FF880, 0x0007, Bus::Data); // Message from ARM9 to ARM7
-    arm9_mem.WriteHalf(0x027FF884, 0x0006, Bus::Data); // ARM7 boot task
-    arm9_mem.WriteWord(0x027FFC00, 0x1FC2, Bus::Data); // Copy of chip ID 1
-    arm9_mem.WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
-    arm9_mem.WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
-    arm9_mem.WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
+    arm9.Bus().WriteWord(0x027FF800, 0x1FC2, Bus::Data); // Chip ID 1
+    arm9.Bus().WriteWord(0x027FF804, 0x1FC2, Bus::Data); // Chip ID 2
+    arm9.Bus().WriteHalf(0x027FF850, 0x5835, Bus::Data); // ARM7 BIOS CRC
+    arm9.Bus().WriteHalf(0x027FF880, 0x0007, Bus::Data); // Message from ARM9 to ARM7
+    arm9.Bus().WriteHalf(0x027FF884, 0x0006, Bus::Data); // ARM7 boot task
+    arm9.Bus().WriteWord(0x027FFC00, 0x1FC2, Bus::Data); // Copy of chip ID 1
+    arm9.Bus().WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
+    arm9.Bus().WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
+    arm9.Bus().WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
   }
 
   u64 overshoot = 0;
 
   Interconnect interconnect;
   ARM7 arm7;
-  ARM9MemoryBus arm9_mem;
-  arm::ARM arm9;
-  CP15 cp15;
+  ARM9 arm9;
 };
 
 Core::Core(std::string const& rom_path) {
