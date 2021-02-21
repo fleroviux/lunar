@@ -4,6 +4,7 @@
 
 #include <util/bit.hpp>
 #include <util/log.hpp>
+#include <util/punning.hpp>
 #include <fstream>
 #include <string.h>
 
@@ -83,23 +84,21 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
 
 template<typename T>
 auto ARM7MemoryBus::Read(u32 address) -> T {
-  auto bitcount = bit::number_of_bits<T>();
-
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
     case 0x00: {
       // TODO: figure out how out-of-bounds reads are supposed to work.
-      return *reinterpret_cast<T*>(&bios[address & 0x3FFF]);
+      return read<T>(bios, address & 0x3FFF);
     }
     case 0x02: {
-      return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
+      return read<T>(ewram, address & 0x3FFFFF);
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.data == nullptr) {
-        return *reinterpret_cast<T*>(&iwram[address & 0xFFFF]);
+        return read<T>(iwram, address & 0xFFFF);
       }
-      return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
+      return read<T>(swram.data, address & swram.mask);
     }
     case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
@@ -121,7 +120,7 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
       return vram.region_arm7_wram.Read<T>(address);
     }
     default: {
-      LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
+      LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", bit::number_of_bits<T>(), address);
     }
   }
 
@@ -130,21 +129,19 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
 
 template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value) {
-  auto bitcount = bit::number_of_bits<T>();
-  
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
     case 0x02: {
-      *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
+      write<T>(ewram, address & 0x3FFFFF, value);
       break;
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.data == nullptr) {
-        *reinterpret_cast<T*>(&iwram[address & 0xFFFF]) = value;
+        write<T>(iwram, address & 0xFFFF, value);
         break;
       }
-      *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
+      write<T>(swram.data, address & swram.mask, value);
       break;
     }
     case 0x04: {
@@ -168,7 +165,7 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       break;
     }
     default: {
-      LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
+      LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bit::number_of_bits<T>(), address, value);
     }
   }
 }

@@ -5,6 +5,7 @@
 #include <util/bit.hpp>
 #include <util/log.hpp>
 #include <util/meta.hpp>
+#include <util/punning.hpp>
 #include <fstream>
 
 #include "bus.hpp"
@@ -103,26 +104,26 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       bus != Bus::System &&
       address >= itcm.config.base &&
       address <= itcm.config.limit) {
-    return *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]);
+    return read<T>(itcm_data, (address - itcm.config.base) & 0x7FFF);
   }
 
   if (dtcm.config.enable_read &&
       bus == Bus::Data &&
       address >= dtcm.config.base &&
       address <= dtcm.config.limit) {
-    return *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]);
+    return read<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF);
   }
 
   switch (address >> 24) {
     case 0x02: {
-      return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
+      return read<T>(ewram, address & 0x3FFFFF);
     }
     case 0x03: {
       if (swram.data == nullptr) {
         LOG_ERROR("ARM9: attempted to read SWRAM but it isn't mapped.");
         return 0;
       }
-      return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
+      return read<T>(swram.data, address & swram.mask);
     }
     case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
@@ -141,13 +142,13 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       return 0;
     }
     case 0x05: {
-      return *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]);
+      return read<T>(video_unit.pram, address & 0x7FF);
     }
     case 0x06: {
       return VisitVRAMByAddress<ReadFunctor<T>>(address);
     }
     case 0x07: {
-      return *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]);
+      return read<T>(video_unit.oam, address & 0x7FF);
     }
     case 0x08: {
       return 0xFF;
@@ -155,7 +156,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0xFF: {
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
-        return *reinterpret_cast<T*>(&bios[address & 0x7FFF]);
+        return read<T>(bios, address & 0x7FFF);
     }
     default: {
       LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bit::number_of_bits<T>(), address);
@@ -173,21 +174,21 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
     if (itcm.config.enable &&
         address >= itcm.config.base &&
         address <= itcm.config.limit) {
-      *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]) = value;
+      write<T>(itcm_data, (address - itcm.config.base) & 0x7FFF, value);
       return;
     }
 
     if (dtcm.config.enable &&
         address >= dtcm.config.base &&
         address <= dtcm.config.limit) {
-      *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]) = value;
+      write<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF, value);
       return;
     }
   }
 
   switch (address >> 24) {
     case 0x02: {
-      *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
+      write<T>(ewram, address & 0x3FFFFF, value);
       break;
     }
     case 0x03: {
@@ -195,7 +196,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
         LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
         return;
       }
-      *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
+      write<T>(swram.data, address & swram.mask, value);
       break;
     }
     case 0x04: {
@@ -215,7 +216,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
       break;
     }
     case 0x05: {
-      *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]) = value;
+      write<T>(video_unit.pram, address & 0x7FF, value);
       break;
     }
     case 0x06: {
@@ -223,7 +224,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
       break;
     }
     case 0x07: {
-      *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
+      write<T>(video_unit.oam, address & 0x7FF, value);
       break;
     }
     default: {

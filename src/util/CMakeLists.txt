@@ -20,7 +20,8 @@ set(HEADERS_PUBLIC
   include/util/integer.hpp
   include/util/likely.hpp
   include/util/log.hpp
-  include/util/meta.hpp)
+  include/util/meta.hpp
+  include/util/punning.hpp)
 
 add_library(duality-util STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(duality-util PUBLIC include)

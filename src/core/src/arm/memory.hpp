@@ -9,6 +9,7 @@
 #include <util/integer.hpp>
 #include <util/likely.hpp>
 #include <util/meta.hpp>
+#include <util/punning.hpp>
 #include <memory>
 
 namespace Duality::core::arm {
@@ -42,22 +43,23 @@ struct MemoryBase {
     address &= ~(sizeof(T) - 1);
 
     if constexpr (gEnableFastMemory && bus != Bus::System) {
-      if (itcm.config.enable_read && address >= itcm.config.base && address <= itcm.config.limit) {
-        return *reinterpret_cast<T*>(&itcm.data[(address - itcm.config.base) & itcm.mask]);
+      if (itcm.config.enable_read &&
+          address >= itcm.config.base &&
+          address <= itcm.config.limit) {
+        return read<T>(itcm.data, (address - itcm.config.base) & itcm.mask);
       }
     }
 
     if constexpr (gEnableFastMemory && bus == Bus::Data) {
       if (dtcm.config.enable_read && address >= dtcm.config.base && address <= dtcm.config.limit) {
-        return *reinterpret_cast<T*>(&dtcm.data[(address - dtcm.config.base) & dtcm.mask]);
+        return read<T>(dtcm.data, (address - dtcm.config.base) & dtcm.mask);
       }
     }
 
     if (gEnableFastMemory && likely(pagetable != nullptr)) {
       auto page = (*pagetable)[address >> kPageShift];
       if (likely(page != nullptr)) {
-        page += address & kPageMask;
-        return *reinterpret_cast<T*>(page);
+        return read<T>(page, address & kPageMask);
       }
     }
 
@@ -74,13 +76,17 @@ struct MemoryBase {
     address &= ~(sizeof(T) - 1);
 
     if constexpr (gEnableFastMemory && bus != Bus::System) {
-      if (itcm.config.enable && address >= itcm.config.base && address <= itcm.config.limit) {
-        *reinterpret_cast<T*>(&itcm.data[(address - itcm.config.base) & itcm.mask]) = value;
+      if (itcm.config.enable &&
+          address >= itcm.config.base &&
+          address <= itcm.config.limit) {
+        write<T>(itcm.data, (address - itcm.config.base) & itcm.mask, value);
         return;
       }
 
-      if (dtcm.config.enable && address >= dtcm.config.base && address <= dtcm.config.limit) {
-        *reinterpret_cast<T*>(&dtcm.data[(address - dtcm.config.base) & dtcm.mask]) = value;
+      if (dtcm.config.enable &&
+          address >= dtcm.config.base &&
+          address <= dtcm.config.limit) {
+        write<T>(dtcm.data, (address - dtcm.config.base) & dtcm.mask, value);
         return;
       }
     }
@@ -88,8 +94,7 @@ struct MemoryBase {
     if (gEnableFastMemory && likely(pagetable != nullptr)) {
       auto page = (*pagetable)[address >> kPageShift];
       if (likely(page != nullptr)) {
-        page += address & kPageMask;
-        *reinterpret_cast<T*>(page) = value;
+        write<T>(page, address & kPageMask, value);
         return;
       }
     }
