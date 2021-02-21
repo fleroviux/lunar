@@ -47,27 +47,36 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
 }
 
 void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
+  auto& table = *pagetable;
+
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
+    auto index = address >> kPageShift;
+
     switch (address >> 24) {
-      case 0x00:
-        (*pagetable)[address >> kPageShift] = &bios[address & 0x3FFF];
+      case 0x00: {
+        table[index] = &bios[address & 0x3FFF];
         break;
-      case 0x02:
-        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+      }
+      case 0x02: {
+        table[index] = &ewram[address & 0x3FFFFF];
         break;
-      case 0x03:
+      }
+      case 0x03: {
         if ((address & 0x00800000) || swram.data == nullptr) {
-          (*pagetable)[address >> kPageShift] = &iwram[address & 0xFFFF];
+          table[index] = &iwram[address & 0xFFFF];
         } else {
-          (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
+          table[index] = &swram.data[address & swram.mask];
         }
         break;
-      case 0x06:
-        (*pagetable)[address >> kPageShift] = vram.region_arm7_wram.GetUnsafePointer<u8>(address);
+      }
+      case 0x06: {
+        table[index] = vram.region_arm7_wram.GetUnsafePointer<u8>(address);
         break;
-      default:
-        (*pagetable)[address >> kPageShift] = nullptr;
+      }
+      default: {
+        table[index] = nullptr;
         break;
+      }
     }
   }
 }
@@ -79,17 +88,20 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
-    case 0x00:
+    case 0x00: {
       // TODO: figure out how out-of-bounds reads are supposed to work.
       return *reinterpret_cast<T*>(&bios[address & 0x3FFF]);
-    case 0x02:
+    }
+    case 0x02: {
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
-    case 0x03:
+    }
+    case 0x03: {
       if ((address & 0x00800000) || swram.data == nullptr) {
         return *reinterpret_cast<T*>(&iwram[address & 0xFFFF]);
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
-    case 0x04:
+    }
+    case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
         return ReadWordIO(address | 0) |
           (u64(ReadWordIO(address | 4)) << 32);
@@ -104,10 +116,13 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
         return ReadByteIO(address);
       }
       return 0;
-    case 0x06:
+    }
+    case 0x06: {
       return vram.region_arm7_wram.Read<T>(address);
-    default:
+    }
+    default: {
       LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", bitcount, address);
+    }
   }
 
   return 0;
@@ -120,17 +135,19 @@ void ARM7MemoryBus::Write(u32 address, T value) {
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
 
   switch (address >> 24) {
-    case 0x02:
+    case 0x02: {
       *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
       break;
-    case 0x03:
+    }
+    case 0x03: {
       if ((address & 0x00800000) || swram.data == nullptr) {
         *reinterpret_cast<T*>(&iwram[address & 0xFFFF]) = value;
         break;
       }
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
-    case 0x04:
+    }
+    case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
         WriteWordIO(address | 0, value);
         WriteWordIO(address | 4, value >> 32);
@@ -145,11 +162,14 @@ void ARM7MemoryBus::Write(u32 address, T value) {
         WriteByteIO(address, value);
       }
       break;
-    case 0x06:
+    }
+    case 0x06: {
       vram.region_arm7_wram.Write<T>(address, value);
       break;
-    default:
+    }
+    default: {
       LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", bitcount, address, value);
+    }
   }
 }
 

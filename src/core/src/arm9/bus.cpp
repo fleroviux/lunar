@@ -59,59 +59,72 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
 }
 
 void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
-  if constexpr (!gEnableFastMemory) return;
+  auto& table = *pagetable;
 
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
+    auto index = address >> kPageShift;
+
     switch (address >> 24) {
-      case 0x02:
-        (*pagetable)[address >> kPageShift] = &ewram[address & 0x3FFFFF];
+      case 0x02: {
+        table[index] = &ewram[address & 0x3FFFFF];
         break;
-      case 0x03:
+      }
+      case 0x03: {
         if (swram.data != nullptr) {
-          (*pagetable)[address >> kPageShift] = &swram.data[address & swram.mask];
+          table[index] = &swram.data[address & swram.mask];
         } else {
-          (*pagetable)[address >> kPageShift] = nullptr;
+          table[index] = nullptr;
         }
         break;
-      case 0x06:
-        (*pagetable)[address >> kPageShift] = VisitVRAMByAddress<GetUnsafePointerFunctor<u8>>(address);
+      }
+      case 0x06: {
+        table[index] = VisitVRAMByAddress<GetUnsafePointerFunctor<u8>>(address);
         break;
-      case 0xFF:
+      }
+      case 0xFF: {
         // TODO: clean up address decoding and figure out out-of-bounds reads.
         if ((address & 0xFFFF0000) == 0xFFFF0000)
-          (*pagetable)[address >> kPageShift] = &bios[address & 0x7FFF];
+          table[index] = &bios[address & 0x7FFF];
         break;
-      default:
-        (*pagetable)[address >> kPageShift] = nullptr;
+      }
+      default: {
+        table[index] = nullptr;
         break;
+      }
     }
   }
 }
 
 template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
-  auto bitcount = bit::number_of_bits<T>();
-
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
-  if (itcm.config.enable_read && bus != Bus::System && address >= itcm.config.base && address <= itcm.config.limit) {
+  if (itcm.config.enable_read &&
+      bus != Bus::System &&
+      address >= itcm.config.base &&
+      address <= itcm.config.limit) {
     return *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]);
   }
 
-  if (dtcm.config.enable_read && bus == Bus::Data && address >= dtcm.config.base && address <= dtcm.config.limit) {
+  if (dtcm.config.enable_read &&
+      bus == Bus::Data &&
+      address >= dtcm.config.base &&
+      address <= dtcm.config.limit) {
     return *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]);
   }
 
   switch (address >> 24) {
-    case 0x02:
+    case 0x02: {
       return *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]);
-    case 0x03:
+    }
+    case 0x03: {
       if (swram.data == nullptr) {
         LOG_ERROR("ARM9: attempted to read SWRAM but it isn't mapped.");
         return 0;
       }
       return *reinterpret_cast<T*>(&swram.data[address & swram.mask]);
-    case 0x04:
+    }
+    case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
         return ReadWordIO(address | 0) |
           (u64(ReadWordIO(address | 4)) << 32);
@@ -126,20 +139,27 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
         return ReadByteIO(address);
       }
       return 0;
-    case 0x05:
+    }
+    case 0x05: {
       return *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]);
-    case 0x06:
+    }
+    case 0x06: {
       return VisitVRAMByAddress<ReadFunctor<T>>(address);
-    case 0x07:
+    }
+    case 0x07: {
       return *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]);
-    case 0x08:
+    }
+    case 0x08: {
       return 0xFF;
-    case 0xFF:
+    }
+    case 0xFF: {
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
         return *reinterpret_cast<T*>(&bios[address & 0x7FFF]);
-    default:
-      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bitcount, address);
+    }
+    default: {
+      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", bit::number_of_bits<T>(), address);
+    }
   }
 
   return 0;
@@ -147,34 +167,38 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 
 template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
-  auto bitcount = bit::number_of_bits<T>();
-
   static_assert(common::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (bus != Bus::System) {
-    if (itcm.config.enable && address >= itcm.config.base && address <= itcm.config.limit) {
+    if (itcm.config.enable &&
+        address >= itcm.config.base &&
+        address <= itcm.config.limit) {
       *reinterpret_cast<T*>(&itcm_data[(address - itcm.config.base) & 0x7FFF]) = value;
       return;
     }
 
-    if (dtcm.config.enable && address >= dtcm.config.base && address <= dtcm.config.limit) {
+    if (dtcm.config.enable &&
+        address >= dtcm.config.base &&
+        address <= dtcm.config.limit) {
       *reinterpret_cast<T*>(&dtcm_data[(address - dtcm.config.base) & 0x3FFF]) = value;
       return;
     }
   }
 
   switch (address >> 24) {
-    case 0x02:
+    case 0x02: {
       *reinterpret_cast<T*>(&ewram[address & 0x3FFFFF]) = value;
       break;
-    case 0x03:
+    }
+    case 0x03: {
       if (swram.data == nullptr) {
         LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
         return;
       }
       *reinterpret_cast<T*>(&swram.data[address & swram.mask]) = value;
       break;
-    case 0x04:
+    }
+    case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
         WriteWordIO(address | 0, value);
         WriteWordIO(address | 4, value >> 32);
@@ -189,17 +213,22 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
         WriteByteIO(address, value);
       }
       break;
-    case 0x05:
+    }
+    case 0x05: {
       *reinterpret_cast<T*>(&video_unit.pram[address & 0x7FF]) = value;
       break;
-    case 0x06:
+    }
+    case 0x06: {
       VisitVRAMByAddress<WriteFunctor<T>>(address, value);
       break;
-    case 0x07:
+    }
+    case 0x07: {
       *reinterpret_cast<T*>(&video_unit.oam[address & 0x7FF]) = value;
       break;
-    default:
-      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bitcount, address, value);
+    }
+    default: {
+      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", bit::number_of_bits<T>(), address, value);
+    }
   }
 }
 
@@ -207,24 +236,29 @@ template<class Functor, typename... Args>
 auto ARM9MemoryBus::VisitVRAMByAddress(u32 address, Args... args) -> typename Functor::return_type {
   switch ((address >> 20) & 15) {
     /// PPU A - BG VRAM (max 512 KiB)
-    case 0 ... 1:
+    case 0 ... 1: {
       return (typename Functor::template value<32>){}(vram.region_ppu_bg[0], address & 0x1FFFFF, args...);
+    }
 
     /// PPU B - BG VRAM (max 512 KiB)
-    case 2 ... 3:
+    case 2 ... 3: {
       return (typename Functor::template value<32>){}(vram.region_ppu_bg[1], address & 0x1FFFFF, args...);
+    }
   
     /// PPU A - OBJ VRAM (max 256 KiB)
-    case 4 ... 5:
+    case 4 ... 5: {
       return (typename Functor::template value<16>){}(vram.region_ppu_obj[0], address & 0x1FFFFF, args...);
+    }
   
     /// PPU B - OBJ VRAM (max 128 KiB)
-    case 6 ... 7:
+    case 6 ... 7: {
       return (typename Functor::template value<16>){}(vram.region_ppu_obj[1], address & 0x1FFFFF, args...);
+    }
   
     /// LCDC (max 656 KiB)
-    default:
+    default: {
       return (typename Functor::template value<41>){}(vram.region_lcdc, address & 0xFFFFF, args...);
+    }
   }
 }
 
