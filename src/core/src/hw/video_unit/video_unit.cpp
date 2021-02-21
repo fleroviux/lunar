@@ -111,6 +111,10 @@ void VideoUnit::OnHdrawBegin(int late) {
     dispstat9.vblank.flag = false;
   }
 
+  if (vcount.value == kTotalLines - 48) {
+    gpu.Render();
+  }
+
   dispstat7.hblank.flag = false;
   dispstat9.hblank.flag = false;
 

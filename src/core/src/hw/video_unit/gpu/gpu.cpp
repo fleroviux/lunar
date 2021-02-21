@@ -52,10 +52,15 @@ void GPU::Reset() {
   packed_cmds = 0;
   packed_args_left = 0;
   
+  for (int  i = 0; i < 2; i++) {
+    vertex[i] = {};
+    polygon[i] = {};
+  }
+  gx_buffer_id = 0;
+  
   in_vertex_list = false;
-  vertex = {};
-  polygon = {};
   position_old = {};
+  vertices.clear();
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -221,12 +226,12 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
   if (vertices.size() == required) {
     // FIXME: this is disgusting.
-    if (polygon.count == 2048) {
+    if (polygon[gx_buffer_id].count == 2048) {
       vertices.clear();
       return;
     }
 
-    auto& poly = polygon.data[polygon.count];
+    auto& poly = polygon[gx_buffer_id].data[polygon[gx_buffer_id].count];
 
     // Determine if the polygon must be clipped.
     bool needs_clipping = false;
@@ -245,18 +250,18 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
       // TODO: this isn't going to cut it efficiency-wise.
       if (is_strip && !is_first) {
-        vertices.insert(vertices.begin(), vertex.data[vertex.count - 1]);
-        vertices.insert(vertices.begin(), vertex.data[vertex.count - 2]);
+        vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 1]);
+        vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 2]);
       }
 
       for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
         // FIXME: this is disgusting.
-        if (vertex.count == 6144) {
+        if (vertex[gx_buffer_id].count == 6144) {
           LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
           break;
         }
-        auto index = vertex.count++;
-        vertex.data[index] = v;
+        auto index = vertex[gx_buffer_id].count++;
+        vertex[gx_buffer_id].data[index] = v;
         poly.indices[poly.count++] = index;
       }
 
@@ -272,8 +277,8 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       }
     } else {
       if (is_strip && !is_first) {
-        poly.indices[0] = vertex.count - 2;
-        poly.indices[1] = vertex.count - 1;
+        poly.indices[0] = vertex[gx_buffer_id].count - 2;
+        poly.indices[1] = vertex[gx_buffer_id].count - 1;
         poly.count = 2;
       } else {
         poly.count = 0;
@@ -281,12 +286,12 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
       for (auto const& v : vertices) {
         // FIXME: this is disgusting.
-        if (vertex.count == 6144) {
+        if (vertex[gx_buffer_id].count == 6144) {
           LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
           break;
         }
-        auto index = vertex.count++;
-        vertex.data[index] = v;
+        auto index = vertex[gx_buffer_id].count++;
+        vertex[gx_buffer_id].data[index] = v;
         poly.indices[poly.count++] = index;
       }
 
@@ -300,7 +305,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
     poly.texture_params = texture_params;
     if (poly.count != 0) {
-      polygon.count++;
+      polygon[gx_buffer_id].count++;
     }
   }
 }

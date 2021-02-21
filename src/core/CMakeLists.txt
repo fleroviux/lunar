@@ -27,6 +27,7 @@ set(SOURCES
   src/hw/timer/timer.cpp
   src/hw/video_unit/gpu/commands.cpp
   src/hw/video_unit/gpu/gpu.cpp
+  src/hw/video_unit/gpu/renderer.cpp
   src/hw/video_unit/ppu/render/affine.cpp
   src/hw/video_unit/ppu/render/oam.cpp
   src/hw/video_unit/ppu/render/text.cpp

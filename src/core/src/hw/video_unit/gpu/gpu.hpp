@@ -37,6 +37,7 @@ struct GPU {
     return static_cast<T>(clip_matrix[col][row].raw() >> ((offset & 3) * 8));
   }
 
+  void Render();
   auto GetOutput() -> u16 const* { return &output[0]; }
 
   struct DISP3DCNT {
@@ -152,7 +153,7 @@ private:
   void ProcessCommands();
   void CheckGXFIFO_IRQ();
   void UpdateClipMatrix();
-  
+
   auto DequeueMatrix4x4() -> Matrix4<Fixed20x12> {
     Matrix4<Fixed20x12> mat;
     for (int col = 0; col < 4; col++) {
@@ -231,13 +232,16 @@ private:
   struct {
     int count = 0;
     Vertex data[6144];
-  } vertex;
+  } vertex[2];
 
   /// Polygon RAM
   struct {
     int count = 0;
     Polygon data[2048];
-  } polygon;
+  } polygon[2];
+
+  /// ID of the buffer the geometry engine currently writes into.
+  int gx_buffer_id = 0;
 
   /// Temporary vertex buffer for the primitive being submitted at the moment.
   /// TODO: figure out a name that doesn't completely suck.
