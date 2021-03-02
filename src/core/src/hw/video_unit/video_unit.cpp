@@ -147,7 +147,7 @@ void VideoUnit::OnHblankBegin(int late) {
     ppu_b.OnDrawScanlineEnd();
   }
 
-  scheduler.Add(594 - late, this, &VideoUnit::OnHdrawBegin);
+  scheduler.Add(524 - late, this, &VideoUnit::OnHdrawBegin);
 }
 
 auto VideoUnit::DisplayStatus::ReadByte(uint offset) -> u8 {
