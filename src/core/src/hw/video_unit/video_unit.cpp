@@ -78,14 +78,6 @@ void VideoUnit::OnHdrawBegin(int late) {
   CheckVerticalCounterIRQ(dispstat7, irq7);
   CheckVerticalCounterIRQ(dispstat9, irq9);
 
-  if (dispstat7.vcount.enable_irq && dispstat7.vcount.flag) {
-    irq7.Raise(IRQ::Source::VCount);
-  }
-
-  if (dispstat9.vcount.enable_irq && dispstat9.vcount.flag) {
-    irq9.Raise(IRQ::Source::VCount);
-  }
-
   if (vcount.value == kDrawingLines) {
     dma7.Request(DMA7::Time::VBlank);
     dma9.Request(DMA9::Time::VBlank);
