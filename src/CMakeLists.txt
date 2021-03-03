@@ -11,7 +11,7 @@ option(BUILD_DUALITY_SDL2 "Build the SDL2 frontend" ON)
 option(BUILD_DUALITY_QT "Build the Qt frontend" OFF)
 
 if (BUILD_DUALITY_SDL2)
-  add_subdirectory(duality)
+  add_subdirectory(duality-sdl)
 endif()
 
 if (BUILD_DUALITY_QT)
