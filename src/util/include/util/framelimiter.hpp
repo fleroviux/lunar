@@ -20,67 +20,55 @@ struct Framelimiter {
   }
 
   void Reset(float fps) {
-    Unbounded(false);
-    frames_per_second = fps;
-    frame_duration = kMillisecondsPerSecond / fps;
-    accumulated_error = 0;
     frame_count = 0;
-    timestamp_previous_fps_update = std::chrono::steady_clock::now();
+    frame_duration = int(kMicrosecondsPerSecond / fps);
+    frames_per_second = fps;
+    unbounded = false;
+    timestamp_target = std::chrono::steady_clock::now();
+    timestamp_fps_update = std::chrono::steady_clock::now();
   }
 
   void Unbounded(bool value) {
-    unbounded = value;
+    if (unbounded != value) {
+      unbounded = value;
+      if (!value) {
+        timestamp_target = std::chrono::steady_clock::now();
+      }
+    }
   }
 
   void Run(std::function<void(void)> frame_advance, std::function<void(float)> update_fps) {
-    auto timestamp_frame_start = std::chrono::steady_clock::now();
+    timestamp_target += std::chrono::microseconds(frame_duration);
 
     frame_advance();
-    
-    auto timestamp_frame_end = std::chrono::steady_clock::now();
-
     frame_count++;
+    
+    auto now = std::chrono::steady_clock::now(); 
+    auto fps_update_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
+      now - timestamp_fps_update).count();
 
-    auto time_since_last_fps_update = std::chrono::duration_cast<std::chrono::milliseconds>(
-      timestamp_frame_end - timestamp_previous_fps_update
-    ).count();
-
-    if (time_since_last_fps_update >= kMillisecondsPerSecond) {
-      update_fps(frame_count * 1000.0 / time_since_last_fps_update);
+    if (fps_update_delta >= kMillisecondsPerSecond) {
+      update_fps(frame_count * float(kMillisecondsPerSecond) / fps_update_delta);
       frame_count = 0;
-      timestamp_previous_fps_update = timestamp_frame_end;
+      timestamp_fps_update = std::chrono::steady_clock::now();
     }
 
     if (!unbounded) {
-      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - timestamp_frame_start
-      ).count();
-
-      // NOTE: we need to cast the variables to integers seperately because
-      // we don't want the fractional parts to accumulate and overflow into the integer part.
-      auto delay = int(frame_duration) + int(accumulated_error) - elapsed;
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-
-      accumulated_error -= int(accumulated_error);
-      accumulated_error -= std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - timestamp_frame_start
-      ).count() - frame_duration;
+      std::this_thread::sleep_until(timestamp_target);
     }
   }
 
 private:
   static constexpr int kMillisecondsPerSecond = 1000;
+  static constexpr int kMicrosecondsPerSecond = 1000000;
 
   int frame_count = 0;
-
+  int frame_duration;
   float frames_per_second;
-  float frame_duration;
-  float accumulated_error = 0.0;
-
   bool unbounded = false;
 
-  std::chrono::time_point<std::chrono::steady_clock> timestamp_previous_fps_update;
+  std::chrono::time_point<std::chrono::steady_clock> timestamp_target;
+  std::chrono::time_point<std::chrono::steady_clock> timestamp_fps_update;
 };
 
 } // namespace common
