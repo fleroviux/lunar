@@ -27,11 +27,18 @@ SDL2VideoDevice::~SDL2VideoDevice() {
 }
 
 void SDL2VideoDevice::Draw(u32 const* top, u32 const* bottom) {
+  buffer_top = top;
+  buffer_bottom = bottom;
+}
+
+void SDL2VideoDevice::Present() {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, top);
-    
+  if (buffer_top != nullptr) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
+  }
+
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 0.0f);
   glVertex2f(-1.0f,  1.0f);
@@ -44,7 +51,9 @@ void SDL2VideoDevice::Draw(u32 const* top, u32 const* bottom) {
   glEnd();
 
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, bottom);
+  if (buffer_bottom != nullptr) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_bottom);
+  }
 
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 0.0f);

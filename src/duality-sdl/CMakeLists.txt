@@ -8,11 +8,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../modules)
 set(SOURCES
   src/device/audio_device.cpp
   src/device/video_device.cpp
+  src/emulator_thread.cpp
   src/main.cpp)
 
 set(HEADERS
   src/device/audio_device.hpp
-  src/device/video_device.hpp)
+  src/device/video_device.hpp
+  src/emulator_thread.hpp)
 
 include(FindSDL2)
 find_package(SDL2 REQUIRED)

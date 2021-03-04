@@ -22,7 +22,7 @@ MainWindow::MainWindow() : QMainWindow(nullptr) {
 
 void MainWindow::CreateFileMenu(QMenuBar* menu) {
   auto file_menu = menu->addMenu(tr("File"));
-  
+
   auto open = file_menu->addAction(tr("Open"));
   file_menu->addSeparator();
   auto exit = file_menu->addAction(tr("Close"));

@@ -8,6 +8,7 @@
 
 #include "device/audio_device.hpp"
 #include "device/video_device.hpp"
+#include "emulator_thread.hpp"
 
 #undef main
 
@@ -43,34 +44,24 @@ void loop(Duality::core::Core& core) {
 
   int frames = 0;
   auto t0 = SDL_GetTicks();
-  bool fastforward = false;
   SDL_Event event;
 
+  auto emu_thread = EmulatorThread{core};
+  emu_thread.Start();
+
   for (;;) {
-    // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
-    static constexpr int kCyclesPerFrame = 560190;
+    auto fps = emu_thread.GetFPS();
+    SDL_SetWindowTitle(window, fmt::format("Duality [{0:.2f} fps | {1:.2f} ms]",
+        fps, 1000.0 / fps).c_str());
 
-    core.Run(kCyclesPerFrame);
-
-    auto t1 = SDL_GetTicks();
-    auto t_diff = t1 - t0;
-    frames++;
-    if (t_diff >= 1000) {
-      auto percent = frames / 60.0 * 100.0;
-      auto ms = t_diff / float(frames);
-      SDL_SetWindowTitle(window, fmt::format("Duality [{0} fps | {1:.2f} ms]",
-        frames,
-        ms).c_str());
-      fmt::print("framerate: {0} fps, {1} ms, {2}%\n", frames, ms, percent);
-      frames = 0;
-      t0 = SDL_GetTicks();
-    }
+    video_device.Present();
 
     while (SDL_PollEvent(&event)) {
       using Key = Duality::core::InputDevice::Key;
 
       if (event.type == SDL_QUIT)
         goto cleanup;
+
       if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) {
         int key = -1;
         bool down = event.type == SDL_KEYDOWN;
@@ -88,17 +79,10 @@ void loop(Duality::core::Core& core) {
           case SDLK_f: input_device.SetKeyDown(Key::R, down); break;
           case SDLK_q: input_device.SetKeyDown(Key::X, down); break;
           case SDLK_w: input_device.SetKeyDown(Key::Y, down); break;
-          case SDLK_SPACE: {
-            fastforward = down;
-            if (fastforward) {
-              SDL_GL_SetSwapInterval(0);
-            } else {
-              SDL_GL_SetSwapInterval(1);
-            }
-            break;
-          }
+          case SDLK_SPACE: emu_thread.SetFastForward(down); break;
         }
       }
+
       if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
         auto mouse_event = reinterpret_cast<SDL_MouseMotionEvent*>(&event);
         int x = mouse_event->x / scale;
@@ -112,6 +96,7 @@ void loop(Duality::core::Core& core) {
   }
 
 cleanup:
+  emu_thread.Stop();
   SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
 }

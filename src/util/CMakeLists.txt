@@ -17,6 +17,7 @@ set(HEADERS_PUBLIC
   include/util/math/vector.hpp
   include/util/bit.hpp
   include/util/fifo.hpp
+  include/util/framelimiter.hpp
   include/util/integer.hpp
   include/util/likely.hpp
   include/util/log.hpp
