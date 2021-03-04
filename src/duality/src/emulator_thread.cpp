@@ -2,11 +2,13 @@
  * Copyright (C) 2021 fleroviux
  */
 
-#include "emulator_thread.hpp"
+#include <duality/emulator_thread.hpp>
+
+namespace Duality {
 
 EmulatorThread::EmulatorThread(Duality::core::Core& core)
     : core(core) {
-  framelimiter.Reset(59.8983);
+  frame_limiter.Reset(59.8983);
 }
 
 bool EmulatorThread::IsRunning() const {
@@ -18,7 +20,7 @@ auto EmulatorThread::GetFPS() const -> float {
 }
 
 void EmulatorThread::SetFastForward(bool enabled) {
-  framelimiter.Unbounded(enabled);
+  frame_limiter.SetFastForward(enabled);
 }
 
 void EmulatorThread::Start() {
@@ -30,10 +32,10 @@ void EmulatorThread::Start() {
     // 355 dots-per-line * 263 lines-per-frame * 6 cycles-per-dot = 560190
     static constexpr int kCyclesPerFrame = 560190;
 
-    framelimiter.Reset();
+    frame_limiter.Reset();
 
     while (running) {
-      framelimiter.Run([this]() {
+      frame_limiter.Run([this]() {
         core.Run(kCyclesPerFrame);
       }, [this](float fps) {
         this->fps = fps;
@@ -49,3 +51,5 @@ void EmulatorThread::Stop() {
   running = false;
   thread.join();
 }
+
+} // namespace Duality

@@ -5,10 +5,10 @@
 #include <util/integer.hpp>
 #include <util/log.hpp>
 #include <core/core.hpp>
+#include <duality/emulator_thread.hpp>
 
 #include "device/audio_device.hpp"
 #include "device/video_device.hpp"
-#include "emulator_thread.hpp"
 
 #undef main
 
@@ -46,7 +46,7 @@ void loop(Duality::core::Core& core) {
   auto t0 = SDL_GetTicks();
   SDL_Event event;
 
-  auto emu_thread = EmulatorThread{core};
+  auto emu_thread = Duality::EmulatorThread{core};
   emu_thread.Start();
 
   for (;;) {
