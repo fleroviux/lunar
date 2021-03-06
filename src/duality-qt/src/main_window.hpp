@@ -20,8 +20,12 @@ private slots:
 
 private:
   void CreateFileMenu(QMenuBar* menu);
+  void CreateEmulationMenu(QMenuBar* menu);
 
   Screen* screen;
+  QAction* action_reset;
+  QAction* action_pause;
+  QAction* action_stop;
   MAAudioDevice audio_device;
   std::unique_ptr<Duality::core::Core> core;
   std::unique_ptr<Duality::EmulatorThread> emu_thread;

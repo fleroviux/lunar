@@ -17,6 +17,7 @@ MainWindow::MainWindow() : QMainWindow(nullptr) {
 
   auto menu = new QMenuBar{this};
   CreateFileMenu(menu);
+  CreateEmulationMenu(menu);
   setMenuBar(menu);
 }
 
@@ -29,6 +30,47 @@ void MainWindow::CreateFileMenu(QMenuBar* menu) {
 
   connect(open, &QAction::triggered, this, &MainWindow::OnOpenFile);
   connect(exit, &QAction::triggered, &QApplication::quit);
+}
+
+void MainWindow::CreateEmulationMenu(QMenuBar* menu) {
+  auto emu_menu = menu->addMenu(tr("Emulation"));
+
+  action_reset = emu_menu->addAction(tr("Reset"));
+  action_pause = emu_menu->addAction(tr("Pause"));
+  action_stop  = emu_menu->addAction(tr("Stop"));
+
+  action_reset->setEnabled(false);
+  action_pause->setEnabled(false);
+  action_pause->setCheckable(true);
+  action_stop->setEnabled(false);
+
+  connect(action_reset, &QAction::triggered, [this]() {
+    emu_thread->Stop();
+    //core->Reset();
+    emu_thread->Start();
+  });
+
+  connect(action_pause, &QAction::triggered, [this]() {
+    if (emu_thread->IsRunning()) {
+      emu_thread->Stop();
+      audio_device.SetPaused(true);
+    } else {
+      emu_thread->Start();
+      audio_device.SetPaused(false);
+    }
+  });
+
+  connect(action_stop, &QAction::triggered, [this]() {
+    if (emu_thread) {
+      action_reset->setEnabled(false);
+      action_pause->setEnabled(false);
+      action_stop->setEnabled(false);
+      screen->CancelDraw();
+      emu_thread->Stop();
+      core = {};
+      emu_thread = {};
+    }
+  });
 }
 
 void MainWindow::OnOpenFile() {
@@ -51,5 +93,9 @@ void MainWindow::OnOpenFile() {
     core->SetAudioDevice(audio_device);
     emu_thread = std::make_unique<Duality::EmulatorThread>(*core.get());
     emu_thread->Start();
+
+    action_reset->setEnabled(true);
+    action_pause->setEnabled(true);
+    action_stop->setEnabled(true);
   }
 }

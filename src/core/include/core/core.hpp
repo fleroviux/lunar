@@ -20,6 +20,7 @@ struct Core {
  void SetInputDevice(InputDevice& device);
  void SetVideoDevice(VideoDevice& device);
 
+ void Reset();
  void Run(uint cycles);
 
 private:

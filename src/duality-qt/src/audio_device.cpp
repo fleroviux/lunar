@@ -27,6 +27,8 @@ bool MAAudioDevice::Open(
 ) {
   ma_device_config device_config;
 
+  opened = false;
+
   // TODO: miniaudio does not support playback with a constant block size,
   // therefore we do not support it either right now.
   device_config = ma_device_config_init(ma_device_type_playback);
@@ -50,9 +52,20 @@ bool MAAudioDevice::Open(
     return false;
   }
 
+  opened = true;
   return true;
 }
   
 void MAAudioDevice::Close() {
   ma_device_uninit(&device);
+}
+
+void MAAudioDevice::SetPaused(bool paused) {
+  if (opened) {
+    if (paused) {
+      ma_device_stop(&device);  
+    } else {
+      ma_device_start(&device);
+    }
+  }
 }

@@ -23,6 +23,8 @@ struct MAAudioDevice final : Duality::core::AudioDevice {
   
   void Close() override;
 
+  void SetPaused(bool paused);
+
   struct UserData {
     void* argument;
     Callback callback;
@@ -33,4 +35,5 @@ private:
   uint block_size;
   UserData user_data;
   ma_device device;
+  bool opened = false;
 };

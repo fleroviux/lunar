@@ -55,6 +55,10 @@ struct CoreImpl {
     interconnect.video_unit.SetVideoDevice(device);
   }
 
+  void Reset() {
+    // TODO
+  }
+
   void Run(uint cycles) {
     auto& scheduler = interconnect.scheduler;
     auto& irq9 = interconnect.irq9;
@@ -94,7 +98,6 @@ struct CoreImpl {
       throw std::runtime_error("failed to open ROM");
     }
 
-    auto header = Header{};
     rom.read((char*)&header, sizeof(Header));
     if (!rom.good()) {
       throw std::runtime_error("failed to read ROM header, not enough data.");
@@ -163,6 +166,7 @@ struct CoreImpl {
   Interconnect interconnect;
   ARM7 arm7;
   ARM9 arm9;
+  Header header;
 };
 
 Core::Core(std::string const& rom_path) {
@@ -183,6 +187,10 @@ void Core::SetInputDevice(InputDevice& device) {
 
 void Core::SetVideoDevice(VideoDevice& device) {
   pimpl->SetVideoDevice(device);
+}
+
+void Core::Reset() {
+  pimpl->Reset();
 }
 
 void Core::Run(uint cycles) {
