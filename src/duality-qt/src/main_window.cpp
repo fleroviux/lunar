@@ -41,7 +41,10 @@ void MainWindow::OnOpenFile() {
     // TODO: handle errors while attemping to load the ROM, firmware or BIOSes.
     // TODO; make it so that we don't have to dynamically allocate the core,
     // which is pretty pointless.
-    screen->CancelDraw(); // fixme
+    screen->CancelDraw();
+    if (emu_thread) {
+      emu_thread->Stop();
+    }
     core = std::make_unique<Duality::core::Core>(
       file_dialog.selectedFiles().at(0).toStdString());
     core->SetVideoDevice(*screen);
