@@ -16,7 +16,8 @@ namespace Duality::core {
 void AudioCallback(struct APU* this_, s16* stream, int length);
 
 struct APU {
-  APU(Scheduler& scheduler) : scheduler(scheduler) { Reset(); }
+  APU(Scheduler& scheduler);
+ ~APU();
 
   void Reset();
   void SetMemory(arm::MemoryBase* memory) { this->memory = memory; }

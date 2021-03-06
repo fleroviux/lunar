@@ -31,9 +31,20 @@ static constexpr s16 kAdpcmTable[89] {
   0x7FFF
 };
 
+APU::APU(Scheduler& scheduler) : scheduler(scheduler) {
+  Reset();
+}
+
+APU::~APU() {
+  if (audio_device != nullptr) {
+    audio_device->Close();
+  }
+}
+
 void APU::Reset() {
-  for (int i = 0; i < 16; i++)
+  for (int i = 0; i < 16; i++) {
     channels[i] = {};
+  }
 
   memset(&buffer, 0, sizeof(buffer));
   buffer_rd_pos = 0;
