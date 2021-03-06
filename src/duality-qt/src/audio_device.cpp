@@ -8,6 +8,17 @@
 
 #include "audio_device.hpp"
 
+void MADataCallback(
+  ma_device* device,
+  void* output,
+  const void* input,
+  u32 frame_count
+) {
+  auto user_data = (MAAudioDevice::UserData*)device->pUserData;
+
+  user_data->callback(user_data->argument, (s16*)output, frame_count * sizeof(s16) * 2);
+}
+
 bool MAAudioDevice::Open(
   void* userdata,
   Callback callback,
@@ -23,12 +34,11 @@ bool MAAudioDevice::Open(
   device_config.playback.channels = 2;
   device_config.sampleRate = frequency;
   device_config.dataCallback = MADataCallback;
-  device_config.pUserData = this;
+  device_config.pUserData = &user_data;
 
-  this->userdata = userdata;
-  this->callback = callback;
   this->frequency = frequency;
   this->block_size = block_size;
+  user_data = {userdata, callback};
 
   if (ma_device_init(NULL, &device_config, &device) != MA_SUCCESS) {
     LOG_ERROR("MAAudioDevice: failed to open device.");
@@ -45,15 +55,4 @@ bool MAAudioDevice::Open(
   
 void MAAudioDevice::Close() {
   ma_device_uninit(&device);
-}
-
-void MADataCallback(
-  ma_device* device,
-  void* output,
-  const void* input,
-  u32 frame_count
-) {
-  auto audio_device = (MAAudioDevice*)device->pUserData;
-
-  audio_device->callback(audio_device->userdata, (s16*)output, frame_count * sizeof(s16) * 2);
 }

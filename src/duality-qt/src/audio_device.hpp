@@ -10,13 +10,6 @@ extern "C" {
 #include <miniaudio.h>
 }
 
-void MADataCallback(
-  ma_device* device,
-  void* output,
-  const void* input,
-  u32 frame_count
-);
-
 struct MAAudioDevice final : Duality::core::AudioDevice {
   auto GetSampleRate() -> uint override { return frequency; }
   auto GetBlockSize() -> uint override { return block_size; }
@@ -30,17 +23,14 @@ struct MAAudioDevice final : Duality::core::AudioDevice {
   
   void Close() override;
 
-private:
-  friend void MADataCallback(
-    ma_device* device,
-    void* output,
-    const void* input,
-    u32 frame_count);
+  struct UserData {
+    void* argument;
+    Callback callback;
+  };
 
-  void* userdata;
-  Callback callback;
+private:
   uint frequency;
   uint block_size;
-
+  UserData user_data;
   ma_device device;
 };
