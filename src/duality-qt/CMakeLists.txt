@@ -6,17 +6,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../modules)
 
 set(SOURCES
+  src/audio_device.cpp
   src/main.cpp
   src/main_window.cpp
   src/screen.cpp)
 
 set(HEADERS
+  src/audio_device.hpp
   src/main_window.hpp
   src/screen.hpp)
 
 set(CMAKE_AUTOMOC ON)
+find_package(OpenGL REQUIRED)
 find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 
 add_executable(Duality-Qt ${SOURCES} ${HEADERS})
 set_target_properties(Duality-Qt PROPERTIES OUTPUT_NAME "Duality")
-target_link_libraries(Duality-Qt Qt5::Widgets Qt5::OpenGL duality-util)
+target_link_libraries(Duality-Qt Qt5::Widgets Qt5::OpenGL OpenGL::GL duality-common miniaudio)

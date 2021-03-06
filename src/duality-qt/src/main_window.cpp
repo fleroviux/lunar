@@ -38,5 +38,15 @@ void MainWindow::OnOpenFile() {
   file_dialog.setNameFilter("Nintendo DS ROM (*.nds)");
   
   if (file_dialog.exec()) {
+    // TODO: handle errors while attemping to load the ROM, firmware or BIOSes.
+    // TODO; make it so that we don't have to dynamically allocate the core,
+    // which is pretty pointless.
+    screen->CancelDraw(); // fixme
+    core = std::make_unique<Duality::core::Core>(
+      file_dialog.selectedFiles().at(0).toStdString());
+    core->SetVideoDevice(*screen);
+    core->SetAudioDevice(audio_device);
+    emu_thread = std::make_unique<Duality::EmulatorThread>(*core.get());
+    emu_thread->Start();
   }
 }

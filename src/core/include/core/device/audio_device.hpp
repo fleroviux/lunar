@@ -13,8 +13,8 @@ struct AudioDevice {
 
   using Callback = void (*)(void* userdata, s16* stream, int byte_len);
 
-  virtual auto GetSampleRate() -> int = 0;
-  virtual auto GetBlockSize() -> int = 0;
+  virtual auto GetSampleRate() -> uint = 0;
+  virtual auto GetBlockSize() -> uint = 0;
 
   virtual bool Open(
     void* userdata,

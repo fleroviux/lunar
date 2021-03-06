@@ -11,6 +11,11 @@ EmulatorThread::EmulatorThread(Duality::core::Core& core)
   frame_limiter.Reset(59.8983);
 }
 
+EmulatorThread::~EmulatorThread() {
+  if (IsRunning())
+    Stop();
+}
+
 bool EmulatorThread::IsRunning() const {
   return running;
 }

@@ -13,6 +13,7 @@ namespace Duality {
 
 struct EmulatorThread {
   EmulatorThread(core::Core& core);
+ ~EmulatorThread();
 
   bool IsRunning() const;
   auto GetFPS() const -> float;
