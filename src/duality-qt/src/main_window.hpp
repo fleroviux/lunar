@@ -7,6 +7,8 @@
 #include <duality/emulator_thread.hpp>
 #include <QApplication>
 #include <QMainWindow>
+#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QMenuBar>
 #include <memory>
 
@@ -25,6 +27,8 @@ private slots:
 private:
   void CreateFileMenu(QMenuBar* menu);
   void CreateEmulationMenu(QMenuBar* menu);
+  bool UpdateKeyInput(QObject* watched, QKeyEvent* event);
+  bool UpdateTouchInput(QObject* watched, QMouseEvent* event);
 
   Screen* screen;
   QAction* action_reset;

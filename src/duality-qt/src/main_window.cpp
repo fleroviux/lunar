@@ -4,7 +4,6 @@
 
 #include <QApplication>
 #include <QFileDialog>
-#include <QKeyEvent>
 #include <QStatusBar>
 #include <utility>
 
@@ -16,6 +15,7 @@ MainWindow::MainWindow(QApplication& app) : QMainWindow(nullptr) {
   screen = new Screen{this};
   setCentralWidget(screen);
   screen->resize(512, 768);
+  screen->installEventFilter(this);
 
   auto menu = new QMenuBar{this};
   CreateFileMenu(menu);
@@ -50,7 +50,7 @@ void MainWindow::CreateEmulationMenu(QMenuBar* menu) {
 
   connect(action_reset, &QAction::triggered, [this]() {
     emu_thread->Stop();
-    //core->Reset();
+    core->Reset();
     emu_thread->Start();
   });
 
@@ -105,42 +105,70 @@ void MainWindow::OnOpenFile() {
   }
 }
 
+bool MainWindow::UpdateKeyInput(QObject* watched, QKeyEvent* event) {
+  using namespace Duality::core;
+
+  // TODO: make the key mapping configurable.
+  static constexpr std::pair<int, InputDevice::Key> kKeyMap[] {
+    { Qt::Key_A, InputDevice::Key::A },
+    { Qt::Key_S, InputDevice::Key::B },
+    { Qt::Key_D, InputDevice::Key::L },
+    { Qt::Key_F, InputDevice::Key::R },
+    { Qt::Key_Q, InputDevice::Key::X },
+    { Qt::Key_W, InputDevice::Key::Y },
+    { Qt::Key_Backspace, InputDevice::Key::Select },
+    { Qt::Key_Return, InputDevice::Key::Start },
+    { Qt::Key_Up, InputDevice::Key::Up },
+    { Qt::Key_Down, InputDevice::Key::Down },
+    { Qt::Key_Left, InputDevice::Key::Left },
+    { Qt::Key_Right, InputDevice::Key::Right }
+  };
+
+  auto key = event->key();
+  bool down = event->type() == QEvent::KeyPress;
+
+  for (auto entry : kKeyMap) {
+    if (entry.first == key) {
+      input_device.SetKeyDown(entry.second, down);
+      return true;
+    }
+  }
+
+  if (key == Qt::Key_Space) {
+    emu_thread->SetFastForward(down);
+    return true;
+  }
+
+  return QObject::eventFilter(watched, event);
+}
+
+bool MainWindow::UpdateTouchInput(QObject* watched, QMouseEvent* event) {
+  auto scale = 384.0 / screen->size().height();
+  auto x = int(event->x() * scale);
+  auto y = int(event->y() * scale) - 192;
+  bool down = (event->buttons() & Qt::LeftButton) && y >= 0;
+
+  input_device.SetKeyDown(Duality::core::InputDevice::Key::TouchPen, down);
+  input_device.GetTouchPoint().x = x;
+  input_device.GetTouchPoint().y = y;
+
+  return QObject::eventFilter(watched, event);
+}
+
 bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
   auto type = event->type();
 
-  if (type == QEvent::KeyPress || type == QEvent::KeyRelease) {
-    using namespace Duality::core;
-
-    // TODO: make the key mapping configurable.
-    static constexpr std::pair<int, InputDevice::Key> kKeyMap[] {
-      { Qt::Key_A, InputDevice::Key::A },
-      { Qt::Key_S, InputDevice::Key::B },
-      { Qt::Key_D, InputDevice::Key::L },
-      { Qt::Key_F, InputDevice::Key::R },
-      { Qt::Key_Q, InputDevice::Key::X },
-      { Qt::Key_W, InputDevice::Key::Y },
-      { Qt::Key_Backspace, InputDevice::Key::Select },
-      { Qt::Key_Return, InputDevice::Key::Start },
-      { Qt::Key_Up, InputDevice::Key::Up },
-      { Qt::Key_Down, InputDevice::Key::Down },
-      { Qt::Key_Left, InputDevice::Key::Left },
-      { Qt::Key_Right, InputDevice::Key::Right }
-    };
-
-    auto key = dynamic_cast<QKeyEvent*>(event)->key();
-    bool down = type == QEvent::KeyPress;
-
-    for (auto entry : kKeyMap) {
-      if (entry.first == key) {
-        input_device.SetKeyDown(entry.second, down);
-        break;
+  switch (event->type()) {
+    case QEvent::KeyPress:
+    case QEvent::KeyRelease:
+      return UpdateKeyInput(watched, dynamic_cast<QKeyEvent*>(event));
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseButtonRelease:
+    case QEvent::MouseMove:
+      if (watched == screen) {
+        return UpdateTouchInput(watched, dynamic_cast<QMouseEvent*>(event));
       }
-    }
-
-    if (key == Qt::Key_Space) {
-      emu_thread->SetFastForward(down);
-    }
-  }
+  } 
 
   return QObject::eventFilter(watched, event);
 }
