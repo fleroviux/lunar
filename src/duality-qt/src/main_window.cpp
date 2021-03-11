@@ -4,11 +4,13 @@
 
 #include <QApplication>
 #include <QFileDialog>
+#include <QKeyEvent>
 #include <QStatusBar>
+#include <utility>
 
 #include "main_window.hpp"
 
-MainWindow::MainWindow() : QMainWindow(nullptr) {
+MainWindow::MainWindow(QApplication& app) : QMainWindow(nullptr) {
   setWindowTitle("Duality");
 
   screen = new Screen{this};
@@ -19,6 +21,8 @@ MainWindow::MainWindow() : QMainWindow(nullptr) {
   CreateFileMenu(menu);
   CreateEmulationMenu(menu);
   setMenuBar(menu);
+
+  app.installEventFilter(this);
 }
 
 void MainWindow::CreateFileMenu(QMenuBar* menu) {
@@ -81,7 +85,7 @@ void MainWindow::OnOpenFile() {
   
   if (file_dialog.exec()) {
     // TODO: handle errors while attemping to load the ROM, firmware or BIOSes.
-    // TODO; make it so that we don't have to dynamically allocate the core,
+    // TODO: make it so that we don't have to dynamically allocate the core,
     // which is pretty pointless.
     screen->CancelDraw();
     if (emu_thread) {
@@ -91,6 +95,7 @@ void MainWindow::OnOpenFile() {
       file_dialog.selectedFiles().at(0).toStdString());
     core->SetVideoDevice(*screen);
     core->SetAudioDevice(audio_device);
+    core->SetInputDevice(input_device);
     emu_thread = std::make_unique<Duality::EmulatorThread>(*core.get());
     emu_thread->Start();
 
@@ -98,4 +103,44 @@ void MainWindow::OnOpenFile() {
     action_pause->setEnabled(true);
     action_stop->setEnabled(true);
   }
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
+  auto type = event->type();
+
+  if (type == QEvent::KeyPress || type == QEvent::KeyRelease) {
+    using namespace Duality::core;
+
+    // TODO: make the key mapping configurable.
+    static constexpr std::pair<int, InputDevice::Key> kKeyMap[] {
+      { Qt::Key_A, InputDevice::Key::A },
+      { Qt::Key_S, InputDevice::Key::B },
+      { Qt::Key_D, InputDevice::Key::L },
+      { Qt::Key_F, InputDevice::Key::R },
+      { Qt::Key_Q, InputDevice::Key::X },
+      { Qt::Key_W, InputDevice::Key::Y },
+      { Qt::Key_Backspace, InputDevice::Key::Select },
+      { Qt::Key_Return, InputDevice::Key::Start },
+      { Qt::Key_Up, InputDevice::Key::Up },
+      { Qt::Key_Down, InputDevice::Key::Down },
+      { Qt::Key_Left, InputDevice::Key::Left },
+      { Qt::Key_Right, InputDevice::Key::Right }
+    };
+
+    auto key = dynamic_cast<QKeyEvent*>(event)->key();
+    bool down = type == QEvent::KeyPress;
+
+    for (auto entry : kKeyMap) {
+      if (entry.first == key) {
+        input_device.SetKeyDown(entry.second, down);
+        break;
+      }
+    }
+
+    if (key == Qt::Key_Space) {
+      emu_thread->SetFastForward(down);
+    }
+  }
+
+  return QObject::eventFilter(watched, event);
 }

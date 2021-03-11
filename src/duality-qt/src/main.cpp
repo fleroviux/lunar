@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName("fleroviux");
   QCoreApplication::setApplicationName("Duality");
 
-  MainWindow window{};
+  MainWindow window{app};
   window.show();
 
   return app.exec();

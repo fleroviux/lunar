@@ -5,6 +5,7 @@
 #pragma once
 
 #include <duality/emulator_thread.hpp>
+#include <QApplication>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <memory>
@@ -13,7 +14,10 @@
 #include "screen.hpp"
 
 struct MainWindow : QMainWindow {
-  MainWindow();
+  MainWindow(QApplication& app);
+
+protected:
+  bool eventFilter(QObject* target, QEvent* event) override;
 
 private slots:
   void OnOpenFile();
@@ -27,6 +31,7 @@ private:
   QAction* action_pause;
   QAction* action_stop;
   MAAudioDevice audio_device;
+  Duality::core::BasicInputDevice input_device;
   std::unique_ptr<Duality::core::Core> core;
   std::unique_ptr<Duality::EmulatorThread> emu_thread;
 
