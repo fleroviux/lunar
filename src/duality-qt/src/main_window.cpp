@@ -143,10 +143,11 @@ bool MainWindow::UpdateKeyInput(QObject* watched, QKeyEvent* event) {
 }
 
 bool MainWindow::UpdateTouchInput(QObject* watched, QMouseEvent* event) {
-  auto scale = 384.0 / screen->size().height();
-  auto x = int(event->x() * scale);
+  auto size = screen->size();
+  auto scale = 384.0 / size.height();
+  auto x = int((event->x() - size.width() / 2) * scale) + 128;
   auto y = int(event->y() * scale) - 192;
-  bool down = (event->buttons() & Qt::LeftButton) && y >= 0;
+  bool down = (event->buttons() & Qt::LeftButton) && y >= 0 && x >= 0 && x <= 255;
 
   input_device.SetKeyDown(Duality::core::InputDevice::Key::TouchPen, down);
   input_device.GetTouchPoint().x = x;
