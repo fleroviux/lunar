@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Hardware accelerated 64-bit division and square root engine.
 struct MathEngine {
@@ -28,7 +28,7 @@ struct MathEngine {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::MathEngine;
+    friend struct Duality::Core::MathEngine;
 
     DivisionMode mode = DivisionMode::S32_S32;
     bool error_divide_by_zero = false;
@@ -41,7 +41,7 @@ struct MathEngine {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
   private:
-    friend struct Duality::core::MathEngine;
+    friend struct Duality::Core::MathEngine;
 
     u64 value = 0;
     MathEngine& math_engine;
@@ -58,7 +58,7 @@ struct MathEngine {
     auto ReadByte (uint offset) -> u8;
     void WriteByte(uint offset, u8 value);
   private:
-    friend struct Duality::core::MathEngine;
+    friend struct Duality::Core::MathEngine;
 
     bool mode_64bit = false;
     MathEngine& math_engine;
@@ -68,7 +68,7 @@ struct MathEngine {
     auto ReadByte(uint offset) -> u8;
 
   private:
-    friend struct Duality::core::MathEngine;
+    friend struct Duality::Core::MathEngine;
 
     u32 value = 0;
   } sqrt_result;
@@ -80,7 +80,7 @@ struct MathEngine {
     void WriteByte(uint offset, u8 value);
   
   private:
-    friend struct Duality::core::MathEngine;
+    friend struct Duality::Core::MathEngine;
 
     u64 value = 0;
     MathEngine& math_engine;
@@ -91,4 +91,4 @@ private:
   void UpdateSquareRoot();
 };
 
-}; // namespace Duality::core
+}; // namespace Duality::Core

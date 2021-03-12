@@ -91,7 +91,7 @@ void MainWindow::OnOpenFile() {
     if (emu_thread) {
       emu_thread->Stop();
     }
-    core = std::make_unique<Duality::core::Core>(
+    core = std::make_unique<Duality::Core::Core>(
       file_dialog.selectedFiles().at(0).toStdString());
     core->SetVideoDevice(*screen);
     core->SetAudioDevice(audio_device);
@@ -106,7 +106,7 @@ void MainWindow::OnOpenFile() {
 }
 
 bool MainWindow::UpdateKeyInput(QObject* watched, QKeyEvent* event) {
-  using namespace Duality::core;
+  using namespace Duality::Core;
 
   // TODO: make the key mapping configurable.
   static constexpr std::pair<int, InputDevice::Key> kKeyMap[] {
@@ -149,7 +149,7 @@ bool MainWindow::UpdateTouchInput(QObject* watched, QMouseEvent* event) {
   auto y = int(event->y() * scale) - 192;
   bool down = (event->buttons() & Qt::LeftButton) && y >= 0 && x >= 0 && x <= 255;
 
-  input_device.SetKeyDown(Duality::core::InputDevice::Key::TouchPen, down);
+  input_device.SetKeyDown(Duality::Core::InputDevice::Key::TouchPen, down);
   input_device.GetTouchPoint().x = x;
   input_device.GetTouchPoint().y = y;
 

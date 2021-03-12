@@ -9,7 +9,7 @@
 #include "hw/spi/spi_device.hpp"
 #include "hw/spi/firmware/firmware.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Touch Screen Controller
 /// Asahi Kasei Microsystems AK4148AVT
@@ -37,4 +37,4 @@ private:
   InputDevice* input_device = nullptr;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

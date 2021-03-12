@@ -6,7 +6,7 @@
 
 #include "video_unit.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 static constexpr int kDrawingLines = 192;
 static constexpr int kBlankingLines = 71;
@@ -220,4 +220,4 @@ void VideoUnit::PowerControl::WriteByte(uint offset, u8 value) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -6,7 +6,7 @@
 
 #include "registers.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void DisplayControl::Reset() {
   WriteByte(0, 0);
@@ -353,4 +353,4 @@ void Mosaic::WriteByte(uint offset, u8 value) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

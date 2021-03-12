@@ -35,8 +35,8 @@ private:
   QAction* action_pause;
   QAction* action_stop;
   MAAudioDevice audio_device;
-  Duality::core::BasicInputDevice input_device;
-  std::unique_ptr<Duality::core::Core> core;
+  Duality::Core::BasicInputDevice input_device;
+  std::unique_ptr<Duality::Core::Core> core;
   std::unique_ptr<Duality::EmulatorThread> emu_thread;
 
   Q_OBJECT;

@@ -9,7 +9,7 @@
 #include "arm/memory.hpp"
 #include "hw/irq/irq.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct DMA7 {
   enum Time {
@@ -81,4 +81,4 @@ private:
   IRQ& irq;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

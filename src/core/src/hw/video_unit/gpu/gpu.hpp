@@ -16,7 +16,7 @@
 #include "scheduler.hpp"
 #include "matrix_stack.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// 3D graphics processing unit (GPU)
 struct GPU {
@@ -45,7 +45,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend struct Duality::core::GPU;
+    friend struct Duality::Core::GPU;
     
     enum class Shading {
       Toon = 0,
@@ -79,7 +79,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
     
   private:
-    friend struct Duality::core::GPU;
+    friend struct Duality::Core::GPU;
     
     enum class IRQMode {
       Never = 0,
@@ -285,4 +285,4 @@ private:
   Matrix4<Fixed20x12> clip_matrix;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -11,7 +11,7 @@
 #include "arm9/arm9.hpp"
 #include "interconnect.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// NDS file header
 struct Header {
@@ -197,4 +197,4 @@ void Core::Run(uint cycles) {
   pimpl->Run(cycles);
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

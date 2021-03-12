@@ -9,7 +9,7 @@
 #include "arm/memory.hpp"
 #include "hw/irq/irq.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct DMA9 {
   enum Time {
@@ -91,4 +91,4 @@ private:
   bool gxfifo_half_empty;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

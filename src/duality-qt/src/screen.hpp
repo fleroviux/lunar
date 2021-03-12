@@ -8,7 +8,7 @@
 #include <util/integer.hpp>
 #include <QOpenGLWidget>
 
-struct Screen final : QOpenGLWidget, Duality::core::VideoDevice {
+struct Screen final : QOpenGLWidget, Duality::Core::VideoDevice {
   Screen(QWidget* parent);
  ~Screen() override;
 

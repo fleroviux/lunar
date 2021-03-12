@@ -4,7 +4,7 @@
 
 #include "arm7.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 ARM7::ARM7(Interconnect& interconnect)
     : bus(&interconnect)
@@ -34,4 +34,4 @@ void ARM7::Run(uint cycles) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

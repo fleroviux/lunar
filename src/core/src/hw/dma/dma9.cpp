@@ -7,7 +7,7 @@
 
 #include "dma9.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void DMA9::Reset() {
   memset(filldata, 0, sizeof(filldata));
@@ -210,4 +210,4 @@ void DMA9::RunChannel(Channel& channel) {
   channel.running = false;
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

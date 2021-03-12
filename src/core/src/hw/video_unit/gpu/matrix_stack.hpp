@@ -8,7 +8,7 @@
 
 #include "fixed_point.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 // TODO: figure out how over- and underflow work on hardware.
 template<int capacity>
@@ -72,5 +72,5 @@ private:
   Matrix4<Fixed20x12> stack[capacity];
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core
 

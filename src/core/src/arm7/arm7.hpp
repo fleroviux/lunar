@@ -8,7 +8,7 @@
 #include "interconnect.hpp"
 #include "bus.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct ARM7 {
   ARM7(Interconnect& interconnect);
@@ -44,4 +44,4 @@ private:
   IRQ& irq;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

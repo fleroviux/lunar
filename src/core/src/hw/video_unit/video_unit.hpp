@@ -17,7 +17,7 @@
 #include "hw/irq/irq.hpp"
 #include "scheduler.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Graphics subsystem which contains two 2D PPUs (A and B) and a 3D GPU.
 struct VideoUnit {
@@ -35,7 +35,7 @@ struct VideoUnit {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::VideoUnit;
+    friend struct Duality::Core::VideoUnit;
 
     struct {
       bool flag = false;
@@ -53,7 +53,7 @@ struct VideoUnit {
     auto ReadByte(uint offset) -> u8;
 
   private:
-    friend struct Duality::core::VideoUnit;
+    friend struct Duality::Core::VideoUnit;
     u16 value = 0xFFFF;
   } vcount;
 
@@ -64,7 +64,7 @@ struct VideoUnit {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::VideoUnit;
+    friend struct Duality::Core::VideoUnit;
 
     bool enable_lcds = false;
     bool enable_ppu_a = false;
@@ -94,4 +94,4 @@ private:
   VideoDevice* video_device = nullptr;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -8,7 +8,7 @@
 
 #include "math_engine.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void MathEngine::Reset() {
   // TODO!
@@ -166,4 +166,4 @@ void MathEngine::UpdateSquareRoot() {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

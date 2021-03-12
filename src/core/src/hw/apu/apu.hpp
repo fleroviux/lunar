@@ -11,7 +11,7 @@
 #include "arm/memory.hpp"
 #include "scheduler.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void AudioCallback(struct APU* this_, s16* stream, int length);
 
@@ -26,7 +26,7 @@ struct APU {
   void Write(uint chan_id, uint offset, u8 value);
 
 private:
-  friend void Duality::core::AudioCallback(APU* this_, s16* stream, int length);
+  friend void Duality::Core::AudioCallback(APU* this_, s16* stream, int length);
 
   static constexpr int kRingBufferSize = 8192;
 
@@ -92,4 +92,4 @@ private:
   AudioDevice* audio_device = nullptr;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct VideoDevice {
   virtual ~VideoDevice() = default;
@@ -14,4 +14,4 @@ struct VideoDevice {
   virtual void Draw(u32 const* top, u32 const* bottom) = 0;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

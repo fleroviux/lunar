@@ -6,7 +6,7 @@
 
 #include "cp15.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
     : core(core)
@@ -153,4 +153,4 @@ void CP15::WriteITCMConfig(int cn, int cm, int opcode, u32 value) {
   LOG_INFO("CP15: ITCM mapped @ 0x{0:08X} - 0x{1:08X}", itcm_config.base, itcm_config.limit);
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -9,7 +9,7 @@
 #include "bus.hpp"
 #include "cp15.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct ARM9 {
   ARM9(Interconnect& interconnect);
@@ -26,4 +26,4 @@ private:
   IRQ& irq;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

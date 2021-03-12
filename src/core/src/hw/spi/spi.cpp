@@ -6,7 +6,7 @@
 
 #include "spi.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 SPI::SPI(IRQ& irq7) : irq7(irq7) {
   Reset();
@@ -95,4 +95,4 @@ void SPI::SPIDATA::WriteByte(u8 value) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

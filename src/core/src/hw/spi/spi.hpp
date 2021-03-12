@@ -10,7 +10,7 @@
 #include "firmware/firmware.hpp"
 #include "hw/irq/irq.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Serial Peripheral Interface
 struct SPI {
@@ -28,7 +28,7 @@ struct SPI {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::SPI;
+    friend struct Duality::Core::SPI;
 
     int  baudrate = 0;
     bool busy = false;
@@ -47,7 +47,7 @@ struct SPI {
     auto ReadByte () -> u8;
     void WriteByte(u8 value);
   private:
-    friend struct Duality::core::SPI;
+    friend struct Duality::Core::SPI;
 
     u8 value = 0;
     SPI& spi;
@@ -58,4 +58,4 @@ private:
   SPIDevice* devices[4] { nullptr, &firmware, &tsc, nullptr };
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

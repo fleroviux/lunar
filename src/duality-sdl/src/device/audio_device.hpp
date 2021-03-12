@@ -8,7 +8,7 @@
 #include <core/device/audio_device.hpp>
 #include <SDL.h>
 
-struct SDL2AudioDevice final : Duality::core::AudioDevice {
+struct SDL2AudioDevice final : Duality::Core::AudioDevice {
   auto GetSampleRate() -> uint override { return have.freq; }
   auto GetBlockSize() -> uint override { return have.samples; }
 

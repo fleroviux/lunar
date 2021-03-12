@@ -6,7 +6,7 @@
 
 #include "gpu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void GPU::CMD_SetMatrixMode() {
   matrix_mode = static_cast<MatrixMode>(Dequeue().argument & 3);
@@ -413,5 +413,5 @@ void GPU::CMD_SwapBuffers() {
   polygon[gx_buffer_id].count = 0;
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core
 

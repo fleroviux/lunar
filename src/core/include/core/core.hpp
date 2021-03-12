@@ -10,7 +10,7 @@
 #include <util/integer.hpp>
 #include <string>
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct Core {
   Core(std::string const& rom_path);
@@ -27,4 +27,4 @@ private:
   struct CoreImpl* pimpl = nullptr;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

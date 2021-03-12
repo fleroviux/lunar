@@ -10,7 +10,7 @@
 #include "hw/video_unit/vram.hpp"
 #include "registers.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// 2D picture processing unit (PPU).
 /// The Nintendo DS has two of these (PPU A and PPU B) for each screen.
@@ -227,4 +227,4 @@ private:
   static const int s_obj_size[4][4][2];
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

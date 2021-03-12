@@ -6,7 +6,7 @@
 
 #include "dma7.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 static constexpr u32 g_dma_src_mask[] = {
   0x07FFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF
@@ -188,4 +188,4 @@ void DMA7::RunChannel(Channel& channel) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

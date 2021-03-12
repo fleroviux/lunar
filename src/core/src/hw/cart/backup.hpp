@@ -7,7 +7,7 @@
 #include <util/integer.hpp>
 #include <util/log.hpp>
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// This is mostly a stub now, do properly at a later point.
 struct Backup {
@@ -157,4 +157,4 @@ private:
   }
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

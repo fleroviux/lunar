@@ -9,7 +9,7 @@
 
 #include "hw/irq/irq.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Inter-Process Communication hardware for ARM9 and ARM7
 /// synchronization and message passing.
@@ -91,4 +91,4 @@ private:
   IRQ* irq[2];
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

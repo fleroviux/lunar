@@ -12,7 +12,7 @@
 #include <util/punning.hpp>
 #include <memory>
 
-namespace Duality::core::arm {
+namespace Duality::Core::arm {
 
 /** Base class that memory systems must implement
   * in order to be connected to an ARM core.
@@ -123,4 +123,4 @@ struct MemoryBase {
   } itcm, dtcm;
 };
 
-} // namespace Duality::core::arm
+} // namespace Duality::Core::arm

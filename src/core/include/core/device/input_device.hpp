@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct InputDevice {
   enum class Key {
@@ -54,4 +54,4 @@ private:
   bool keys[kKeyCount] {false};
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -6,7 +6,7 @@
 
 #include "tsc.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void TSC::Reset(Firmware& firmware) {
   data_reg = 0;
@@ -89,4 +89,4 @@ auto TSC::Transfer(u8 data) -> u8 {
   return out;
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

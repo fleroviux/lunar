@@ -6,7 +6,7 @@
 
 #include "ipc.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 IPC::IPC(IRQ& irq7, IRQ& irq9) {
   irq[static_cast<uint>(Client::ARM7)] = &irq7;
@@ -182,4 +182,4 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
   return fifo_tx.latch;
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

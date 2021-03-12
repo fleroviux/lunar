@@ -8,7 +8,7 @@
 #include <GL/glew.h>
 #include <SDL.h>
 
-struct SDL2VideoDevice final : Duality::core::VideoDevice {
+struct SDL2VideoDevice final : Duality::Core::VideoDevice {
   SDL2VideoDevice(SDL_Window* window);
  ~SDL2VideoDevice() override;
 

@@ -10,7 +10,7 @@
 
 #include "bus.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     : ewram(interconnect->ewram)
@@ -296,4 +296,4 @@ void ARM9MemoryBus::WriteQuad(u32 address, u64 value, Bus bus) {
 }
 
 
-} // namespace Duality::core
+} // namespace Duality::Core

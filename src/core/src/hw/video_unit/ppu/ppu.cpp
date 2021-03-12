@@ -7,7 +7,7 @@
 
 #include "ppu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 PPU::PPU(
   int id,
@@ -255,4 +255,4 @@ void PPU::RenderMainMemoryDisplay(u16 vcount) {
   ASSERT(false, "PPU: unimplemented main memory display mode.");
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

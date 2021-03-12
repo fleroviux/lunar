@@ -10,7 +10,7 @@
 #include "arm/memory.hpp"
 #include "interconnect.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct ARM9MemoryBus final : arm::MemoryBase {
   ARM9MemoryBus(Interconnect* interconnect);
@@ -106,4 +106,4 @@ private:
   Interconnect::KeyInput& keyinput;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

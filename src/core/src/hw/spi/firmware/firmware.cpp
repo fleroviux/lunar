@@ -6,7 +6,7 @@
 
 #include "firmware.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void Firmware::Reset() {
   if (file.is_open()) {
@@ -89,5 +89,5 @@ void Firmware::ParseCommand(u8 command) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core
 

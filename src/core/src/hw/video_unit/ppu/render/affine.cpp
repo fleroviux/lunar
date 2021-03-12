@@ -4,7 +4,7 @@
 
 #include "hw/video_unit/ppu/ppu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void PPU::AffineRenderLoop(
   uint id,
@@ -158,4 +158,4 @@ void PPU::RenderLayerLarge() {
   });
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

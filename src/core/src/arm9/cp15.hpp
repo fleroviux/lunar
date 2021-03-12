@@ -11,7 +11,7 @@
 #include "arm/coprocessor.hpp"
 #include "bus.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /** This class emulates the System Control Coprocessor (CP15).
   * It is responsible for various things, such as configuration
@@ -65,4 +65,4 @@ private:
   WriteHandler handler_wr[kLUTSize];
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

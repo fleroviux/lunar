@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 
-namespace Duality::core {
+namespace Duality::Core {
   
 struct AudioDevice {
   virtual ~AudioDevice() = default;
@@ -26,4 +26,4 @@ struct AudioDevice {
   virtual void Close() = 0;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

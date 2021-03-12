@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 
-namespace Duality::core {
+namespace Duality::Core {
 
 namespace detail {
 
@@ -91,7 +91,7 @@ private:
   T value {};
 };
 
-} // namespace Duality::core::detail
+} // namespace Duality::Core::detail
 
 using Fixed20x12 = detail::FixedBase<s32, s64, 12>;
 using Fixed12x4 = detail::FixedBase<s16, s32, 4>;
@@ -100,28 +100,28 @@ namespace detail {
 inline auto operator*(Fixed12x4 lhs, Fixed20x12 rhs) -> Fixed12x4 {
   return Fixed12x4{s16((Fixed20x12{lhs.raw()} * rhs).raw())};
 }
-} // namespace Duality::core::detail
+} // namespace Duality::Core::detail
 
-} // namespace Duality::core
+} // namespace Duality::Core
 
 template<>
-struct NumericConstants<Duality::core::Fixed20x12> {
-  static constexpr auto zero() -> Duality::core::Fixed20x12 {
-    return Duality::core::Fixed20x12{};
+struct NumericConstants<Duality::Core::Fixed20x12> {
+  static constexpr auto zero() -> Duality::Core::Fixed20x12 {
+    return Duality::Core::Fixed20x12{};
   }
   
-  static constexpr auto one() -> Duality::core::Fixed20x12 {
-    return Duality::core::Fixed20x12{1 << 12};
+  static constexpr auto one() -> Duality::Core::Fixed20x12 {
+    return Duality::Core::Fixed20x12{1 << 12};
   }
 };
 
 template<>
-struct NumericConstants<Duality::core::Fixed12x4> {
-  static constexpr auto zero() -> Duality::core::Fixed12x4 {
-    return Duality::core::Fixed12x4{};
+struct NumericConstants<Duality::Core::Fixed12x4> {
+  static constexpr auto zero() -> Duality::Core::Fixed12x4 {
+    return Duality::Core::Fixed12x4{};
   }
   
-  static constexpr auto one() -> Duality::core::Fixed12x4 {
-    return Duality::core::Fixed12x4{1 << 4};
+  static constexpr auto one() -> Duality::Core::Fixed12x4 {
+    return Duality::Core::Fixed12x4{1 << 4};
   }
 };

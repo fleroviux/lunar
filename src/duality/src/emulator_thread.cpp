@@ -6,7 +6,7 @@
 
 namespace Duality {
 
-EmulatorThread::EmulatorThread(Duality::core::Core& core)
+EmulatorThread::EmulatorThread(Duality::Core::Core& core)
     : core(core) {
   frame_limiter.Reset(59.8983);
 }

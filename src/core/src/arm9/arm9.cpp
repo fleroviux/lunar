@@ -4,7 +4,7 @@
 
 #include "arm9.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 ARM9::ARM9(Interconnect& interconnect)
     : bus(&interconnect)
@@ -30,4 +30,4 @@ void ARM9::Run(uint cycles) {
   core.Run(cycles);
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

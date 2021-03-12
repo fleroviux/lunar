@@ -6,7 +6,7 @@
 
 #include <util/integer.hpp>
 
-namespace Duality::core::arm {
+namespace Duality::Core::arm {
 
 struct Coprocessor {
   virtual void Reset() = 0;
@@ -35,4 +35,4 @@ struct Coprocessor {
   virtual void Write(int opcode1, int cn, int cm, int opcode2, u32 value) = 0;
 };
 
-} // namespace Duality::core::arm
+} // namespace Duality::Core::arm

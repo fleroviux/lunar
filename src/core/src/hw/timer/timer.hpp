@@ -9,7 +9,7 @@
 #include "hw/irq/irq.hpp"
 #include "scheduler.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 struct Timer {
   Timer(Scheduler& scheduler, IRQ& irq)
@@ -56,4 +56,4 @@ private:
   void OnOverflow(Channel& channel);
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -23,7 +23,7 @@
 #include "hw/video_unit/video_unit.hpp"
 #include "scheduler.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 // TODO: this whole construct really needs to go away :methharold:
 struct Interconnect {
@@ -191,4 +191,4 @@ struct Interconnect {
   } extkeyinput = {};
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

@@ -10,7 +10,7 @@ extern "C" {
 #include <miniaudio.h>
 }
 
-struct MAAudioDevice final : Duality::core::AudioDevice {
+struct MAAudioDevice final : Duality::Core::AudioDevice {
   auto GetSampleRate() -> uint override { return frequency; }
   auto GetBlockSize() -> uint override { return block_size; }
 

@@ -4,7 +4,7 @@
 
 #include "gpu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 void GPU::Render() {
   // TODO: use data from rear image MMIO registers.
@@ -241,4 +241,4 @@ void GPU::Render() {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

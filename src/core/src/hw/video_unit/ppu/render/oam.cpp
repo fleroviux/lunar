@@ -4,7 +4,7 @@
 
 #include "hw/video_unit/ppu/ppu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 const int PPU::s_obj_size[4][4][2] = {
   /* SQUARE */
@@ -221,4 +221,4 @@ void PPU::RenderLayerOAM(u16 vcount) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

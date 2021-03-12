@@ -10,7 +10,7 @@
 
 #include "apu.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 static constexpr float kVolumeDivideLUT[4] { 1.0, 1.0 / 2.0, 1.0 / 4.0, 1.0 / 16.0 };
 
@@ -340,4 +340,4 @@ void AudioCallback(APU* this_, s16* stream, int length) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

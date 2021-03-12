@@ -4,7 +4,7 @@
 
 #include "vram.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 VRAM::VRAM() {
   Reset();
@@ -403,4 +403,4 @@ void VRAM::MapToCurrent(Bank bank) {
   }
 }
 
-} // namespace Duality::core
+} // namespace Duality::Core

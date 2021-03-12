@@ -8,7 +8,7 @@
 
 #include "arm/arm.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// ARM7 and ARM9 interrupt controller.
 struct IRQ {
@@ -46,7 +46,7 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::IRQ;
+    friend struct Duality::Core::IRQ;
 
     bool enabled = false;
     IRQ* irq = nullptr;
@@ -58,7 +58,7 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::IRQ;
+    friend struct Duality::Core::IRQ;
 
     u32 value = 0;
     IRQ* irq = nullptr;
@@ -70,7 +70,7 @@ struct IRQ {
     void WriteByte(uint offset, u8 value);
 
   private:
-    friend struct Duality::core::IRQ;
+    friend struct Duality::Core::IRQ;
 
     u32 value = 0;
     IRQ* irq = nullptr;
@@ -82,4 +82,4 @@ private:
   arm::ARM* core = nullptr;
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

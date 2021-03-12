@@ -12,7 +12,7 @@
 
 #undef main
 
-void loop(Duality::core::Core& core) {
+void loop(Duality::Core::Core& core) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto scale = 2;
@@ -35,7 +35,7 @@ void loop(Duality::core::Core& core) {
   SDL_GL_SetSwapInterval(1);
 
   auto audio_device = SDL2AudioDevice{};
-  auto input_device = Duality::core::BasicInputDevice{};
+  auto input_device = Duality::Core::BasicInputDevice{};
   auto video_device = SDL2VideoDevice{window};
 
   core.SetAudioDevice(audio_device);
@@ -57,7 +57,7 @@ void loop(Duality::core::Core& core) {
     video_device.Present();
 
     while (SDL_PollEvent(&event)) {
-      using Key = Duality::core::InputDevice::Key;
+      using Key = Duality::Core::InputDevice::Key;
 
       if (event.type == SDL_QUIT)
         goto cleanup;
@@ -106,7 +106,7 @@ auto main(int argc, const char** argv) -> int {
     printf("%s rom_path\n", argv[0]);
     return -1;
   }
-  auto core = Duality::core::Core{argv[1]};
+  auto core = Duality::Core::Core{argv[1]};
   loop(core);
   return 0;
 }

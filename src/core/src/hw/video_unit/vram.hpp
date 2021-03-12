@@ -9,7 +9,7 @@
 
 #include "vram_region.hpp"
 
-namespace Duality::core {
+namespace Duality::Core {
 
 /// Holds VRAM bank data and takes care of allocating VRAM banks to regions (uses).
 struct VRAM {
@@ -112,4 +112,4 @@ private:
   void MapToCurrent(Bank bank);
 };
 
-} // namespace Duality::core
+} // namespace Duality::Core

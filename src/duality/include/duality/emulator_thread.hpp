@@ -12,7 +12,7 @@
 namespace Duality {
 
 struct EmulatorThread {
-  EmulatorThread(core::Core& core);
+  EmulatorThread(Core::Core& core);
  ~EmulatorThread();
 
   bool IsRunning() const;
@@ -23,7 +23,7 @@ struct EmulatorThread {
 
 private:
   float fps = 0.0;
-  core::Core& core;
+  Core::Core& core;
   FrameLimiter frame_limiter;
 
   std::thread thread;
