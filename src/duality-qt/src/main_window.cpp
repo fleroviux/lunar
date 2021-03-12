@@ -134,7 +134,7 @@ bool MainWindow::UpdateKeyInput(QObject* watched, QKeyEvent* event) {
     }
   }
 
-  if (key == Qt::Key_Space) {
+  if (key == Qt::Key_Space && emu_thread) {
     emu_thread->SetFastForward(down);
     return true;
   }
