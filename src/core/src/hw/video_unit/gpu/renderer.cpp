@@ -110,12 +110,6 @@ void GPU::Render() {
     s32 y_min = 256;
     s32 y_max = 0;
 
-    auto lerp = [](s32 a, s32 b, s32 t, s32 t_max) {
-      if (t_max == 0)
-        return a;
-      return (a * (t_max - t) + b * t) / t_max;
-    };
-
     bool skip = false;
 
     for (int j = 0; j < poly.count; j++) {
@@ -178,6 +172,7 @@ void GPU::Render() {
 
       struct Span {
         s32 x[2];
+        s32 w[2];
         s32 depth[2];
         s16 uv[2][2];
       } span;
@@ -185,17 +180,33 @@ void GPU::Render() {
       int a = 0;
       int b = 1;
 
+      auto lerp = [](s32 a, s32 b, s32 t, s32 t_max, s32 w_a = 1 << 12, s32 w_b = 1 << 12) {
+        // CHECKME
+        if (w_a == 0 || w_b == 0)
+          return a;
+        auto x = (s64(t_max - t) << 24) / w_a;
+        auto y = (s64(t) << 24) / w_b;
+        auto max = x + y;
+        if (max == 0)
+          return a;
+        return s32((a * x + b * y) / max);
+      };
+
       for (int j = 0; j < 2; j++) {
         auto t = y - points[s[j]].y;
         auto t_max = points[e[j]].y - points[s[j]].y;
+        auto w0 = points[s[j]].vertex->position.w().raw();
+        auto w1 = points[e[j]].vertex->position.w().raw();
 
         span.x[j] = lerp(points[s[j]].x, points[e[j]].x, t, t_max);
-        span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max);
+        // TODO: this can be simplified because w0 and w1 both cancel out in part of the equation.
+        span.w[j] = lerp(w0, w1, t, t_max, w0, w1);
+        span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max, w0, w1);
 
         for (int k = 0; k < 2; k++) {
           span.uv[j][k] = lerp(
             points[s[j]].vertex->uv[k].raw(),
-            points[e[j]].vertex->uv[k].raw(), t, t_max);
+            points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1);
         }
       }
 
@@ -212,10 +223,10 @@ void GPU::Render() {
             auto t_max = span.x[b] - span.x[a];
 
             s16 uv[2];
-            s32 depth = lerp(span.depth[a], span.depth[b], t, t_max);
+            s32 depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
 
             for (int j = 0; j < 2; j++) {
-              uv[j] = lerp(span.uv[0][j], span.uv[1][j], t, t_max);
+              uv[j] = lerp(span.uv[a][j], span.uv[b][j], t, t_max, span.w[a], span.w[b]);
             }
 
             // TODO: implement "equal" depth test mode.
