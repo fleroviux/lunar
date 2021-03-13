@@ -14,6 +14,7 @@
 #include "hw/irq/irq.hpp"
 #include "hw/video_unit/vram.hpp"
 #include "scheduler.hpp"
+#include "color.hpp"
 #include "matrix_stack.hpp"
 
 namespace Duality::Core {
