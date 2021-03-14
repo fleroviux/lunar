@@ -8,22 +8,30 @@
 #include <util/math/vector.hpp>
 #include <util/integer.hpp>
 
+#include "fixed_point.hpp"
+
 namespace Duality::Core {
 
 namespace detail {
 
+// TODO: change underlying data type to signed?
 struct ColorComponent {
   constexpr ColorComponent() {}
   constexpr ColorComponent(u16 value) : value(value) {}
 
   auto raw() const -> u16 { return value; }
 
+  auto saturate() -> ColorComponent& {
+    value = std::clamp(value, u16(0), u16(511));
+    return *this;
+  }
+
   auto operator+(ColorComponent other) const -> ColorComponent {
-    return saturate_up(value + other.value);
+    return value + other.value;
   }
 
   auto operator-(ColorComponent other) const -> ColorComponent {
-    return saturate_down(value - other.value);
+    return value - other.value;
   }
 
   auto operator*(ColorComponent other) const -> ColorComponent {
@@ -31,12 +39,12 @@ struct ColorComponent {
   }
 
   auto operator+=(ColorComponent other) -> ColorComponent& {
-    value = saturate_up(value + other.value);
+    value = value + other.value;
     return *this;
   }
 
   auto operator-=(ColorComponent other) -> ColorComponent& {
-    value = saturate_down(value - other.value);
+    value = value - other.value;
     return *this;
   }
 
@@ -70,16 +78,13 @@ struct ColorComponent {
   }
 
 private:
-  static auto saturate_up(u16 value) -> u8 {
-    return std::min(value, u16(511));
-  }
-
-  static auto saturate_down(u16 value) -> u8 {
-    return std::max(value, u16(0));
-  }
 
   u16 value {};
 };
+
+inline auto operator*(ColorComponent const& lhs, Fixed20x12 rhs) -> ColorComponent {
+  return detail::ColorComponent{u16((s64(lhs.raw()) * rhs.raw()) >> 12)};
+}
 
 } // namespace Duality::Core::detail
 
@@ -137,6 +142,12 @@ struct Color4 : Vector<Color4, detail::ColorComponent, 4> {
     return (r().raw() >> 4) |
           ((g().raw() >> 4) <<  5) |
           ((b().raw() >> 4) << 10);
+  }
+
+  auto saturate() -> Color4& {
+    for (uint i = 0; i < 4; i++)
+      data[i].saturate();
+    return *this;
   }
 
   auto operator*(detail::ColorComponent other) const -> Color4 {

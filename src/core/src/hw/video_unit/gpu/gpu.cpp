@@ -344,12 +344,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
 
             clipped[b].push_back({
               .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
-              // TODO: fix the interpolate template so that we can use it for color vectors too.
-              .color = Color4{
-                detail::ColorComponent{u16(v1.color[0].raw() + (((v0.color[0].raw() - v1.color[0].raw()) * scale.raw()) >> 12))},
-                detail::ColorComponent{u16(v1.color[1].raw() + (((v0.color[1].raw() - v1.color[1].raw()) * scale.raw()) >> 12))},
-                detail::ColorComponent{u16(v1.color[2].raw() + (((v0.color[2].raw() - v1.color[2].raw()) * scale.raw()) >> 12))}
-              },
+              .color = Color4::interpolate(v1.color, v0.color, scale),
               .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
             });
           }
