@@ -178,6 +178,7 @@ void GPU::ProcessCommands() {
       case 0x26: CMD_SubmitVertex_XZ(); break;
       case 0x27: CMD_SubmitVertex_YZ(); break;
       case 0x28: CMD_SubmitVertex_Offset(); break;
+      case 0x29: CMD_SetPolygonAttributes(); break;
       case 0x2A: CMD_SetTextureParameters(); break;
       case 0x2B: CMD_SetPaletteBase(); break;
 
@@ -299,6 +300,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       is_first = false;
     }
 
+    poly.params = poly_params;
     poly.texture_params = texture_params;
     if (poly.count != 0) {
       polygon[gx_buffer_id].count++;

@@ -108,11 +108,37 @@ private:
     u32 argument = 0;
   };
 
+  struct PolygonParams {
+    bool enable_light[4] { false };
+  
+    enum class Mode {
+      Modulation,
+      Decal,
+      Shaded,
+      Shadow
+    } mode = Mode::Modulation;
+
+    bool render_back_side = false;
+    bool render_front_side = false;
+    bool enable_translucent_depth_write = false; 
+    bool render_far_plane_polys = false;
+    bool render_1dot_depth_tested = false;
+
+    enum class DepthTest {
+      Less,
+      Equal
+    } depth_test = DepthTest::Less;
+
+    bool enable_fog = false;
+    int alpha = 0;
+    int polygon_id = 0;
+  };
+
   struct TextureParams {
-    u32 address;
-    bool repeat[2];
-    bool flip[2];
-    int size[2];
+    u32 address = 0;
+    bool repeat[2] { false };
+    bool flip[2] { false };
+    int size[2] { 0 };
 
     enum class Format {
       None,
@@ -125,15 +151,15 @@ private:
       Direct
     } format = Format::None;
 
-    bool color0_transparent;
+    bool color0_transparent = false;
 
     enum class Transform {
       TexCoord,
       Normal,
       Vertex
-    } transform;
+    } transform = Transform::TexCoord;
 
-    u16 palette_base;
+    u16 palette_base = 0;
   };
 
   struct Vertex {
@@ -146,6 +172,8 @@ private:
   struct Polygon {
     int count;
     int indices[10];
+    // TODO: unify polygon and texture parameters?
+    PolygonParams params;
     TextureParams texture_params;
   };
 
@@ -216,6 +244,7 @@ private:
   void CMD_SubmitVertex_XZ();
   void CMD_SubmitVertex_YZ();
   void CMD_SubmitVertex_Offset();
+  void CMD_SetPolygonAttributes();
   void CMD_SetTextureParameters();
   void CMD_SetPaletteBase();
   
@@ -257,6 +286,9 @@ private:
 
   /// Current vertex UV
   Vector2<Fixed12x4> vertex_uv;
+
+  /// Current polygon parameters
+  PolygonParams poly_params;
 
   /// Current texture parameters
   TextureParams texture_params;

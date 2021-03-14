@@ -354,6 +354,24 @@ void GPU::CMD_SubmitVertex_Offset() {
   });
 }
 
+void GPU::CMD_SetPolygonAttributes() {
+  auto arg = Dequeue().argument;
+
+  poly_params.enable_light[0] = arg & 1;
+  poly_params.enable_light[1] = arg & 2;
+  poly_params.enable_light[2] = arg & 4;
+  poly_params.enable_light[3] = arg & 8;
+  poly_params.render_back_side = arg & 16;
+  poly_params.render_front_side = arg & 32;
+  poly_params.enable_translucent_depth_write = arg & (1 << 11);
+  poly_params.render_far_plane_polys = arg & (1 << 12);
+  poly_params.render_1dot_depth_tested = arg & (1 << 13);
+  poly_params.depth_test = static_cast<PolygonParams::DepthTest>((arg >> 14) & 1);
+  poly_params.enable_fog = arg & (1 << 15);
+  poly_params.alpha = (arg >> 16) & 31;
+  poly_params.polygon_id = (arg >> 24) & 63;
+}
+
 void GPU::CMD_SetTextureParameters() {
   auto arg = Dequeue().argument;
 
