@@ -7,8 +7,6 @@
 namespace Duality::Core {
 
 auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
-  static const auto kTransparentColor = Color4{0, 0, 0, 0};
-
   const int size[2] {
     8 << params.size[0],
     8 << params.size[1]
@@ -60,7 +58,7 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
       auto index = (vram_texture.Read<u8>(params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
 
       if (params.color0_transparent && index == 0) {
-        return kTransparentColor;
+        return Color4{0, 0, 0, 0};
       }
       
       return Color4::from_rgb555(vram_palette.Read<u16>((palette_addr >> 1) + index * sizeof(u16)) & 0x7FFF);
@@ -69,7 +67,7 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
       auto index = (vram_texture.Read<u8>(params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
       
       if (params.color0_transparent && index == 0) {
-        return kTransparentColor;
+        return Color4{0, 0, 0, 0};
       }
       
       return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
@@ -78,7 +76,7 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
       auto index = vram_texture.Read<u8>(params.address + offset);
 
       if (params.color0_transparent && index == 0) {
-        return kTransparentColor;
+        return Color4{0, 0, 0, 0};
       }
 
       return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
@@ -101,7 +99,7 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
       switch (mode) {
         case 0: {
           if (index == 3) {
-            return kTransparentColor;
+            return Color4{0, 0, 0, 0};
           }
           return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
@@ -117,7 +115,7 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
             return color_0;
           }
           if (index == 3) {
-            return kTransparentColor;
+            return Color4{0, 0, 0, 0};
           }
           return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
@@ -165,14 +163,12 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
       auto color = vram_texture.Read<u16>(params.address + offset * sizeof(u16));
 
       if (color & 0x8000) {
-        return kTransparentColor;
+        return Color4{0, 0, 0, 0};
       }
 
       return Color4::from_rgb555(color);
     }
   };
-
-  return Color4::from_rgb555(0x999);
 }
 
 void GPU::Render() {
@@ -195,17 +191,9 @@ void GPU::Render() {
     s32 y_min = 256;
     s32 y_max = 0;
 
-    bool skip = false;
-
     for (int j = 0; j < poly.count; j++) {
       auto const& vert = vertex[gx_buffer_id ^ 1].data[poly.indices[j]];
       auto& point = points[j];
-
-      // FIXME
-      if (vert.position[3] == 0) {
-        skip = true;
-        break;
-      }
 
       // TODO: use the provided viewport configuration.
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
@@ -226,11 +214,6 @@ void GPU::Render() {
       }
     }
 
-    // FIXME
-    if (skip) {
-      continue;
-    }
-
     int s[2];
     int e[2];
 
@@ -243,6 +226,17 @@ void GPU::Render() {
     e[1] = start == 0 ? (poly.count - 1) : (start - 1);
 
     for (s32 y = y_min; y <= y_max; y++) {
+      struct Span {
+        s32 x[2];
+        s32 w[2];
+        s32 depth[2];
+        Vector2<Fixed12x4> uv[2];
+        Color4 color[2];
+      } span;
+
+      int a = 0; // left edge index
+      int b = 1; // right edge index
+
       if (points[e[0]].y <= y) {
         s[0] = e[0];
         if (++e[0] == poly.count)
@@ -255,27 +249,28 @@ void GPU::Render() {
           e[1] = poly.count - 1;
       }
 
-      struct Span {
-        s32 x[2];
-        s32 w[2];
-        s32 depth[2];
-        s16 uv[2][2];
-        Color4 color[2];
-      } span;
-
-      int a = 0;
-      int b = 1;
-
       auto lerp = [](s32 a, s32 b, s32 t, s32 t_max, s32 w_a = 1 << 12, s32 w_b = 1 << 12) {
-        // CHECKME
-        if (w_a == 0 || w_b == 0)
-          return a;
-        auto x = (s64(t_max - t) << 24) / w_a;
-        auto y = (s64(t) << 24) / w_b;
-        auto max = x + y;
-        if (max == 0)
-          return a;
-        return s32((a * x + b * y) / max);
+        // // If both w-Coordinates are same then division-by-zero should cancel out.
+        // if (w_a == w_b) {
+        //   w_a = 1;
+        //   w_b = 1;
+        // }
+
+        // // If only one w-Coordinate is zero, then the other will be biased to zero.
+        // if (w_a == 0) return a;
+        // if (w_b == 0) return b;
+
+        if (w_a != 0 && w_b != 0) {
+          auto x = (s64(t_max - t) << 24) / w_a;
+          auto y = (s64(t) << 24) / w_b;
+          auto max = x + y;
+
+          if (max != 0) {
+            return s32((a * x + b * y) / max);
+          }
+        }
+
+        return a;
       };
 
       for (int j = 0; j < 2; j++) {
@@ -284,15 +279,15 @@ void GPU::Render() {
         auto w0 = points[s[j]].vertex->position.w().raw();
         auto w1 = points[e[j]].vertex->position.w().raw();
 
+        // TODO: interpolation of w0 and w1 can be optimized.
         span.x[j] = lerp(points[s[j]].x, points[e[j]].x, t, t_max);
-        // TODO: this can be simplified because w0 and w1 both cancel out in part of the equation.
         span.w[j] = lerp(w0, w1, t, t_max, w0, w1);
         span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max, w0, w1);
 
         for (int k = 0; k < 2; k++) {
-          span.uv[j][k] = lerp(
+          span.uv[j][k] = Fixed12x4{lerp(
             points[s[j]].vertex->uv[k].raw(),
-            points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1);
+            points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1)};
         }
 
         for (int k = 0; k < 3; k++) {
@@ -307,19 +302,18 @@ void GPU::Render() {
         b ^= 1;
       }
 
-      // TODO: why are these guards still necessary? Is the clipper not doing its job?
       if (y >= 0 && y <= 191) {
         for (s32 x = span.x[a]; x <= span.x[b]; x++) {
           if (x >= 0 && x <= 255) {
             auto t = x - span.x[a];
             auto t_max = span.x[b] - span.x[a];
 
-            s16 uv[2];
             s32 depth;
+            Vector2<Fixed12x4> uv;
             Color4 vertex_color;
 
             for (int j = 0; j < 2; j++) {
-              uv[j] = lerp(span.uv[a][j], span.uv[b][j], t, t_max, span.w[a], span.w[b]);
+              uv[j] = Fixed12x4{lerp(span.uv[a][j].raw(), span.uv[b][j].raw(), t, t_max, span.w[a], span.w[b])};
             }
 
             depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
@@ -335,13 +329,17 @@ void GPU::Render() {
               continue;
             }
 
-            // TODO: do not sample textures if they are disabled.
-            auto tex_color = SampleTexture(poly.texture_params, uv[0], uv[1]);
-            // TODO: perform alpha test
-            // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
-            if (tex_color.a() != 0) {
-              // TODO: final GPU output should be 18-bit (RGB666), I think?
-              output[y * 256 + x] = (tex_color * vertex_color).to_rgb555();
+            if (disp3dcnt.enable_textures) {
+              auto tex_color = SampleTexture(poly.texture_params, uv[0].raw(), uv[1].raw());
+              // TODO: perform alpha test
+              // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
+              if (tex_color.a() != 0) {
+                // TODO: final GPU output should be 18-bit (RGB666), I think?
+                output[y * 256 + x] = (tex_color * vertex_color).to_rgb555();
+                depthbuffer[y * 256 + x] = depth;
+              }
+            } else {
+              output[y * 256 + x] = vertex_color.to_rgb555();
               depthbuffer[y * 256 + x] = depth;
             }
           }
