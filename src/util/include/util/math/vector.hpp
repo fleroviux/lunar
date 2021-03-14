@@ -20,14 +20,14 @@ struct Vector {
     return data[i];
   }
 
-  auto operator+(Derived const& other) -> Derived {
+  auto operator+(Derived const& other) const -> Derived {
     Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] + other[i];
     return result;
   }
 
-  auto operator-(Derived const& other) -> Derived {
+  auto operator-(Derived const& other) const -> Derived {
     Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] - other[i];
@@ -194,4 +194,6 @@ struct Vector4 : Vector<Vector4<T>, T, 4> {
   auto y() const -> T { return this->data[1]; }
   auto z() const -> T { return this->data[2]; }
   auto w() const -> T { return this->data[3]; }
+
+  auto xyz() const -> Vector3<T> { return Vector3<T>{x(), y(), z()}; }
 };
