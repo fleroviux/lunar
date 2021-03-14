@@ -211,11 +211,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
   auto clip_position = clip_matrix * position;
 
-  vertices.push_back({
-    clip_position,
-    { vertex_color[0], vertex_color[1], vertex_color[2] },
-    vertex_uv
-  });
+  vertices.push_back({ clip_position, vertex_color, vertex_uv });
 
   position_old = position;
 
@@ -345,10 +341,11 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
 
             clipped[b].push_back({
               .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
-              .color = {
-                v1.color[0] + (((v0.color[0] - v1.color[0]) * scale.raw()) >> 12),
-                v1.color[1] + (((v0.color[1] - v1.color[1]) * scale.raw()) >> 12),
-                v1.color[2] + (((v0.color[2] - v1.color[2]) * scale.raw()) >> 12)
+              // TODO: fix the interpolate template so that we can use it for color vectors too.
+              .color = Color4{
+                detail::ColorComponent{u16(v1.color[0].raw() + (((v0.color[0].raw() - v1.color[0].raw()) * scale.raw()) >> 12))},
+                detail::ColorComponent{u16(v1.color[1].raw() + (((v0.color[1].raw() - v1.color[1].raw()) * scale.raw()) >> 12))},
+                detail::ColorComponent{u16(v1.color[2].raw() + (((v0.color[2].raw() - v1.color[2].raw()) * scale.raw()) >> 12))}
               },
               .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
             });

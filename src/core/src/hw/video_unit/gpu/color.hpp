@@ -14,9 +14,9 @@ namespace detail {
 
 struct ColorComponent {
   constexpr ColorComponent() {}
-  constexpr ColorComponent(u8 value) : value(value) {}
+  constexpr ColorComponent(u16 value) : value(value) {}
 
-  auto raw() const -> u8 { return value; }
+  auto raw() const -> u16 { return value; }
 
   auto operator+(ColorComponent other) const -> ColorComponent {
     return saturate_up(value + other.value);
@@ -27,7 +27,7 @@ struct ColorComponent {
   }
 
   auto operator*(ColorComponent other) const -> ColorComponent {
-    return u8((u16(value) * u16(other.value)) >> 6);
+    return u16((u32(value) * u32(other.value)) >> 9);
   }
 
   auto operator+=(ColorComponent other) -> ColorComponent& {
@@ -41,7 +41,7 @@ struct ColorComponent {
   }
 
   auto operator*=(ColorComponent other) -> ColorComponent& {
-    value = u8((u16(value) * u16(other.value)) >> 6);
+    value = u16((u32(value) * u32(other.value)) >> 9);
     return *this;
   }
 
@@ -70,15 +70,15 @@ struct ColorComponent {
   }
 
 private:
-  static auto saturate_up(u8 value) -> u8 {
-    return std::min(value, u8(63));
+  static auto saturate_up(u16 value) -> u8 {
+    return std::min(value, u16(511));
   }
 
-  static auto saturate_down(u8 value) -> u8 {
-    return std::max(value, u8(0));
+  static auto saturate_down(u16 value) -> u8 {
+    return std::max(value, u16(0));
   }
 
-  u8 value {};
+  u16 value {};
 };
 
 } // namespace Duality::Core::detail
@@ -114,6 +114,39 @@ struct Color4 : Vector<detail::ColorComponent, 4> {
   Color4(Color4 const& other) {
     for (uint i = 0; i < 4; i++)
       this->data[i] = other[i];
+  }
+
+  static auto from_rgb555(u16 color) -> Color4 {
+    auto r = (color >>  0) & 31;
+    auto g = (color >>  5) & 31;
+    auto b = (color >> 10) & 31;
+    
+    // TODO: confirm that the hardware expands the 5-bit value to 9-bit like this.
+    return Color4{
+      u16((r << 4) | (r >> 1)),
+      u16((g << 4) | (g >> 1)),
+      u16((b << 4) | (b >> 1)),
+      511
+    };
+  }
+
+  auto to_rgb555() -> u16 {
+    return (r().raw() >> 4) |
+          ((g().raw() >> 4) <<  5) |
+          ((b().raw() >> 4) << 10);
+  }
+
+  auto operator*(Color4 const& other) const -> Color4 {
+    Color4 result{};
+    for (uint i = 0; i < 4; i++)
+      result[i] = data[i] * other[i];
+    return result;
+  }
+
+  auto operator*=(Color4 const& other) -> Color4& {
+    for (uint i = 0; i < 4; i++)
+      data[i] *= other[i];
+    return *this;
   }
 
   auto r() -> value_type& { return this->data[0]; }

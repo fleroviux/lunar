@@ -138,7 +138,7 @@ private:
 
   struct Vertex {
     Vector4<Fixed20x12> position;
-    s32 color[3];
+    Color4 color;
     Vector2<Fixed12x4> uv;
     // ...
   };
@@ -253,7 +253,7 @@ private:
   Vector4<Fixed20x12> position_old;
 
   /// Current vertex color
-  s32 vertex_color[3];
+  Color4 vertex_color;
 
   /// Current vertex UV
   Vector2<Fixed12x4> vertex_uv;

@@ -175,6 +175,7 @@ void GPU::Render() {
         s32 w[2];
         s32 depth[2];
         s16 uv[2][2];
+        Color4 color[2];
       } span;
 
       int a = 0;
@@ -208,6 +209,12 @@ void GPU::Render() {
             points[s[j]].vertex->uv[k].raw(),
             points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1);
         }
+
+        for (int k = 0; k < 3; k++) {
+          span.color[j][k] = detail::ColorComponent{lerp(
+            points[s[j]].vertex->color[k].raw(),
+            points[e[j]].vertex->color[k].raw(), t, t_max, w0, w1)};
+        }
       }
 
       if (span.x[0] > span.x[1]) {
@@ -223,10 +230,19 @@ void GPU::Render() {
             auto t_max = span.x[b] - span.x[a];
 
             s16 uv[2];
-            s32 depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
+            s32 depth;
+            Color4 vertex_color;
 
             for (int j = 0; j < 2; j++) {
               uv[j] = lerp(span.uv[a][j], span.uv[b][j], t, t_max, span.w[a], span.w[b]);
+            }
+
+            depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
+
+            for (int j = 0; j < 3; j++) {
+              vertex_color[j] = detail::ColorComponent{lerp(
+                span.color[a][j].raw(),
+                span.color[b][j].raw(), t, t_max, span.w[a], span.w[b])};
             }
 
             // TODO: implement "equal" depth test mode.
@@ -234,10 +250,15 @@ void GPU::Render() {
               continue;
             }
 
+            // TODO: do not sample textures if they are disabled.
             auto texel = SampleTexture(poly.texture_params, uv[0], uv[1]);
             // TODO: perform alpha test
+            // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
             if (texel != 0x8000) {
-              output[y * 256 + x] = texel;
+              // TODO: SampleTexture should return a Color4 object instead.
+              auto texel_color = Color4::from_rgb555(texel);
+              // TODO: final GPU output should be 18-bit (RGB666), I think?
+              output[y * 256 + x] = (texel_color * vertex_color).to_rgb555();
               depthbuffer[y * 256 + x] = depth;
             }
           }

@@ -279,17 +279,7 @@ void GPU::CMD_MatrixTranslate() {
 }
 
 void GPU::CMD_SetColor() {
-  // TODO: fix this absolutely atrocious code...
-
-  auto arg = Dequeue().argument;
-
-  auto r = (arg >>  0) & 31;
-  auto g = (arg >>  5) & 31;
-  auto b = (arg >> 10) & 31;
-
-  vertex_color[0] = r * 2 + (r + 31) / 32;
-  vertex_color[1] = g * 2 + (g + 31) / 32;
-  vertex_color[2] = b * 2 + (b + 31) / 32;
+  vertex_color = Color4::from_rgb555(u16(Dequeue().argument));
 }
 
 void GPU::CMD_SetNormal() {
@@ -391,13 +381,6 @@ void GPU::CMD_BeginVertexList() {
   is_first = true;
 
   vertices.clear();
-
-  // TODO: this is likely inaccurate.
-  // I don't know when exactly (and if) vertex attributes are reset.
-  for (int i = 0; i < 3; i++) {
-    vertex_color[i] = 63;
-  }
-  vertex_uv = {};
 }
 
 void GPU::CMD_EndVertexList() {
