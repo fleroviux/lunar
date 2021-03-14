@@ -6,13 +6,13 @@
 
 namespace Duality::Core {
 
-auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
+auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4 {
   const int size[2] {
     8 << params.size[0],
     8 << params.size[1]
   };
 
-  int coord[2] { u >> 4, v >> 4 };
+  int coord[2] { uv.x().integer(), uv.y().integer() };
 
   for (int i = 0; i < 2; i++) {
     if (coord[i] < 0 || coord[i] >= size[i]) {
@@ -330,7 +330,7 @@ void GPU::Render() {
             }
 
             if (disp3dcnt.enable_textures) {
-              auto tex_color = SampleTexture(poly.texture_params, uv[0].raw(), uv[1].raw());
+              auto tex_color = SampleTexture(poly.texture_params, uv);
               // TODO: perform alpha test
               // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
               if (tex_color.a() != 0) {

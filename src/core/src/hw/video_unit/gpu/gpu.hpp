@@ -217,7 +217,7 @@ private:
 
   void AddVertex(Vector4<Fixed20x12> const& position);
   auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
-  auto SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4;
+  auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
 
   /// Matrix commands
   void CMD_SetMatrixMode();
