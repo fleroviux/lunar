@@ -86,7 +86,10 @@ private:
 struct Color4 : Vector<detail::ColorComponent, 4> {
   using value_type = detail::ColorComponent; 
 
-  Color4() {}
+  Color4() {
+    for (uint i = 0; i < 4; i++)
+      this->data[i] = value_type{511};
+  }
 
   Color4(
     value_type r,
@@ -96,7 +99,7 @@ struct Color4 : Vector<detail::ColorComponent, 4> {
     this->data[0] = r;
     this->data[1] = g;
     this->data[2] = b;
-    this->data[3] = value_type{63};
+    this->data[3] = value_type{511};
   }
 
   Color4(

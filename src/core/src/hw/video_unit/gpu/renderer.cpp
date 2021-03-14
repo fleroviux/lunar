@@ -6,7 +6,9 @@
 
 namespace Duality::Core {
 
-auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> u16 {
+auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> Color4 {
+  static const auto kTransparentColor = Color4{0, 0, 0, 0};
+
   const int size[2] {
     8 << params.size[0],
     8 << params.size[1]
@@ -32,62 +34,85 @@ auto GPU::SampleTexture(TextureParams const& params, s16 u, s16 v) -> u16 {
 
   switch (params.format) {
     case TextureParams::Format::None: {
-      return 0x7FFF;
+      return Color4{};
     }
     case TextureParams::Format::A3I5: {
       u8  value = vram_texture.Read<u8>(params.address + offset);
       int index = value & 0x1F;
       int alpha = value >> 5;
-      alpha = (alpha << 2) + (alpha >> 1);
-      // TODO: this is incorrect, but we don't support semi-transparency right now.
-      // I'm also not sure if this format uses the "Color 0 transparent" flag.
-      if (alpha == 0 || (params.color0_transparent && index == 0)) {
-        return 0x8000;
+
+      auto rgb555 = vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+      auto rgb9999 = Color4::from_rgb555(rgb555);
+      
+      if (params.color0_transparent && index == 0) {
+        rgb9999.a() = 0;
+      } else {
+        // TODO: what precision is really used internally for alpha?
+        // I suspect while vertex color is interpolated with 9-bit precision,
+        // maybe it is truncated to 6-bit before the texture multiply?
+        rgb9999.a() = (alpha << 6) | (alpha << 3) | alpha; // 3-bit alpha to 9-bit alpha  
       }
-      return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+
+      return rgb9999;
     }
     case TextureParams::Format::Palette2BPP: {
       auto index = (vram_texture.Read<u8>(params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
+
       if (params.color0_transparent && index == 0) {
-        return 0x8000;
+        return kTransparentColor;
       }
-      return vram_palette.Read<u16>((params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF;
+      
+      return Color4::from_rgb555(vram_palette.Read<u16>((params.palette_base << 3) + index * sizeof(u16)) & 0x7FFF);
     }
     case TextureParams::Format::Palette4BPP: {
       auto index = (vram_texture.Read<u8>(params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
+      
       if (params.color0_transparent && index == 0) {
-        return 0x8000;
+        return kTransparentColor;
       }
-      return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+      
+      return Color4::from_rgb555(vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF);
     }
     case TextureParams::Format::Palette8BPP: {
       auto index = vram_texture.Read<u8>(params.address + offset);
+
       if (params.color0_transparent && index == 0) {
-        return 0x8000;
+        return kTransparentColor;
       }
-      return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+
+      return Color4::from_rgb555(vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF);
     }
     case TextureParams::Format::A5I3: {
       u8  value = vram_texture.Read<u8>(params.address + offset);
       int index = value & 7;
       int alpha = value >> 3;
-      // TODO: this is incorrect, but we don't support semi-transparency right now.
-      // I'm also not sure if this format uses the "Color 0 transparent" flag.
-      if (alpha == 0 || (params.color0_transparent && index == 0)) {
-        return 0x8000;
+
+      auto rgb555 = vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+      auto rgb9999 = Color4::from_rgb555(rgb555);
+      
+      if (params.color0_transparent && index == 0) {
+        rgb9999.a() = 0;
+      } else {
+        // TODO: what precision is really used internally for alpha?
+        // I suspect while vertex color is interpolated with 9-bit precision,
+        // maybe it is truncated to 6-bit before the texture multiply?
+        rgb9999.a() = (alpha << 4) | (alpha >> 1); // 5-bit alpha to 9-bit alpha  
       }
-      return vram_palette.Read<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
+
+      return rgb9999;
     }
     case TextureParams::Format::Direct: {
       auto color = vram_texture.Read<u16>(params.address + offset * sizeof(u16));
+
       if (color & 0x8000) {
-        return 0x8000;
+        return kTransparentColor;
       }
-      return color;
+
+      return Color4::from_rgb555(color);
     }
   };
 
-  return u16(0x999);
+  return Color4::from_rgb555(0x999);
 }
 
 void GPU::Render() {
@@ -251,14 +276,12 @@ void GPU::Render() {
             }
 
             // TODO: do not sample textures if they are disabled.
-            auto texel = SampleTexture(poly.texture_params, uv[0], uv[1]);
+            auto tex_color = SampleTexture(poly.texture_params, uv[0], uv[1]);
             // TODO: perform alpha test
             // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
-            if (texel != 0x8000) {
-              // TODO: SampleTexture should return a Color4 object instead.
-              auto texel_color = Color4::from_rgb555(texel);
+            if (tex_color.a() != 0) {
               // TODO: final GPU output should be 18-bit (RGB666), I think?
-              output[y * 256 + x] = (texel_color * vertex_color).to_rgb555();
+              output[y * 256 + x] = (tex_color * vertex_color).to_rgb555();
               depthbuffer[y * 256 + x] = depth;
             }
           }
