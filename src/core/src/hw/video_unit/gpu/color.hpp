@@ -119,6 +119,11 @@ struct Color4 : Vector<detail::ColorComponent, 4> {
       this->data[i] = other[i];
   }
 
+  Color4(Vector<detail::ColorComponent, 4> const& other) {
+    for (uint i = 0; i < 4; i++)
+      this->data[i] = other[i];
+  }
+
   static auto from_rgb555(u16 color) -> Color4 {
     auto r = (color >>  0) & 31;
     auto g = (color >>  5) & 31;
@@ -133,10 +138,23 @@ struct Color4 : Vector<detail::ColorComponent, 4> {
     };
   }
 
-  auto to_rgb555() -> u16 {
+  auto to_rgb555() const -> u16 {
     return (r().raw() >> 4) |
           ((g().raw() >> 4) <<  5) |
           ((b().raw() >> 4) << 10);
+  }
+
+  auto operator*(detail::ColorComponent other) const -> Color4 {
+    Color4 result{};
+    for (uint i = 0; i < 4; i++)
+      result[i] = data[i] * other;
+    return result;
+  }
+
+  auto operator*=(detail::ColorComponent other) -> Color4& {
+    for (uint i = 0; i < 4; i++)
+      data[i] *= other;
+    return *this;
   }
 
   auto operator*(Color4 const& other) const -> Color4 {

@@ -39,7 +39,7 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> u16 const* { return &output[0]; }
+  auto GetOutput() -> Color4 const* { return &draw_buffer[0]; }
 
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -303,8 +303,9 @@ private:
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  u16 output[256 * 192];
-  s32 depthbuffer[256 * 192];
+  Color4 draw_buffer[256 * 192];
+  Color4 back_buffer[256 * 192];
+  s32 depth_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;

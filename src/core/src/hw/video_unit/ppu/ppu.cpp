@@ -14,7 +14,7 @@ PPU::PPU(
   VRAM const& vram,
   u8  const* pram,
   u8  const* oam,
-  u16 const* gpu_output
+  Color4 const* gpu_output
 )   : id(id)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
@@ -186,7 +186,8 @@ void PPU::RenderNormal(u16 vcount) {
   if (mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      memcpy(buffer_bg, &gpu_output[vcount * 256], sizeof(buffer_bg));
+      for (uint x = 0; x < 256; x++)
+        buffer_bg[0][x] = gpu_output[vcount * 256 + x].to_rgb555();
     } else {
       RenderLayerText(0, vcount);
     }

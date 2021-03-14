@@ -173,8 +173,9 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
 
 void GPU::Render() {
   for (uint i = 0; i < 256 * 192; i++) {
-    output[i] = 0x8000;
-    depthbuffer[i] = 0x7FFFFFFF;
+    draw_buffer[i] = {};
+    back_buffer[i] = {};
+    depth_buffer[i] = 0x7FFFFFFF;
   }
 
   for (int i = 0; i < polygon[gx_buffer_id ^ 1].count; i++) {
@@ -308,7 +309,14 @@ void GPU::Render() {
             auto t = x - span.x[a];
             auto t_max = span.x[b] - span.x[a];
 
-            s32 depth;
+            s32 depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
+
+            // Check depth as early as possible to avoid shading occluded pixels.
+            // TODO: implement "equal" depth test mode.
+            if (depth >= depth_buffer[y * 256 + x]) {
+              continue;
+            }
+
             Vector2<Fixed12x4> uv;
             Color4 vertex_color;
 
@@ -316,32 +324,45 @@ void GPU::Render() {
               uv[j] = Fixed12x4{lerp(span.uv[a][j].raw(), span.uv[b][j].raw(), t, t_max, span.w[a], span.w[b])};
             }
 
-            depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
-
             for (int j = 0; j < 3; j++) {
               vertex_color[j] = detail::ColorComponent{lerp(
                 span.color[a][j].raw(),
                 span.color[b][j].raw(), t, t_max, span.w[a], span.w[b])};
             }
 
-            // TODO: implement "equal" depth test mode.
-            if (depth >= depthbuffer[y * 256 + x]) {
-              continue;
-            }
+            auto index = y * 256 + x;
+
+            // if (disp3dcnt.enable_alpha_blend) {
+            //   // TODO: alpha=0 means wireframe mode. handle that.
+            //   vertex_color.a() = (poly.params.alpha << 4) | (poly.params.alpha >> 1); 
+            // }
 
             if (disp3dcnt.enable_textures) {
               auto tex_color = SampleTexture(poly.texture_params, uv);
               // TODO: perform alpha test
               // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
               if (tex_color.a() != 0) {
+                auto color = tex_color * vertex_color;
+                // if (disp3dcnt.enable_alpha_blend) {
+                //   color = color * color.a() + back_buffer[index] * (detail::ColorComponent{511} - color.a());
+                // }
+
                 // TODO: final GPU output should be 18-bit (RGB666), I think?
-                output[y * 256 + x] = (tex_color * vertex_color).to_rgb555();
-                depthbuffer[y * 256 + x] = depth;
+                draw_buffer[index] = tex_color * vertex_color;
+                depth_buffer[index] = depth;
               }
             } else {
-              output[y * 256 + x] = vertex_color.to_rgb555();
-              depthbuffer[y * 256 + x] = depth;
+              if (disp3dcnt.enable_alpha_blend) {
+                vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (detail::ColorComponent{511} - vertex_color.a());
+              }
+
+              draw_buffer[index] = vertex_color;
+              depth_buffer[index] = depth;
             }
+
+            // if (disp3dcnt.enable_alpha_blend) {
+            //   back_buffer[index] = draw_buffer[index];
+            // }
           }
         }
       }

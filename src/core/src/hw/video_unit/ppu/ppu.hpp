@@ -7,6 +7,7 @@
 #include <util/integer.hpp>
 #include <functional>
 
+#include "hw/video_unit/gpu/color.hpp"
 #include "hw/video_unit/vram.hpp"
 #include "registers.hpp"
 
@@ -20,7 +21,7 @@ struct PPU {
     VRAM const& vram,
     u8  const* pram,
     u8  const* oam,
-    u16 const* gpu_output = nullptr);
+    Color4 const* gpu_output = nullptr);
 
   struct MMIO {
     DisplayControl dispcnt;
@@ -221,7 +222,7 @@ private:
   u8 const* oam;
 
   /// Full-frame output of the 3D engine 
-  u16 const* gpu_output;
+  Color4 const* gpu_output;
 
   static constexpr u16 s_color_transparent = 0x8000;
   static const int s_obj_size[4][4][2];

@@ -69,8 +69,9 @@ void GPU::Reset() {
   texture.Reset();
   clip_matrix.identity();
   
-  for (uint i = 0; i < 256 * 192; i++)
-    output[i] = 0x8000;
+  for (uint i = 0; i < 256 * 192; i++) {
+    draw_buffer[i] = {}; 
+  }
 }
 
 void GPU::WriteGXFIFO(u32 value) {
