@@ -83,7 +83,7 @@ private:
 
 } // namespace Duality::Core::detail
 
-struct Color4 : Vector<detail::ColorComponent, 4> {
+struct Color4 : Vector<Color4, detail::ColorComponent, 4> {
   using value_type = detail::ColorComponent; 
 
   Color4() {
@@ -115,11 +115,6 @@ struct Color4 : Vector<detail::ColorComponent, 4> {
   }
 
   Color4(Color4 const& other) {
-    for (uint i = 0; i < 4; i++)
-      this->data[i] = other[i];
-  }
-
-  Color4(Vector<detail::ColorComponent, 4> const& other) {
     for (uint i = 0; i < 4; i++)
       this->data[i] = other[i];
   }

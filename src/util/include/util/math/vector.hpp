@@ -8,7 +8,7 @@
 #include <util/integer.hpp>
 #include <util/math/numeric_traits.hpp>
 
-template<typename T, uint n>
+template<typename Derived, typename T, uint n>
 struct Vector {
   Vector() {}
 
@@ -20,77 +20,77 @@ struct Vector {
     return data[i];
   }
 
-  auto operator+(Vector const& other) -> Vector {
-    Vector result{};
+  auto operator+(Derived const& other) -> Derived {
+    Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] + other[i];
     return result;
   }
 
-  auto operator-(Vector const& other) -> Vector {
-    Vector result{};
+  auto operator-(Derived const& other) -> Derived {
+    Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] - other[i];
     return result;
   }
 
-  auto operator*(T value) const -> Vector {
-    Vector result{};
+  auto operator*(T value) const -> Derived {
+    Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] * value;
     return result;
   }
 
-  auto operator/(T value) const -> Vector {
-    Vector result{};
+  auto operator/(T value) const -> Derived {
+    Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = data[i] / value;
     return result;
   }
 
-  auto operator+=(Vector const& other) -> Vector& {
+  auto operator+=(Derived const& other) -> Derived& {
     for (uint i = 0; i < n; i++)
       data[i] += other[i];
-    return *this;
+    return *static_cast<Derived*>(this);
   }
 
-  auto operator-=(Vector const& other) -> Vector& {
+  auto operator-=(Derived const& other) -> Derived& {
     for (uint i = 0; i < n; i++)
       data[i] -= other[i];
-    return *this;
+    return *static_cast<Derived*>(this);
   }
 
-  auto operator*=(T value) -> Vector& {
+  auto operator*=(T value) -> Derived& {
     for (uint i = 0; i < n; i++)
       data[i] *= value;
-    return *this;
+    return *static_cast<Derived*>(this);
   }
 
-  auto operator/=(T value) -> Vector& {
+  auto operator/=(T value) -> Derived& {
     for (uint i = 0; i < n; i++)
       data[i] /= value;
-    return *this;
+    return *static_cast<Derived*>(this);
   }
 
-  auto operator-() const -> Vector {
-    Vector result{};
+  auto operator-() const -> Derived {
+    Derived result{};
     for (uint i = 0; i < n; i++)
       result[i] = -data[i];
     return result;
   }
 
-  bool operator==(Vector const& other) const {
+  bool operator==(Derived const& other) const {
     for (uint i = 0; i < n; i++)
       if (data[i] != other[i])
         return false;
     return true;
   }
 
-  bool operator!=(Vector const& other) const {
+  bool operator!=(Derived const& other) const {
     return !(*this == other);
   }
 
-  auto dot(Vector const& other) const -> T {
+  auto dot(Derived const& other) const -> T {
     T result{};
     for (uint i = 0; i < n; i++)
       result += data[i] * other[i];
@@ -98,8 +98,8 @@ struct Vector {
   }
 
   template<typename U>
-  static auto interpolate(Vector const& a, Vector const& b, U factor) -> Vector {
-    Vector result{};
+  static auto interpolate(Derived const& a, Derived const& b, U factor) -> Derived {
+    Derived result{};
     U one_minus_factor = NumericConstants<U>::one() - factor;
     for (uint i = 0; i < n; i++)
       result[i] = a[i] * one_minus_factor + b[i] * factor;
@@ -111,7 +111,7 @@ protected:
 };
 
 template<typename T>
-struct Vector2 : Vector<T, 2> {
+struct Vector2 : Vector<Vector2<T>, T, 2> {
   Vector2() {}
 
   Vector2(T x, T y) {
@@ -119,7 +119,7 @@ struct Vector2 : Vector<T, 2> {
     this->data[1] = y;
   }
 
-  Vector2(Vector<T, 2> const& other) {
+  Vector2(Vector2 const& other) {
     this->data[0] = other[0];
     this->data[1] = other[1];
   }
@@ -132,7 +132,7 @@ struct Vector2 : Vector<T, 2> {
 };
 
 template<typename T>
-struct Vector3 : Vector<T, 3> {
+struct Vector3 : Vector<Vector3<T>, T, 3> {
   Vector3() {}
 
   Vector3(T x, T y, T z) {
@@ -141,7 +141,7 @@ struct Vector3 : Vector<T, 3> {
     this->data[2] = z;
   }
 
-  Vector3(Vector<T, 3> const& other) {
+  Vector3(Vector3 const& other) {
     for (uint i = 0; i < 3; i++)
       this->data[i] = other[i];
   }
@@ -164,7 +164,7 @@ struct Vector3 : Vector<T, 3> {
 };
 
 template<typename T>
-struct Vector4 : Vector<T, 4> {
+struct Vector4 : Vector<Vector4<T>, T, 4> {
   Vector4() {}
 
   Vector4(T x, T y, T z, T w) {
@@ -174,13 +174,13 @@ struct Vector4 : Vector<T, 4> {
     this->data[3] = w;
   }
 
-  Vector4(Vector<T, 3> const& other) {
+  Vector4(Vector3<T> const& other) {
     for (uint i = 0; i < 3; i++)
       this->data[i] = other[i];
     this->data[3] = NumericConstants<T>::one();
   }
 
-  Vector4(Vector<T, 4> const& other) {
+  Vector4(Vector4 const& other) {
     for (uint i = 0; i < 4; i++)
       this->data[i] = other[i];
   }

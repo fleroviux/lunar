@@ -35,8 +35,8 @@ struct Matrix4 {
     return data[i];
   }
 
-  auto operator*(Vector<T, 4> const& vec) const -> Vector<T, 4> {
-    Vector<T, 4> result{};
+  auto operator*(Vector4<T> const& vec) const -> Vector4<T> {
+    Vector4<T> result{};
     for (uint i = 0; i < 4; i++)
       result += data[i] * vec[i];
     return result;
