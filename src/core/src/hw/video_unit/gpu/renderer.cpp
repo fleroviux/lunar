@@ -18,8 +18,9 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
     if (coord[i] < 0 || coord[i] >= size[i]) {
       int mask = size[i] - 1;
       if (params.repeat[i]) {
+        bool odd = (coord[i] >> (3 + params.size[i])) & 1;
         coord[i] &= mask;
-        if (params.flip[i]) {
+        if (params.flip[i] && odd) {
           coord[i] ^= mask;
         }
       } else {
