@@ -110,7 +110,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
             auto color_1 = Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
-              color_0[i] = detail::ColorComponent{(color_0[i].raw() >> 1) + (color_1[i].raw() >> 1)};
+              color_0[i] = detail::ColorComponent{u16((color_0[i].raw() >> 1) + (color_1[i].raw() >> 1))};
             }
 
             return color_0;
@@ -132,7 +132,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
             auto color_1 = Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
-              color_0[i] = detail::ColorComponent{((color_0[i].raw() * coeff_0) + (color_1[i].raw() * coeff_1)) >> 3};
+              color_0[i] = detail::ColorComponent{u16(((color_0[i].raw() * coeff_0) + (color_1[i].raw() * coeff_1)) >> 3)};
             }
 
             return color_0;
@@ -287,15 +287,15 @@ void GPU::Render() {
         span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max, w0, w1);
 
         for (int k = 0; k < 2; k++) {
-          span.uv[j][k] = Fixed12x4{lerp(
+          span.uv[j][k] = Fixed12x4{s16(lerp(
             points[s[j]].vertex->uv[k].raw(),
-            points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1)};
+            points[e[j]].vertex->uv[k].raw(), t, t_max, w0, w1))};
         }
 
         for (int k = 0; k < 3; k++) {
-          span.color[j][k] = detail::ColorComponent{lerp(
+          span.color[j][k] = detail::ColorComponent{u16(lerp(
             points[s[j]].vertex->color[k].raw(),
-            points[e[j]].vertex->color[k].raw(), t, t_max, w0, w1)};
+            points[e[j]].vertex->color[k].raw(), t, t_max, w0, w1))};
         }
       }
 
@@ -322,13 +322,13 @@ void GPU::Render() {
             Color4 vertex_color;
 
             for (int j = 0; j < 2; j++) {
-              uv[j] = Fixed12x4{lerp(span.uv[a][j].raw(), span.uv[b][j].raw(), t, t_max, span.w[a], span.w[b])};
+              uv[j] = Fixed12x4{s16(lerp(span.uv[a][j].raw(), span.uv[b][j].raw(), t, t_max, span.w[a], span.w[b]))};
             }
 
             for (int j = 0; j < 3; j++) {
-              vertex_color[j] = detail::ColorComponent{lerp(
+              vertex_color[j] = detail::ColorComponent{u16(lerp(
                 span.color[a][j].raw(),
-                span.color[b][j].raw(), t, t_max, span.w[a], span.w[b])};
+                span.color[b][j].raw(), t, t_max, span.w[a], span.w[b]))};
             }
 
             auto index = y * 256 + x;
