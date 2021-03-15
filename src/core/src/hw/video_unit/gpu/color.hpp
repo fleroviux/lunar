@@ -12,30 +12,30 @@
 
 namespace Duality::Core {
 
-using Fixed9 = detail::FixedBase<int, int, 9>;
+using Fixed6 = detail::FixedBase<s8, int, 6>;
 
 namespace detail {
 
-inline auto operator*(Fixed9 lhs, Fixed20x12 rhs) -> Fixed9 {
-  return Fixed9{int((s64(lhs.raw()) * rhs.raw()) >> 12)};
+inline auto operator*(Fixed6 lhs, Fixed20x12 rhs) -> Fixed6 {
+  return Fixed6{s8((s64(lhs.raw()) * rhs.raw()) >> 12)};
 }
 
 } // namespace detail
 
-struct Color4 : Vector<Color4, Fixed9, 4> {
+struct Color4 : Vector<Color4, Fixed6, 4> {
   Color4() {
     for (uint i = 0; i < 4; i++)
-      this->data[i] = Fixed9{511};
+      this->data[i] = Fixed6{63};
   }
 
-  Color4(Fixed9 r, Fixed9 g, Fixed9 b) {
+  Color4(Fixed6 r, Fixed6 g, Fixed6 b) {
     this->data[0] = r;
     this->data[1] = g;
     this->data[2] = b;
-    this->data[3] = Fixed9{511};
+    this->data[3] = Fixed6{63};
   }
 
-  Color4(Fixed9 r, Fixed9 g, Fixed9 b, Fixed9 a) {
+  Color4(Fixed6 r, Fixed6 g, Fixed6 b, Fixed6 a) {
     this->data[0] = r;
     this->data[1] = g;
     this->data[2] = b;
@@ -48,33 +48,32 @@ struct Color4 : Vector<Color4, Fixed9, 4> {
   }
 
   static auto from_rgb555(u16 color) -> Color4 {
-    auto r = (color >>  0) & 31;
-    auto g = (color >>  5) & 31;
-    auto b = (color >> 10) & 31;
+    auto r = (color << 1) & 62;
+    auto g = (color >> 4) & 62;
+    auto b = (color >> 9) & 62;
     
-    // TODO: confirm that the hardware expands the 5-bit value to 9-bit like this.
     return Color4{
-      u16((r << 4) | (r >> 1)),
-      u16((g << 4) | (g >> 1)),
-      u16((b << 4) | (b >> 1)),
-      511
+      s8(r | (r >> 5)),
+      s8(g | (g >> 5)),
+      s8(b | (b >> 5)),
+      s8(63)
     };
   }
 
   auto to_rgb555() const -> u16 {
-    return (r().raw() >> 4) |
-          ((g().raw() >> 4) <<  5) |
-          ((b().raw() >> 4) << 10);
+    return (r().raw() >> 1) |
+          ((g().raw() >> 1) <<  5) |
+          ((b().raw() >> 1) << 10);
   }
 
-  auto operator*(Fixed9 other) const -> Color4 {
+  auto operator*(Fixed6 other) const -> Color4 {
     Color4 result{};
     for (uint i = 0; i < 4; i++)
       result[i] = data[i] * other;
     return result;
   }
 
-  auto operator*=(Fixed9 other) -> Color4& {
+  auto operator*=(Fixed6 other) -> Color4& {
     for (uint i = 0; i < 4; i++)
       data[i] *= other;
     return *this;
@@ -93,26 +92,26 @@ struct Color4 : Vector<Color4, Fixed9, 4> {
     return *this;
   }
 
-  auto r() -> Fixed9& { return this->data[0]; }
-  auto g() -> Fixed9& { return this->data[1]; }
-  auto b() -> Fixed9& { return this->data[2]; }
-  auto a() -> Fixed9& { return this->data[3]; }
+  auto r() -> Fixed6& { return this->data[0]; }
+  auto g() -> Fixed6& { return this->data[1]; }
+  auto b() -> Fixed6& { return this->data[2]; }
+  auto a() -> Fixed6& { return this->data[3]; }
 
-  auto r() const -> Fixed9 { return this->data[0]; }
-  auto g() const -> Fixed9 { return this->data[1]; }
-  auto b() const -> Fixed9 { return this->data[2]; }
-  auto a() const -> Fixed9 { return this->data[3]; }
+  auto r() const -> Fixed6 { return this->data[0]; }
+  auto g() const -> Fixed6 { return this->data[1]; }
+  auto b() const -> Fixed6 { return this->data[2]; }
+  auto a() const -> Fixed6 { return this->data[3]; }
 };
 
 } // namespace Duality::Core
 
 template<>
-struct NumericConstants<Duality::Core::Fixed9> {
-  static constexpr auto zero() -> Duality::Core::Fixed9 {
-    return Duality::Core::Fixed9{};
+struct NumericConstants<Duality::Core::Fixed6> {
+  static constexpr auto zero() -> Duality::Core::Fixed6 {
+    return Duality::Core::Fixed6{};
   }
   
-  static constexpr auto one() -> Duality::Core::Fixed9 {
-    return Duality::Core::Fixed9{511};
+  static constexpr auto one() -> Duality::Core::Fixed6 {
+    return Duality::Core::Fixed6{63};
   }
 };
