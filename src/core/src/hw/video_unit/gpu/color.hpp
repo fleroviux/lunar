@@ -12,107 +12,30 @@
 
 namespace Duality::Core {
 
+using Fixed9 = detail::FixedBase<int, int, 9>;
+
 namespace detail {
 
-// TODO: change underlying data type to signed?
-struct ColorComponent {
-  constexpr ColorComponent() {}
-  constexpr ColorComponent(u16 value) : value(value) {}
-
-  auto raw() const -> u16 { return value; }
-
-  auto saturate() -> ColorComponent& {
-    value = std::clamp(value, u16(0), u16(511));
-    return *this;
-  }
-
-  auto operator+(ColorComponent other) const -> ColorComponent {
-    return value + other.value;
-  }
-
-  auto operator-(ColorComponent other) const -> ColorComponent {
-    return value - other.value;
-  }
-
-  auto operator*(ColorComponent other) const -> ColorComponent {
-    return u16((u32(value) * u32(other.value)) >> 9);
-  }
-
-  auto operator+=(ColorComponent other) -> ColorComponent& {
-    value = value + other.value;
-    return *this;
-  }
-
-  auto operator-=(ColorComponent other) -> ColorComponent& {
-    value = value - other.value;
-    return *this;
-  }
-
-  auto operator*=(ColorComponent other) -> ColorComponent& {
-    value = u16((u32(value) * u32(other.value)) >> 9);
-    return *this;
-  }
-
-  bool operator==(ColorComponent other) const {
-    return value == other.value;
-  }
-
-  bool operator!=(ColorComponent other) const {
-    return value != other.value;
-  }
-
-  bool operator<=(ColorComponent other) const {
-    return value <= other.value;
-  }
-
-  bool operator>=(ColorComponent other) const {
-    return value >= other.value;
-  }
-
-  bool operator<(ColorComponent other) const {
-    return value < other.value;
-  }
-
-  bool operator>(ColorComponent other) const {
-    return value > other.value;
-  }
-
-private:
-
-  u16 value {};
-};
-
-inline auto operator*(ColorComponent const& lhs, Fixed20x12 rhs) -> ColorComponent {
-  return detail::ColorComponent{u16((s64(lhs.raw()) * rhs.raw()) >> 12)};
+inline auto operator*(Fixed9 lhs, Fixed20x12 rhs) -> Fixed9 {
+  return Fixed9{int((s64(lhs.raw()) * rhs.raw()) >> 12)};
 }
 
-} // namespace Duality::Core::detail
+} // namespace detail
 
-struct Color4 : Vector<Color4, detail::ColorComponent, 4> {
-  using value_type = detail::ColorComponent; 
-
+struct Color4 : Vector<Color4, Fixed9, 4> {
   Color4() {
     for (uint i = 0; i < 4; i++)
-      this->data[i] = value_type{511};
+      this->data[i] = Fixed9{511};
   }
 
-  Color4(
-    value_type r,
-    value_type g,
-    value_type b
-  ) {
+  Color4(Fixed9 r, Fixed9 g, Fixed9 b) {
     this->data[0] = r;
     this->data[1] = g;
     this->data[2] = b;
-    this->data[3] = value_type{511};
+    this->data[3] = Fixed9{511};
   }
 
-  Color4(
-    value_type r,
-    value_type g,
-    value_type b,
-    value_type a
-  ) {
+  Color4(Fixed9 r, Fixed9 g, Fixed9 b, Fixed9 a) {
     this->data[0] = r;
     this->data[1] = g;
     this->data[2] = b;
@@ -144,20 +67,14 @@ struct Color4 : Vector<Color4, detail::ColorComponent, 4> {
           ((b().raw() >> 4) << 10);
   }
 
-  auto saturate() -> Color4& {
-    for (uint i = 0; i < 4; i++)
-      data[i].saturate();
-    return *this;
-  }
-
-  auto operator*(detail::ColorComponent other) const -> Color4 {
+  auto operator*(Fixed9 other) const -> Color4 {
     Color4 result{};
     for (uint i = 0; i < 4; i++)
       result[i] = data[i] * other;
     return result;
   }
 
-  auto operator*=(detail::ColorComponent other) -> Color4& {
+  auto operator*=(Fixed9 other) -> Color4& {
     for (uint i = 0; i < 4; i++)
       data[i] *= other;
     return *this;
@@ -176,26 +93,26 @@ struct Color4 : Vector<Color4, detail::ColorComponent, 4> {
     return *this;
   }
 
-  auto r() -> value_type& { return this->data[0]; }
-  auto g() -> value_type& { return this->data[1]; }
-  auto b() -> value_type& { return this->data[2]; }
-  auto a() -> value_type& { return this->data[3]; }
+  auto r() -> Fixed9& { return this->data[0]; }
+  auto g() -> Fixed9& { return this->data[1]; }
+  auto b() -> Fixed9& { return this->data[2]; }
+  auto a() -> Fixed9& { return this->data[3]; }
 
-  auto r() const -> value_type { return this->data[0]; }
-  auto g() const -> value_type { return this->data[1]; }
-  auto b() const -> value_type { return this->data[2]; }
-  auto a() const -> value_type { return this->data[3]; }
+  auto r() const -> Fixed9 { return this->data[0]; }
+  auto g() const -> Fixed9 { return this->data[1]; }
+  auto b() const -> Fixed9 { return this->data[2]; }
+  auto a() const -> Fixed9 { return this->data[3]; }
 };
 
 } // namespace Duality::Core
 
 template<>
-struct NumericConstants<Duality::Core::detail::ColorComponent> {
-  static constexpr auto zero() -> Duality::Core::detail::ColorComponent {
-    return Duality::Core::detail::ColorComponent{};
+struct NumericConstants<Duality::Core::Fixed9> {
+  static constexpr auto zero() -> Duality::Core::Fixed9 {
+    return Duality::Core::Fixed9{};
   }
   
-  static constexpr auto one() -> Duality::Core::detail::ColorComponent {
-    return Duality::Core::detail::ColorComponent{63};
+  static constexpr auto one() -> Duality::Core::Fixed9 {
+    return Duality::Core::Fixed9{511};
   }
 };

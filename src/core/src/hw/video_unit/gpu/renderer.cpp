@@ -110,7 +110,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
             auto color_1 = Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
-              color_0[i] = detail::ColorComponent{u16((color_0[i].raw() >> 1) + (color_1[i].raw() >> 1))};
+              color_0[i] = Fixed9{u16((color_0[i].raw() >> 1) + (color_1[i].raw() >> 1))};
             }
 
             return color_0;
@@ -132,7 +132,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
             auto color_1 = Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
-              color_0[i] = detail::ColorComponent{u16(((color_0[i].raw() * coeff_0) + (color_1[i].raw() * coeff_1)) >> 3)};
+              color_0[i] = Fixed9{u16(((color_0[i].raw() * coeff_0) + (color_1[i].raw() * coeff_1)) >> 3)};
             }
 
             return color_0;
@@ -170,6 +170,8 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
       return Color4::from_rgb555(color);
     }
   };
+
+  return Color4{};
 }
 
 void GPU::Render() {
@@ -293,7 +295,7 @@ void GPU::Render() {
         }
 
         for (int k = 0; k < 3; k++) {
-          span.color[j][k] = detail::ColorComponent{u16(lerp(
+          span.color[j][k] = Fixed9{u16(lerp(
             points[s[j]].vertex->color[k].raw(),
             points[e[j]].vertex->color[k].raw(), t, t_max, w0, w1))};
         }
@@ -326,7 +328,7 @@ void GPU::Render() {
             }
 
             for (int j = 0; j < 3; j++) {
-              vertex_color[j] = detail::ColorComponent{u16(lerp(
+              vertex_color[j] = Fixed9{u16(lerp(
                 span.color[a][j].raw(),
                 span.color[b][j].raw(), t, t_max, span.w[a], span.w[b]))};
             }
@@ -345,7 +347,7 @@ void GPU::Render() {
               if (tex_color.a() != 0) {
                 auto color = tex_color * vertex_color;
                 // if (disp3dcnt.enable_alpha_blend) {
-                //   color = color * color.a() + back_buffer[index] * (detail::ColorComponent{511} - color.a());
+                //   color = color * color.a() + back_buffer[index] * (Fixed9{511} - color.a());
                 // }
 
                 // TODO: final GPU output should be 18-bit (RGB666), I think?
@@ -354,7 +356,7 @@ void GPU::Render() {
               }
             } else {
               if (disp3dcnt.enable_alpha_blend) {
-                vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (detail::ColorComponent{511} - vertex_color.a());
+                vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (Fixed9{511} - vertex_color.a());
               }
 
               draw_buffer[index] = vertex_color;
