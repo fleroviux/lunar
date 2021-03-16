@@ -305,7 +305,7 @@ private:
   
   Color4 draw_buffer[256 * 192];
   Color4 back_buffer[256 * 192];
-  s32 depth_buffer[256 * 192];
+  u32 depth_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;

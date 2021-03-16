@@ -172,7 +172,7 @@ void GPU::Render() {
   for (uint i = 0; i < 256 * 192; i++) {
     draw_buffer[i] = {};
     back_buffer[i] = {};
-    depth_buffer[i] = 0x7FFFFFFF;
+    depth_buffer[i] = 0xFFFFFF;
   }
 
   for (int i = 0; i < polygon[gx_buffer_id ^ 1].count; i++) {
@@ -181,7 +181,7 @@ void GPU::Render() {
     struct Point {
       s32 x;
       s32 y;
-      s32 depth;
+      u32 depth;
       Vertex const* vertex;
     } points[poly.count];
 
@@ -194,9 +194,10 @@ void GPU::Render() {
       auto& point = points[j];
 
       // TODO: use the provided viewport configuration.
+      // TODO: support w-Buffering mode.
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
       point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
-      point.depth = (vert.position.z() / vert.position.w()).raw();
+      point.depth = (((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9;
       point.vertex = &vert;
 
       // Pick the first vertex with the lowest y-Coordinate as the start node.
