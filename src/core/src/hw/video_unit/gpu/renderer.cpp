@@ -170,8 +170,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
 
 void GPU::Render() {
   for (uint i = 0; i < 256 * 192; i++) {
-    draw_buffer[i] = {};
-    back_buffer[i] = {};
+    draw_buffer[i] = Color4{0, 0, 0, 0};
     depth_buffer[i] = 0xFFFFFF;
   }
 
@@ -332,37 +331,35 @@ void GPU::Render() {
                 span.color[b][j].raw(), t, t_max, span.w[a], span.w[b]))};
             }
 
-            // if (disp3dcnt.enable_alpha_blend) {
-            //   // TODO: alpha=0 means wireframe mode. handle that.
-            //   vertex_color.a() = (poly.params.alpha << 4) | (poly.params.alpha >> 1); 
-            // }
+            bool do_blend = disp3dcnt.enable_alpha_blend && draw_buffer[index].a() != 0;
+
+            auto color = vertex_color;
+
+            // TODO: alpha=0 means wireframe mode. handle that.
+            color.a() = (poly.params.alpha << 1) | (poly.params.alpha >> 4); 
 
             if (disp3dcnt.enable_textures) {
-              auto tex_color = SampleTexture(poly.texture_params, uv);
+              auto texel = SampleTexture(poly.texture_params, uv);
               // TODO: perform alpha test
-              // TODO: respect "depth-value for translucent pixels" setting from "polygon_attr" command.
-              if (tex_color.a() != 0) {
-                auto color = tex_color * vertex_color;
-                // if (disp3dcnt.enable_alpha_blend) {
-                //   color = color * color.a() + back_buffer[index] * (Fixed6{63} - color.a());
-                // }
-
-                // TODO: final GPU output should be 18-bit (RGB666), I think?
-                draw_buffer[index] = tex_color * vertex_color;
-                depth_buffer[index] = depth_new;
+              if (texel.a() == 0) {
+                continue;
               }
-            } else {
-              // if (disp3dcnt.enable_alpha_blend) {
-              //   vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (Fixed6{63} - vertex_color.a());
-              // }
-
-              draw_buffer[index] = vertex_color;
-              depth_buffer[index] = depth_new;
+              color *= texel;
             }
 
-            // if (disp3dcnt.enable_alpha_blend) {
-            //   back_buffer[index] = draw_buffer[index];
-            // }
+            if (do_blend) {
+              auto a0 = color.a();
+              auto a1 = Fixed6{63} - a0;
+              for (uint j = 0; j < 3; j++)
+                color[j] = color[j] * a0 + draw_buffer[index][j] * a1;
+              color.a() = std::max(color.a(), draw_buffer[index].a());
+            }
+
+            draw_buffer[index] = color;
+            // TODO: figure out what the actual logic is supposed to be.
+            //if (color.a() == 63 || poly.params.enable_translucent_depth_write) {
+              depth_buffer[index] = depth_new;
+            //}
           }
         }
       }
