@@ -228,7 +228,7 @@ void GPU::Render() {
       struct Span {
         s32 x[2];
         s32 w[2];
-        s32 depth[2];
+        u32 depth[2];
         Vector2<Fixed12x4> uv[2];
         Color4 color[2];
       } span;
@@ -306,13 +306,17 @@ void GPU::Render() {
           if (x >= 0 && x <= 255) {
             auto t = x - span.x[a];
             auto t_max = span.x[b] - span.x[a];
+            auto index = y * 256 + x;
 
-            s32 depth = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
+            auto depth_old = depth_buffer[index];
+            auto depth_new = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
 
-            // Check depth as early as possible to avoid shading occluded pixels.
-            // TODO: implement "equal" depth test mode.
-            if (depth >= depth_buffer[y * 256 + x]) {
-              continue;
+            if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
+              if (depth_new >= depth_old)
+                continue;
+            } else {
+              if (std::abs(s32(depth_new) - s32(depth_old)) > 0x200)
+                continue;
             }
 
             Vector2<Fixed12x4> uv;
@@ -327,8 +331,6 @@ void GPU::Render() {
                 span.color[a][j].raw(),
                 span.color[b][j].raw(), t, t_max, span.w[a], span.w[b]))};
             }
-
-            auto index = y * 256 + x;
 
             // if (disp3dcnt.enable_alpha_blend) {
             //   // TODO: alpha=0 means wireframe mode. handle that.
@@ -347,15 +349,15 @@ void GPU::Render() {
 
                 // TODO: final GPU output should be 18-bit (RGB666), I think?
                 draw_buffer[index] = tex_color * vertex_color;
-                depth_buffer[index] = depth;
+                depth_buffer[index] = depth_new;
               }
             } else {
-              if (disp3dcnt.enable_alpha_blend) {
-                vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (Fixed6{63} - vertex_color.a());
-              }
+              // if (disp3dcnt.enable_alpha_blend) {
+              //   vertex_color = vertex_color * vertex_color.a() + back_buffer[index] * (Fixed6{63} - vertex_color.a());
+              // }
 
               draw_buffer[index] = vertex_color;
-              depth_buffer[index] = depth;
+              depth_buffer[index] = depth_new;
             }
 
             // if (disp3dcnt.enable_alpha_blend) {
