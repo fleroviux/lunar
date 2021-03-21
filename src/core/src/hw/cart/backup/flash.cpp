@@ -6,10 +6,12 @@
 
 #include "flash.hpp"
 
-// TODO: figure out what state the FLASH chip is in after a command completed.
-// Also what happens if you submit a command but do not assert /CS?
-
-// TODO: generate a manufacturer and device id based on e.g. the size.
+/*
+ * TODO: 
+ * - figure the state after a command completed out
+ * - figure out what happens if /CS is not driven high after sending a command byte.
+ * - generate a plausible manufacturer and device id instead of always using the same one.
+ */
 
 namespace Duality::Core {
 
@@ -33,6 +35,12 @@ void FLASH::Reset() {
   deep_power_down = false;
 }
 
+void FLASH::Select() {
+  if (state == State::Deselected) {
+    state = State::ReceiveCommand;
+  }
+}
+
 void FLASH::Deselect() {
   if (current_cmd == Command::PageWrite ||
       current_cmd == Command::PageProgram ||
@@ -41,7 +49,7 @@ void FLASH::Deselect() {
     write_enable_latch = false;
   }
 
-  state = State::ReceiveCommand;
+  state = State::Deselected;
 }
 
 auto FLASH::Transfer(u8 data) -> u8 {
@@ -51,8 +59,9 @@ auto FLASH::Transfer(u8 data) -> u8 {
       break;
     }
     case State::ReadJEDEC: {
-      if (address < 3) {
-        return jedec_id[address++];
+      data = jedec_id[address];
+      if (++address == 3) {
+        state = State::Idle;
       }
       break;
     }
@@ -72,27 +81,14 @@ auto FLASH::Transfer(u8 data) -> u8 {
     case State::SendAddress2: {
       address |= data;
 
+      // TODO: this is a bit messy still, try to refactor it away.
       switch (current_cmd) {
-        case Command::ReadData:
-          state = State::ReadData;
-          break;
-        case Command::ReadDataFast:
-          state = State::DummyByte;
-          break;
-        case Command::PageWrite:
-          state = State::PageWrite;
-          break;
-        case Command::PageProgram:
-          state = State::PageProgram;
-          break;
-        case Command::PageErase:
-          state = State::PageErase;
-          break;
-        case Command::SectorErase:
-          state = State::SectorErase;
-          break;
-        default:
-          ASSERT(false, "FLASH: no state for command 0x{0:02X} after 24-bit address.", current_cmd);
+        case Command::ReadData:     state = State::ReadData;    break;
+        case Command::ReadDataFast: state = State::DummyByte;   break;
+        case Command::PageWrite:    state = State::PageWrite;   break;
+        case Command::PageProgram:  state = State::PageProgram; break;
+        case Command::PageErase:    state = State::PageErase;   break;
+        case Command::SectorErase:  state = State::SectorErase; break;
       }
       break;
     }
@@ -110,7 +106,6 @@ auto FLASH::Transfer(u8 data) -> u8 {
     }
     case State::PageProgram: {
       // TODO: confirm that page program actually is a bitwise-AND operation.
-      // melonDS seems to set the data to zeroes, but is that correct?
       file->Write(address, file->Read(address) & data);
       address = (address & ~0xFF) | ((address + 1) & 0xFF);
       break;
@@ -120,6 +115,7 @@ auto FLASH::Transfer(u8 data) -> u8 {
       for (uint i = 0; i < 256; i++) {
         file->Write(address + i, 0xFF);
       }
+      state = State::Idle;
       break;
     }
     case State::SectorErase: {
@@ -127,6 +123,10 @@ auto FLASH::Transfer(u8 data) -> u8 {
       for (uint i = 0; i < 0x10000; i++) {
         file->Write(address + i, 0xFF);
       }
+      state = State::Idle;
+      break;
+    }
+    case State::Idle: {
       break;
     }
     default: {
@@ -150,10 +150,12 @@ void FLASH::ParseCommand(Command cmd) {
   switch (cmd) {
     case Command::WriteEnable: {
       write_enable_latch = true;
+      state = State::Idle;
       break;
     }
     case Command::WriteDisable: {
       write_enable_latch = false;
+      state = State::Idle;
       break;
     }
     case Command::ReadJEDEC: {

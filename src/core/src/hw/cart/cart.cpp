@@ -137,10 +137,11 @@ auto Cartridge::ReadSPI() -> u8 {
 
 void Cartridge::WriteSPI(u8 value) {
   if (backup) {
+    backup->Select();
     spidata = backup->Transfer(value);
-    
-    if (!auxspicnt.chipselect_hold)
+    if (!auxspicnt.chipselect_hold) {
       backup->Deselect();
+    }
   } else {
     spidata = 0xFF;
   }

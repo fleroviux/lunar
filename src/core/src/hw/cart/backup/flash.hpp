@@ -10,7 +10,7 @@
 
 namespace Duality::Core {
 
-struct FLASH : Backup {
+struct FLASH final : Backup {
   enum class Size {
     _256K = 0,
     _512K,
@@ -21,6 +21,7 @@ struct FLASH : Backup {
   FLASH(std::string const& save_path, Size size_hint);
 
   void Reset() override;
+  void Select() override;
   void Deselect() override;
   auto Transfer(u8 data) -> u8 override;
 
@@ -41,6 +42,8 @@ private:
   };
 
   enum class State {
+    Idle,
+    Deselected,
     ReceiveCommand,
     ReadJEDEC,
     ReadStatus,
