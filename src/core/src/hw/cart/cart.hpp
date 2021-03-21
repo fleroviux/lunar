@@ -67,9 +67,10 @@ struct Cartridge {
 
     // TODO: implement the remaining data fields.
     // http://problemkaputt.de/gbatek.htm#dscartridgeioports
-    int transfer_clock_rate = 0;
+    int  transfer_clock_rate = 0;
     bool data_ready = false;
-    int data_block_size = 0;
+    int  data_block_size = 0;
+    bool busy = false;
 
     Cartridge& cart;
   } romctrl { *this };

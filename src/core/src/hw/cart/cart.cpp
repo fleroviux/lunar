@@ -111,8 +111,9 @@ void Cartridge::OnCommandStart() {
     }
   }
 
-  // TODO: deduplicate this code
-  if (transfer.data_count != 0) {
+  romctrl.busy = transfer.data_count != 0;
+
+  if (romctrl.busy) {
     scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
       romctrl.data_ready = true;
 
@@ -152,6 +153,7 @@ auto Cartridge::ReadROM() -> u32 {
   romctrl.data_ready = false;
 
   if (transfer.index == transfer.count) {
+    romctrl.busy = false;
     transfer.index = 0;
     transfer.count = 0;
 
@@ -201,8 +203,6 @@ void Cartridge::AUXSPICNT::WriteByte(uint offset, u8 value) {
 }
 
 auto Cartridge::ROMCTRL::ReadByte(uint offset) -> u8 {
-  bool busy = cart.transfer.count != 0;
-
   switch (offset) {
     case 0:
     case 1:
@@ -225,10 +225,11 @@ void Cartridge::ROMCTRL::WriteByte(uint offset, u8 value) {
     case 3:
       data_block_size = value & 7;
       transfer_clock_rate = (value >> 3) & 1;
-      if (value & 0x80) {
-        ASSERT(cart.transfer.count == 0, "Cartridge: attempted to engage transfer while interface is busy.");
-        // TODO: emulate initial transfer delay for the command.
-        cart.OnCommandStart();
+      if ((value & 0x80) && !busy) {
+        busy = true;
+        cart.scheduler.Add(sizeof(u64) * kCyclesPerByte[transfer_clock_rate], [this](int late) {
+          cart.OnCommandStart();
+        });
       }
       break;
     default:
