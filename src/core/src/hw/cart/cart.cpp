@@ -9,6 +9,8 @@
 
 namespace Duality::Core {
 
+static constexpr int kCyclesPerByte[2] { 5, 8 };
+
 void Cartridge::Reset() {
   if (file.is_open())
     file.close();
@@ -46,6 +48,7 @@ void Cartridge::Load(std::string const& path) {
 void Cartridge::OnCommandStart() {
   transfer.index = 0;
   transfer.data_count = 0;
+  romctrl.data_ready = false;
 
   if (romctrl.data_block_size == 0) {
     transfer.count = 0;
@@ -108,13 +111,18 @@ void Cartridge::OnCommandStart() {
     }
   }
 
-  if (auxspicnt.enable_ready_irq && transfer.data_count != 0) {
-    // TODO: only raise IRQ and DMA on the CPU which has rights to the cartridge bus.
+  // TODO: deduplicate this code
+  if (transfer.data_count != 0) {
+    scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
+      romctrl.data_ready = true;
+
+      dma7.Request(DMA7::Time::Slot1);
+      dma9.Request(DMA9::Time::Slot1);
+    });
+  } else if (auxspicnt.enable_ready_irq) {
     irq7.Raise(IRQ::Source::Cart_DataReady);
     irq9.Raise(IRQ::Source::Cart_DataReady);
-    dma7.Request(DMA7::Time::Slot1);
-    dma9.Request(DMA9::Time::Slot1);
-  } 
+  }
 }
 
 auto Cartridge::ReadSPI() -> u8 {
@@ -129,24 +137,36 @@ void Cartridge::WriteSPI(u8 value) {
 }
 
 auto Cartridge::ReadROM() -> u32 {
-  ASSERT(transfer.count != 0, "Cartridge: attempted to read data outside of a transfer.");
-
   u32 data = 0xFFFFFFFF;
+
+  if (!romctrl.data_ready) {
+    return data;
+  }
 
   if (transfer.data_count != 0) {
     data = transfer.data[transfer.index++ % transfer.data_count];
+  } else {
+    transfer.index++;
   }
+
+  romctrl.data_ready = false;
 
   if (transfer.index == transfer.count) {
     transfer.index = 0;
     transfer.count = 0;
-  } else if (auxspicnt.enable_ready_irq) {
-    // TODO: only raise IRQ or DMA on the CPU which has rights to the cartridge bus.
-    irq7.Raise(IRQ::Source::Cart_DataReady);
-    irq9.Raise(IRQ::Source::Cart_DataReady);
-    dma7.Request(DMA7::Time::Slot1);
-    dma9.Request(DMA9::Time::Slot1);
-  } 
+
+    if (auxspicnt.enable_ready_irq) {
+      irq7.Raise(IRQ::Source::Cart_DataReady);
+      irq9.Raise(IRQ::Source::Cart_DataReady);
+    }
+  } else {
+    scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
+      romctrl.data_ready = true;
+
+      dma7.Request(DMA7::Time::Slot1);
+      dma9.Request(DMA9::Time::Slot1);
+    });
+  }
 
   return data;
 }
@@ -188,11 +208,9 @@ auto Cartridge::ROMCTRL::ReadByte(uint offset) -> u8 {
     case 1:
       return 0;
     case 2:
-      // NOTE: this actually is "data ready", but we don't emulate delays at the moment.
-      // Therefore data is always available as long as the transfer is in progress.
-      return busy ? 0x80 : 0;
+      return data_ready ? 0x80 : 0;
     case 3:
-      return data_block_size | (busy ? 0x80 : 0);
+      return data_block_size | (transfer_clock_rate << 3) | (busy ? 0x80 : 0);
   }
 
   UNREACHABLE;
@@ -206,8 +224,10 @@ void Cartridge::ROMCTRL::WriteByte(uint offset, u8 value) {
       break;
     case 3:
       data_block_size = value & 7;
+      transfer_clock_rate = (value >> 3) & 1;
       if (value & 0x80) {
         ASSERT(cart.transfer.count == 0, "Cartridge: attempted to engage transfer while interface is busy.");
+        // TODO: emulate initial transfer delay for the command.
         cart.OnCommandStart();
       }
       break;

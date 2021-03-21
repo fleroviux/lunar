@@ -12,12 +12,19 @@
 #include "hw/dma/dma7.hpp"
 #include "hw/dma/dma9.hpp"
 #include "hw/irq/irq.hpp"
+#include "scheduler.hpp"
 
 namespace Duality::Core {
 
 struct Cartridge {
-  Cartridge(IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
-      : irq7(irq7)
+  Cartridge(
+    Scheduler& scheduler,
+    IRQ& irq7,
+    IRQ& irq9,
+    DMA7& dma7,
+    DMA9& dma9
+  )   : scheduler(scheduler)
+      , irq7(irq7)
       , irq9(irq9)
       , dma7(dma7)
       , dma9(dma9) {
@@ -60,6 +67,8 @@ struct Cartridge {
 
     // TODO: implement the remaining data fields.
     // http://problemkaputt.de/gbatek.htm#dscartridgeioports
+    int transfer_clock_rate = 0;
+    bool data_ready = false;
     int data_block_size = 0;
 
     Cartridge& cart;
@@ -100,6 +109,7 @@ private:
   /// SPI backup data register
   u8 spidata = 0;
 
+  Scheduler& scheduler;
   DMA7& dma7;
   DMA9& dma9;
   IRQ& irq7;
