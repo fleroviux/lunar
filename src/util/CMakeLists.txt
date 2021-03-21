@@ -15,6 +15,7 @@ set(HEADERS_PUBLIC
   include/util/math/matrix.hpp
   include/util/math/numeric_traits.hpp
   include/util/math/vector.hpp
+  include/util/backup_file.hpp
   include/util/bit.hpp
   include/util/fifo.hpp
   include/util/integer.hpp

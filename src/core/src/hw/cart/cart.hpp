@@ -6,9 +6,11 @@
 
 #include <util/integer.hpp>
 #include <fstream>
+#include <memory>
 #include <string>
 
-#include "backup.hpp"
+#include "backup/backup.hpp"
+#include "backup/flash.hpp"
 #include "hw/dma/dma7.hpp"
 #include "hw/dma/dma9.hpp"
 #include "hw/irq/irq.hpp"
@@ -115,7 +117,7 @@ private:
   DMA9& dma9;
   IRQ& irq7;
   IRQ& irq9;
-  Backup backup;
+  std::unique_ptr<Backup> backup;
 };
 
 } // namespace Duality::Core

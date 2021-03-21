@@ -15,6 +15,7 @@ set(SOURCES
   src/arm9/bus_mmio.cpp
   src/arm9/cp15.cpp
   src/hw/apu/apu.cpp
+  src/hw/cart/backup/flash.cpp
   src/hw/cart/cart.cpp
   src/hw/dma/dma7.cpp
   src/hw/dma/dma9.cpp
@@ -58,6 +59,8 @@ set(HEADERS
   src/arm9/bus.hpp
   src/arm9/cp15.hpp
   src/hw/apu/apu.hpp
+  src/hw/cart/backup/backup.hpp
+  src/hw/cart/backup/flash.hpp
   src/hw/cart/backup.hpp
   src/hw/cart/cart.hpp
   src/hw/dma/dma7.hpp

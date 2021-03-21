@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <util/log.hpp>
+#include <filesystem>
 
 #include "cart.hpp"
 
@@ -20,10 +21,12 @@ void Cartridge::Reset() {
   //romctrl = {};
   cardcmd = {};
   spidata = 0;
+  backup = nullptr;
 }
 
 void Cartridge::Load(std::string const& path) {
   u32 file_size;
+  auto save_path = std::filesystem::path{path}.replace_extension(".sav").string();
 
   if (file.is_open())
     file.close();
@@ -43,6 +46,8 @@ void Cartridge::Load(std::string const& path) {
       break;
     }
   }
+
+  backup = std::make_unique<FLASH>(save_path, FLASH::Size::_512K);
 }
 
 void Cartridge::OnCommandStart() {
@@ -131,10 +136,14 @@ auto Cartridge::ReadSPI() -> u8 {
 }
 
 void Cartridge::WriteSPI(u8 value) {
-  spidata = backup.Transfer(value);
-  
-  if (!auxspicnt.chipselect_hold)
-    backup.Deselect();
+  if (backup) {
+    spidata = backup->Transfer(value);
+    
+    if (!auxspicnt.chipselect_hold)
+      backup->Deselect();
+  } else {
+    spidata = 0xFF;
+  }
 }
 
 auto Cartridge::ReadROM() -> u32 {
