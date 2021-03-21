@@ -116,8 +116,8 @@ auto FLASH::Transfer(u8 data) -> u8 {
       break;
     case State::SectorErase:
       // TODO: how to transition from this state?
-      address &= ~0x7FFFF;
-      for (uint i = 0; i < 0x80000; i++)
+      address &= ~0xFFFF;
+      for (uint i = 0; i < 0x10000; i++)
         file->Write(address + i, 0xFF);
       break;
     default:
