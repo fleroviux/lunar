@@ -42,15 +42,13 @@ private:
 
   enum class State {
     ReceiveCommand,
-    ReadManufacturerID,
-    ReadMemoryType,
-    ReadMemoryCapacity,
+    ReadJEDEC,
     ReadStatus,
     SendAddress0,
     SendAddress1,
     SendAddress2,
-    ReadFastDummyByte,
-    Reading,
+    DummyByte,
+    ReadData,
     PageWrite,
     PageProgram,
     PageErase,
@@ -63,6 +61,7 @@ private:
   u32 address;
   bool write_enable_latch;
   bool deep_power_down;
+  u8 jedec_id[3] { 0x20, 0x40, 0x12 };
 
   std::string save_path;
   Size size_hint;
