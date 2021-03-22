@@ -8,7 +8,7 @@
 
 /*
  * TODO: 
- * - figure the state after a command completed out
+ * - figure out the state after a command completed
  * - figure out what happens if /CS is not driven high after sending a command byte.
  * - generate a plausible manufacturer and device id instead of always using the same one.
  */
@@ -141,6 +141,7 @@ void FLASH::ParseCommand(Command cmd) {
   if (deep_power_down) {
     if (cmd == Command::ReleaseDeepPowerDown) {
       deep_power_down = false;
+      state = State::Idle;
     }
     return;
   }
@@ -178,12 +179,17 @@ void FLASH::ParseCommand(Command cmd) {
     case Command::SectorErase: {
       if (write_enable_latch) {
         state = State::SendAddress0;
+      } else {
+        state = State::Idle;
       }
       break;
     }
     case Command::DeepPowerDown: {
       deep_power_down = true;
       break;
+    }
+    default: {
+      // ASSERT(false, "FLASH: unhandled command 0x{0:02X}", cmd);
     }
   }
 }

@@ -10,6 +10,7 @@
 
 namespace Duality::Core {
 
+/// FLASH memory emulation
 struct FLASH final : Backup {
   enum class Size {
     _256K = 0,
@@ -68,7 +69,7 @@ private:
 
   std::string save_path;
   Size size_hint;
-  size_t mask = 0;
+  size_t mask;
 
   std::unique_ptr<BackupFile> file;
 };
