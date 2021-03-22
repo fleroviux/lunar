@@ -7,6 +7,7 @@
 #include <filesystem>
 
 #include "backup/eeprom.hpp"
+#include "backup/eeprom512b.hpp"
 #include "backup/flash.hpp"
 #include "cart.hpp"
 
@@ -51,6 +52,7 @@ void Cartridge::Load(std::string const& path) {
 
   backup = std::make_unique<FLASH>(save_path, FLASH::Size::_512K);
   // backup = std::make_unique<EEPROM>(save_path, EEPROM::Size::_8K);
+  // backup = std::make_unique<EEPROM512B>(save_path);
 }
 
 void Cartridge::OnCommandStart() {
