@@ -9,10 +9,10 @@
 #include <memory>
 #include <string>
 
-#include "backup/backup.hpp"
 #include "hw/dma/dma7.hpp"
 #include "hw/dma/dma9.hpp"
 #include "hw/irq/irq.hpp"
+#include "hw/spi/spi_device.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
@@ -116,7 +116,7 @@ private:
   DMA9& dma9;
   IRQ& irq7;
   IRQ& irq9;
-  std::unique_ptr<Backup> backup;
+  std::unique_ptr<SPIDevice> backup;
 };
 
 } // namespace Duality::Core

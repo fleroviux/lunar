@@ -6,12 +6,12 @@
 
 #include <util/backup_file.hpp>
 
-#include "backup.hpp"
+#include "hw/spi/spi_device.hpp"
 
 namespace Duality::Core {
 
 /// EEPROM (and FRAM) memory emulation
-struct EEPROM final : Backup {
+struct EEPROM final : SPIDevice {
   enum class Size {
     _8K,
     _32K,

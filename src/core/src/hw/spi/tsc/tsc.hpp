@@ -16,7 +16,6 @@ namespace Duality::Core {
 struct TSC : SPIDevice {
   TSC(FLASH& firmware);
 
-  // FIXME
   void Reset() override;
   void Select() override {}
   void Deselect() override {}

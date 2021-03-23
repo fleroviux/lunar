@@ -6,12 +6,12 @@
 
 #include <util/backup_file.hpp>
 
-#include "backup.hpp"
+#include "hw/spi/spi_device.hpp"
 
 namespace Duality::Core {
 
 /// EEPROM 512B memory emulation
-struct EEPROM512B final : Backup {
+struct EEPROM512B final : SPIDevice {
   EEPROM512B(std::string const& save_path);
 
   void Reset() override;

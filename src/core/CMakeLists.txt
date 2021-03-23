@@ -60,7 +60,6 @@ set(HEADERS
   src/arm9/bus.hpp
   src/arm9/cp15.hpp
   src/hw/apu/apu.hpp
-  src/hw/cart/backup/backup.hpp
   src/hw/cart/backup/eeprom.hpp
   src/hw/cart/backup/eeprom512b.hpp
   src/hw/cart/backup/flash.hpp

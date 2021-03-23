@@ -6,12 +6,12 @@
 
 #include <util/backup_file.hpp>
 
-#include "backup.hpp"
+#include "hw/spi/spi_device.hpp"
 
 namespace Duality::Core {
 
 /// FLASH memory emulation
-struct FLASH final : Backup {
+struct FLASH final : SPIDevice {
   enum class Size {
     _256K = 0,
     _512K,
