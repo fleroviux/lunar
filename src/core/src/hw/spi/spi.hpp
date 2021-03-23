@@ -7,7 +7,7 @@
 #include <util/integer.hpp>
 
 #include "tsc/tsc.hpp"
-#include "firmware/firmware.hpp"
+#include "hw/cart/backup/flash.hpp"
 #include "hw/irq/irq.hpp"
 
 namespace Duality::Core {
@@ -18,7 +18,7 @@ struct SPI {
 
   void Reset();
 
-  Firmware firmware;
+  FLASH firmware;
   TSC tsc;
 
   struct SPICNT {

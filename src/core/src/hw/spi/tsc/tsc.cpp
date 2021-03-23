@@ -8,7 +8,11 @@
 
 namespace Duality::Core {
 
-void TSC::Reset(Firmware& firmware) {
+TSC::TSC(FLASH& firmware)
+    : firmware(firmware) {
+}
+
+void TSC::Reset() {
   data_reg = 0;
 
   // Read touchscreen calibration data from firmware.
@@ -49,10 +53,6 @@ void TSC::Reset(Firmware& firmware) {
   firmware.Deselect();
 }
 
-void TSC::SetInputDevice(InputDevice& device) {
-  input_device = &device;
-}
-
 auto TSC::Transfer(u8 data) -> u8 {
   u8 out = data_reg >> 8;
   data_reg <<= 8;
@@ -87,6 +87,10 @@ auto TSC::Transfer(u8 data) -> u8 {
   }
 
   return out;
+}
+
+void TSC::SetInputDevice(InputDevice& device) {
+  input_device = &device;
 }
 
 } // namespace Duality::Core

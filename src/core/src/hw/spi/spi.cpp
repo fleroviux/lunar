@@ -8,7 +8,10 @@
 
 namespace Duality::Core {
 
-SPI::SPI(IRQ& irq7) : irq7(irq7) {
+SPI::SPI(IRQ& irq7)
+    : irq7(irq7)
+    , firmware("firmware.bin", FLASH::Size::_256K)
+    , tsc(firmware) {
   Reset();
 }
 
@@ -17,7 +20,7 @@ void SPI::Reset() {
   //spicnt = { *this );
   //spidata = { *this }
   firmware.Reset();
-  tsc.Reset(firmware);
+  tsc.Reset();
 }
 
 auto SPI::SPICNT::ReadByte(uint offset) -> u8 {

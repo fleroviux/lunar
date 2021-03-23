@@ -7,19 +7,22 @@
 #include <core/device/input_device.hpp>
 
 #include "hw/spi/spi_device.hpp"
-#include "hw/spi/firmware/firmware.hpp"
+#include "hw/cart/backup/flash.hpp"
 
 namespace Duality::Core {
 
 /// Touch Screen Controller
 /// Asahi Kasei Microsystems AK4148AVT
 struct TSC : SPIDevice {
-  void Reset(Firmware& firmware);
-  void SetInputDevice(InputDevice& device);
+  TSC(FLASH& firmware);
 
+  // FIXME
+  void Reset() override;
   void Select() override {}
   void Deselect() override {}
   auto Transfer(u8 data) -> u8 override;
+
+  void SetInputDevice(InputDevice& device);
 
 private:
   u16 data_reg;
@@ -34,6 +37,7 @@ private:
   u8  scr_x1;
   u8  scr_y1;
 
+  FLASH& firmware;
   InputDevice* input_device = nullptr;
 };
 
