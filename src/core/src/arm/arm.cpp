@@ -12,7 +12,7 @@ void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
   state.Reset();
-  SwitchMode(MODE_SYS);
+  SwitchMode(state.cpsr.f.mode);
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = ExceptionBase();
@@ -60,7 +60,6 @@ void ARM::Run(int instructions) {
     }
   }
 }
-
 
 void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
   if (id >= 16) { 

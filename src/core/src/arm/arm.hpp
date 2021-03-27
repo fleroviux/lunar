@@ -33,6 +33,7 @@ struct ARM {
   void Reset();
   void Run(int instructions);
   void AttachCoprocessor(uint id, Coprocessor* coprocessor);
+  void SwitchMode(Mode new_mode);
   auto IRQLine() -> bool& { return irq_line; }
   void WaitForIRQ() { wait_for_irq = true; }
   bool IsWaitingForIRQ() { return wait_for_irq; }
@@ -56,7 +57,6 @@ private:
   static auto GetRegisterBankByMode(Mode mode) -> Bank;
 
   void SignalIRQ();
-  void SwitchMode(Mode new_mode);
   void ReloadPipeline16();
   void ReloadPipeline32();
   void BuildConditionTable();

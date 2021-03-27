@@ -20,6 +20,7 @@ ARM9::ARM9(Interconnect& interconnect)
 void ARM9::Reset(u32 entrypoint) {
   core.ExceptionBase(0xFFFF0000);
   core.Reset();
+  core.SwitchMode(arm::MODE_SYS);
   core.GetState().r13 = 0x03002F7C;
   core.GetState().bank[arm::BANK_IRQ][arm::BANK_R13] = 0x03003F80;
   core.GetState().bank[arm::BANK_SVC][arm::BANK_R13] = 0x03003FC0;

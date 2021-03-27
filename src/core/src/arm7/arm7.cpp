@@ -21,6 +21,7 @@ void ARM7::Reset(u32 entrypoint) {
   // TODO: reset the bus and all associated devices.
   core.ExceptionBase(0);
   core.Reset();
+  core.SwitchMode(arm::MODE_SYS);
   core.GetState().r13 = 0x0380FD80;
   core.GetState().bank[arm::BANK_IRQ][arm::BANK_R13] = 0x0380FF80;
   core.GetState().bank[arm::BANK_SVC][arm::BANK_R13] = 0x0380FFC0;
