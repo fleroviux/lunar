@@ -63,7 +63,6 @@ set(HEADERS
   src/hw/cart/backup/eeprom.hpp
   src/hw/cart/backup/eeprom512b.hpp
   src/hw/cart/backup/flash.hpp
-  src/hw/cart/backup.hpp
   src/hw/cart/cart.hpp
   src/hw/dma/dma7.hpp
   src/hw/dma/dma9.hpp
