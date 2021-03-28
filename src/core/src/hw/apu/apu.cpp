@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <util/log.hpp>
-//#include <SDL.h>
 #include <string.h>
 
 #include "apu.hpp"
@@ -110,27 +109,21 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
       channel.format = static_cast<Channel::Format>((value >> 5) & 3);
       
       if (!channel.running && (value & 0x80)) {
-        ASSERT(channel.format == Channel::Format::PSG || 
-          channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
-
         channel.running = true;
         channel.cur_address = channel.src_address;
         channel.t = 0;
 
         if (channel.format == Channel::Format::ADPCM) {
-          u32 value = memory->FastRead<u32, arm::MemoryBase::Bus::System>(channel.cur_address);
-          channel.adpcm_sample = s16(value & 0xFFFF);
-          channel.adpcm_index = (value >> 16) & 0x7F;
-          if (channel.adpcm_index > 88)
-            channel.adpcm_index = 88;
+          channel.adpcm_header = memory->FastRead<u32, arm::MemoryBase::Bus::System>(channel.cur_address);
+          channel.adpcm_sample = s16(channel.adpcm_header & 0xFFFF);
+          channel.adpcm_index = std::min((channel.adpcm_header >> 16) & 0x7F, 88U);
           channel.cur_address += 4;
-
-          // FIXME
-          channel.adpcm_header = value;
         }
 
-        if (channel.format == Channel::Format::PSG && chan_id >= 14) {
+        if (channel.format == Channel::Format::PSG) {
           channel.noise_lfsr = 0x7FFF;
+        } else {
+          ASSERT(channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
         }
 
         auto delay = 2 * (0x10000 - channel.timer_duty);
@@ -190,7 +183,6 @@ void APU::StepMixer(int cycles_late) {
   float samples[2] { };
 
   for (auto const& channel : channels) {
-    // TODO: interpret volume_mul = 127 as 128.
     float sample = channel.sample * channel.volume_mul * kVolumeDivideLUT[channel.volume_div] / 128.0;
     samples[0] += sample * channel.panning / 128.0;
     samples[1] += sample * (127.0 - channel.panning) / 128.0;
@@ -294,7 +286,6 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
             channel.cur_address = loop_address;
 
             if (channel.format == Channel::Format::ADPCM) {
-              // FIXME
               channel.adpcm_sample = s16(channel.adpcm_header & 0xFFFF);
               channel.adpcm_index = std::min((channel.adpcm_header >> 16) & 0x7F, 88U);
             }

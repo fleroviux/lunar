@@ -141,7 +141,6 @@ void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
   fifo_tx.send.Write(value);
 }
 
-
 auto IPC::IPCFIFORECV::ReadByte(Client client, uint offset) -> u8 {
   if (offset >= 4) {
     UNREACHABLE;
