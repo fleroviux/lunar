@@ -58,7 +58,7 @@ void APU::SetAudioDevice(AudioDevice& device) {
     audio_device->Close();
   }
   audio_device = &device;
-  audio_device->Open(this, (AudioDevice::Callback)AudioCallback, 32768, 2048);
+  audio_device->Open(this, (AudioDevice::Callback)AudioCallback, 65536, 2048);
 }
 
 auto APU::Read(uint chan_id, uint offset) -> u8 {
@@ -126,8 +126,14 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
           ASSERT(channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
         }
 
-        auto delay = 2 * (0x10000 - channel.timer_duty);
-        channel.event = scheduler.Add(delay, [chan_id, this](int cycles_late) {
+        channel.timestamp_update = scheduler.GetTimestampNow();
+        channel.duty = 2 * (0x10000 - channel.timer_duty);
+
+        for (int i = 0; i < 4; i++) {
+          channel.samples[i] = 0;
+        }
+
+        channel.event = scheduler.Add(channel.duty, [chan_id, this](int cycles_late) {
           StepChannel(chan_id, cycles_late);
         });
       }
@@ -183,7 +189,23 @@ void APU::StepMixer(int cycles_late) {
   float samples[2] { };
 
   for (auto const& channel : channels) {
-    float sample = channel.sample * channel.volume_mul * kVolumeDivideLUT[channel.volume_div] / 128.0;
+    if (!channel.running) {
+      continue;
+    }
+
+    // http://paulbourke.net/miscellaneous/interpolation/
+    auto mu  = (scheduler.GetTimestampNow() - channel.timestamp_update) / float(channel.duty);
+    auto mu2 = mu * mu;
+    auto a0 = channel.samples[0] - channel.samples[1] - channel.samples[3] + channel.samples[2];
+    auto a1 = channel.samples[3] - channel.samples[2] - a0;
+    auto a2 = channel.samples[1] - channel.samples[3];
+    auto a3 = channel.samples[2];
+
+    float sample = a0 * mu * mu2 + a1 * mu2 + a2 * mu + a3;
+
+    sample *= channel.volume_mul;
+    sample *= kVolumeDivideLUT[channel.volume_div] / 128.0;
+
     samples[0] += sample * channel.panning / 128.0;
     samples[1] += sample * (127.0 - channel.panning) / 128.0;
   }
@@ -198,20 +220,24 @@ void APU::StepMixer(int cycles_late) {
   buffer_wr_pos = (buffer_wr_pos + 1) % kRingBufferSize;
   buffer_count++;
 
-  scheduler.Add(1024 - cycles_late, this, &APU::StepMixer);
+  scheduler.Add(512 - cycles_late, this, &APU::StepMixer);
 }
 
 void APU::StepChannel(uint chan_id, int cycles_late) {
   auto& channel = channels[chan_id];
+
+  channel.samples[3] = channel.samples[2];
+  channel.samples[2] = channel.samples[1];
+  channel.samples[1] = channel.samples[0];
 
   if (channel.format == Channel::Format::PSG) {
     ASSERT(chan_id >= 8, "APU: channel #{0} cannot run in PSG mode", chan_id);
   
     if (chan_id <= 13) {
       if (channel.t < (7 - channel.psg_wave_duty)) {
-        channel.sample = -1.0;
+        channel.samples[0] = -1.0;
       } else {
-        channel.sample = +1.0;
+        channel.samples[0] = +1.0;
       }
 
       if (++channel.t == 8) channel.t = 0;
@@ -220,9 +246,9 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
       channel.noise_lfsr >>= 1;
       if (carry) {
         channel.noise_lfsr ^= 0x6000;
-        channel.sample = -1.0;
+        channel.samples[0] = -1.0;
       } else {
-        channel.sample = +1.0;
+        channel.samples[0] = +1.0;
       }
     }
   } else {
@@ -236,13 +262,13 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
 
     switch (channel.format) {
       case Channel::Format::PCM8: {
-        channel.sample = s8(channel.latch & 0xFF) / 128.0;
+        channel.samples[0] = s8(channel.latch & 0xFF) / 128.0;
         channel.latch >>= 8;
         channel.t += 2;
         break;
       }
       case Channel::Format::PCM16: {
-        channel.sample = s16(channel.latch & 0xFFFF) / 32768.0;
+        channel.samples[0] = s16(channel.latch & 0xFFFF) / 32768.0;
         channel.latch >>= 16;
         channel.t += 4;
         break;
@@ -264,7 +290,7 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
         }
 
         channel.adpcm_index = std::clamp(channel.adpcm_index + kAdpcmIndexTab[data & 7], 0, 88);
-        channel.sample = channel.adpcm_sample / 32768.0;
+        channel.samples[0] = channel.adpcm_sample / 32768.0;
         channel.t++;
         break;
       }
@@ -292,16 +318,18 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
             break;
           case Channel::RepeatMode::OneShot:
             channel.running = false;
-            channel.sample = 0;
+            channel.samples[0] = 0;
             break;
         }
       }
     }
   }
 
+  channel.timestamp_update = scheduler.GetTimestampNow();
+  channel.duty = 2 * (0x10000 - channel.timer_duty);
+
   if (channel.running) {
-    auto delay = 2 * (0x10000 - channel.timer_duty);
-    channel.event = scheduler.Add(delay - cycles_late, [chan_id, this](int cycles_late) {
+    channel.event = scheduler.Add(channel.duty - cycles_late, [chan_id, this](int cycles_late) {
       StepChannel(chan_id, cycles_late);
     });
   } else {

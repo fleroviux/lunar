@@ -68,7 +68,9 @@ private:
     u32 length = 0;
 
     // internal
-    float sample;
+    float samples[4];
+    int duty;
+    u64 timestamp_update;
     s16 adpcm_sample;
     int adpcm_index;
     u32 adpcm_header;
