@@ -50,7 +50,7 @@ void APU::Reset() {
   buffer_wr_pos = 0;
   buffer_count = 0;
 
-  scheduler.Add(1024, this, &APU::StepMixer);
+  scheduler.Add(512, this, &APU::StepMixer);
 }
 
 void APU::SetAudioDevice(AudioDevice& device) {
@@ -58,7 +58,7 @@ void APU::SetAudioDevice(AudioDevice& device) {
     audio_device->Close();
   }
   audio_device = &device;
-  audio_device->Open(this, (AudioDevice::Callback)AudioCallback, 65536, 2048);
+  audio_device->Open(this, (AudioDevice::Callback)AudioCallback, 65536, 4096);
 }
 
 auto APU::Read(uint chan_id, uint offset) -> u8 {
@@ -352,9 +352,8 @@ void AudioCallback(APU* this_, s16* stream, int length) {
     int j = 0;
 
     for (int i = 0; i < num_samples; i++) {
-      *stream++ = this_->buffer[0][this_->buffer_rd_pos + j];
-      *stream++ = this_->buffer[1][this_->buffer_rd_pos + j];
-      if (++j == this_->buffer_count) j = 0;
+      *stream++ = this_->buffer[0][(this_->buffer_rd_pos + j) % APU::kRingBufferSize];
+      *stream++ = this_->buffer[1][(this_->buffer_rd_pos + j) % APU::kRingBufferSize];
     }
   }
 }
