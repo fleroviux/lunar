@@ -118,14 +118,29 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
         }
       }
 
-      if (!window || win_layer_enable[LAYER_SFX] || is_alpha_obj) {
-        auto blend_mode = mmio.bldcnt.sfx;
-        bool have_dst = mmio.bldcnt.targets[0][layer[0]];
-        bool have_src = mmio.bldcnt.targets[1][layer[1]];
+      auto blend_mode = mmio.bldcnt.sfx;
+      bool have_dst = mmio.bldcnt.targets[0][layer[0]];
+      bool have_src = mmio.bldcnt.targets[1][layer[1]];
+      auto sfx_enable = !window || win_layer_enable[LAYER_SFX];
 
-        if (is_alpha_obj && have_src) {
-          Blend(pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
-        } else if (have_dst && blend_mode != BlendControl::Effect::SFX_NONE && (have_src || blend_mode != BlendControl::Effect::SFX_BLEND)) {
+      if (is_alpha_obj && have_src) {
+        Blend(pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
+      } if (blend_mode == BlendControl::Effect::SFX_BLEND) {
+        if (have_dst && have_src) {
+          // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
+          if (layer[0] == 0 && (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6)) {
+            // Someone should revoke my coding license for this.
+            auto tmp = mmio.bldalpha;
+            mmio.bldalpha.a = gpu_output[vcount * 256 + x].a().raw() >> 2;
+            mmio.bldalpha.b = 16 - mmio.bldalpha.a;
+            Blend(pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
+            mmio.bldalpha = tmp;
+          } else if (sfx_enable) {
+            Blend(pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
+          }
+        }
+      } else if (blend_mode != BlendControl::Effect::SFX_NONE) {
+        if (have_dst && sfx_enable) {
           Blend(pixel[0], pixel[1], blend_mode);
         }
       }

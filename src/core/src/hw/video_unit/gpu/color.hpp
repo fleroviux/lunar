@@ -61,6 +61,8 @@ struct Color4 : Vector<Color4, Fixed6, 4> {
   }
 
   auto to_rgb555() const -> u16 {
+    if (a().raw() == 0) return 0x8000;
+
     return (r().raw() >> 1) |
           ((g().raw() >> 1) <<  5) |
           ((b().raw() >> 1) << 10);
