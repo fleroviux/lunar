@@ -145,6 +145,19 @@ void GPU::Enqueue(CmdArgPack pack) {
   if (gxfifo.IsEmpty() && !gxpipe.IsFull()) {
     gxpipe.Write(pack);
   } else {
+    /* HACK: before we drop any command or argument data,
+     * execute the next command early.
+     * In hardware enqueueing into full queue would stall the CPU or DMA,
+     * but this is difficult to emulate accurately.
+     */
+    while (gxfifo.IsFull()) {
+      gxstat.gx_busy = false;
+      if (cmd_event != nullptr) {
+        scheduler.Cancel(cmd_event);
+      }
+      ProcessCommands();
+    }
+
     gxfifo.Write(pack);
     dma9.SetGXFIFOHalfEmpty(gxfifo.Count() < 128);
   }
@@ -225,8 +238,9 @@ void GPU::ProcessCommands() {
     // *Very* approximate GX command timing.
     // TODO: scheduling a bunch of events with 1 cycle delay might be a tad slow.
     gxstat.gx_busy = true;
-    scheduler.Add(kCmdCycles[command], [this](int cycles_late) {
+    cmd_event = scheduler.Add(kCmdCycles[command], [this](int cycles_late) {
       gxstat.gx_busy = false;
+      cmd_event = nullptr;
       ProcessCommands();
     });
   }

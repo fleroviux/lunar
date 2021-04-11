@@ -317,6 +317,8 @@ private:
   MatrixStack<31> direction;
   MatrixStack< 1> texture;
   Matrix4<Fixed20x12> clip_matrix;
+
+  Scheduler::Event* cmd_event = nullptr;
 };
 
 } // namespace Duality::Core
