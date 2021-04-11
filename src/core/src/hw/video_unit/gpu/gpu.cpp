@@ -34,6 +34,32 @@ static constexpr int kCmdNumParams[256] {
   3, 2, 1
 };
 
+static constexpr int kCmdCycles[256] {
+  // 0x00 - 0x0F (all NOPs)
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x10 - 0x1F (Matrix engine)
+  1, 17, 36, 19, 34, 30, 35, 31, 28, 22, 22, 1, 1, 1, 1, 1,
+
+  // 0x20 - 0x2F (Vertex and polygon attributes, mostly)
+  1, 9, 1, 9, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x30 - 0x3F (Material / lighting properties)
+  4, 4, 6, 1, 32, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x40 - 0x4F (Begin/end vertex)
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x50 - 0x5F (Swap buffers)
+  392, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x60 - 0x6F (Set viewport)
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+  // 0x70 - 0x7F (Box, position and vector test)
+  103, 9, 5
+};
+
 GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
     : scheduler(scheduler)
     , irq9(irq9)
@@ -196,9 +222,10 @@ void GPU::ProcessCommands() {
         break;
     }
 
-    // Fake the amount of time it takes to process the command.
+    // *Very* approximate GX command timing.
+    // TODO: scheduling a bunch of events with 1 cycle delay might be a tad slow.
     gxstat.gx_busy = true;
-    scheduler.Add(9, [this](int cycles_late) {
+    scheduler.Add(kCmdCycles[command], [this](int cycles_late) {
       gxstat.gx_busy = false;
       ProcessCommands();
     });
