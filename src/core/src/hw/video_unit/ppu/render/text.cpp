@@ -9,7 +9,8 @@ namespace Duality::Core {
 void PPU::RenderLayerText(uint id, u16 vcount) {
   auto const& bgcnt = mmio.bgcnt[id];
   auto const& mosaic = mmio.mosaic.bg;
-  uint expal_slot = id <= 1 ? bgcnt.palette_slot : id;
+
+  uint expal_slot = id | (bgcnt.palette_slot << 1);
 
   u32 tile_base = mmio.dispcnt.tile_block * 65536 + bgcnt.tile_block * 16384;
    
