@@ -15,7 +15,8 @@ struct EEPROM final : SPIDevice {
   enum class Size {
     _8K,
     _32K,
-    _64K
+    _64K,
+    _128K
   };
 
   EEPROM(std::string const& save_path, Size size_hint);
@@ -41,8 +42,9 @@ private:
     ReceiveCommand,
     ReadStatus,
     WriteStatus,
-    ReadAddressHI,
-    ReadAddressLO,
+    ReadAddress0,
+    ReadAddress1,
+    ReadAddress2,
     Read,
     Write
   } state;
@@ -57,6 +59,7 @@ private:
 
   std::string save_path;
   Size size_hint;
+  Size size;
   size_t mask;
   size_t page_mask;
 

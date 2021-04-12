@@ -16,21 +16,40 @@ EEPROM::EEPROM(std::string const& save_path, Size size_hint)
 
 void EEPROM::Reset() {
   static const std::vector<size_t> kBackupSize { 
-    8192, 32768, 65536 };
+    8192, 32768, 65536, 131072 };
 
-  auto size = kBackupSize[static_cast<int>(size_hint)];
+  auto bytes = kBackupSize[static_cast<int>(size_hint)];
 
-  file = BackupFile::OpenOrCreate(save_path, kBackupSize, size);
-  mask = size - 1U;
+  file = BackupFile::OpenOrCreate(save_path, kBackupSize, bytes);
+  mask = bytes - 1U;
   Deselect();
 
-  if (size == 8192) {
-    page_mask = 31;
-  } else if (size == 65536) {
-    page_mask = 127;
-  } else {
-    // FRAM writes are unlimited
-    page_mask = mask;
+  switch (bytes) {
+    case 8192: {
+      // EEPROM 8K, FRAM 8K
+      // TODO: FRAM doesn't have pages.
+      size = Size::_8K; 
+      page_mask = 31;
+      break;
+    }
+    case 32768: {
+      // FRAM 32K
+      size = Size::_32K; 
+      page_mask = mask;
+      break;
+    }
+    case 65536: {
+      // EEPROM 64K
+      size = Size::_64K; 
+      page_mask = 127;
+      break;
+    }
+    case 131072: {
+      // EEPROM 128K
+      size = Size::_128K;
+      page_mask = 255;
+      break;
+    }
   }
 
   write_enable_latch = false;
@@ -72,12 +91,17 @@ auto EEPROM::Transfer(u8 data) -> u8 {
       state = State::Idle;
       break;
     }
-    case State::ReadAddressHI: {
-      address = data << 8;
-      state = State::ReadAddressLO;
+    case State::ReadAddress0: {
+      address = data << 16;
+      state = State::ReadAddress1;
       break;
     }
-    case State::ReadAddressLO: {
+    case State::ReadAddress1: {
+      address |= data << 8;
+      state = State::ReadAddress2;
+      break;
+    }
+    case State::ReadAddress2: {
       address |= data;
       if (current_cmd == Command::Read) {
         state = State::Read;
@@ -138,12 +162,22 @@ void EEPROM::ParseCommand(Command cmd) {
       break;
     }
     case Command::Read: {
-      state = State::ReadAddressHI;
+      address = 0;
+      if (size == Size::_128K) {
+        state = State::ReadAddress0;
+      } else {
+        state = State::ReadAddress1;
+      }
       break;
     }
     case Command::Write: {
       if (write_enable_latch) {
-        state = State::ReadAddressHI;
+        address = 0;
+        if (size == Size::_128K) {
+          state = State::ReadAddress0;
+        } else {
+          state = State::ReadAddress1;
+        }
       } else {
         state = State::Idle;
       }
