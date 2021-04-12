@@ -19,7 +19,7 @@ struct EEPROM final : SPIDevice {
     _128K
   };
 
-  EEPROM(std::string const& save_path, Size size_hint);
+  EEPROM(std::string const& save_path, Size size_hint, bool fram);
 
   void Reset() override;
   void Select() override;
@@ -60,6 +60,7 @@ private:
   std::string save_path;
   Size size_hint;
   Size size;
+  bool fram;
   size_t mask;
   size_t page_mask;
 

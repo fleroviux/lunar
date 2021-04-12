@@ -8,9 +8,10 @@
 
 namespace Duality::Core {
 
-EEPROM::EEPROM(std::string const& save_path, Size size_hint)
+EEPROM::EEPROM(std::string const& save_path, Size size_hint, bool fram)
     : save_path(save_path)
-    , size_hint(size_hint) {
+    , size_hint(size_hint)
+    , fram(fram) {
   Reset();
 }
 
@@ -26,30 +27,31 @@ void EEPROM::Reset() {
 
   switch (bytes) {
     case 8192: {
-      // EEPROM 8K, FRAM 8K
-      // TODO: FRAM doesn't have pages.
-      size = Size::_8K; 
+      size = Size::_8K;
       page_mask = 31;
       break;
     }
     case 32768: {
-      // FRAM 32K
-      size = Size::_32K; 
-      page_mask = mask;
+      // Note: there is no known use of EEPROM with this size (only FRAM).
+      size = Size::_32K;
+      page_mask = 63;
       break;
     }
     case 65536: {
-      // EEPROM 64K
-      size = Size::_64K; 
+      size = Size::_64K;
       page_mask = 127;
       break;
     }
     case 131072: {
-      // EEPROM 128K
       size = Size::_128K;
       page_mask = 255;
       break;
     }
+  }
+
+  // FRAM consists of a single page spanning the full address space.
+  if (fram) {
+    page_mask = mask;
   }
 
   write_enable_latch = false;

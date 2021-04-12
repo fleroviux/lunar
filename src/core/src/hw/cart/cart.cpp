@@ -51,7 +51,7 @@ void Cartridge::Load(std::string const& path) {
   }
 
   // backup = std::make_unique<FLASH>(save_path, FLASH::Size::_1024K);
-  backup = std::make_unique<EEPROM>(save_path, EEPROM::Size::_128K);
+  backup = std::make_unique<EEPROM>(save_path, EEPROM::Size::_128K, false);
   // backup = std::make_unique<EEPROM512B>(save_path);
 }
 
