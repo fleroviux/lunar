@@ -29,22 +29,30 @@ void EEPROM::Reset() {
     case 8192: {
       size = Size::_8K;
       page_mask = 31;
+      address_upper_half = 0x1000;
+      address_upper_quarter = 0x1800;
       break;
     }
     case 32768: {
       // Note: there is no known use of EEPROM with this size (only FRAM).
       size = Size::_32K;
       page_mask = 63;
+      address_upper_half = 0x4000;
+      address_upper_quarter = 0x6000;
       break;
     }
     case 65536: {
       size = Size::_64K;
       page_mask = 127;
+      address_upper_half = 0x8000;
+      address_upper_quarter = 0xC000;
       break;
     }
     case 131072: {
       size = Size::_128K;
       page_mask = 255;
+      address_upper_half = 0x10000;
+      address_upper_quarter = 0x18000;
       break;
     }
   }
@@ -117,8 +125,8 @@ auto EEPROM::Transfer(u8 data) -> u8 {
     }
     case State::Write: {
       switch (write_protect_mode) {
-        case 1: if (address >= 0xC000) return 0xFF;
-        case 2: if (address >= 0x8000) return 0xFF;
+        case 1: if (address >= address_upper_quarter) return 0xFF;
+        case 2: if (address >= address_upper_half) return 0xFF;
         case 3: return 0xFF;
       }
 

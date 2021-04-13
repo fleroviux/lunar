@@ -52,7 +52,7 @@ private:
   void ParseCommand(Command cmd);
 
   Command current_cmd;
-  u16 address;
+  u32 address;
   bool write_enable_latch;
   int  write_protect_mode;
   bool status_reg_write_disable;
@@ -63,6 +63,8 @@ private:
   bool fram;
   size_t mask;
   size_t page_mask;
+  u32 address_upper_half;
+  u32 address_upper_quarter;
 
   std::unique_ptr<BackupFile> file;
 };
