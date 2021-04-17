@@ -80,11 +80,13 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
       return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
     case TextureParams::Format::Compressed4x4: {
+      auto row_x = coord[0] >> 2;
       auto row_y = coord[1] >> 2;
       auto tile_x = coord[0] & 3;
       auto tile_y = coord[1] & 3;
+      auto row_size = size[0] >> 2;
 
-      auto data_address = params.address + row_y * size[0] + coord[0] + tile_y;
+      auto data_address = params.address + (row_y * row_size + row_x) * sizeof(u32) + tile_y;
 
       auto data_slot_index  = data_address >> 18;
       auto data_slot_offset = data_address & 0x1FFFF;
@@ -285,7 +287,7 @@ void GPU::Render() {
         // TODO: interpolation of w0 and w1 can be optimized.
         span.x[j] = lerp(points[s[j]].x, points[e[j]].x, t, t_max);
         span.w[j] = lerp(w0, w1, t, t_max, w0, w1);
-        span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max, w0, w1);
+        span.depth[j] = lerp(points[s[j]].depth, points[e[j]].depth, t, t_max);
 
         for (int k = 0; k < 2; k++) {
           span.uv[j][k] = Fixed12x4{s16(lerp(
