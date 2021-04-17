@@ -80,6 +80,7 @@ auto FLASH::Transfer(u8 data) -> u8 {
     }
     case State::SendAddress2: {
       address |= data;
+      address &= mask;
 
       // TODO: this is a bit messy still, try to refactor it away.
       switch (current_cmd) {
