@@ -315,7 +315,7 @@ void GPU::Render() {
             auto index = y * 256 + x;
 
             auto depth_old = depth_buffer[index];
-            auto depth_new = lerp(span.depth[a], span.depth[b], t, t_max, span.w[a], span.w[b]);
+            auto depth_new = lerp(span.depth[a], span.depth[b], t, t_max);
 
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
               if (depth_new >= depth_old)

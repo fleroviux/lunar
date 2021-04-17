@@ -287,10 +287,26 @@ void GPU::CMD_SetNormal() {
 
 void GPU::CMD_SetUV() {
   auto arg = Dequeue().argument;
-  vertex_uv = Vector2<Fixed12x4>{
-    s16(arg & 0xFFFF),
-    s16(arg >> 16)
-  };
+
+  auto u = s16(arg & 0xFFFF);
+  auto v = s16(arg >> 16);
+
+  if (texture_params.transform == TextureParams::Transform::TexCoord) {
+    auto const& matrix = texture.current;
+
+    auto x = Fixed20x12{u << 8};
+    auto y = Fixed20x12{v << 8};
+
+    auto t_x = (matrix[2].x() + matrix[3].x()) * Fixed20x12{256};
+    auto t_y = (matrix[2].y() + matrix[3].y()) * Fixed20x12{256};
+
+    vertex_uv = Vector2<Fixed12x4>{
+      s16((x * matrix[0].x() + y * matrix[1].x() + t_x).raw() >> 8),
+      s16((x * matrix[0].y() + y * matrix[1].y() + t_y).raw() >> 8),
+    };
+  } else {
+    vertex_uv = Vector2<Fixed12x4>{u, v};
+  }
 }
 
 void GPU::CMD_SubmitVertex_16() {
@@ -385,6 +401,9 @@ void GPU::CMD_SetTextureParameters() {
   texture_params.format = static_cast<TextureParams::Format>((arg >> 26) & 7);
   texture_params.color0_transparent = arg & (1 << 29);
   texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
+
+  ASSERT(texture_params.transform == TextureParams::Transform::None ||
+         texture_params.transform == TextureParams::Transform::TexCoord, "GPU: unhandled texture transform mode: {0}", texture_params.transform);
 }
 
 void GPU::CMD_SetPaletteBase() {

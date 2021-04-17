@@ -154,6 +154,7 @@ private:
     bool color0_transparent = false;
 
     enum class Transform {
+      None,
       TexCoord,
       Normal,
       Vertex
