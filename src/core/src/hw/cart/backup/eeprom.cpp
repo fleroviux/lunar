@@ -130,7 +130,7 @@ auto EEPROM::Transfer(u8 data) -> u8 {
         case 3: return 0xFF;
       }
 
-      file->Write(address, data);
+      file->Write(address & mask, data);
       address = (address & ~page_mask) | ((address + 1) & page_mask);
       break;
     }
