@@ -80,17 +80,22 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
       return Color4::from_rgb555(vram_palette.Read<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
     case TextureParams::Format::Compressed4x4: {
-      auto row_x = coord[0] >> 2;
       auto row_y = coord[1] >> 2;
-      auto block = row_y * (size[0] >> 2) + row_x;
+      auto tile_x = coord[0] & 3;
+      auto tile_y = coord[1] & 3;
 
-      auto data = vram_texture.Read<u32>(params.address + block * sizeof(u32)); 
-      auto info = vram_texture.Read<u16>(((params.address & 0x1FFFF) | 0x20000) + ((params.address >> 18) << 16) + block * sizeof(u16));
+      auto data_address = params.address + row_y * size[0] + coord[0] + tile_y;
+
+      auto data_slot_index  = data_address >> 18;
+      auto data_slot_offset = data_address & 0x1FFFF;
+      auto info_address = 0x20000 + (data_slot_offset >> 1) + (data_slot_index * 0x10000);
+
+      auto data = vram_texture.Read<u8>(data_address); 
+      auto info = vram_texture.Read<u16>(info_address);
+
+      auto index = (data >> (tile_x * 2)) & 3;
       auto palette_offset = info & 0x3FFF;
       auto mode = info >> 14;
-
-      auto shift = ((coord[1] & 3) * 8 + (coord[0] & 3) * 2);
-      auto index = (data >> shift) & 3;
 
       palette_addr += palette_offset << 2;
 
