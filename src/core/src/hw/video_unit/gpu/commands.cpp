@@ -107,6 +107,7 @@ void GPU::CMD_LoadIdentity() {
     case MatrixMode::Simultaneous:
       modelview.current.identity();
       direction.current.identity();
+      UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
       texture.current.identity();
@@ -270,6 +271,7 @@ void GPU::CMD_MatrixTranslate() {
     case MatrixMode::Modelview:
     case MatrixMode::Simultaneous:
       modelview.current = modelview.current * mat;
+      // direction.current = direction.current * mat; // hmm...
       UpdateClipMatrix();
       break;
     case MatrixMode::Texture:
@@ -301,8 +303,9 @@ void GPU::CMD_SetNormal() {
     };
   }
 
-  // CHECKME: is the command supposed to overwrite the previous vertex color?
-  vertex_color = Color4{0, 0, 0, 0};
+  auto normal = (direction.current * Vector4<Fixed20x12>{ x, y, z, NumericConstants<Fixed20x12>::zero() }).xyz();
+
+  vertex_color = material.emissive;
 
   for (int i = 0; i < 4; i++) {
     // TODO: latch the enable bits on BeginVertexList commands?
@@ -312,9 +315,8 @@ void GPU::CMD_SetNormal() {
 
     auto const& light = lights[i];
 
-    // TODO: do not create the normal vector twice...
-    auto cos_theta = -light.direction.dot(Vector3{x, y, z});
-    auto shinyness = -light.halfway.dot(Vector3{x, y, z});
+    auto cos_theta = -light.direction.dot(normal);
+    auto shinyness = -light.halfway.dot(normal);
 
     // TODO: support min/max/clamp for the fixed point types.
     if (cos_theta.raw() < 0) cos_theta = NumericConstants<Fixed20x12>::zero();
@@ -497,7 +499,7 @@ void GPU::CMD_SetLightVector() {
     s16(((arg >>  0) & 0x3FF) << 6) >> 3,
     s16(((arg >> 10) & 0x3FF) << 6) >> 3,
     s16(((arg >> 20) & 0x3FF) << 6) >> 3,
-    NumericConstants<Fixed20x12>::one()
+    NumericConstants<Fixed20x12>::zero()
   };
 
   light.direction = (this->direction.current * direction).xyz();
