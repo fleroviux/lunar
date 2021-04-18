@@ -300,6 +300,48 @@ void GPU::CMD_SetNormal() {
       s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
     };
   }
+
+  // CHECKME: is the command supposed to overwrite the previous vertex color?
+  vertex_color = Color4{0, 0, 0, 0};
+
+  for (int i = 0; i < 4; i++) {
+    // TODO: latch the enable bits on BeginVertexList commands?
+    if (!poly_params.enable_light[i]) {
+      continue;
+    }
+
+    auto const& light = lights[i];
+
+    // TODO: do not create the normal vector twice...
+    auto cos_theta = -light.direction.dot(Vector3{x, y, z});
+    auto shinyness = -light.halfway.dot(Vector3{x, y, z});
+
+    // TODO: support min/max/clamp for the fixed point types.
+    if (cos_theta.raw() < 0) cos_theta = NumericConstants<Fixed20x12>::zero();
+    if (shinyness.raw() < 0) shinyness = NumericConstants<Fixed20x12>::zero();
+
+    shinyness *= shinyness;
+
+    if (material.enable_shinyness_table) {
+      // TODO!
+    }
+
+    auto diffuse_r = (material.diffuse.r().raw() * cos_theta.raw() * light.color.r().raw()) >> 18;
+    auto diffuse_g = (material.diffuse.g().raw() * cos_theta.raw() * light.color.g().raw()) >> 18;
+    auto diffuse_b = (material.diffuse.b().raw() * cos_theta.raw() * light.color.b().raw()) >> 18;
+
+    auto specular_r = (material.specular.r().raw() * shinyness.raw() * light.color.r().raw()) >> 18;
+    auto specular_g = (material.specular.g().raw() * shinyness.raw() * light.color.g().raw()) >> 18;
+    auto specular_b = (material.specular.b().raw() * shinyness.raw() * light.color.b().raw()) >> 18;
+
+    auto ambient_r = (material.ambient.r().raw() * light.color.r().raw()) >> 6;
+    auto ambient_g = (material.ambient.g().raw() * light.color.g().raw()) >> 6;
+    auto ambient_b = (material.ambient.b().raw() * light.color.b().raw()) >> 6;
+
+    vertex_color.r() = std::clamp(vertex_color.r().raw() + diffuse_r + specular_r + ambient_r, 0, 63);
+    vertex_color.g() = std::clamp(vertex_color.g().raw() + diffuse_g + specular_g + ambient_g, 0, 63);
+    vertex_color.b() = std::clamp(vertex_color.b().raw() + diffuse_b + specular_b + ambient_b, 0, 63);
+  }
 }
 
 void GPU::CMD_SetUV() {
@@ -424,6 +466,54 @@ void GPU::CMD_SetTextureParameters() {
 
 void GPU::CMD_SetPaletteBase() {
   texture_params.palette_base = Dequeue().argument & 0x1FFF;
+}
+
+void GPU::CMD_SetMaterialColor0() {
+  auto arg = Dequeue().argument;
+
+  material.diffuse = Color4::from_rgb555(arg & 0x7FFF);
+  material.ambient = Color4::from_rgb555(arg >> 16);
+
+  if (arg & 0x8000) {
+    vertex_color = material.diffuse;
+  }
+}
+
+void GPU::CMD_SetMaterialColor1() {
+  auto arg = Dequeue().argument;
+
+  material.specular = Color4::from_rgb555(arg & 0x7FFF);
+  material.emissive = Color4::from_rgb555(arg >> 16);
+
+  material.enable_shinyness_table = arg & 0x8000;
+}
+
+void GPU::CMD_SetLightVector() {
+  auto arg = Dequeue().argument;
+
+  auto& light = lights[arg >> 30];
+
+  auto direction = Vector4<Fixed20x12>{
+    s16(((arg >>  0) & 0x3FF) << 6) >> 3,
+    s16(((arg >> 10) & 0x3FF) << 6) >> 3,
+    s16(((arg >> 20) & 0x3FF) << 6) >> 3,
+    NumericConstants<Fixed20x12>::one()
+  };
+
+  light.direction = (this->direction.current * direction).xyz();
+  
+  // halfway = (direction + (0, 0, -1)) * 0.5
+  light.halfway = Vector3<Fixed20x12>{
+    light.direction.x().raw() >> 1,
+    light.direction.y().raw() >> 1,
+   (light.direction.z() - NumericConstants<Fixed20x12>::one()).raw() >> 1
+  };
+}
+
+void GPU::CMD_SetLightColor() {
+  auto arg = Dequeue().argument;
+
+  lights[arg >> 30].color = Color4::from_rgb555(arg & 0x7FFF);
 }
 
 void GPU::CMD_BeginVertexList() {

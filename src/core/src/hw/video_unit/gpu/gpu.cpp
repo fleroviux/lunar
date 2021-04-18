@@ -62,6 +62,11 @@ void GPU::Reset() {
   position_old = {};
   vertices.clear();
 
+  for (int i = 0; i < 4; i++) {
+    lights[i] = {};
+  }
+  material = {};
+
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
   modelview.Reset();
@@ -196,6 +201,11 @@ void GPU::ProcessCommands() {
       case 0x29: CMD_SetPolygonAttributes(); break;
       case 0x2A: CMD_SetTextureParameters(); break;
       case 0x2B: CMD_SetPaletteBase(); break;
+
+      case 0x30: CMD_SetMaterialColor0(); break;
+      case 0x31: CMD_SetMaterialColor1(); break;
+      case 0x32: CMD_SetLightVector(); break;
+      case 0x33: CMD_SetLightColor(); break;
 
       case 0x40: CMD_BeginVertexList(); break;
       case 0x41: CMD_EndVertexList(); break;

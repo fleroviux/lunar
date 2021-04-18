@@ -248,8 +248,14 @@ private:
   void CMD_SetPolygonAttributes();
   void CMD_SetTextureParameters();
   void CMD_SetPaletteBase();
-  
-  /// Vertex lists
+
+  /// Lighting commands
+  void CMD_SetMaterialColor0();
+  void CMD_SetMaterialColor1();
+  void CMD_SetLightVector();
+  void CMD_SetLightColor();
+
+  /// Vertex list commands
   void CMD_BeginVertexList();
   void CMD_EndVertexList();
 
@@ -260,14 +266,12 @@ private:
   bool is_strip;
   bool is_first;
 
-  /// Vertex RAM
-  struct {
+  struct VertexRAM {
     int count = 0;
     Vertex data[6144];
   } vertex[2];
 
-  /// Polygon RAM
-  struct {
+  struct PolygonRAM {
     int count = 0;
     Polygon data[2048];
   } polygon[2];
@@ -294,6 +298,21 @@ private:
 
   /// Current texture parameters
   TextureParams texture_params;
+
+  struct Light {
+    Vector3<Fixed20x12> direction;
+    Vector3<Fixed20x12> halfway;
+    Color4 color;
+  } lights[4];
+
+  struct Material {
+    Color4 diffuse;
+    Color4 ambient;
+    Color4 specular;
+    Color4 emissive;
+
+    bool enable_shinyness_table = false;
+  } material;
 
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
