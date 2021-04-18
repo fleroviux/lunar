@@ -185,6 +185,7 @@ void GPU::ProcessCommands() {
       case 0x1C: CMD_MatrixTranslate(); break;
       
       case 0x20: CMD_SetColor(); break;
+      case 0x21: CMD_SetNormal(); break;
       case 0x22: CMD_SetUV(); break;
       case 0x23: CMD_SubmitVertex_16(); break;
       case 0x24: CMD_SubmitVertex_10(); break;

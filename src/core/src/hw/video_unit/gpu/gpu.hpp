@@ -287,6 +287,7 @@ private:
 
   /// Current vertex UV
   Vector2<Fixed12x4> vertex_uv;
+  Vector2<Fixed12x4> vertex_uv_source;
 
   /// Current polygon parameters
   PolygonParams poly_params;

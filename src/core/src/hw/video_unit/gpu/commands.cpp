@@ -283,6 +283,23 @@ void GPU::CMD_SetColor() {
 }
 
 void GPU::CMD_SetNormal() {
+  auto arg = Dequeue().argument;
+
+  auto x = Fixed20x12{s16(((arg >>  0) & 0x3FF) << 6) >> 3};
+  auto y = Fixed20x12{s16(((arg >> 10) & 0x3FF) << 6) >> 3};
+  auto z = Fixed20x12{s16(((arg >> 20) & 0x3FF) << 6) >> 3};
+
+  if (texture_params.transform == TextureParams::Transform::Normal) {
+    auto const& matrix = texture.current;
+
+    auto t_x = Fixed20x12{vertex_uv_source.x().raw() << 12};
+    auto t_y = Fixed20x12{vertex_uv_source.y().raw() << 12};
+
+    vertex_uv = Vector2<Fixed12x4>{
+      s16((x * matrix[0].x() + y * matrix[1].x() + z * matrix[2].x() + t_x).raw() >> 12),
+      s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
+    };
+  }
 }
 
 void GPU::CMD_SetUV() {
@@ -290,6 +307,8 @@ void GPU::CMD_SetUV() {
 
   auto u = s16(arg & 0xFFFF);
   auto v = s16(arg >> 16);
+
+  vertex_uv_source = Vector2<Fixed12x4>{u, v};
 
   if (texture_params.transform == TextureParams::Transform::TexCoord) {
     auto const& matrix = texture.current;
@@ -305,7 +324,7 @@ void GPU::CMD_SetUV() {
       s16((x * matrix[0].y() + y * matrix[1].y() + t_y).raw() >> 8),
     };
   } else {
-    vertex_uv = Vector2<Fixed12x4>{u, v};
+    vertex_uv = vertex_uv_source;
   }
 }
 
@@ -403,7 +422,8 @@ void GPU::CMD_SetTextureParameters() {
   texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
 
   ASSERT(texture_params.transform == TextureParams::Transform::None ||
-         texture_params.transform == TextureParams::Transform::TexCoord, "GPU: unhandled texture transform mode: {0}", texture_params.transform);
+         texture_params.transform == TextureParams::Transform::TexCoord ||
+         texture_params.transform == TextureParams::Transform::Normal, "GPU: unhandled texture transform mode: {0}", texture_params.transform);
 }
 
 void GPU::CMD_SetPaletteBase() {
