@@ -420,10 +420,6 @@ void GPU::CMD_SetTextureParameters() {
   texture_params.format = static_cast<TextureParams::Format>((arg >> 26) & 7);
   texture_params.color0_transparent = arg & (1 << 29);
   texture_params.transform = static_cast<TextureParams::Transform>(arg >> 30);
-
-  ASSERT(texture_params.transform == TextureParams::Transform::None ||
-         texture_params.transform == TextureParams::Transform::TexCoord ||
-         texture_params.transform == TextureParams::Transform::Normal, "GPU: unhandled texture transform mode: {0}", texture_params.transform);
 }
 
 void GPU::CMD_SetPaletteBase() {

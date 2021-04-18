@@ -226,6 +226,22 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     return;
   }
 
+  if (texture_params.transform == TextureParams::Transform::Position) {
+    auto const& matrix = texture.current;
+
+    auto x = position.x();
+    auto y = position.y();
+    auto z = position.z();
+
+    auto t_x = Fixed20x12{vertex_uv_source.x().raw() << 12};
+    auto t_y = Fixed20x12{vertex_uv_source.y().raw() << 12};
+
+    vertex_uv = Vector2<Fixed12x4>{
+      s16((x * matrix[0].x() + y * matrix[1].x() + z * matrix[2].x() + t_x).raw() >> 12),
+      s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
+    };
+  }
+
   auto clip_position = clip_matrix * position;
 
   vertices.push_back({ clip_position, vertex_color, vertex_uv });

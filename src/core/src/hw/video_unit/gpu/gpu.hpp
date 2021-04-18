@@ -157,7 +157,7 @@ private:
       None,
       TexCoord,
       Normal,
-      Vertex
+      Position
     } transform = Transform::TexCoord;
 
     u16 palette_base = 0;
