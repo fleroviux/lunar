@@ -12,7 +12,7 @@
 
 #undef main
 
-void loop(Duality::Core::Core& core) {
+void loop(const char* rom_path) {
   SDL_Init(SDL_INIT_VIDEO);
 
   auto scale = 2;
@@ -37,6 +37,7 @@ void loop(Duality::Core::Core& core) {
   auto audio_device = SDL2AudioDevice{};
   auto input_device = Duality::Core::BasicInputDevice{};
   auto video_device = SDL2VideoDevice{window};
+  auto core = Duality::Core::Core{rom_path};
 
   core.SetAudioDevice(audio_device);
   core.SetInputDevice(input_device);
@@ -106,7 +107,6 @@ auto main(int argc, const char** argv) -> int {
     printf("%s rom_path\n", argv[0]);
     return -1;
   }
-  auto core = Duality::Core::Core{argv[1]};
-  loop(core);
+  loop(argv[1]);
   return 0;
 }
