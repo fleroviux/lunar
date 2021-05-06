@@ -258,7 +258,7 @@ auto ARM9MemoryBus::VisitVRAMByAddress(u32 address, Args... args) -> typename Fu
   
     /// LCDC (max 656 KiB)
     default: {
-      return (typename Functor::template value<41>){}(vram.region_lcdc, address & 0xFFFFF, args...);
+      return (typename Functor::template value<64>){}(vram.region_lcdc, address & 0xFFFFF, args...);
     }
   }
 }

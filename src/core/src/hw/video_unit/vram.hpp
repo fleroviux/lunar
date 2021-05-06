@@ -45,7 +45,7 @@ struct VRAM {
   Region<16> region_ppu_obj[2] { 15, 7 };
 
   /// ARM9 direct access "LCDC" mapping
-  Region<41> region_lcdc { 63 };
+  Region<64> region_lcdc { 63 };
 
   /// ARM7 bank C / D mapping
   Region<16> region_arm7_wram { 15 };

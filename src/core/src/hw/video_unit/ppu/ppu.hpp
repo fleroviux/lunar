@@ -19,8 +19,8 @@ struct PPU {
   PPU(
     int id,
     VRAM const& vram,
-    u8  const* pram,
-    u8  const* oam,
+    u8   const* pram,
+    u8   const* oam,
     Color4 const* gpu_output = nullptr);
 
   struct MMIO {
@@ -213,7 +213,7 @@ private:
   Region<1, 8192> const& extpal_obj;
 
   /// LCDC mapped VRAM
-  Region<41> const& vram_lcdc;
+  Region<64> const& vram_lcdc;
 
   /// Palette RAM
   u8 const* pram;

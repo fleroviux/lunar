@@ -12,8 +12,8 @@ namespace Duality::Core {
 PPU::PPU(
   int id,
   VRAM const& vram,
-  u8  const* pram,
-  u8  const* oam,
+  u8   const* pram,
+  u8   const* oam,
   Color4 const* gpu_output
 )   : id(id)
     , vram_bg(vram.region_ppu_bg[id])
