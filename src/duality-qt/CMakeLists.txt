@@ -20,6 +20,9 @@ set(CMAKE_AUTOMOC ON)
 find_package(OpenGL REQUIRED)
 find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 add_executable(Duality-Qt ${SOURCES} ${HEADERS})
 set_target_properties(Duality-Qt PROPERTIES OUTPUT_NAME "Duality")
-target_link_libraries(Duality-Qt Qt5::Widgets Qt5::OpenGL OpenGL::GL duality-common miniaudio)
+target_link_libraries(Duality-Qt Qt5::Widgets Qt5::OpenGL OpenGL::GL duality-common miniaudio Threads::Threads ${CMAKE_DL_LIBS})
