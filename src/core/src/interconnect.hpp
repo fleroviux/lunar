@@ -21,11 +21,11 @@
 #include "hw/spi/spi.hpp"
 #include "hw/timer/timer.hpp"
 #include "hw/video_unit/video_unit.hpp"
+#include "hw/wifi/wifi.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
 
-// TODO: this whole construct really needs to go away :methharold:
 struct Interconnect {
   Interconnect()
       : apu(scheduler)
@@ -58,6 +58,7 @@ struct Interconnect {
     dma7.Reset();
     dma9.Reset();
     video_unit.Reset();
+    wifi.Reset();
 
     // TODO: this is the value for direct boot,
     // which value is correct for firmware boot?
@@ -94,6 +95,7 @@ struct Interconnect {
   DMA7 dma7;
   DMA9 dma9;
   VideoUnit video_unit;
+  WIFI wifi;
 
   struct WRAMCNT {
     using Callback = std::function<void(void)>;

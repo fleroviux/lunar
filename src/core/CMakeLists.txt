@@ -39,6 +39,7 @@ set(SOURCES
   src/hw/video_unit/ppu/registers.cpp
   src/hw/video_unit/video_unit.cpp
   src/hw/video_unit/vram.cpp
+  src/hw/wifi/wifi.cpp
   src/core_impl.cpp
   src/scheduler.cpp)
 
@@ -81,6 +82,7 @@ set(HEADERS
   src/hw/video_unit/video_unit.hpp
   src/hw/video_unit/vram.hpp
   src/hw/video_unit/vram_region.hpp
+  src/hw/wifi/wifi.hpp
   src/interconnect.hpp
   src/scheduler.hpp)
 

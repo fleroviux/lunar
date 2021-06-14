@@ -24,6 +24,7 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , dma(interconnect->dma7)
     , video_unit(interconnect->video_unit)
     , vram(interconnect->video_unit.vram)
+    , wifi(interconnect->wifi)
     , wramcnt(interconnect->wramcnt)
     , keyinput(interconnect->keyinput)
     , extkeyinput(interconnect->extkeyinput) {

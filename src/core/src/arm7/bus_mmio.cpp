@@ -75,7 +75,11 @@ enum Registers {
 
   // Sound
   REG_SOUNDCHAN_LO = 0x0400'0400,
-  REG_SOUNDCHAN_HI = 0x0400'04FF
+  REG_SOUNDCHAN_HI = 0x0400'04FF,
+
+  // WIFI
+  REG_WIFI_LO = 0x0480'4000,
+  REG_WIFI_HI = 0x0480'82F7
 };
 
 auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
@@ -335,6 +339,9 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
 
     case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
       return apu.Read((address >> 4) & 15, address & 15);
+
+    case REG_WIFI_LO ... REG_WIFI_HI:
+      return wifi.ReadByteIO(address);
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
@@ -707,7 +714,12 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
     }
 
     case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
-      return apu.Write((address >> 4) & 15, address & 15, value);
+      apu.Write((address >> 4) & 15, address & 15, value);
+      break;
+
+    case REG_WIFI_LO ... REG_WIFI_HI:
+      wifi.WriteByteIO(address, value);
+      break;
 
     default:
       LOG_WARN("ARM7: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);

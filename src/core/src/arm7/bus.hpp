@@ -61,6 +61,7 @@ private:
   DMA7& dma;
   VideoUnit& video_unit;
   VRAM& vram;
+  WIFI& wifi;
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   Interconnect::ExtKeyInput& extkeyinput;
