@@ -186,8 +186,19 @@ void PPU::RenderNormal(u16 vcount) {
   if (mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      for (uint x = 0; x < 256; x++)
-        buffer_bg[0][x] = gpu_output[vcount * 256 + x].to_rgb555();
+      for (uint x = 0; x < 256; x++) {
+        auto color = Color4{};
+
+        // top row
+        color  = gpu_output[(vcount * 512 + x) * 2 + 0] * Fixed6{16};
+        color += gpu_output[(vcount * 512 + x) * 2 + 1] * Fixed6{16};
+
+        // bottom row
+        color += gpu_output[(vcount * 512 + x) * 2 + 512] * Fixed6{16};
+        color += gpu_output[(vcount * 512 + x) * 2 + 513] * Fixed6{16};
+
+        buffer_bg[0][x] = color.to_rgb555();
+      }
     } else {
       RenderLayerText(0, vcount);
     }

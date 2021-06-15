@@ -176,7 +176,7 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
 }
 
 void GPU::Render() {
-  for (uint i = 0; i < 256 * 192; i++) {
+  for (uint i = 0; i < 512 * 384; i++) {
     draw_buffer[i] = Color4{0, 0, 0, 0};
     depth_buffer[i] = 0xFFFFFF;
   }
@@ -192,7 +192,7 @@ void GPU::Render() {
     } points[poly.count];
 
     int start = 0;
-    s32 y_min = 256;
+    s32 y_min = 512;
     s32 y_max = 0;
 
     for (int j = 0; j < poly.count; j++) {
@@ -201,8 +201,8 @@ void GPU::Render() {
 
       // TODO: use the provided viewport configuration.
       // TODO: support w-Buffering mode.
-      point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
-      point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
+      point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(256)).integer() + 256;
+      point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int(192)).integer() + 192;
       point.depth = (((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9;
       point.vertex = &vert;
 
@@ -307,12 +307,12 @@ void GPU::Render() {
         b ^= 1;
       }
 
-      if (y >= 0 && y <= 191) {
+      if (y >= 0 && y <= 383) {
         for (s32 x = span.x[a]; x <= span.x[b]; x++) {
-          if (x >= 0 && x <= 255) {
+          if (x >= 0 && x <= 511) {
             auto t = x - span.x[a];
             auto t_max = span.x[b] - span.x[a];
-            auto index = y * 256 + x;
+            auto index = y * 512 + x;
 
             auto depth_old = depth_buffer[index];
             auto depth_new = lerp(span.depth[a], span.depth[b], t, t_max);

@@ -324,8 +324,8 @@ private:
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  Color4 draw_buffer[256 * 192];
-  u32 depth_buffer[256 * 192];
+  Color4 draw_buffer[512 * 384];
+  u32 depth_buffer[512 * 384];
 
   /// Packed command processing
   u32 packed_cmds;
