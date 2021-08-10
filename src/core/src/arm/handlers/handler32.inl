@@ -446,6 +446,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
 
   u32 offset;
   u32 address = state.reg[base];
+  bool allow_writeback = !load || base != dst;
 
   if constexpr (immediate) {
     offset = (instruction & 0xF) | ((instruction >> 4) & 0xF0);
@@ -472,9 +473,20 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       if constexpr (load) {
         state.reg[dst] = ReadByteSigned(address);
       } else if (arch == Architecture::ARMv5TE) {
-        ASSERT((dst & 1) == 0, "ARM: LDRD: using an odd numbered destination register is undefined.");
         ASSERT(dst != 14, "ARM: LDRD: loading r14 and r15 is unpredictable.");
-        ASSERT(!writeback || (dst != base && (dst + 1) != base), "ARM: LDRD: using the base register as a destination is unpredictable");
+
+        // LDRD: using an odd numbered destination register is undefined.
+        if ((dst & 1) == 1) {
+          state.r15 -= 4;
+          ARM_Undefined(instruction);
+          return;
+        }
+
+        /* LDRD writeback edge-case deviates from the regular LDR behavior.
+         * Instead it behaves more like a LDM instruction, in that the
+         * base register writeback happens between the first and second load.
+         */
+        allow_writeback = base != (dst + 1);
 
         state.reg[dst + 0] = ReadWord(address + 0);
         state.reg[dst + 1] = ReadWord(address + 4);
@@ -485,7 +497,12 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       if constexpr (load) {
         state.reg[dst] = ReadHalfSigned(address);
       } else if (arch == Architecture::ARMv5TE) {
-        ASSERT((dst & 1) == 0, "ARM: STRD: using an odd numbered destination register is undefined.");
+        // STRD: using an odd numbered destination register is undefined.
+        if ((dst & 1) == 1) {
+          state.r15 -= 4;
+          ARM_Undefined(instruction);
+          return;
+        }
 
         WriteWord(address + 0, state.reg[dst + 0]);
         WriteWord(address + 4, state.reg[dst + 1]);
@@ -496,7 +513,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       UNREACHABLE;
   }
 
-  if (!load || base != dst) {
+  if (allow_writeback) {
     if constexpr (!pre) {
       state.reg[base] += add ? offset : -offset;
     } else if (writeback) {
