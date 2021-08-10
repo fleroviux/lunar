@@ -473,8 +473,6 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       if constexpr (load) {
         state.reg[dst] = ReadByteSigned(address);
       } else if (arch == Architecture::ARMv5TE) {
-        ASSERT(dst != 14, "ARM: LDRD: loading r14 and r15 is unpredictable.");
-
         // LDRD: using an odd numbered destination register is undefined.
         if ((dst & 1) == 1) {
           state.r15 -= 4;
@@ -490,6 +488,10 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
 
         state.reg[dst + 0] = ReadWord(address + 0);
         state.reg[dst + 1] = ReadWord(address + 4);
+
+        if (dst == 14) {
+          ReloadPipeline32();
+        }
       }
       break;
     }
@@ -519,6 +521,10 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
     } else if (writeback) {
       state.reg[base] = address;
     }
+  }
+
+  if (load && dst == 15) {
+    ReloadPipeline32();
   }
 }
 
