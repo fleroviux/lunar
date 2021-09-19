@@ -114,7 +114,7 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
         channel.t = 0;
 
         if (channel.format == Channel::Format::ADPCM) {
-          channel.adpcm_header = memory->FastRead<u32, arm::MemoryBase::Bus::System>(channel.cur_address);
+          channel.adpcm_header = memory->FastRead<u32, lunatic::Memory::Bus::System>(channel.cur_address);
           channel.adpcm_sample = s16(channel.adpcm_header & 0xFFFF);
           channel.adpcm_index = std::min((channel.adpcm_header >> 16) & 0x7F, 88U);
           channel.cur_address += 4;
@@ -256,7 +256,7 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
     u32 end_address  = loop_address + sizeof(u32) * channel.length;
 
     if (channel.t == 0) {
-      channel.latch = memory->FastRead<u32, arm::MemoryBase::Bus::System>(channel.cur_address);
+      channel.latch = memory->FastRead<u32, lunatic::Memory::Bus::System>(channel.cur_address);
       channel.cur_address += 4;
     }
 

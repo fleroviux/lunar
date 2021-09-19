@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <lunatic/cpu.hpp>
 #include <util/integer.hpp>
 
 #include "arm/arm.hpp"
@@ -35,7 +36,12 @@ struct IRQ {
   IRQ();
 
   void Reset();
-  void SetCore(arm::ARM& core) { this->core = &core; UpdateIRQLine(); }
+  
+  void SetCore(lunatic::CPU* core) {
+    this->core = core;
+    UpdateIRQLine();
+  }
+  
   void Raise(Source source);
   bool IsEnabled();
   bool HasPendingIRQ();
@@ -79,7 +85,7 @@ struct IRQ {
 private:
   void UpdateIRQLine();
 
-  arm::ARM* core = nullptr;
+  lunatic::CPU* core = nullptr;
 };
 
 } // namespace Duality::Core

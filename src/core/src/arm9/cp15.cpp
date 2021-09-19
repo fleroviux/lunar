@@ -8,9 +8,8 @@
 
 namespace Duality::Core {
 
-CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
-    : core(core)
-    , bus(bus) {
+CP15::CP15(ARM9MemoryBus* bus)
+    : bus(bus) {
   for (int i = 0; i < kLUTSize; i++) {
     handler_rd[i] = &CP15::DefaultRead;
     handler_wr[i] = &CP15::DefaultWrite;
@@ -24,9 +23,12 @@ CP15::CP15(arm::ARM* core, ARM9MemoryBus* bus)
 
   RegisterHandler(1, 0, 0, &CP15::WriteControlRegister);
   RegisterHandler(7, 0, 4, &CP15::WriteWaitForIRQ);
+  RegisterHandler(7, 5, 0, &CP15::WriteInvalidateICache);
+  RegisterHandler(7, 5, 1, &CP15::WriteInvalidateICacheLine);
   RegisterHandler(7, 8, 2, &CP15::WriteWaitForIRQ);
   RegisterHandler(9, 1, 0, &CP15::WriteDTCMConfig);
   RegisterHandler(9, 1, 1, &CP15::WriteITCMConfig);
+
 }
 
 void CP15::Reset() {
@@ -47,6 +49,19 @@ void CP15::RegisterHandler(int cn, int cm, int opcode, ReadHandler handler) {
 
 void CP15::RegisterHandler(int cn, int cm, int opcode, WriteHandler handler) {
   handler_wr[Index(cn, cm, opcode)] = handler;
+}
+
+bool CP15::ShouldWriteBreakBasicBlock(int opcode1, int cn, int cm, int opcode2) {
+  if (opcode1 == 0 && cn == 7) {
+    // Wait for IRQ
+    if (cm == 0 && opcode2 == 4) return true;
+    if (cm == 8 && opcode2 == 2) return true;
+
+    // Invalidate ICache
+    if (cm == 5 && opcode2 == 0) return true;
+    if (cm == 5 && opcode2 == 1) return true;
+  }
+  return false;
 }
 
 auto CP15::Read(int opcode1, int cn, int cm, int opcode2) -> u32 {
@@ -90,7 +105,8 @@ void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
   // - bits 3 - 6 always are set
   reg_control = (value & 0x000FF085) | 0x78;
 
-  core->ExceptionBase((value & 0x2000) == 0 ? 0x00000000 : 0xFFFF0000);
+  // FIXME: make exception base dynamic in lunatic
+  // core->ExceptionBase((value & 0x2000) == 0 ? 0x00000000 : 0xFFFF0000);
   
   dtcm_config.enable = value & 0x10000;
   dtcm_config.enable_read = dtcm_config.enable && (value & 0x20000) == 0;
@@ -106,6 +122,17 @@ void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
   core->WaitForIRQ();
+}
+
+void CP15::WriteInvalidateICache(int cn, int cm, int opcode, u32 value) {
+  core->ClearICache();
+}
+
+void CP15::WriteInvalidateICacheLine(int cn, int cm, int opcode, u32 value) {
+  auto address_lo = value & ~0x1F;
+  auto address_hi = address_lo + 0x1F;
+
+  core->ClearICacheRange(address_lo, address_hi);
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {

@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "arm/arm.hpp"
+#include <lunatic/cpu.hpp>
+
 #include "interconnect.hpp"
 #include "bus.hpp"
 #include "cp15.hpp"
@@ -16,13 +17,14 @@ struct ARM9 {
 
   void Reset(u32 entrypoint);
   auto Bus() -> ARM9MemoryBus& { return bus; }
-  bool IsHalted() { return core.IsWaitingForIRQ(); }
+  bool IsHalted() { return core->IsWaitingForIRQ(); }
   void Run(uint cycles);
 
 private:
   ARM9MemoryBus bus;
   CP15 cp15;
-  arm::ARM core;
+  // arm::ARM core;
+  std::unique_ptr<lunatic::CPU> core;
   IRQ& irq;
 };
 

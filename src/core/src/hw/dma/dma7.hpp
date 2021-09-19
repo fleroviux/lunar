@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <lunatic/memory.hpp>
 #include <util/integer.hpp>
 
-#include "arm/memory.hpp"
 #include "hw/irq/irq.hpp"
 
 namespace Duality::Core {
@@ -19,7 +19,7 @@ struct DMA7 {
     Special = 3
   };
 
-  using Bus = arm::MemoryBase::Bus;
+  using Bus = lunatic::Memory::Bus;
 
   DMA7(IRQ& irq) : irq(irq) {
     Reset();
@@ -32,7 +32,7 @@ struct DMA7 {
 
   // TODO: get rid of this ugly hack that only exists
   // because we can't pass "memory" to the constructor at the moment.
-  void SetMemory(arm::MemoryBase* memory) { this->memory = memory; }
+  void SetMemory(lunatic::Memory* memory) { this->memory = memory; }
 
 private:
   enum Registers {
@@ -77,7 +77,7 @@ private:
 
   void RunChannel(Channel& channel);
 
-  arm::MemoryBase* memory;
+  lunatic::Memory* memory;
   IRQ& irq;
 };
 

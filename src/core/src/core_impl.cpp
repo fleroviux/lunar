@@ -91,7 +91,7 @@ struct CoreImpl {
   }
 
   void Load(std::string const& rom_path) {
-    using Bus = arm::MemoryBase::Bus;
+    using Bus = lunatic::Memory::Bus;
 
     std::ifstream rom { rom_path, std::ios::in | std::ios::binary };
     if (!rom.good()) {

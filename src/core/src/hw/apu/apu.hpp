@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <lunatic/memory.hpp>
 #include <util/integer.hpp>
 #include <core/device/audio_device.hpp>
 #include <mutex>
 
-#include "arm/memory.hpp"
+// #include "arm/memory.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
@@ -20,7 +21,7 @@ struct APU {
  ~APU();
 
   void Reset();
-  void SetMemory(arm::MemoryBase* memory) { this->memory = memory; }
+  void SetMemory(lunatic::Memory* memory) { this->memory = memory; }
   void SetAudioDevice(AudioDevice& device);
   auto Read (uint chan_id, uint offset) -> u8;
   void Write(uint chan_id, uint offset, u8 value);
@@ -90,7 +91,7 @@ private:
   int buffer_count;
   std::mutex buffer_lock;
   Scheduler& scheduler;
-  arm::MemoryBase* memory = nullptr;
+  lunatic::Memory* memory = nullptr;
   AudioDevice* audio_device = nullptr;
 };
 

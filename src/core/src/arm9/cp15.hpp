@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <lunatic/cpu.hpp>
+
 #include <util/integer.hpp>
 #include <util/log.hpp>
 
 #include "arm/arm.hpp"
-#include "arm/coprocessor.hpp"
+// #include "arm/coprocessor.hpp"
 #include "bus.hpp"
 
 namespace Duality::Core {
@@ -18,11 +20,13 @@ namespace Duality::Core {
   * of the MPU, TCM and cache, alignment and endianness modes,
   * and various other things.
   */
-struct CP15 : arm::Coprocessor {
-  CP15(arm::ARM* core, ARM9MemoryBus* bus);
+struct CP15 : lunatic::Coprocessor {
+  CP15(ARM9MemoryBus* bus);
 
   void Reset() override;
+  void SetCore(lunatic::CPU* core) { this->core = core; }
 
+  bool ShouldWriteBreakBasicBlock(int opcode1, int cn, int cm, int opcode2) override;
   auto Read (int opcode1, int cn, int cm, int opcode2) -> u32 override;
   void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override;
 
@@ -48,6 +52,8 @@ private:
   auto ReadControlRegister(int cn, int cm, int opcode) -> u32;
   void WriteControlRegister(int cn, int cm, int opcode, u32 value);
   void WriteWaitForIRQ(int cn, int cm, int opcode, u32 value);
+  void WriteInvalidateICache(int cn, int cm, int opcode, u32 value);
+  void WriteInvalidateICacheLine(int cn, int cm, int opcode, u32 value);
   auto ReadDTCMConfig(int cn, int cm, int opcode) -> u32;
   auto ReadITCMConfig(int cn, int cm, int opcode) -> u32;
   void WriteDTCMConfig(int cn, int cm, int opcode, u32 value);
@@ -57,7 +63,7 @@ private:
   u32 reg_dtcm;
   u32 reg_itcm;
 
-  arm::ARM* core;
+  lunatic::CPU* core;
   ARM9MemoryBus* bus;
   ARM9MemoryBus::TCM::Config dtcm_config;
   ARM9MemoryBus::TCM::Config itcm_config;

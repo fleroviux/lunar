@@ -2,7 +2,7 @@
  * Copyright (C) 2020 fleroviux
  */
 
-using Bus = MemoryBase::Bus;
+using Bus = lunatic::Memory::Bus;
 
 auto ReadByte(u32 address) -> u32 {
   return memory->FastRead<u8, Bus::Data>(address);

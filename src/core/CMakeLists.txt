@@ -52,9 +52,7 @@ set(HEADERS
   src/arm/tablegen/gen_arm.hpp
   src/arm/tablegen/gen_thumb.hpp
   src/arm/arm.hpp
-  src/arm/coprocessor.hpp
   src/arm/state.hpp
-  src/arm/memory.hpp
   src/arm7/arm7.hpp
   src/arm7/bus.hpp
   src/arm9/arm9.hpp
@@ -92,7 +90,7 @@ set(HEADERS_PUBLIC
   include/core/core.hpp)
 
 add_library(duality-core STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
-target_link_libraries(duality-core duality-util fmt)
+target_link_libraries(duality-core duality-util fmt lunatic)
 target_include_directories(duality-core PRIVATE src)
 target_include_directories(duality-core PUBLIC include)
 

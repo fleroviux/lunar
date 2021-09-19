@@ -8,6 +8,15 @@
 
 namespace Duality::Core::arm {
 
+ARM::ARM(lunatic::CPU::Descriptor const& descriptor)
+    : arch(Architecture(descriptor.model))
+    , exception_base(descriptor.exception_base)
+    , memory(&descriptor.memory)
+    , coprocessors(descriptor.coprocessors) {
+  BuildConditionTable();
+  Reset();
+}
+
 void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
@@ -15,21 +24,29 @@ void ARM::Reset() {
   SwitchMode(state.cpsr.f.mode);
   opcode[0] = nop;
   opcode[1] = nop;
-  state.r15 = ExceptionBase();
+  state.r15 = exception_base;
   wait_for_irq = false;
   IRQLine() = false;
-
-  for (auto coprocessor : coprocessors)
-    if (coprocessor != nullptr)
-      coprocessor->Reset();
 }
 
-void ARM::Run(int instructions) {
+auto ARM::IRQLine() -> bool& {
+  return irq_line;
+}
+
+void ARM::WaitForIRQ() {
+  wait_for_irq = true;
+}
+
+auto ARM::IsWaitingForIRQ() -> bool {
+  return wait_for_irq;
+}
+
+void ARM::Run(int cycles) {
   if (IsWaitingForIRQ() && !IRQLine()) {
     return;
   }
 
-  while (instructions-- > 0) {
+  while (cycles-- > 0) {
     if (IRQLine()) SignalIRQ();
 
     auto instruction = opcode[0];
@@ -61,12 +78,66 @@ void ARM::Run(int instructions) {
   }
 }
 
-void ARM::AttachCoprocessor(uint id, Coprocessor* coprocessor) {
-  if (id >= 16) { 
-    throw std::runtime_error{"Coprocessor ID must be lower or equal to 15"};
+auto ARM::GetGPR(lunatic::GPR reg) const -> u32 {
+  return state.reg[int(reg)];
+}
+
+auto ARM::GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 {
+  auto reg_id = int(reg);
+  auto limit = Mode(mode) == MODE_FIQ ? 8 : 13;
+  auto current_mode = state.cpsr.f.mode;
+
+  if (current_mode != Mode(mode) && reg_id >= limit && reg_id != 15) {
+    return state.bank[GetRegisterBankByMode(Mode(mode))][reg_id - 8];
   }
-  
-  coprocessors[id] = coprocessor;
+
+  return state.reg[reg_id];
+}
+
+auto ARM::GetCPSR() const -> lunatic::StatusRegister {
+  return {.v = state.cpsr.v};
+}
+
+auto ARM::GetSPSR(lunatic::Mode mode) const -> lunatic::StatusRegister {
+  return {.v = state.spsr[GetRegisterBankByMode(Mode(mode))].v};
+}
+
+void ARM::SetGPR(lunatic::GPR reg, u32 value) {
+  if (reg == lunatic::GPR::PC) {
+    state.r15 = value;
+    if (state.cpsr.f.thumb) {
+      ReloadPipeline16();
+    } else {
+      ReloadPipeline32();
+    }
+  } else {
+    state.reg[int(reg)] = value;
+  }
+}
+
+void ARM::SetGPR(lunatic::GPR reg, lunatic::Mode mode, u32 value) {
+  if (reg == lunatic::GPR::PC) {
+    SetGPR(lunatic::GPR::PC, value);
+  } else {
+    auto reg_id = int(reg);
+    auto limit = Mode(mode) == MODE_FIQ ? 8 : 13;
+    auto current_mode = state.cpsr.f.mode;
+
+    if (current_mode != Mode(mode) && reg_id >= limit) {
+      auto bank = GetRegisterBankByMode(Mode(mode));
+      state.bank[bank][reg_id - 8] = value;
+    } else {
+      state.reg[reg_id] = value;
+    }
+  }
+}
+
+void ARM::SetCPSR(lunatic::StatusRegister psr) {
+  state.cpsr.v = psr.v;
+}
+
+void ARM::SetSPSR(lunatic::Mode mode, lunatic::StatusRegister psr) {
+  state.spsr[GetRegisterBankByMode(Mode(mode))].v = psr.v;
 }
 
 void ARM::SignalIRQ() {
@@ -92,7 +163,7 @@ void ARM::SignalIRQ() {
   }
   
   // Jump to IRQ exception vector.
-  state.r15 = ExceptionBase() + 0x18;
+  state.r15 = exception_base + 0x18;
   ReloadPipeline32();
 }
 

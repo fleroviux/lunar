@@ -5,14 +5,14 @@
 #pragma once
 
 #include <cstddef>
+#include <lunatic/cpu.hpp>
 #include <util/integer.hpp>
 
-#include "arm/memory.hpp"
 #include "interconnect.hpp"
 
 namespace Duality::Core {
 
-struct ARM9MemoryBus final : arm::MemoryBase {
+struct ARM9MemoryBus final : lunatic::Memory {
   ARM9MemoryBus(Interconnect* interconnect);
 
   void SetDTCM(TCM::Config const& config) { dtcm.config = config; }
@@ -21,12 +21,10 @@ struct ARM9MemoryBus final : arm::MemoryBase {
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;
   auto ReadWord(u32 address, Bus bus) -> u32 override;
-  auto ReadQuad(u32 address, Bus bus) -> u64 override;
 
   void WriteByte(u32 address,  u8 value, Bus bus) override;
   void WriteHalf(u32 address, u16 value, Bus bus) override;
   void WriteWord(u32 address, u32 value, Bus bus) override;
-  void WriteQuad(u32 address, u64 value, Bus bus) override;
 
 private:
   void UpdateMemoryMap(u32 address_lo, u64 address_hi);
