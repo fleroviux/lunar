@@ -6,7 +6,6 @@
 
 #include <lunatic/cpu.hpp>
 
-// #include "arm/arm.hpp"
 #include "interconnect.hpp"
 #include "bus.hpp"
 

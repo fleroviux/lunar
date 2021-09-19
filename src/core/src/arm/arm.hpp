@@ -8,9 +8,7 @@
 #include <lunatic/cpu.hpp>
 #include <util/log.hpp>
 
-#include "coprocessor.hpp"
 #include "state.hpp"
-#include "memory.hpp"
 
 namespace Duality::Core::arm {
 
@@ -64,8 +62,8 @@ private:
   Architecture arch;
   u32 exception_base = 0;
   bool wait_for_irq = false;
-  MemoryBase* memory;
-  std::array<Coprocessor*, 16> coprocessors;
+  lunatic::Memory* memory;
+  std::array<lunatic::Coprocessor*, 16> coprocessors;
 
   State state;
   State::StatusRegister* p_spsr;

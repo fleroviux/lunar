@@ -7,7 +7,6 @@
 #include <lunatic/memory.hpp>
 #include <util/integer.hpp>
 
-// #include "arm/memory.hpp"
 #include "hw/irq/irq.hpp"
 
 namespace Duality::Core {

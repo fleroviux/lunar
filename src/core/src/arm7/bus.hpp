@@ -7,7 +7,6 @@
 #include <lunatic/cpu.hpp>
 #include <util/integer.hpp>
 
-#include "arm/memory.hpp"
 #include "interconnect.hpp"
 
 namespace Duality::Core {
