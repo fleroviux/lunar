@@ -16,8 +16,8 @@ namespace Duality::Core {
 struct ARM9MemoryBus final : lunatic::Memory {
   ARM9MemoryBus(Interconnect* interconnect);
 
-  void SetDTCM(TCM::Config const& config) { dtcm.config = config; UpdateMemoryMap(0, 0xFFFFFFFF); }
-  void SetITCM(TCM::Config const& config) { itcm.config = config; UpdateMemoryMap(0, 0xFFFFFFFF); }
+  void SetDTCM(TCM::Config const& config) { dtcm.config = config; }
+  void SetITCM(TCM::Config const& config) { itcm.config = config; }
 
   auto ReadByte(u32 address, Bus bus) ->  u8 override;
   auto ReadHalf(u32 address, Bus bus) -> u16 override;

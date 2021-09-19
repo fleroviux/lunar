@@ -31,7 +31,6 @@ ARM9::ARM9(Interconnect& interconnect)
   irq.SetCoreJIT(core.get());
   interconnect.dma9.SetMemory(&bus);
   Reset(0);
-
 }
 
 void ARM9::Reset(u32 entrypoint) {

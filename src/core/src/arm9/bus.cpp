@@ -65,16 +65,6 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
     auto index = address >> kPageShift;
 
-    if (address >= itcm.config.base && address <= itcm.config.limit) {
-      table[index] = nullptr;
-      continue;
-    }
-
-    if (address >= dtcm.config.base && address <= dtcm.config.limit) {
-      table[index] = nullptr;
-      continue;
-    }
-
     switch (address >> 24) {
       case 0x02: {
         table[index] = &ewram[address & 0x3FFFFF];
