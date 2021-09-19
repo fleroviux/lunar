@@ -183,9 +183,9 @@ auto ARM7MemoryBus::ReadWord(u32 address, Bus bus) -> u32 {
   return Read<u32>(address);
 }
 
-auto ARM7MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
-  return Read<u64>(address);
-}
+// auto ARM7MemoryBus::ReadQuad(u32 address, Bus bus) -> u64 {
+//   return Read<u64>(address);
+// }
   
 void ARM7MemoryBus::WriteByte(u32 address, u8 value, Bus bus) {
   Write<u8>(address, value);
@@ -199,8 +199,8 @@ void ARM7MemoryBus::WriteWord(u32 address, u32 value, Bus bus) {
   Write<u32>(address, value);
 }
 
-void ARM7MemoryBus::WriteQuad(u32 address, u64 value, Bus bus) {
-  Write<u64>(address, value);
-}
+// void ARM7MemoryBus::WriteQuad(u32 address, u64 value, Bus bus) {
+//   Write<u64>(address, value);
+// }
 
 } // namespace Duality::Core

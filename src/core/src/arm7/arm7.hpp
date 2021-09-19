@@ -4,7 +4,9 @@
 
 #pragma once
 
-#include "arm/arm.hpp"
+#include <lunatic/cpu.hpp>
+
+// #include "arm/arm.hpp"
 #include "interconnect.hpp"
 #include "bus.hpp"
 
@@ -20,7 +22,7 @@ struct ARM7 {
 
 private:
   /// No-operation stub for the CP14 coprocessor
-  struct CP14 : arm::Coprocessor {
+  struct CP14 : lunatic::Coprocessor {
     void Reset() override {}
 
     auto Read(
@@ -40,7 +42,8 @@ private:
   } cp14;
 
   ARM7MemoryBus bus;
-  arm::ARM core;
+  // arm::ARM core;
+  std::unique_ptr<lunatic::CPU> core;
   IRQ& irq;
 };
 

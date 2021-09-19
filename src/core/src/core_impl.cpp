@@ -112,7 +112,7 @@ struct CoreImpl {
         if (!rom.good()) {
           throw std::runtime_error("failed to read ARM7 binary from ROM into ARM7 memory");
         }
-        arm7.Bus().WriteByte(dst++, data, Bus::Data);
+        arm7.Bus().WriteByte(dst++, data, lunatic::Memory::Bus::Data);//Bus::Data);
       }
 
       arm7.Reset(header.arm7.entrypoint);
