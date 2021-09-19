@@ -40,6 +40,10 @@ void IRQ::UpdateIRQLine() {
   if (core != nullptr) {
     core->IRQLine() = IsEnabled() && HasPendingIRQ();
   }
+
+  if (core_jit != nullptr) {
+    core_jit->IRQLine() = IsEnabled() && HasPendingIRQ();
+  }
 }
 
 auto IRQ::IME::ReadByte(uint offset) -> u8 {

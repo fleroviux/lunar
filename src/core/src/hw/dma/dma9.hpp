@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <lunatic/memory.hpp>
 #include <util/integer.hpp>
 
 #include "arm/memory.hpp"
@@ -23,7 +24,7 @@ struct DMA9 {
     GxFIFO = 7
   };
 
-  using Bus = arm::MemoryBase::Bus;
+  using Bus = lunatic::Memory::Bus;
 
   DMA9(IRQ& irq) : irq(irq) {
     Reset();
@@ -39,7 +40,7 @@ struct DMA9 {
 
   // TODO: get rid of this ugly hack that only exists
   // because we can't pass "memory" to the constructor at the moment.
-  void SetMemory(arm::MemoryBase* memory) { this->memory = memory; }
+  void SetMemory(lunatic::Memory* memory) { this->memory = memory; }
 
 private:
   enum Registers {
@@ -86,7 +87,7 @@ private:
   void RunChannel(Channel& channel);
 
   u8 filldata[16];
-  arm::MemoryBase* memory;
+  lunatic::Memory* memory;
   IRQ& irq;
   bool gxfifo_half_empty;
 };

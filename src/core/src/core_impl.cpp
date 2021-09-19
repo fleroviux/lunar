@@ -127,7 +127,7 @@ struct CoreImpl {
         if (!rom.good()) {
           throw std::runtime_error("failed to read ARM9 binary from ROM into ARM9 memory");
         }
-        arm9.Bus().WriteByte(dst++, data, Bus::Data);
+        arm9.Bus().WriteByte(dst++, data, lunatic::Memory::Bus::Data);//Bus::Data);
       }
 
       arm9.Reset(header.arm9.entrypoint);
@@ -141,7 +141,7 @@ struct CoreImpl {
       if (!rom.good()) {
         throw std::runtime_error("failed to load cartridge header into memory");
       }
-      arm9.Bus().WriteByte(dst++, data, Bus::Data);
+      arm9.Bus().WriteByte(dst++, data, lunatic::Memory::Bus::Data);//Bus::Data);
     }
 
     rom.close();
@@ -150,15 +150,15 @@ struct CoreImpl {
     interconnect.cart.Load(rom_path);
 
     // Huge thanks to Hydr8gon for pointing this out:
-    arm9.Bus().WriteWord(0x027FF800, 0x1FC2, Bus::Data); // Chip ID 1
-    arm9.Bus().WriteWord(0x027FF804, 0x1FC2, Bus::Data); // Chip ID 2
-    arm9.Bus().WriteHalf(0x027FF850, 0x5835, Bus::Data); // ARM7 BIOS CRC
-    arm9.Bus().WriteHalf(0x027FF880, 0x0007, Bus::Data); // Message from ARM9 to ARM7
-    arm9.Bus().WriteHalf(0x027FF884, 0x0006, Bus::Data); // ARM7 boot task
-    arm9.Bus().WriteWord(0x027FFC00, 0x1FC2, Bus::Data); // Copy of chip ID 1
-    arm9.Bus().WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
-    arm9.Bus().WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
-    arm9.Bus().WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
+    arm9.Bus().WriteWord(0x027FF800, 0x1FC2, lunatic::Memory::Bus::Data);//Bus::Data); // Chip ID 1
+    arm9.Bus().WriteWord(0x027FF804, 0x1FC2, lunatic::Memory::Bus::Data);//Bus::Data); // Chip ID 2
+    arm9.Bus().WriteHalf(0x027FF850, 0x5835, lunatic::Memory::Bus::Data);//Bus::Data); // ARM7 BIOS CRC
+    arm9.Bus().WriteHalf(0x027FF880, 0x0007, lunatic::Memory::Bus::Data);//Bus::Data); // Message from ARM9 to ARM7
+    arm9.Bus().WriteHalf(0x027FF884, 0x0006, lunatic::Memory::Bus::Data);//Bus::Data); // ARM7 boot task
+    arm9.Bus().WriteWord(0x027FFC00, 0x1FC2, lunatic::Memory::Bus::Data);//Bus::Data); // Copy of chip ID 1
+    arm9.Bus().WriteWord(0x027FFC04, 0x1FC2, lunatic::Memory::Bus::Data);//Bus::Data); // Copy of chip ID 2
+    arm9.Bus().WriteHalf(0x027FFC10, 0x5835, lunatic::Memory::Bus::Data);//Bus::Data); // Copy of ARM7 BIOS CRC
+    arm9.Bus().WriteHalf(0x027FFC40, 0x0001, lunatic::Memory::Bus::Data);//Bus::Data); // Boot indicator
   }
 
   u64 overshoot = 0;
