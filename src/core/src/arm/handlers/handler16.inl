@@ -499,7 +499,7 @@ void Thumb_SWI(u16 instruction) {
 
   // Save current program counter and jump to SVC exception vector.
   state.r14 = state.r15 - 2;
-  state.r15 = ExceptionBase() + 0x08;
+  state.r15 = exception_base + 0x08;
   ReloadPipeline32();
 }
 

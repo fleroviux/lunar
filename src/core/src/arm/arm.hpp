@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <lunatic/cpu.hpp>
 #include <util/log.hpp>
 
 #include "coprocessor.hpp"
@@ -13,41 +14,33 @@
 
 namespace Duality::Core::arm {
 
-struct ARM {
-  // TODO: it would be more appropriate to have this be the processor model.
+struct ARM final : lunatic::CPU {
+  // TODO: remove this and use lunatic enumeration.
   enum class Architecture {
     ARMv4T,
     ARMv5TE
   };
 
-  ARM(Architecture arch, MemoryBase* memory)
-      : arch(arch)
-      , memory(memory) {
-    BuildConditionTable();
-    Reset();
-  }
+  ARM(lunatic::CPU::Descriptor const& descriptor);
 
-  auto ExceptionBase() -> u32 const { return exception_base; }
-  void ExceptionBase(u32 base) { exception_base = base; } 
+  // TODO: make Reset() a virtual member function of lunatic::CPU
+  void Reset() override;
+  auto IRQLine() -> bool& override;
+  void WaitForIRQ() override;
+  auto IsWaitingForIRQ() -> bool override;
+  void ClearICache() override {}
+  void ClearICacheRange(u32 address_lo, u32 address_hi) override {}
 
-  void Reset();
-  void Run(int instructions);
-  void AttachCoprocessor(uint id, Coprocessor* coprocessor);
-  void SwitchMode(Mode new_mode);
-  auto IRQLine() -> bool& { return irq_line; }
-  void WaitForIRQ() { wait_for_irq = true; }
-  bool IsWaitingForIRQ() { return wait_for_irq; }
+  void Run(int cycles) override;
 
-  // TODO: implement a cleaner interface to modify the execution state.
-  auto GetState() -> State& { return state; }
-  void SetPC(u32 value) {
-    state.r15 = value;
-    if (state.cpsr.f.thumb) {
-      ReloadPipeline16();
-    } else {
-      ReloadPipeline32();
-    }
-  }
+  auto GetGPR(lunatic::GPR reg) const -> u32 override;
+  auto GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 override;
+  auto GetCPSR() const -> lunatic::StatusRegister override;
+  auto GetSPSR(lunatic::Mode mode) const -> lunatic::StatusRegister override;
+  void SetGPR(lunatic::GPR reg, u32 value) override;
+  void SetGPR(lunatic::GPR reg, lunatic::Mode mode, u32 value) override;
+  void SetCPSR(lunatic::StatusRegister psr) override;
+  void SetSPSR(lunatic::Mode mode, lunatic::StatusRegister psr) override;
 
   typedef void (ARM::*Handler16)(u16);
   typedef void (ARM::*Handler32)(u32);
@@ -61,6 +54,7 @@ private:
   void ReloadPipeline32();
   void BuildConditionTable();
   bool CheckCondition(Condition condition);
+  void SwitchMode(Mode new_mode);
 
   #include "handlers/arithmetic.inl"
   #include "handlers/handler16.inl"
@@ -71,7 +65,7 @@ private:
   u32 exception_base = 0;
   bool wait_for_irq = false;
   MemoryBase* memory;
-  Coprocessor* coprocessors[16] { nullptr };
+  std::array<Coprocessor*, 16> coprocessors;
 
   State state;
   State::StatusRegister* p_spsr;

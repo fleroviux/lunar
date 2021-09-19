@@ -779,7 +779,7 @@ void ARM_Undefined(u32 instruction) {
 
   // Save current program counter and jump to UND exception vector.
   state.r14 = state.r15 - 4;
-  state.r15 = ExceptionBase() + 0x04;
+  state.r15 = exception_base + 0x04;
   ReloadPipeline32();
 }
 
@@ -793,7 +793,7 @@ void ARM_SWI(u32 instruction) {
 
   // Save current program counter and jump to SVC exception vector.
   state.r14 = state.r15 - 4;
-  state.r15 = ExceptionBase() + 0x08;
+  state.r15 = exception_base + 0x08;
   ReloadPipeline32();
 }
 
