@@ -176,28 +176,46 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
 }
 
 void GPU::Render() {
+  struct Point {
+    s32 x;
+    s32 y;
+    u32 depth;
+    Vertex const* vertex;
+  } points[10];
+
+  struct Span {
+    s32 x[2];
+    s32 w[2];
+    u32 depth[2];
+    Vector2<Fixed12x4> uv[2];
+    Color4 color[2];
+  } span;
+
   for (uint i = 0; i < 256 * 192; i++) {
     draw_buffer[i] = Color4{0, 0, 0, 0};
-    depth_buffer[i] = 0xFFFFFF;
   }
 
-  for (int i = 0; i < polygon[gx_buffer_id ^ 1].count; i++) {
-    Polygon const& poly = polygon[gx_buffer_id ^ 1].data[i];
+  for (uint i = 0; i < 256 * 192; i++) {
+    depth_buffer[i] = 0x00FF'FFFF;
+  }
 
-    struct Point {
-      s32 x;
-      s32 y;
-      u32 depth;
-      Vertex const* vertex;
-    } points[poly.count];
+  auto buffer_id = gx_buffer_id ^ 1;
+  auto& vert_ram = vertex[buffer_id];
+  auto& poly_ram = polygon[buffer_id];
+  auto poly_count = poly_ram.count;
+
+  for (int i = 0; i < poly_count; i++) {
+    Polygon const& poly = poly_ram.data[i];
 
     int start = 0;
     s32 y_min = 256;
     s32 y_max = 0;
 
-    for (int j = 0; j < poly.count; j++) {
-      auto const& vert = vertex[gx_buffer_id ^ 1].data[poly.indices[j]];
+    auto vert_count = poly.count;
+
+    for (int j = 0; j < vert_count; j++) {
       auto& point = points[j];
+      auto const& vert = vert_ram.data[poly.indices[j]];
 
       // TODO: use the provided viewport configuration.
       // TODO: support w-Buffering mode.
@@ -224,34 +242,26 @@ void GPU::Render() {
 
     // first edge (CW)
     s[0] = start;
-    e[0] = start == (poly.count - 1) ? 0 : (start + 1);
+    e[0] = start == (vert_count - 1) ? 0 : (start + 1);
 
     // second edge (CCW)
     s[1] = start;
-    e[1] = start == 0 ? (poly.count - 1) : (start - 1);
+    e[1] = start == 0 ? (vert_count - 1) : (start - 1);
 
     for (s32 y = y_min; y <= y_max; y++) {
-      struct Span {
-        s32 x[2];
-        s32 w[2];
-        u32 depth[2];
-        Vector2<Fixed12x4> uv[2];
-        Color4 color[2];
-      } span;
-
       int a = 0; // left edge index
       int b = 1; // right edge index
 
       if (points[e[0]].y <= y) {
         s[0] = e[0];
-        if (++e[0] == poly.count)
+        if (++e[0] == vert_count)
           e[0] = 0;
       }
 
       if (points[e[1]].y <= y) {
         s[1] = e[1];
         if (--e[1] == -1)
-          e[1] = poly.count - 1;
+          e[1] = vert_count - 1;
       }
 
       auto lerp = [](s32 a, s32 b, s32 t, s32 t_max, s32 w_a = 1 << 12, s32 w_b = 1 << 12) {
