@@ -217,8 +217,10 @@ void APU::StepMixer(int cycles_late) {
     buffer[i][buffer_wr_pos] = sample_s16;
   }
 
-  buffer_wr_pos = (buffer_wr_pos + 1) % kRingBufferSize;
-  buffer_count++;
+  if (buffer_count < kRingBufferSize) {
+    buffer_wr_pos = (buffer_wr_pos + 1) % kRingBufferSize;
+    buffer_count++;
+  }
 
   scheduler.Add(512 - cycles_late, this, &APU::StepMixer);
 }
