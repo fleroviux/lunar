@@ -121,7 +121,7 @@ void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
 }
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
-  core->WaitForIRQ();
+  core->WaitForIRQ() = true;
 }
 
 void CP15::WriteInvalidateICache(int cn, int cm, int opcode, u32 value) {

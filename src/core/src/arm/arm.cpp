@@ -33,17 +33,13 @@ auto ARM::IRQLine() -> bool& {
   return irq_line;
 }
 
-void ARM::WaitForIRQ() {
-  wait_for_irq = true;
-}
-
-auto ARM::IsWaitingForIRQ() -> bool {
+auto ARM::WaitForIRQ() -> bool& {
   return wait_for_irq;
 }
 
-void ARM::Run(int cycles) {
-  if (IsWaitingForIRQ() && !IRQLine()) {
-    return;
+auto ARM::Run(int cycles) -> int {
+  if (WaitForIRQ() && !IRQLine()) {
+    return 0;
   }
 
   while (cycles-- > 0) {
@@ -70,12 +66,14 @@ void ARM::Run(int cycles) {
         }
         (this->*s_opcode_lut_32[hash])(instruction);
 
-        if (IsWaitingForIRQ()) return;
+        if (WaitForIRQ()) return 0;
       } else {
         state.r15 += 4;
       }
     }
   }
+
+  return 0;
 }
 
 auto ARM::GetGPR(lunatic::GPR reg) const -> u32 {

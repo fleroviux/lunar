@@ -17,7 +17,7 @@ struct ARM9 {
 
   void Reset(u32 entrypoint);
   auto Bus() -> ARM9MemoryBus& { return bus; }
-  bool IsHalted() { return core->IsWaitingForIRQ(); }
+  bool IsHalted() { return core->WaitForIRQ(); }
   void Run(uint cycles);
 
 private:

@@ -24,12 +24,11 @@ struct ARM final : lunatic::CPU {
   // TODO: make Reset() a virtual member function of lunatic::CPU
   void Reset() override;
   auto IRQLine() -> bool& override;
-  void WaitForIRQ() override;
-  auto IsWaitingForIRQ() -> bool override;
+  auto WaitForIRQ() -> bool& override;
   void ClearICache() override {}
   void ClearICacheRange(u32 address_lo, u32 address_hi) override {}
 
-  void Run(int cycles) override;
+  auto Run(int cycles) -> int override;
 
   auto GetGPR(lunatic::GPR reg) const -> u32 override;
   auto GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 override;
