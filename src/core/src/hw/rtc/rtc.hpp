@@ -91,32 +91,10 @@ private:
 
   State state;
 
-  // struct ControlRegister {
-  //   bool unknown;
-  //   bool per_minute_irq;
-  //   bool mode_24h;
-  //   bool poweroff;
-
-  //   void Reset() {
-  //     unknown = false;
-  //     per_minute_irq = false;
-  //     mode_24h = false;
-  //     poweroff = false;
-  //   }
-  // } control;
-
   u8 stat1;
   u8 stat2;
 
   static constexpr int s_argument_count[8] = {
-    /*0, // ForceReset
-    0, // Unused?
-    7, // DateTime
-    0, // ForceIRQ
-    1, // Control
-    0, // Unused?
-    3, // Time
-    0  // FreeRegister*/
     1, // Stat1
     3, // INT1 frequency duty / alarm1 time
     7, // DateTime
@@ -124,7 +102,7 @@ private:
     1, // Stat2
     3, // INT2 alarm2 time
     3, // Time
-    0
+    0, // TODO
   };
 };
 

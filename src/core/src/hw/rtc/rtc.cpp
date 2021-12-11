@@ -65,7 +65,7 @@ void RTC::WritePort(u8 value) {
     current_byte = 0;
   }
 
-  if (!port.cs || !(!old_sck && port.sck)) {
+  if (!port.cs || !(old_sck && !port.sck)) {
     return;
   }
 
