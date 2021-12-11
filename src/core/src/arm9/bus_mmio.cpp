@@ -648,7 +648,7 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return gpu_io.ReadClipMatrix<u8>(address - REG_CLIPMTX_RESULT_LO);
 
     case REG_POSTFLG:
-      return 1;
+      return postflag;
 
     default:
       LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
@@ -1683,6 +1683,12 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_GXSTAT|3:
       gpu_io.gxstat.WriteByte(3, value);
+      break;
+
+    case REG_POSTFLG:
+      // Bit 0: post boot flag (write-once, cannot be unset)
+      // Bit 1: undocumented (read- and writeable)
+      postflag = (postflag & 1) | (value & 3);
       break;
 
     default:

@@ -23,7 +23,6 @@ struct ARM9 {
 private:
   ARM9MemoryBus bus;
   CP15 cp15;
-  // arm::ARM core;
   std::unique_ptr<lunatic::CPU> core;
   IRQ& irq;
 };

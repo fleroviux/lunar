@@ -12,9 +12,9 @@ namespace common::logger {
 auto trim_filepath(const char* file) -> std::string {
   auto tmp = std::string{file};
 #ifdef WIN32
-  auto pos = tmp.find("\\source\\");
+  auto pos = tmp.find("\\src\\");
 #else
-  auto pos = tmp.find("/source/");
+  auto pos = tmp.find("/src/");
 #endif
   if (pos == std::string::npos) {
     return "???";

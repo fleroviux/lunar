@@ -32,8 +32,7 @@ CP15::CP15(ARM9MemoryBus* bus)
 }
 
 void CP15::Reset() {
-  // TODO: these values are for direct boot.
-  // they would need to be different if we boot into the firmware.
+  // TODO: use different initialization values for  firmware boot.
 
   // Reset control register (enable DTCM and ITCM, exception base = 0xFFFF0000)
   Write(0, 1, 0, 0, 0x0005707D);

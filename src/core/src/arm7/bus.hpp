@@ -66,6 +66,8 @@ private:
   Interconnect::KeyInput& keyinput;
   Interconnect::ExtKeyInput& extkeyinput;
   bool halted;
+  u8 postflag;
+  u16 soundbias;
 };
 
 } // namespace Duality::Core

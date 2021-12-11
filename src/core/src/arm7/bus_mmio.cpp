@@ -76,13 +76,14 @@ enum Registers {
   // Sound
   REG_SOUNDCHAN_LO = 0x0400'0400,
   REG_SOUNDCHAN_HI = 0x0400'04FF,
+  REG_SOUNDBIAS = 0x0400'0504,
 
   // WIFI
   REG_WIFI_LO = 0x0480'4000,
   REG_WIFI_HI = 0x0480'82F7
 };
 
-auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
+auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {  
   switch (address) {
     // PPU engine A
     case REG_DISPSTAT|0:
@@ -335,10 +336,14 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return wramcnt.ReadByte();
 
     case REG_POSTFLG:
-     return 1;
+     return postflag;
 
     case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
       return apu.Read((address >> 4) & 15, address & 15);
+    case REG_SOUNDBIAS|0:
+      return u8(soundbias);
+    case REG_SOUNDBIAS|1:
+      return u8(soundbias >> 8);
 
     case REG_WIFI_LO ... REG_WIFI_HI:
       return wifi.ReadByteIO(address);
@@ -713,8 +718,18 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     }
 
+    case REG_POSTFLG:
+      postflag |= value & 1;
+      break;
+
     case REG_SOUNDCHAN_LO ... REG_SOUNDCHAN_HI:
       apu.Write((address >> 4) & 15, address & 15, value);
+      break;
+    case REG_SOUNDBIAS|0:
+      soundbias = (soundbias & ~0xFF) | value;
+      break;
+    case REG_SOUNDBIAS|1:
+      soundbias = (soundbias &  0xFF) | ((value & 3) << 8);
       break;
 
     case REG_WIFI_LO ... REG_WIFI_HI:

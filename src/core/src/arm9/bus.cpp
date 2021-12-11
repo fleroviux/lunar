@@ -57,6 +57,8 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
       UpdateMemoryMap(0x06800000 + offset, 0x06800000 + size);
     });
   }
+
+  postflag = 0;
 }
 
 void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {

@@ -41,7 +41,6 @@ private:
   } cp14;
 
   ARM7MemoryBus bus;
-  // arm::ARM core;
   std::unique_ptr<lunatic::CPU> core;
   IRQ& irq;
 };

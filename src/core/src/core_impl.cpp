@@ -91,6 +91,19 @@ struct CoreImpl {
   }
 
   void Load(std::string const& rom_path) {
+    bool direct_boot = false;
+
+    if (direct_boot) {
+      DirectBoot(rom_path);
+    } else {
+      FirmwareBoot();
+    }
+
+    // Load cartridge ROM into Slot 1
+    interconnect.cart.Load(rom_path);
+  }
+
+  void DirectBoot(std::string const& rom_path) {
     using Bus = lunatic::Memory::Bus;
 
     std::ifstream rom { rom_path, std::ios::in | std::ios::binary };
@@ -146,9 +159,6 @@ struct CoreImpl {
 
     rom.close();
 
-    // Load cartridge ROM into Slot 1
-    interconnect.cart.Load(rom_path);
-
     // Huge thanks to Hydr8gon for pointing this out:
     arm9.Bus().WriteWord(0x027FF800, 0x1FC2, Bus::Data); // Chip ID 1
     arm9.Bus().WriteWord(0x027FF804, 0x1FC2, Bus::Data); // Chip ID 2
@@ -159,6 +169,12 @@ struct CoreImpl {
     arm9.Bus().WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
     arm9.Bus().WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
     arm9.Bus().WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
+  }
+
+  void FirmwareBoot() {
+    // TODO: start in supervisor mode and reset all GPRs.
+    arm7.Reset(0x00000000);
+    arm9.Reset(0xFFFF0000);
   }
 
   u64 overshoot = 0;
