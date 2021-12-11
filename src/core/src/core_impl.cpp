@@ -91,7 +91,7 @@ struct CoreImpl {
   }
 
   void Load(std::string const& rom_path) {
-    bool direct_boot = false;
+    bool direct_boot = true;
 
     if (direct_boot) {
       DirectBoot(rom_path);
@@ -169,6 +169,10 @@ struct CoreImpl {
     arm9.Bus().WriteWord(0x027FFC04, 0x1FC2, Bus::Data); // Copy of chip ID 2
     arm9.Bus().WriteHalf(0x027FFC10, 0x5835, Bus::Data); // Copy of ARM7 BIOS CRC
     arm9.Bus().WriteHalf(0x027FFC40, 0x0001, Bus::Data); // Boot indicator
+
+    // Set POSTFLG=1
+    arm7.Bus().WriteByte(0x04000300, 1, Bus::Data);
+    arm9.Bus().WriteByte(0x04000300, 1, Bus::Data);
   }
 
   void FirmwareBoot() {

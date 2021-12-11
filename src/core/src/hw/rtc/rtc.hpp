@@ -123,7 +123,7 @@ private:
     1, // ClockAdjustment
     1, // Stat2
     3, // INT2 alarm2 time
-    6, // Time
+    3, // Time
     0
   };
 };

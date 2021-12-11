@@ -15,23 +15,14 @@ void RTC::Reset() {
   current_bit = 0;
   current_byte = 0;
   data = 0;
-
-  for (int i = 0; i < 7; i++) {
-    buffer[i] = 0;
-  }
-
   port = {};
-
   state = State::Command;
 
-  //control.Reset();
   stat1 = 0;
   stat2 = 0;
 }
 
 auto RTC::Read() -> u8 {
-  // TODO: handle SIO port outside out "sending" state?
-
   return (port.sio << 0) |
          (port.sck << 1) |
          (port.cs  << 2) |
@@ -44,12 +35,6 @@ void RTC::Write(u8 value) {
   port.write_sio = value & 16;
   port.write_sck = value & 32;
   port.write_cs  = value & 64;
-
-  /*LOG_TRACE("RTC: write 0x{:03B}", (value >> 3) & 7);
-
-  if (port.write_sio) {
-    LOG_TRACE("RTC: SIO writeable");
-  }*/
 
   WritePort(value);
 }
@@ -70,27 +55,9 @@ void RTC::WritePort(u8 value) {
   int old_sck = port.sck;
   int old_cs  = port.cs;
 
-  // if (GetPortDirection(static_cast<int>(Port::CS)) == GPIO::PortDirection::Out) {
-  //   port.cs = (value >> static_cast<int>(Port::CS)) & 1;
-  // } else {
-  //   LOG_ERROR("RTC: CS port should be set to 'output' but configured as 'input'.");;
-  // }
-
-  // if (GetPortDirection(static_cast<int>(Port::SCK)) == GPIO::PortDirection::Out) {
-  //   port.sck = (value >> static_cast<int>(Port::SCK)) & 1;
-  // } else {
-  //   LOG_ERROR("RTC: SCK port should be set to 'output' but configured as 'input'.");
-  // }
-
-  // if (GetPortDirection(static_cast<int>(Port::SIO)) == GPIO::PortDirection::Out) {
-  //   port.sio = (value >> static_cast<int>(Port::SIO)) & 1;
-  // }
-
   if (port.write_sio) port.sio = (value >> 0) & 1;
   if (port.write_sck) port.sck = (value >> 1) & 1;
   if (port.write_cs ) port.cs  = (value >> 2) & 1;
-
-  //LOG_TRACE("RTC: write sio={} sck={} cs={}", port.sio, port.sck, port.cs);
 
   if (!old_cs && port.cs) {
     state = State::Command;
