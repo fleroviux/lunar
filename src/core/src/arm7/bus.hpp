@@ -65,6 +65,7 @@ private:
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   Interconnect::ExtKeyInput& extkeyinput;
+  RTC& rtc;
   bool halted;
   u8 postflag;
   u16 soundbias;

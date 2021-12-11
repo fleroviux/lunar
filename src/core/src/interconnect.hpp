@@ -17,6 +17,7 @@
 #include "hw/dma/dma9.hpp"
 #include "hw/ipc/ipc.hpp"
 #include "hw/math/math_engine.hpp"
+#include "hw/rtc/rtc.hpp"
 #include "hw/irq/irq.hpp"
 #include "hw/spi/spi.hpp"
 #include "hw/timer/timer.hpp"
@@ -59,6 +60,7 @@ struct Interconnect {
     dma9.Reset();
     video_unit.Reset();
     wifi.Reset();
+    rtc.Reset();
 
     // TODO: this is the value for direct boot,
     // which value is correct for firmware boot?
@@ -96,6 +98,7 @@ struct Interconnect {
   DMA9 dma9;
   VideoUnit video_unit;
   WIFI wifi;
+  RTC rtc;
 
   struct WRAMCNT {
     using Callback = std::function<void(void)>;

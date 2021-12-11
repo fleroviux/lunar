@@ -45,6 +45,9 @@ enum Registers {
   REG_KEYINPUT = 0x0400'0130,
   REG_EXTKEYINPUT = 0x0400'0136,
 
+  // RTC
+  REG_RTC = 0x0400'0138,
+
   // IPC
   REG_IPCSYNC = 0x0400'0180,
   REG_IPCFIFOCNT = 0x0400'0184,
@@ -234,6 +237,10 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return keyinput.ReadByte(1);
     case REG_EXTKEYINPUT:
       return extkeyinput.ReadByte();
+
+    // RTC
+    case REG_RTC:
+      return rtc.Read();
 
     // IPC
     case REG_IPCSYNC|0:
@@ -587,6 +594,10 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       timer.Write(3, 3, value);
       break;
 
+    case REG_RTC:
+      rtc.Write(value);
+      break;
+
     // IPC
     case REG_IPCSYNC|0:
       ipc.ipcsync.WriteByte(IPC::Client::ARM7, 0, value);
@@ -719,6 +730,7 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
     }
 
     case REG_POSTFLG:
+      // Bit 0: post boot flag (write-once, cannot be unset)
       postflag |= value & 1;
       break;
 

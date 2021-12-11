@@ -24,6 +24,7 @@ set(SOURCES
   src/hw/ipc/ipc.cpp
   src/hw/irq/irq.cpp
   src/hw/math/math_engine.cpp
+  src/hw/rtc/rtc.cpp
   src/hw/spi/tsc/tsc.cpp
   src/hw/spi/spi.cpp
   src/hw/timer/timer.cpp
@@ -68,6 +69,7 @@ set(HEADERS
   src/hw/ipc/ipc.hpp
   src/hw/irq/irq.hpp
   src/hw/math/math_engine.hpp
+  src/hw/rtc/rtc.hpp
   src/hw/spi/tsc/tsc.hpp
   src/hw/spi/spi.hpp
   src/hw/spi/spi_device.hpp
