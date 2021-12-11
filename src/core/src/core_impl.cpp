@@ -99,7 +99,6 @@ struct CoreImpl {
       FirmwareBoot();
     }
 
-    // Load cartridge ROM into Slot 1
     interconnect.cart.Load(rom_path);
   }
 

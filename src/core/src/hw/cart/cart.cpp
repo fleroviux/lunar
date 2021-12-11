@@ -69,6 +69,13 @@ void Cartridge::OnCommandStart() {
   }
 
   switch (cardcmd.buffer[0]) {
+    /// Dummy (read high-z bytes)
+    case 0x9F: {
+      transfer.data[0] = 0xFFFFFFFF;
+      transfer.data_count = 1;
+      break;
+    }
+
     /// Get Data 
     case 0xB7: {
       u32 address;
