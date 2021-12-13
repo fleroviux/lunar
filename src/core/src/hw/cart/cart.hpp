@@ -89,6 +89,18 @@ struct Cartridge {
 private:
   void OnCommandStart();
 
+  // --- KEY1 en/decryption begin ---
+
+  u32 keybuf[0x1048/4];
+
+  void Encrypt64(u32* ptr);
+  void Decrypt64(u32* ptr);
+  void InitKeyCode(u32 idcode, int level, int modulo);
+
+  u32 idcode;
+
+  // --- KEY1 en/decryption end
+
   // TODO: abstract the cartridge file away.
   bool loaded = false;
   std::fstream file;
