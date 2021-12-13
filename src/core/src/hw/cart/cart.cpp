@@ -37,7 +37,7 @@ void Cartridge::Load(std::string const& path) {
   loaded = false;
 
   file.open(path, std::ios::in | std::ios::binary);
-  ASSERT(file.good(), "Cartridge: failed to load ROM: {0}", path);
+  ASSERT(file.good(), "Cart: failed to load ROM: {0}", path);
   loaded = true;
   file.seekg(0, std::ios::end);
   file_size = file.tellg();
@@ -201,6 +201,7 @@ void Cartridge::OnCommandStart() {
       if (address == 0x4000) {
         //LOG_TRACE("Cart: debug 0x{:08X}", transfer.data[0]);
 
+        // Set the first eight bytes to "encryObj"
         transfer.data[0] = 0x72636e65;
         transfer.data[1] = 0x6a624f70;
 
@@ -268,11 +269,11 @@ void Cartridge::OnCommandStart() {
 
         if (address <= 0x7FFF) {
           address = 0x8000 + (address & 0x1FF);
-          LOG_WARN("Cartridge: attempted to read protected region.");
+          LOG_WARN("Cart: attempted to read protected region.");
         }
 
-        ASSERT(transfer.count <= 0x80, "Cartridge: command 0xB7: size greater than 0x200 is untested.");
-        ASSERT((address & 0x1FF) == 0, "Cartridge: command 0xB7: address unaligned to 0x200 is untested.");
+        ASSERT(transfer.count <= 0x80, "Cart: command 0xB7: size greater than 0x200 is untested.");
+        ASSERT((address & 0x1FF) == 0, "Cart: command 0xB7: address unaligned to 0x200 is untested.");
 
         transfer.data_count = std::min(0x80, transfer.count);
 
@@ -305,7 +306,7 @@ void Cartridge::OnCommandStart() {
       }
 
       default: {
-        ASSERT(false, "Cartridge: unhandled command 0x{0:02X}", cardcmd.buffer[0]);
+        ASSERT(false, "Cart: unhandled command 0x{0:02X}", cardcmd.buffer[0]);
       }
     }
   }
