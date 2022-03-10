@@ -69,6 +69,10 @@ private:
   bool halted;
   u8 postflag;
   u16 soundbias;
+
+public:
+  u32 debug_r14;
+  u32 debug_r15;
 };
 
 } // namespace Duality::Core

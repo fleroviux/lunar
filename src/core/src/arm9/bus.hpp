@@ -103,6 +103,9 @@ private:
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   u8 postflag;
+
+public:
+  u32 debug_r15;
 };
 
 } // namespace Duality::Core

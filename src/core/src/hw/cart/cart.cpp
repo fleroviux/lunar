@@ -203,7 +203,7 @@ void Cartridge::OnCommandStart() {
 
         // Set the first eight bytes to "encryObj"
         transfer.data[0] = 0x72636e65;
-        transfer.data[1] = 0x6a624f70;
+        transfer.data[1] = 0x6a624f79;
 
         //LOG_TRACE("Cart: foo {}\n", (char*)&transfer.data[0]);
 
