@@ -100,6 +100,7 @@ private:
   DMA9& dma;
   VideoUnit& video_unit;
   VRAM& vram;
+  EXMEMCNT& exmemcnt;
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   u8 postflag;

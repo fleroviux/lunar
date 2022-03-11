@@ -13,6 +13,7 @@
 #include "hw/dma/dma9.hpp"
 #include "hw/irq/irq.hpp"
 #include "hw/spi/spi_device.hpp"
+#include "exmemcnt.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
@@ -23,12 +24,14 @@ struct Cartridge {
     IRQ& irq7,
     IRQ& irq9,
     DMA7& dma7,
-    DMA9& dma9
+    DMA9& dma9,
+    EXMEMCNT& exmemcnt
   )   : scheduler(scheduler)
       , irq7(irq7)
       , irq9(irq9)
       , dma7(dma7)
-      , dma9(dma9) {
+      , dma9(dma9)
+      , exmemcnt(exmemcnt) {
     Reset();
   }
 
@@ -128,6 +131,7 @@ private:
   DMA9& dma9;
   IRQ& irq7;
   IRQ& irq9;
+  EXMEMCNT& exmemcnt;
   std::unique_ptr<SPIDevice> backup;
 };
 

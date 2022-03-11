@@ -317,12 +317,18 @@ void Cartridge::OnCommandStart() {
     scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
       romctrl.data_ready = true;
 
-      dma7.Request(DMA7::Time::Slot1);
-      dma9.Request(DMA9::Time::Slot1);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        dma7.Request(DMA7::Time::Slot1);
+      } else {
+        dma9.Request(DMA9::Time::Slot1);
+      }
     });
   } else if (auxspicnt.enable_ready_irq) {
-    irq7.Raise(IRQ::Source::Cart_DataReady);
-    irq9.Raise(IRQ::Source::Cart_DataReady);
+    if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+      irq7.Raise(IRQ::Source::Cart_DataReady);
+    } else {
+      irq9.Raise(IRQ::Source::Cart_DataReady);
+    }
   }
 }
 
@@ -363,15 +369,21 @@ auto Cartridge::ReadROM() -> u32 {
     transfer.count = 0;
 
     if (auxspicnt.enable_ready_irq) {
-      irq7.Raise(IRQ::Source::Cart_DataReady);
-      irq9.Raise(IRQ::Source::Cart_DataReady);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        irq7.Raise(IRQ::Source::Cart_DataReady);
+      } else {
+        irq9.Raise(IRQ::Source::Cart_DataReady);
+      }
     }
   } else {
     scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
       romctrl.data_ready = true;
 
-      dma7.Request(DMA7::Time::Slot1);
-      dma9.Request(DMA9::Time::Slot1);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        dma7.Request(DMA7::Time::Slot1);
+      } else {
+        dma9.Request(DMA9::Time::Slot1);
+      }
     });
   }
 
