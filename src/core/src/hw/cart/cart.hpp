@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <util/integer.hpp>
 #include <fstream>
 #include <memory>
@@ -36,7 +37,7 @@ struct Cartridge {
   }
 
   void Reset();
-  void Load(std::string const& path);
+  void Load(std::string const& path, bool direct_boot);
   auto ReadSPI() -> u8;
   void WriteSPI(u8 value);
   auto ReadROM() -> u32;
@@ -90,8 +91,16 @@ struct Cartridge {
   } cardcmd;
 
 private:
-  void OnCommandStart();
+  // TODO: use a plausible chip ID based on the ROM size.
+  static constexpr u32 kChipID = 0x1FC2;
 
+  enum class DataMode {
+    Unencrypted,
+    SecureAreaLoad,
+    MainDataLoad
+  } data_mode = DataMode::Unencrypted;
+
+  void OnCommandStart();
   void Encrypt64(u32* key_buffer, u32* ptr);
   void Decrypt64(u32* key_buffer, u32* ptr);
   void InitKeyCode(u32 game_id_code);

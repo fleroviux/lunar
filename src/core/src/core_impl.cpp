@@ -99,7 +99,7 @@ struct CoreImpl {
       FirmwareBoot();
     }
 
-    interconnect.cart.Load(rom_path);
+    interconnect.cart.Load(rom_path, direct_boot);
   }
 
   void DirectBoot(std::string const& rom_path) {
