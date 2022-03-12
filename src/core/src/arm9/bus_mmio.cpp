@@ -139,6 +139,7 @@ enum Registers {
   REG_IF  = 0x0400'0214,
 
   // Memory control
+  REG_EXMEMCNT  = 0x0400'0204,
   REG_VRAMCNT_A = 0x0400'0240,
   REG_VRAMCNT_B = 0x0400'0241,
   REG_VRAMCNT_C = 0x0400'0242,
@@ -526,6 +527,10 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_IF|3:
       return irq9._if.ReadByte(3);
 
+    case REG_EXMEMCNT|0:
+      return exmemcnt.ReadByte(0);
+    case REG_EXMEMCNT|1:
+      return exmemcnt.ReadByte(1);
     case REG_WRAMCNT:
       return wramcnt.ReadByte();
 
@@ -1542,6 +1547,12 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     // Memory control
+    case REG_EXMEMCNT|0:
+      exmemcnt.WriteByte(0, value);
+      break;
+    case REG_EXMEMCNT|1:
+      exmemcnt.WriteByte(1, value);
+      break;
     case REG_VRAMCNT_A:
       vram.vramcnt_a.WriteByte(value);
       break;

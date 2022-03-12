@@ -23,6 +23,7 @@
 #include "hw/timer/timer.hpp"
 #include "hw/video_unit/video_unit.hpp"
 #include "hw/wifi/wifi.hpp"
+#include "exmemcnt.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
@@ -30,7 +31,7 @@ namespace Duality::Core {
 struct Interconnect {
   Interconnect()
       : apu(scheduler)
-      , cart(scheduler, irq7, irq9, dma7, dma9) 
+      , cart(scheduler, irq7, irq9, dma7, dma9, exmemcnt) 
       , ipc(irq7, irq9)
       , spi(irq7)
       , timer7(scheduler, irq7)
@@ -61,6 +62,8 @@ struct Interconnect {
     video_unit.Reset();
     wifi.Reset();
     rtc.Reset();
+
+    exmemcnt = {};
 
     // TODO: this is the value for direct boot,
     // which value is correct for firmware boot?
@@ -99,6 +102,8 @@ struct Interconnect {
   VideoUnit video_unit;
   WIFI wifi;
   RTC rtc;
+
+  EXMEMCNT exmemcnt;
 
   struct WRAMCNT {
     using Callback = std::function<void(void)>;
