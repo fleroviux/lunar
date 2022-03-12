@@ -50,7 +50,6 @@ void ARM9::Reset(u32 entrypoint) {
 }
 
 void ARM9::Run(uint cycles) {
-  bus.debug_r15 = core->GetGPR(lunatic::GPR::PC);
   core->Run(cycles);
 }
 

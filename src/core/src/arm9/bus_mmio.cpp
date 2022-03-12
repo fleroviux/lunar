@@ -1484,7 +1484,6 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       cart.romctrl.WriteByte(3, value);
       break;
     case REG_CARDCMD|0:
-      //LOG_TRACE("ARM9: Cart: write CARDCMD command byte @ r15=0x{:08X}", debug_r15);
       cart.cardcmd.WriteByte(0, value);
       break;
     case REG_CARDCMD|1:
