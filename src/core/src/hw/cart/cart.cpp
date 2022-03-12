@@ -56,92 +56,92 @@ void Cartridge::Load(std::string const& path) {
   // backup = std::make_unique<EEPROM512B>(save_path);
 
   // Read ID code for KEY1 encryption.
+  u32 game_id_code;
   file.seekg(0xC);
-  file.read((char*)&idcode, sizeof(u32));
+  file.read((char*)&game_id_code, sizeof(u32));
+  InitKeyCode(game_id_code);
 }
 
-void Cartridge::Encrypt64(u32* ptr) {
+void Cartridge::Encrypt64(u32* key_buffer, u32* ptr) {
   u32 x = ptr[1];
   u32 y = ptr[0];
 
   for (int i = 0; i <= 0xF; i++) {
-    u32 z = keybuf[i] ^ x;
+    u32 z = key_buffer[i] ^ x;
 
-    x = keybuf[0x012 + u8(z >> 24)];
-    x = keybuf[0x112 + u8(z >> 16)] + x;
-    x = keybuf[0x212 + u8(z >>  8)] ^ x;
-    x = keybuf[0x312 + u8(z >>  0)] + x;
+    x = key_buffer[0x012 + u8(z >> 24)];
+    x = key_buffer[0x112 + u8(z >> 16)] + x;
+    x = key_buffer[0x212 + u8(z >>  8)] ^ x;
+    x = key_buffer[0x312 + u8(z >>  0)] + x;
 
     x ^= y;
     y  = z;
   }
 
-  ptr[0] = x ^ keybuf[16];
-  ptr[1] = y ^ keybuf[17];
+  ptr[0] = x ^ key_buffer[16];
+  ptr[1] = y ^ key_buffer[17];
 }
 
-void Cartridge::Decrypt64(u32* ptr) {
+void Cartridge::Decrypt64(u32* key_buffer, u32* ptr) {
   u32 x = ptr[1];
   u32 y = ptr[0];
 
   for (int i = 0x11; i >= 0x02; i--) {
-    u32 z = keybuf[i] ^ x;
+    u32 z = key_buffer[i] ^ x;
 
-    x = keybuf[0x012 + u8(z >> 24)];
-    x = keybuf[0x112 + u8(z >> 16)] + x;
-    x = keybuf[0x212 + u8(z >>  8)] ^ x;
-    x = keybuf[0x312 + u8(z >>  0)] + x;
+    x = key_buffer[0x012 + u8(z >> 24)];
+    x = key_buffer[0x112 + u8(z >> 16)] + x;
+    x = key_buffer[0x212 + u8(z >>  8)] ^ x;
+    x = key_buffer[0x312 + u8(z >>  0)] + x;
 
     x ^= y;
     y  = z;
   }
 
-  ptr[0] = x ^ keybuf[1];
-  ptr[1] = y ^ keybuf[0];
+  ptr[0] = x ^ key_buffer[1];
+  ptr[1] = y ^ key_buffer[0];
 }
 
-// NOTE: our modulo is GBATEK's module divided by four.
-void Cartridge::InitKeyCode(u32 idcode, int level, int modulo) {
-  // TODO: pass the BIOS data from outside somehow?
-  std::ifstream bios{"bios7.bin", std::ios::binary};
-  bios.seekg(0x30);
-  bios.read((char*)&keybuf[0], 0x1048);
-  bios.close();
-
+void Cartridge::InitKeyCode(u32 game_id_code) {
   u32 keycode[3];
 
-  // TODO: move this into an external function?
-  auto apply_keycode = [&]() {
-    Encrypt64(&keycode[1]);
-    Encrypt64(&keycode[0]);
+  auto apply_keycode = [&](u32* key_buffer_dst, u32* key_buffer_src) {
+    u32 scratch[2] = {0, 0};
 
-    u32 scratch[2] {0, 0};
+    Encrypt64(key_buffer_src, &keycode[1]);
+    Encrypt64(key_buffer_src, &keycode[0]);
 
     for (int i = 0; i <= 0x11; i++) {
       // TODO: do not rely on builtins
-      // TODO: optimize modulo with a AND-mask
-      keybuf[i] ^= __builtin_bswap32(keycode[i % modulo]);
+      key_buffer_dst[i] = key_buffer_src[i] ^ __builtin_bswap32(keycode[i & 1]);
+    }
+
+    for (int i = 0x12; i <= 0x411; i++) {
+      key_buffer_dst[i] = key_buffer_src[i];
     }
 
     for (int i = 0; i <= 0x410; i += 2)  {
-      Encrypt64(scratch);
-      keybuf[i + 0] = scratch[1];
-      keybuf[i + 1] = scratch[0];
+      Encrypt64(key_buffer_dst, scratch);
+      key_buffer_dst[i + 0] = scratch[1];
+      key_buffer_dst[i + 1] = scratch[0];
     }
   };
 
-  keycode[0] = idcode;
-  keycode[1] = idcode >> 1;
-  keycode[2] = idcode << 1;
+  // TODO: pass the BIOS data from outside somehow?
+  std::ifstream bios{"bios7.bin", std::ios::binary};
+  bios.seekg(0x30);
+  bios.read((char*)&key1_buffer_lvl2[0], 0x1048);
+  bios.close();
 
-  if (level >= 1) apply_keycode();
-  if (level >= 2) apply_keycode();
+  keycode[0] = game_id_code;
+  keycode[1] = game_id_code >> 1;
+  keycode[2] = game_id_code << 1;
+  apply_keycode(key1_buffer_lvl2, key1_buffer_lvl2);
+  apply_keycode(key1_buffer_lvl2, key1_buffer_lvl2);
 
-  if (level >= 3) {
-    keycode[1] <<= 1;
-    keycode[2] >>= 1;
-    apply_keycode();
-  }
+  keycode[1] <<= 1;
+  keycode[2] >>= 1;
+  apply_keycode(key1_buffer_lvl3, key1_buffer_lvl2);
 }
 
 static bool key1_encrypt = false;
@@ -166,8 +166,7 @@ void Cartridge::OnCommandStart() {
       buffer[i] = cardcmd.buffer[7 - i];
     }
 
-    InitKeyCode(idcode, 2, 2);
-    Decrypt64((u32*)&buffer[0]);
+    Decrypt64(key1_buffer_lvl2, (u32*)&buffer[0]);
 
     for (int i = 0; i < 8; i++) {
       cardcmd.buffer[i] = buffer[7 - i];
@@ -207,14 +206,11 @@ void Cartridge::OnCommandStart() {
 
         //LOG_TRACE("Cart: foo {}\n", (char*)&transfer.data[0]);
 
-        InitKeyCode(idcode, 3, 2);
-        
         for (int i = 0; i < 512; i += 2) {
-          Encrypt64(&transfer.data[i]);
+          Encrypt64(key1_buffer_lvl3, &transfer.data[i]);
         }
 
-        InitKeyCode(idcode, 2, 2);
-        Encrypt64(&transfer.data[0]);
+        Encrypt64(key1_buffer_lvl2, &transfer.data[0]);
       }
 
     } else if ((cardcmd.buffer[0] & 0xF0) == 0xA0) {
@@ -236,9 +232,6 @@ void Cartridge::OnCommandStart() {
         file.read((char*)transfer.data, 0x200);
         std::memset(&transfer.data[0x80], 0xFF, 0xE00);
         transfer.data_count = 0x400;
-
-        //InitKeyCode(idcode, 1, 2);
-        //Encrypt64(&transfer.data[0x78/4]);
         break;
       }
 

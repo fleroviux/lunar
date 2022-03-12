@@ -92,17 +92,9 @@ struct Cartridge {
 private:
   void OnCommandStart();
 
-  // --- KEY1 en/decryption begin ---
-
-  u32 keybuf[0x412];
-
-  void Encrypt64(u32* ptr);
-  void Decrypt64(u32* ptr);
-  void InitKeyCode(u32 idcode, int level, int modulo);
-
-  u32 idcode;
-
-  // --- KEY1 en/decryption end
+  void Encrypt64(u32* key_buffer, u32* ptr);
+  void Decrypt64(u32* key_buffer, u32* ptr);
+  void InitKeyCode(u32 game_id_code);
 
   // TODO: abstract the cartridge file away.
   bool loaded = false;
@@ -125,6 +117,9 @@ private:
 
   /// SPI backup data register
   u8 spidata = 0;
+
+  u32 key1_buffer_lvl2[0x412];
+  u32 key1_buffer_lvl3[0x412];
 
   Scheduler& scheduler;
   DMA7& dma7;
