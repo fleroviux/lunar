@@ -94,7 +94,7 @@ private:
 
   // --- KEY1 en/decryption begin ---
 
-  u32 keybuf[0x1048/4];
+  u32 keybuf[0x412];
 
   void Encrypt64(u32* ptr);
   void Decrypt64(u32* ptr);

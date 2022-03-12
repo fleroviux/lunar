@@ -67,13 +67,13 @@ void Cartridge::Encrypt64(u32* ptr) {
   for (int i = 0; i <= 0xF; i++) {
     u32 z = keybuf[i] ^ x;
 
-    x = keybuf[0x048/4 + u8(z >> 24)];
-    x = keybuf[0x448/4 + u8(z >> 16)] + x;
-    x = keybuf[0x848/4 + u8(z >>  8)] ^ x;
-    x = keybuf[0xC48/4 + u8(z >>  0)] + x;
+    x = keybuf[0x012 + u8(z >> 24)];
+    x = keybuf[0x112 + u8(z >> 16)] + x;
+    x = keybuf[0x212 + u8(z >>  8)] ^ x;
+    x = keybuf[0x312 + u8(z >>  0)] + x;
 
     x ^= y;
-    y = z;
+    y  = z;
   }
 
   ptr[0] = x ^ keybuf[16];
@@ -87,13 +87,13 @@ void Cartridge::Decrypt64(u32* ptr) {
   for (int i = 0x11; i >= 0x02; i--) {
     u32 z = keybuf[i] ^ x;
 
-    x = keybuf[0x048/4 + u8(z >> 24)];
-    x = keybuf[0x448/4 + u8(z >> 16)] + x;
-    x = keybuf[0x848/4 + u8(z >>  8)] ^ x;
-    x = keybuf[0xC48/4 + u8(z >>  0)] + x;
+    x = keybuf[0x012 + u8(z >> 24)];
+    x = keybuf[0x112 + u8(z >> 16)] + x;
+    x = keybuf[0x212 + u8(z >>  8)] ^ x;
+    x = keybuf[0x312 + u8(z >>  0)] + x;
 
     x ^= y;
-    y = z;
+    y  = z;
   }
 
   ptr[0] = x ^ keybuf[1];
@@ -117,13 +117,13 @@ void Cartridge::InitKeyCode(u32 idcode, int level, int modulo) {
 
     u32 scratch[2] {0, 0};
 
-    for (int i = 0; i <= 0x44/4; i++) {
+    for (int i = 0; i <= 0x11; i++) {
       // TODO: do not rely on builtins
       // TODO: optimize modulo with a AND-mask
       keybuf[i] ^= __builtin_bswap32(keycode[i % modulo]);
     }
 
-    for (int i = 0; i <= 0x1040/4; i += 2)  {
+    for (int i = 0; i <= 0x410; i += 2)  {
       Encrypt64(scratch);
       keybuf[i + 0] = scratch[1];
       keybuf[i + 1] = scratch[0];
