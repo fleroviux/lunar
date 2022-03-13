@@ -5,7 +5,7 @@
 #pragma once
 
 /// Enables log messages and assertions.
-static constexpr bool gEnableLogging = false;//true;
+static constexpr bool gEnableLogging = true;
 
 /// Enables the fast memory optimization.
 /// Can somewhat increases framerates.
@@ -16,4 +16,4 @@ static constexpr bool gEnableFastMemory = true;
 static constexpr bool gLooselySynchronizeCPUs = true;
 
 /// Enables the experimental JIT recompiler
-static constexpr bool gEnableJITRecompiler = true;
+static constexpr bool gEnableJITRecompiler = false;

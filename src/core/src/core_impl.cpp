@@ -91,7 +91,7 @@ struct CoreImpl {
   }
 
   void Load(std::string const& rom_path) {
-    bool direct_boot = true;
+    bool direct_boot = false;
 
     if (direct_boot) {
       DirectBoot(rom_path);
@@ -99,8 +99,7 @@ struct CoreImpl {
       FirmwareBoot();
     }
 
-    // Load cartridge ROM into Slot 1
-    interconnect.cart.Load(rom_path);
+    interconnect.cart.Load(rom_path, direct_boot);
   }
 
   void DirectBoot(std::string const& rom_path) {

@@ -3,6 +3,7 @@
  */
 
 #include <algorithm>
+#include <cstring>
 #include <util/log.hpp>
 #include <filesystem>
 
@@ -27,7 +28,7 @@ void Cartridge::Reset() {
   backup = nullptr;
 }
 
-void Cartridge::Load(std::string const& path) {
+void Cartridge::Load(std::string const& path, bool direct_boot) {
   u32 file_size;
   auto save_path = std::filesystem::path{path}.replace_extension(".sav").string();
 
@@ -36,7 +37,7 @@ void Cartridge::Load(std::string const& path) {
   loaded = false;
 
   file.open(path, std::ios::in | std::ios::binary);
-  ASSERT(file.good(), "Cartridge: failed to load ROM: {0}", path);
+  ASSERT(file.good(), "Cart: failed to load ROM: {0}", path);
   loaded = true;
   file.seekg(0, std::ios::end);
   file_size = file.tellg();
@@ -53,9 +54,20 @@ void Cartridge::Load(std::string const& path) {
   backup = std::make_unique<FLASH>(save_path, FLASH::Size::_1024K);
   // backup = std::make_unique<EEPROM>(save_path, EEPROM::Size::_128K, false);
   // backup = std::make_unique<EEPROM512B>(save_path);
+
+  // Read ID code for KEY1 encryption.
+  u32 game_id_code;
+  file.seekg(0xC);
+  file.read((char*)&game_id_code, sizeof(u32));
+  InitKeyCode(game_id_code);
+
+  data_mode = direct_boot ? DataMode::MainDataLoad : DataMode::Unencrypted;
 }
 
 void Cartridge::OnCommandStart() {
+  u8* cmd = &cardcmd.buffer[0];
+  bool unknown_command = false;
+
   transfer.index = 0;
   transfer.data_count = 0;
   romctrl.data_ready = false;
@@ -68,57 +80,151 @@ void Cartridge::OnCommandStart() {
     transfer.count = 0x40 << romctrl.data_block_size;
   }
 
-  switch (cardcmd.buffer[0]) {
-    /// Get Data 
-    case 0xB7: {
-      u32 address;
-
-      address  = cardcmd.buffer[1] << 24;
-      address |= cardcmd.buffer[2] << 16;
-      address |= cardcmd.buffer[3] <<  8;
-      address |= cardcmd.buffer[4] <<  0;
-      
-      address &= file_mask;
-
-      if (address <= 0x7FFF) {
-        address = 0x8000 + (address & 0x1FF);
-        LOG_WARN("Cartridge: attempted to read protected region.");
+  if (data_mode == DataMode::Unencrypted) {
+    switch (cardcmd.buffer[0]) {
+      case 0x9F: {
+        // Dummy (read high-z bytes)
+        transfer.data[0] = 0xFFFFFFFF;
+        transfer.data_count = 1;
+        break;
       }
-
-      ASSERT(transfer.count <= 0x80, "Cartridge: command 0xB7: size greater than 0x200 is untested.");
-      ASSERT((address & 0x1FF) == 0, "Cartridge: command 0xB7: address unaligned to 0x200 is untested.");
-
-      transfer.data_count = std::min(0x80, transfer.count);
-
-      u32 byte_len = transfer.data_count * sizeof(u32);
-      u32 sector_a = address >> 12;
-      u32 sector_b = (address + byte_len - 1) >> 12;
-
-      file.seekg(address);
-
-      if (sector_a != sector_b) {
-        u32 size_a = 0x1000 - (address & 0xFFF);
-        u32 size_b = byte_len - size_a;
-        file.read((char*)transfer.data, size_a);
-        file.seekg(address & ~0xFFF);
-        file.read((char*)transfer.data + size_a, size_b);
-      } else {
-        file.read((char*)transfer.data, byte_len);
+      case 0x00: {
+        // Get Cartridge Header
+        // TODO: check what the correct behavior for reading past 0x200 bytes is.
+        file.seekg(0);
+        file.read((char*)transfer.data, 0x200);
+        std::memset(&transfer.data[0x80], 0xFF, 0xE00);
+        transfer.data_count = 0x400;
+        break;
       }
-      break;
+      case 0x90: {
+        // 1st Get ROM Chip ID
+        transfer.data[0] = kChipID;
+        transfer.data_count = 1;
+        break;
+      }
+      case 0x3C: {
+        // Activate KEY1 encryption
+        data_mode = DataMode::SecureAreaLoad;
+        break;
+      }
+      default: {
+        unknown_command = true;
+        break;
+      }
+    }
+  } else if (data_mode == DataMode::SecureAreaLoad) {
+    u8 command[8];
+
+    for (int i = 0; i < 8; i++) {
+      command[i] = cardcmd.buffer[7 - i];
     }
 
-    /// 3rd Get ROM Chip ID
-    case 0xB8: {
-      // TODO: use a plausible chip ID based on the ROM size.
-      transfer.data[0] = 0x1FC2;
-      transfer.data_count = 1;
-      break;
+    Decrypt64(key1_buffer_lvl2, (u32*)&command[0]);
+
+    for (int i = 0; i < 4; i++) {
+      std::swap(command[i], command[7 - i]);
     }
 
-    default: {
-      ASSERT(false, "Cartridge: unhandled command 0x{0:02X}", cardcmd.buffer[0]);
+    switch (command[0] & 0xF0) {
+      case 0x40: {
+        // Activate KEY2 Encryption Mode
+        LOG_WARN("Cart: unhandled 'Activate KEY2 encryption' command");
+        break;
+      }
+      case 0x10: {
+        // 2nd Get ROM Chip ID
+        transfer.data[0] = kChipID;
+        transfer.data_count = 1;
+        break;
+      }
+      case 0x20: {
+        // Get Secure Area Block
+        u32 address = (command[2] & 0xF0) << 8;
+
+        file.seekg(address);
+        file.read((char*)&transfer.data[0], 4096);
+        transfer.data_count = 1024;
+
+        if (address == 0x4000) {
+          transfer.data[0] = 0x72636e65; // encr
+          transfer.data[1] = 0x6a624f79; // yObj
+
+          for (int i = 0; i < 512; i += 2) {
+            Encrypt64(key1_buffer_lvl3, &transfer.data[i]);
+          }
+
+          Encrypt64(key1_buffer_lvl2, &transfer.data[0]);
+        }
+        break;
+      }
+      case 0xA0: {
+        // Enter Main Data Mode
+        data_mode = DataMode::MainDataLoad;
+        break;
+      }
+      default: {
+        unknown_command = true;
+        cmd = &command[0];
+        break;
+      }
     }
+  } else if (data_mode == DataMode::MainDataLoad) {
+    switch (cardcmd.buffer[0]) {
+      case 0xB7: {
+        // Get Data
+        u32 address;
+
+        address  = cardcmd.buffer[1] << 24;
+        address |= cardcmd.buffer[2] << 16;
+        address |= cardcmd.buffer[3] <<  8;
+        address |= cardcmd.buffer[4] <<  0;
+        
+        address &= file_mask;
+
+        if (address <= 0x7FFF) {
+          address = 0x8000 + (address & 0x1FF);
+          LOG_WARN("Cart: attempted to read protected region.");
+        }
+
+        ASSERT(transfer.count <= 0x80, "Cart: command 0xB7: size greater than 0x200 is untested.");
+        ASSERT((address & 0x1FF) == 0, "Cart: command 0xB7: address unaligned to 0x200 is untested.");
+
+        transfer.data_count = std::min(0x80, transfer.count);
+
+        u32 byte_len = transfer.data_count * sizeof(u32);
+        u32 sector_a = address >> 12;
+        u32 sector_b = (address + byte_len - 1) >> 12;
+
+        file.seekg(address);
+
+        if (sector_a != sector_b) {
+          u32 size_a = 0x1000 - (address & 0xFFF);
+          u32 size_b = byte_len - size_a;
+          file.read((char*)transfer.data, size_a);
+          file.seekg(address & ~0xFFF);
+          file.read((char*)transfer.data + size_a, size_b);
+        } else {
+          file.read((char*)transfer.data, byte_len);
+        }
+        break;
+      }
+      case 0xB8: {
+        // 3rd Get ROM Chip ID
+        transfer.data[0] = kChipID;
+        transfer.data_count = 1;
+        break;
+      }
+      default: {
+        unknown_command = true;
+        break;
+      }
+    }
+  }
+
+  if (unknown_command) {
+    ASSERT(false, "Cart: unhandled command (mode={}): {:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
+      (int)data_mode, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7]);
   }
 
   romctrl.busy = transfer.data_count != 0;
@@ -127,13 +233,101 @@ void Cartridge::OnCommandStart() {
     scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
       romctrl.data_ready = true;
 
-      dma7.Request(DMA7::Time::Slot1);
-      dma9.Request(DMA9::Time::Slot1);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        dma7.Request(DMA7::Time::Slot1);
+      } else {
+        dma9.Request(DMA9::Time::Slot1);
+      }
     });
   } else if (auxspicnt.enable_ready_irq) {
-    irq7.Raise(IRQ::Source::Cart_DataReady);
-    irq9.Raise(IRQ::Source::Cart_DataReady);
+    if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+      irq7.Raise(IRQ::Source::Cart_DataReady);
+    } else {
+      irq9.Raise(IRQ::Source::Cart_DataReady);
+    }
   }
+}
+
+void Cartridge::Encrypt64(u32* key_buffer, u32* ptr) {
+  u32 x = ptr[1];
+  u32 y = ptr[0];
+
+  for (int i = 0; i <= 0xF; i++) {
+    u32 z = key_buffer[i] ^ x;
+
+    x = key_buffer[0x012 + u8(z >> 24)];
+    x = key_buffer[0x112 + u8(z >> 16)] + x;
+    x = key_buffer[0x212 + u8(z >>  8)] ^ x;
+    x = key_buffer[0x312 + u8(z >>  0)] + x;
+
+    x ^= y;
+    y  = z;
+  }
+
+  ptr[0] = x ^ key_buffer[16];
+  ptr[1] = y ^ key_buffer[17];
+}
+
+void Cartridge::Decrypt64(u32* key_buffer, u32* ptr) {
+  u32 x = ptr[1];
+  u32 y = ptr[0];
+
+  for (int i = 0x11; i >= 0x02; i--) {
+    u32 z = key_buffer[i] ^ x;
+
+    x = key_buffer[0x012 + u8(z >> 24)];
+    x = key_buffer[0x112 + u8(z >> 16)] + x;
+    x = key_buffer[0x212 + u8(z >>  8)] ^ x;
+    x = key_buffer[0x312 + u8(z >>  0)] + x;
+
+    x ^= y;
+    y  = z;
+  }
+
+  ptr[0] = x ^ key_buffer[1];
+  ptr[1] = y ^ key_buffer[0];
+}
+
+void Cartridge::InitKeyCode(u32 game_id_code) {
+  u32 keycode[3];
+
+  auto apply_keycode = [&](u32* key_buffer_dst, u32* key_buffer_src) {
+    u32 scratch[2] = {0, 0};
+
+    Encrypt64(key_buffer_src, &keycode[1]);
+    Encrypt64(key_buffer_src, &keycode[0]);
+
+    for (int i = 0; i <= 0x11; i++) {
+      // TODO: do not rely on builtins
+      key_buffer_dst[i] = key_buffer_src[i] ^ __builtin_bswap32(keycode[i & 1]);
+    }
+
+    for (int i = 0x12; i <= 0x411; i++) {
+      key_buffer_dst[i] = key_buffer_src[i];
+    }
+
+    for (int i = 0; i <= 0x410; i += 2)  {
+      Encrypt64(key_buffer_dst, scratch);
+      key_buffer_dst[i + 0] = scratch[1];
+      key_buffer_dst[i + 1] = scratch[0];
+    }
+  };
+
+  // TODO: pass the BIOS data from outside somehow?
+  std::ifstream bios{"bios7.bin", std::ios::binary};
+  bios.seekg(0x30);
+  bios.read((char*)&key1_buffer_lvl2[0], 0x1048);
+  bios.close();
+
+  keycode[0] = game_id_code;
+  keycode[1] = game_id_code >> 1;
+  keycode[2] = game_id_code << 1;
+  apply_keycode(key1_buffer_lvl2, key1_buffer_lvl2);
+  apply_keycode(key1_buffer_lvl2, key1_buffer_lvl2);
+
+  keycode[1] <<= 1;
+  keycode[2] >>= 1;
+  apply_keycode(key1_buffer_lvl3, key1_buffer_lvl2);
 }
 
 auto Cartridge::ReadSPI() -> u8 {
@@ -173,15 +367,21 @@ auto Cartridge::ReadROM() -> u32 {
     transfer.count = 0;
 
     if (auxspicnt.enable_ready_irq) {
-      irq7.Raise(IRQ::Source::Cart_DataReady);
-      irq9.Raise(IRQ::Source::Cart_DataReady);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        irq7.Raise(IRQ::Source::Cart_DataReady);
+      } else {
+        irq9.Raise(IRQ::Source::Cart_DataReady);
+      }
     }
   } else {
     scheduler.Add(sizeof(u32) * kCyclesPerByte[romctrl.transfer_clock_rate], [this](int late) {
       romctrl.data_ready = true;
 
-      dma7.Request(DMA7::Time::Slot1);
-      dma9.Request(DMA9::Time::Slot1);
+      if (exmemcnt.nds_slot_access == EXMEMCNT::CPU::ARM7) {
+        dma7.Request(DMA7::Time::Slot1);
+      } else {
+        dma9.Request(DMA9::Time::Slot1);
+      }
     });
   }
 

@@ -62,6 +62,7 @@ private:
   VideoUnit& video_unit;
   VRAM& vram;
   WIFI& wifi;
+  EXMEMCNT& exmemcnt;
   Interconnect::WRAMCNT& wramcnt;
   Interconnect::KeyInput& keyinput;
   Interconnect::ExtKeyInput& extkeyinput;

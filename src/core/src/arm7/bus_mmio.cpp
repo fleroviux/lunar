@@ -70,8 +70,9 @@ enum Registers {
   REG_IE  = 0x0400'0210,
   REG_IF  = 0x0400'0214,
 
-  REG_VRAMSTAT = 0x0400'0240,
-  REG_WRAMSTAT = 0x0400'0241,
+  REG_EXMEMSTAT = 0x0400'0204,
+  REG_VRAMSTAT  = 0x0400'0240,
+  REG_WRAMSTAT  = 0x0400'0241,
 
   REG_POSTFLG = 0x0400'0300,
   REG_HALTCNT = 0x0400'0301,
@@ -337,6 +338,10 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_IF|3:
       return irq7._if.ReadByte(3);
 
+    case REG_EXMEMSTAT | 0:
+      return exmemcnt.ReadByte(0);
+    case REG_EXMEMSTAT | 1:
+      return exmemcnt.ReadByte(1);
     case REG_VRAMSTAT:
       return vram.vramstat.ReadByte();
     case REG_WRAMSTAT:

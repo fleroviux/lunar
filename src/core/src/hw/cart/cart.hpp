@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <util/integer.hpp>
 #include <fstream>
 #include <memory>
@@ -13,6 +14,7 @@
 #include "hw/dma/dma9.hpp"
 #include "hw/irq/irq.hpp"
 #include "hw/spi/spi_device.hpp"
+#include "exmemcnt.hpp"
 #include "scheduler.hpp"
 
 namespace Duality::Core {
@@ -23,17 +25,19 @@ struct Cartridge {
     IRQ& irq7,
     IRQ& irq9,
     DMA7& dma7,
-    DMA9& dma9
+    DMA9& dma9,
+    EXMEMCNT& exmemcnt
   )   : scheduler(scheduler)
       , irq7(irq7)
       , irq9(irq9)
       , dma7(dma7)
-      , dma9(dma9) {
+      , dma9(dma9)
+      , exmemcnt(exmemcnt) {
     Reset();
   }
 
   void Reset();
-  void Load(std::string const& path);
+  void Load(std::string const& path, bool direct_boot);
   auto ReadSPI() -> u8;
   void WriteSPI(u8 value);
   auto ReadROM() -> u32;
@@ -87,7 +91,19 @@ struct Cartridge {
   } cardcmd;
 
 private:
+  // TODO: use a plausible chip ID based on the ROM size.
+  static constexpr u32 kChipID = 0x1FC2;
+
+  enum class DataMode {
+    Unencrypted,
+    SecureAreaLoad,
+    MainDataLoad
+  } data_mode = DataMode::Unencrypted;
+
   void OnCommandStart();
+  void Encrypt64(u32* key_buffer, u32* ptr);
+  void Decrypt64(u32* key_buffer, u32* ptr);
+  void InitKeyCode(u32 game_id_code);
 
   // TODO: abstract the cartridge file away.
   bool loaded = false;
@@ -111,11 +127,15 @@ private:
   /// SPI backup data register
   u8 spidata = 0;
 
+  u32 key1_buffer_lvl2[0x412];
+  u32 key1_buffer_lvl3[0x412];
+
   Scheduler& scheduler;
   DMA7& dma7;
   DMA9& dma9;
   IRQ& irq7;
   IRQ& irq9;
+  EXMEMCNT& exmemcnt;
   std::unique_ptr<SPIDevice> backup;
 };
 
