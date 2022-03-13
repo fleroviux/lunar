@@ -32,6 +32,7 @@ void VideoUnit::Reset() {
   dispstat9 = {};
   vcount = {};
   powcnt1 = {};
+  dispcapcnt = {};
 
   dispstat7.write_cb = [this]() {
     CheckVerticalCounterIRQ(dispstat7, irq7);
@@ -111,11 +112,16 @@ void VideoUnit::OnHdrawBegin(int late) {
   dispstat9.hblank.flag = false;
 
   if (vcount.value <= kDrawingLines - 1) {
-    ppu_a.OnDrawScanlineBegin(vcount.value);
-    ppu_b.OnDrawScanlineBegin(vcount.value);
+    // TODO: check if display capture actually reads BG+3D
+    ppu_a.OnDrawScanlineBegin(vcount.value, dispcapcnt.busy);
+    ppu_b.OnDrawScanlineBegin(vcount.value, false);
   } else {
     ppu_a.OnBlankScanlineBegin(vcount.value);
-    ppu_b.OnBlankScanlineBegin(vcount.value);    
+    ppu_b.OnBlankScanlineBegin(vcount.value);
+
+    if (vcount.value == kDrawingLines) {
+      dispcapcnt.busy = false;
+    }
   }
 
   scheduler.Add(1606 - late, this, &VideoUnit::OnHblankBegin);
@@ -137,9 +143,122 @@ void VideoUnit::OnHblankBegin(int late) {
     dma9.Request(DMA9::Time::HBlank);
     ppu_a.OnDrawScanlineEnd();
     ppu_b.OnDrawScanlineEnd();
+    if (dispcapcnt.busy) {
+      RunDisplayCapture();
+    }
   }
 
   scheduler.Add(524 - late, this, &VideoUnit::OnHdrawBegin);
+}
+
+void VideoUnit::RunDisplayCapture() {
+  constexpr int kCaptureWidthLUT[4]{ 128, 256, 256, 256 };
+  constexpr int kCaptureHeightLUT[4]{ 128, 64, 128, 192 };
+
+  auto height = kCaptureHeightLUT[dispcapcnt.capture_size];
+
+  // TODO: handle the alpha-channel correctly during blending.
+
+  if (vcount.value < height) {
+    auto width = kCaptureWidthLUT[dispcapcnt.capture_size];
+    auto capture_source = dispcapcnt.capture_source;
+    auto line_offset = vcount.value * 256;
+
+    u16 buffer_a[width];
+    u16 buffer_b[width];
+    u16 buffer_mix[width];
+
+    if (capture_source != CaptureControl::CaptureSource::B) {
+      if (dispcapcnt.source_a == CaptureControl::SourceA::GPUAndPPU) {
+        std::memcpy(buffer_a, ppu_a.GetComposerOutput(), sizeof(buffer_a));
+      } else {
+        auto src = gpu.GetOutput() + line_offset;
+
+        for (int x = 0; x < width; x++) {
+          buffer_a[x] = src[x].to_rgb555();
+        }
+      }
+    }
+
+    if (capture_source != CaptureControl::CaptureSource::A) {
+      if (dispcapcnt.source_b == CaptureControl::SourceB::VRAM) {
+        auto vram_read_base = ppu_a.mmio.dispcnt.vram_block << 17;
+        auto vram_read_offset = dispcapcnt.vram_read_offset << 15;
+        auto src = vram.region_lcdc.GetUnsafePointer<u16>(
+          vram_read_base + ((vram_read_offset + line_offset * sizeof(u16)) & 0x1FFFF));
+
+        if (src != nullptr) {
+          std::memcpy(buffer_b, src, sizeof(buffer_b));
+        } else {
+          std::memset(buffer_b, 0, sizeof(buffer_b));
+        }
+      } else {
+        ASSERT(false, "VideoUnit: unhandled main memory display FIFO capture");
+      }
+    }
+
+    u16* buffer_src;
+
+    switch (dispcapcnt.capture_source) {
+      case CaptureControl::CaptureSource::A: {
+        buffer_src = buffer_a;
+        break;
+      }
+      case CaptureControl::CaptureSource::B: {
+        buffer_src = buffer_b;
+        break;
+      }
+      default: {
+        auto eva = std::min(dispcapcnt.eva, 16);
+        auto evb = std::min(dispcapcnt.evb, 16);
+        bool need_clamp = (eva + evb) > 16;
+
+        for (int x = 0; x < width; x++) {
+          auto color_a = buffer_a[x];
+          auto color_b = buffer_b[x];
+
+          auto r_a = (color_a >>  0) & 31;
+          auto g_a = (color_a >>  5) & 31;
+          auto b_a = (color_a >> 10) & 31;
+          //auto a_a =  color_a >> 14;
+
+          auto r_b = (color_b >>  0) & 31;
+          auto g_b = (color_b >>  5) & 31;
+          auto b_b = (color_b >> 10) & 31;
+          //auto a_b =  color_b >> 14;
+
+          auto factor_a = eva;// a_a * eva;
+          auto factor_b = evb;// a_b * evb;
+
+          auto r_out = (r_a * factor_a + r_b * factor_b) >> 4;
+          auto g_out = (g_a * factor_a + g_b * factor_b) >> 4;
+          auto b_out = (b_a * factor_a + b_b * factor_b) >> 4;
+
+          if (need_clamp) {
+            r_out = std::min(r_out, 15);
+            g_out = std::min(g_out, 15);
+            b_out = std::min(b_out, 15);
+          }
+
+          buffer_mix[x] = r_out | (g_out << 5) | (b_out << 10);
+        }
+
+        buffer_src = buffer_mix;
+        break;
+      }
+    }
+
+    auto vram_write_base = dispcapcnt.vram_write_block << 17;
+    auto vram_write_offset = dispcapcnt.vram_write_offset << 15;
+    auto buffer_dst = vram.region_lcdc.GetUnsafePointer<u16>(
+      vram_write_base + ((vram_write_offset + line_offset * sizeof(u16)) & 0x1FFFF));
+
+    if (buffer_dst != nullptr) {
+      for (int x = 0; x < width; x++) {
+        buffer_dst[x] = buffer_src[x];
+      }
+    }
+  }
 }
 
 auto VideoUnit::DisplayStatus::ReadByte(uint offset) -> u8 {
@@ -266,6 +385,7 @@ void VideoUnit::CaptureControl::WriteByte(uint offset, u8 value) {
       source_b = (SourceB)((value >> 1) & 1);
       vram_read_offset = (value >> 2) & 3;
       capture_source = (CaptureSource)((value >> 5) & 3);
+      busy = value & 128;
       break;
     }
     default: {

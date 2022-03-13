@@ -117,6 +117,7 @@ private:
   void CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq);
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);
+  void RunDisplayCapture();
 
   Scheduler& scheduler;
   IRQ& irq7;

@@ -68,7 +68,7 @@ void PPU::Reset() {
   mmio.mosaic.Reset();
 }
 
-void PPU::OnDrawScanlineBegin(u16 vcount) {
+void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
   if (mmio.dispcnt.enable[ENABLE_WIN0]) {
     RenderWindow(0, vcount);
   }
@@ -77,7 +77,7 @@ void PPU::OnDrawScanlineBegin(u16 vcount) {
     RenderWindow(1, vcount);
   }
 
-  RenderScanline(vcount);
+  RenderScanline(vcount, capture_bg_and_3d);
 }
 
 void PPU::OnDrawScanlineEnd() {
@@ -143,8 +143,14 @@ void PPU::OnBlankScanlineBegin(u16 vcount) {
   }
 }
 
-void PPU::RenderScanline(u16 vcount) {
-  switch (mmio.dispcnt.display_mode) {
+void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
+  auto display_mode = mmio.dispcnt.display_mode;
+
+  if (capture_bg_and_3d || display_mode == 1) {
+    RenderBackgroundsAndComposite(vcount);
+  }
+
+  switch (display_mode) {
     case 0:
       RenderDisplayOff(vcount);
       break;
@@ -171,9 +177,34 @@ void PPU::RenderDisplayOff(u16 vcount) {
 void PPU::RenderNormal(u16 vcount) {
   u32* line = &output[vcount * 256];
 
+  for (uint x = 0; x < 256; x++) {
+    line[x] = ConvertColor(buffer_compose[x]);
+  }
+}
+
+void PPU::RenderVideoMemoryDisplay(u16 vcount) {
+  u32* line = &output[vcount * 256];
+  u16 const* source = vram_lcdc.GetUnsafePointer<u16>(mmio.dispcnt.vram_block * 0x20000 + vcount * 256 * sizeof(u16));
+
+  if (source != nullptr) {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(*source++);
+    }
+  } else {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(0);
+    }
+  }
+}
+
+void PPU::RenderMainMemoryDisplay(u16 vcount) {
+  ASSERT(false, "PPU: unimplemented main memory display mode.");
+}
+
+void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   if (mmio.dispcnt.forced_blank) {
     for (uint x = 0; x < 256; x++) {
-      line[x] = ConvertColor(0x7FFF);
+      buffer_compose[x] = 0x7FFF;
     }
     return;
   }
@@ -235,25 +266,6 @@ void PPU::RenderNormal(u16 vcount) {
   }
 
   ComposeScanline(vcount, 0, 3);
-}
-
-void PPU::RenderVideoMemoryDisplay(u16 vcount) {
-  u32* line = &output[vcount * 256];
-  u16 const* source = vram_lcdc.GetUnsafePointer<u16>(mmio.dispcnt.vram_block * 0x20000 + vcount * 256 * sizeof(u16));
-
-  if (source != nullptr) {
-    for (uint x = 0; x < 256; x++) {
-      line[x] = ConvertColor(*source++);
-    }
-  } else {
-    for (uint x = 0; x < 256; x++) {
-      line[x] = ConvertColor(0);
-    }
-  }
-}
-
-void PPU::RenderMainMemoryDisplay(u16 vcount) {
-  ASSERT(false, "PPU: unimplemented main memory display mode.");
 }
 
 } // namespace Duality::Core

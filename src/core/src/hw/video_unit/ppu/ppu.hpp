@@ -50,8 +50,9 @@ struct PPU {
 
   void Reset();
   auto GetOutput() -> u32 const* { return &output[0]; }
+  auto GetComposerOutput() -> u16 const* { return &buffer_compose[0]; }
   
-  void OnDrawScanlineBegin(u16 vcount);
+  void OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d);
   void OnDrawScanlineEnd();
   void OnBlankScanlineBegin(u16 vcount);
 
@@ -88,13 +89,15 @@ private:
     uint id,
     int  width,
     int  height,
-    std::function<void(int, int, int)> render_func);
+    std::function<void(int, int, int)> render_func
+  );
 
-  void RenderScanline(u16 vcount);
+  void RenderScanline(u16 vcount, bool capture_bg_and_3d);
   void RenderDisplayOff(u16 vcount);
   void RenderNormal(u16 vcount);
   void RenderVideoMemoryDisplay(u16 vcount);
   void RenderMainMemoryDisplay(u16 vcount);
+  void RenderBackgroundsAndComposite(u16 vcount);
 
   void RenderLayerText(uint id, u16 vcount);
   void RenderLayerAffine(uint id);
@@ -187,6 +190,7 @@ private:
 
   int id;
   u32 output[256 * 192];
+  u16 buffer_compose[256];
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
