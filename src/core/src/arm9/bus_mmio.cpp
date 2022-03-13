@@ -84,6 +84,7 @@ enum Registers {
   REG_BLDALPHA_B = 0x0400'1052,
   REG_BLDY_A = 0x0400'0054,
   REG_BLDY_B = 0x0400'1054,
+  REG_DISPCAPCNT = 0x0400'0064,
 
   // DMA
   REG_DMA0SAD = 0x0400'00B0,
@@ -230,6 +231,14 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return ppu_io_a.bldalpha.ReadByte(0);
     case REG_BLDALPHA_A|1:
       return ppu_io_a.bldalpha.ReadByte(1);
+    case REG_DISPCAPCNT|0:
+      return video_unit.dispcapcnt.ReadByte(0);
+    case REG_DISPCAPCNT|1:
+      return video_unit.dispcapcnt.ReadByte(1);
+    case REG_DISPCAPCNT|2:
+      return video_unit.dispcapcnt.ReadByte(2);
+    case REG_DISPCAPCNT|3:
+      return video_unit.dispcapcnt.ReadByte(3);
 
     // PPU engine B
     case REG_DISPCNT_B|0:
@@ -952,6 +961,18 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_BLDY_A|1:
     case REG_BLDY_A|2:
     case REG_BLDY_A|3:
+      break;
+    case REG_DISPCAPCNT|0:
+      video_unit.dispcapcnt.WriteByte(0, value);
+      break;
+    case REG_DISPCAPCNT|1:
+      video_unit.dispcapcnt.WriteByte(1, value);
+      break;
+    case REG_DISPCAPCNT|2:
+      video_unit.dispcapcnt.WriteByte(2, value);
+      break;
+    case REG_DISPCAPCNT|3:
+      video_unit.dispcapcnt.WriteByte(3, value);
       break;
       
     // PPU engine B

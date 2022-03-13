@@ -220,4 +220,58 @@ void VideoUnit::PowerControl::WriteByte(uint offset, u8 value) {
   }
 }
 
+auto VideoUnit::CaptureControl::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0: {
+      return eva;
+    }
+    case 1: {
+      return evb;
+    }
+    case 2: {
+      return vram_write_block |
+            (vram_write_offset << 2) |
+            (capture_size      << 4);
+    }
+    case 3: {
+      return (int)source_a |
+            ((int)source_b         << 1) |
+            (     vram_read_offset << 2) |
+            ((int)capture_source   << 5) |
+            (busy ? 128 : 0);
+    }
+  }
+
+  UNREACHABLE;
+}
+
+void VideoUnit::CaptureControl::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      eva = value & 31;
+      break;
+    }
+    case 1: {
+      evb = value & 31;
+      break;
+    }
+    case 2: {
+      vram_write_block = value & 3;
+      vram_write_offset = (value >> 2) & 3;
+      capture_size = (value >> 4) & 3;
+      break;
+    }
+    case 3: {
+      source_a = (SourceA)(value & 1);
+      source_b = (SourceB)((value >> 1) & 1);
+      vram_read_offset = (value >> 2) & 3;
+      capture_source = (CaptureSource)((value >> 5) & 3);
+      break;
+    }
+    default: {
+      UNREACHABLE;
+    }
+  }
+}
+
 } // namespace Duality::Core

@@ -74,6 +74,38 @@ struct VideoUnit {
     bool display_swap = false;
   } powcnt1;
 
+  struct CaptureControl {
+    enum class SourceA {
+      GPUAndPPU = 0,
+      GPU = 1
+    };
+
+    enum class SourceB {
+      VRAM = 0,
+      FIFO = 1
+    };
+
+    enum class CaptureSource {
+      A = 0,
+      B = 1,
+      Both = 2
+    };
+
+    int eva = 0;
+    int evb = 0;
+    int vram_write_block = 0;
+    int vram_write_offset = 0;
+    int capture_size = 0;
+    SourceA source_a = SourceA::GPUAndPPU;
+    SourceB source_b = SourceB::VRAM;
+    int vram_read_offset = 0;
+    CaptureSource capture_source = CaptureSource::A;
+    bool busy = false;
+
+    auto ReadByte(uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
+  } dispcapcnt;
+
   u8 pram[0x800];
   u8 oam[0x800];
   VRAM vram;
