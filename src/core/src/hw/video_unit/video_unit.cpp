@@ -157,8 +157,6 @@ void VideoUnit::RunDisplayCapture() {
 
   auto height = kCaptureHeightLUT[dispcapcnt.capture_size];
 
-  // TODO: handle the alpha-channel correctly during blending.
-
   if (vcount.value < height) {
     auto width = kCaptureWidthLUT[dispcapcnt.capture_size];
     auto capture_source = dispcapcnt.capture_source;
@@ -175,7 +173,11 @@ void VideoUnit::RunDisplayCapture() {
         auto src = gpu.GetOutput() + line_offset;
 
         for (int x = 0; x < width; x++) {
-          buffer_a[x] = src[x].to_rgb555();
+          auto& color = src[x];
+          buffer_a[x] = color.to_rgb555();
+          if (color.a() != 0) {
+            buffer_a[x] |= 0x8000;
+          }
         }
       }
     }
@@ -220,19 +222,20 @@ void VideoUnit::RunDisplayCapture() {
           auto r_a = (color_a >>  0) & 31;
           auto g_a = (color_a >>  5) & 31;
           auto b_a = (color_a >> 10) & 31;
-          //auto a_a =  color_a >> 14;
+          auto a_a =  color_a >> 15;
 
           auto r_b = (color_b >>  0) & 31;
           auto g_b = (color_b >>  5) & 31;
           auto b_b = (color_b >> 10) & 31;
-          //auto a_b =  color_b >> 14;
+          auto a_b =  color_b >> 15;
 
-          auto factor_a = eva;// a_a * eva;
-          auto factor_b = evb;// a_b * evb;
+          auto factor_a = a_a * eva;
+          auto factor_b = a_b * evb;
 
           auto r_out = (r_a * factor_a + r_b * factor_b) >> 4;
           auto g_out = (g_a * factor_a + g_b * factor_b) >> 4;
           auto b_out = (b_a * factor_a + b_b * factor_b) >> 4;
+          auto a_out = (a_a & ((eva > 0) ? 1 : 0)) | (a_b & ((evb > 0) ? 1 : 0));
 
           if (need_clamp) {
             r_out = std::min(r_out, 15);
@@ -240,7 +243,7 @@ void VideoUnit::RunDisplayCapture() {
             b_out = std::min(b_out, 15);
           }
 
-          buffer_mix[x] = r_out | (g_out << 5) | (b_out << 10);
+          buffer_mix[x] = r_out | (g_out << 5) | (b_out << 10) | (a_out << 15);
         }
 
         buffer_src = buffer_mix;

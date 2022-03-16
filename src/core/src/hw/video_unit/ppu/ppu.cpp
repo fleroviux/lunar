@@ -204,7 +204,7 @@ void PPU::RenderMainMemoryDisplay(u16 vcount) {
 void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   if (mmio.dispcnt.forced_blank) {
     for (uint x = 0; x < 256; x++) {
-      buffer_compose[x] = 0x7FFF;
+      buffer_compose[x] = 0xFFFF;
     }
     return;
   }
@@ -217,8 +217,14 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   if (mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      for (uint x = 0; x < 256; x++)
-        buffer_bg[0][x] = gpu_output[vcount * 256 + x].to_rgb555();
+      for (uint x = 0; x < 256; x++) {
+        auto& color = gpu_output[vcount * 256 + x];
+        if (color.a() != 0) {
+          buffer_bg[0][x] = color.to_rgb555();
+        } else {
+          buffer_bg[0][x] = s_color_transparent;
+        }
+      }
     } else {
       RenderLayerText(0, vcount);
     }

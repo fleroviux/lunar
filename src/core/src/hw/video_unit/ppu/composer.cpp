@@ -172,7 +172,7 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
       }
     }
 
-    buffer_compose[x] = pixel[0];
+    buffer_compose[x] = pixel[0] | 0x8000;
   }
 }
 
