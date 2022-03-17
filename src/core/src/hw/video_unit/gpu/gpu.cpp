@@ -77,6 +77,8 @@ void GPU::Reset() {
   for (uint i = 0; i < 256 * 192; i++) {
     draw_buffer[i] = {}; 
   }
+
+  swap_buffers_pending = false;
 }
 
 void GPU::WriteGXFIFO(u32 value) {
@@ -220,13 +222,25 @@ void GPU::ProcessCommands() {
         break;
     }
 
-    // TODO: scheduling a bunch of events with 1 cycle delay might be a tad slow.
-    gxstat.gx_busy = true;
-    cmd_event = scheduler.Add(1, [this](int cycles_late) {
-      gxstat.gx_busy = false;
-      cmd_event = nullptr;
-      ProcessCommands();
-    });
+    if (!swap_buffers_pending) {
+      // TODO: scheduling a bunch of events with 1 cycle delay might be a tad slow.
+      gxstat.gx_busy = true;
+      cmd_event = scheduler.Add(1, [this](int cycles_late) {
+        gxstat.gx_busy = false;
+        cmd_event = nullptr;
+        ProcessCommands();
+      });
+    }
+  }
+}
+
+void GPU::SwapBuffers() {
+  if (swap_buffers_pending) {
+    gx_buffer_id ^= 1;
+    vertex[gx_buffer_id].count = 0;
+    polygon[gx_buffer_id].count = 0;
+    swap_buffers_pending = false;
+    ProcessCommands();
   }
 }
 

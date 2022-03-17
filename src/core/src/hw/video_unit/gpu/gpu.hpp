@@ -26,6 +26,7 @@ struct GPU {
   void Reset();
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
+  void SwapBuffers();
 
   template<typename T>
   auto ReadClipMatrix(u32 offset) -> T {
@@ -340,6 +341,8 @@ private:
   Matrix4<Fixed20x12> clip_matrix;
 
   Scheduler::Event* cmd_event = nullptr;
+
+  bool swap_buffers_pending;
 };
 
 } // namespace Duality::Core

@@ -97,6 +97,8 @@ void VideoUnit::OnHdrawBegin(int late) {
     if (video_device != nullptr) {
       video_device->Draw(GetOutput(Screen::Top), GetOutput(Screen::Bottom));
     }
+
+    gpu.SwapBuffers();
   }
   
   if (vcount.value == kTotalLines - 1) {

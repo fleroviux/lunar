@@ -536,9 +536,7 @@ void GPU::CMD_EndVertexList() {
 
 void GPU::CMD_SwapBuffers() {
   Dequeue();
-  gx_buffer_id ^= 1;
-  vertex[gx_buffer_id].count = 0;
-  polygon[gx_buffer_id].count = 0;
+  swap_buffers_pending = true;
 }
 
 } // namespace Duality::Core
