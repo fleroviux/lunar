@@ -162,13 +162,11 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
       return rgb6666;
     }
     case TextureParams::Format::Direct: {
-      auto color = vram_texture.Read<u16>(params.address + offset * sizeof(u16));
+      auto rgb1555 = vram_texture.Read<u16>(params.address + offset * sizeof(u16));
+      auto rgb6666 = Color4::from_rgb555(rgb1555);
 
-      if (color & 0x8000) {
-        return Color4{0, 0, 0, 0};
-      }
-
-      return Color4::from_rgb555(color);
+      rgb6666.a() = rgb6666.a().raw() * (rgb1555 >> 15);
+      return rgb6666;
     }
   };
 
