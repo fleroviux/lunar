@@ -175,7 +175,7 @@ void PPU::RenderLayerOAM(u16 vcount) {
           auto dimension = mmio.dispcnt.bitmap_obj.dimension;
           auto mask = (16 << dimension) - 1;
 
-          pixel = vram_obj.Read<u16>(((number & ~mask) * 64 + (number & mask) * 8 + tile_y * (128 << dimension) + tile_x) * 2);
+          pixel = vram_obj.Read<u16>(((number & ~mask) * 64 + (number & mask) * 8 + tex_y * (128 << dimension) + tex_x) * 2);
         }
 
         if ((pixel & 0x8000) == 0) {
