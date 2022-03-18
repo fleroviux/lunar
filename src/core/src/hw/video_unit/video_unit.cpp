@@ -246,10 +246,10 @@ void VideoUnit::RunDisplayCapture() {
           auto factor_a = a_a * eva;
           auto factor_b = a_b * evb;
 
-          auto r_out = (r_a * factor_a + r_b * factor_b) >> 4;
-          auto g_out = (g_a * factor_a + g_b * factor_b) >> 4;
-          auto b_out = (b_a * factor_a + b_b * factor_b) >> 4;
-          auto a_out = (a_a & ((eva > 0) ? 1 : 0)) | (a_b & ((evb > 0) ? 1 : 0));
+          auto r_out = (r_a * factor_a + r_b * factor_b + 8) >> 4;
+          auto g_out = (g_a * factor_a + g_b * factor_b + 8) >> 4;
+          auto b_out = (b_a * factor_a + b_b * factor_b + 8) >> 4;
+          auto a_out = (eva > 0 ? a_a : 0) | (evb > 0 ? a_b : 0);
 
           if (need_clamp) {
             r_out = std::min(r_out, 15);
