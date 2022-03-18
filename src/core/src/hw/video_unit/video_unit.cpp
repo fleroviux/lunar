@@ -33,6 +33,8 @@ void VideoUnit::Reset() {
   vcount = {};
   powcnt1 = {};
   dispcapcnt = {};
+  capturing = false;
+  display_swap = false;
 
   dispstat7.write_cb = [this]() {
     CheckVerticalCounterIRQ(dispstat7, irq7);
@@ -55,9 +57,9 @@ void VideoUnit::SetVideoDevice(VideoDevice& device) {
 auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
   switch (screen) {
     case Screen::Top:
-      return powcnt1.display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
+      return display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
     default:
-      return powcnt1.display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
+      return display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
   }
 }
 
@@ -74,6 +76,8 @@ void VideoUnit::CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq) {
 void VideoUnit::OnHdrawBegin(int late) {
   if (++vcount.value == kTotalLines) {
     vcount.value = 0;
+    capturing = dispcapcnt.busy;
+    display_swap = powcnt1.display_swap;
   }
 
   CheckVerticalCounterIRQ(dispstat7, irq7);
@@ -99,6 +103,9 @@ void VideoUnit::OnHdrawBegin(int late) {
     }
 
     gpu.SwapBuffers();
+
+    dispcapcnt.busy = false;
+    capturing = false;
   }
   
   if (vcount.value == kTotalLines - 1) {
@@ -120,10 +127,6 @@ void VideoUnit::OnHdrawBegin(int late) {
   } else {
     ppu_a.OnBlankScanlineBegin(vcount.value);
     ppu_b.OnBlankScanlineBegin(vcount.value);
-
-    if (vcount.value == kDrawingLines) {
-      dispcapcnt.busy = false;
-    }
   }
 
   scheduler.Add(1606 - late, this, &VideoUnit::OnHblankBegin);
@@ -145,7 +148,7 @@ void VideoUnit::OnHblankBegin(int late) {
     dma9.Request(DMA9::Time::HBlank);
     ppu_a.OnDrawScanlineEnd();
     ppu_b.OnDrawScanlineEnd();
-    if (dispcapcnt.busy) {
+    if (capturing) {
       RunDisplayCapture();
     }
   }

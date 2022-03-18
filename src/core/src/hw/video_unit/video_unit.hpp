@@ -106,6 +106,9 @@ struct VideoUnit {
     void WriteByte(uint offset, u8 value);
   } dispcapcnt;
 
+  bool capturing;
+  bool display_swap;
+
   u8 pram[0x800];
   u8 oam[0x800];
   VRAM vram;
