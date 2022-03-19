@@ -178,6 +178,7 @@ struct Point {
   s32 x;
   s32 y;
   u32 depth;
+  s32 w_norm;
   GPU::Vertex const* vertex;
 };
 
@@ -286,6 +287,7 @@ void GPU::Render() {
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
       point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
       point.depth = (((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9;
+      point.w_norm = vert.position.w().raw();
       point.vertex = &vert;
 
       // Pick the first vertex with the lowest y-Coordinate as the start node.
@@ -299,6 +301,44 @@ void GPU::Render() {
       if (point.y > y_max) {
         y_max = point.y;
       }
+    }
+
+    // w-normalization.
+    // TODO: move this to the correct place in the pipeline
+    // Also make sure that this is actually correct.
+    {
+      int min_leading = 32;
+
+      for (int j = 0; j < vert_count; j++) {
+        auto const& point = points[j];
+
+        if (point.w_norm < 0) {
+          min_leading = std::min(min_leading, __builtin_clz(~point.w_norm));
+        } else {
+          min_leading = std::min(min_leading, __builtin_clz( point.w_norm));
+        }
+      }
+
+      if (min_leading < 16) {
+        int shift = 16 - min_leading;
+
+        if ((shift & 3) != 0) {
+          shift += 4 - (shift & 3);
+        }
+
+        for (int j = 0; j < vert_count; j++) {
+          points[j].w_norm >>= shift;
+        }
+      } else if (min_leading > 16) {
+        int shift = (min_leading - 16) & ~3 ;
+      
+        for (int j = 0; j < vert_count; j++) {
+          points[j].w_norm <<= shift;
+        }
+      }
+
+      //LOG_ERROR("GPU: w0 =0x{:08X} w1 =0x{:08X} w2 =0x{:08X}", points[0].vertex->position.w().raw(), points[1].vertex->position.w().raw(), points[2].vertex->position.w().raw());
+      //LOG_ERROR("GPU: w0n=0x{:08X} w1n=0x{:08X} w2n=0x{:08X}", points[0].w_norm, points[1].w_norm, points[2].w_norm);
     }
 
     int s[2];
