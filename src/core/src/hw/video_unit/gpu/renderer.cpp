@@ -251,11 +251,13 @@ struct Interpolator {
     return (a * ((1 << precision) - factor) + b * factor) >> precision;
   }
 
-  auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& result) {
+  // TODO: generalize this for arbitrary vectors?
+
+  auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& color_out) {
     auto factor = force_lerp ? factor_lerp : factor_perp;
 
     for (int i = 0; i < 3; i++) {
-      result[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
+      color_out[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
 
       // // Formula from melonDS interpolation article.
       // // is there actually a mathematical difference?
@@ -263,10 +265,18 @@ struct Interpolator {
       // auto a = color_a[i].raw();
       // auto b = color_b[i].raw();
       // if (a < b) {
-      //   result[i] = (a + (b - a) * factor) >> precision;
+      //   color_outi] = (a + (b - a) * factor) >> precision;
       // } else {
-      //   result[i] = (b + (a - b) * (((1 << precision) - 1) - factor)) >> precision;
+      //   color_out[i] = (b + (a - b) * (((1 << precision) - 1) - factor)) >> precision;
       // }
+    }
+  }
+
+  auto Interpolate(Vector2<Fixed12x4> const& uv_a, Vector2<Fixed12x4> const& uv_b, Vector2<Fixed12x4>& uv_out) {
+    auto factor = force_lerp ? factor_lerp : factor_perp;
+
+    for (int i = 0; i < 2; i++) {
+      uv_out[i] = (uv_a[i].raw() * ((1 << precision) - factor) + uv_b[i].raw() * factor) >> precision;
     }
   }
 
@@ -486,6 +496,7 @@ void GPU::Render() {
         span.x1[j] = x1 >> 18;
         span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
         span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
+        edge_interpolator.Interpolate(p0.vertex->uv, p1.vertex->uv, span.uv[j]);
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
       }
 
@@ -505,7 +516,9 @@ void GPU::Render() {
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
         // TODO: use specialized render method for wireframe drawing.
-        bool wireframe = poly.params.alpha == 0;
+        auto alpha = (poly.params.alpha << 1) | (poly.params.alpha >> 4);
+        bool wireframe = alpha == 0;
+        auto uv = Vector2<Fixed12x4>{};
         auto color = Color4{};
 
         auto x_max = span.x1[r];
@@ -522,7 +535,19 @@ void GPU::Render() {
           if (x >= 0 && x <= 255) {
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x0[l], span.x1[r]);
+            span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
             span_interpolator.Interpolate(span.color[l], span.color[r], color);
+
+            color.a() = alpha; 
+
+            if (disp3dcnt.enable_textures) {
+              auto texel = SampleTexture(poly.texture_params, uv);
+              // TODO: perform alpha test
+              if (texel.a() == 0) {
+                continue;
+              }
+              color *= texel;
+            }
 
             draw_buffer[y * 256 + x] = color;
           }
