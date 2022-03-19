@@ -51,6 +51,9 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  clear_color = {};
+  clear_depth = {};
+  clrimage_offset = {};
   
   for (int  i = 0; i < 2; i++) {
     vertex[i] = {};
@@ -516,6 +519,58 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
       break;
     default:
       UNREACHABLE;
+  }
+}
+
+void GPU::ClearColor::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      color_r = (value >>  0) & 31;
+      color_g = (value >>  5) & 31;
+      color_b = (value >> 10) & 31;
+      enable_fog = value & 128;
+      break;
+    }
+    case 1: {
+      color_a = value & 31;
+      polygon_id = (value >> 8) & 63;
+      break;
+    }
+    default: {
+      UNREACHABLE;
+    }
+  }
+}
+
+void GPU::ClearDepth::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      depth = (depth& 0xFF00) | value;
+      break;
+    }
+    case 1: {
+      depth = ((depth & 0xFF) | (value << 8)) & 0x7FFF;
+      break;
+    }
+    default: {
+      UNREACHABLE;
+    }
+  }
+}
+
+void GPU::ClearImageOffset::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      x = value;
+      break;
+    }
+    case 1: {
+      y = value;
+      break;
+    }
+    default: {
+      UNREACHABLE;
+    }
   }
 }
 

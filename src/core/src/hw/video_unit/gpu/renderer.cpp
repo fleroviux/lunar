@@ -189,12 +189,25 @@ void GPU::Render() {
     Color4 color[2];
   } span;
 
-  for (uint i = 0; i < 256 * 192; i++) {
-    draw_buffer[i] = Color4{0, 0, 0, 0};
-  }
+  if (disp3dcnt.enable_rear_bitmap) {
+    ASSERT(false, "GPU: unhandled rear bitmap");
+  } else {
+    auto color = Color4{
+      (s8)((clear_color.color_r << 1) | (clear_color.color_r >> 4)),
+      (s8)((clear_color.color_g << 1) | (clear_color.color_g >> 4)),
+      (s8)((clear_color.color_b << 1) | (clear_color.color_b >> 4)),
+      (s8)((clear_color.color_a << 1) | (clear_color.color_a >> 4))
+    };
 
-  for (uint i = 0; i < 256 * 192; i++) {
-    depth_buffer[i] = 0x00FF'FFFF;
+    auto depth = (s32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
+
+    for (uint i = 0; i < 256 * 192; i++) {
+      draw_buffer[i] = color;
+    }
+
+    for (uint i = 0; i < 256 * 192; i++) {
+      depth_buffer[i] = depth;
+    }
   }
 
   auto buffer_id = gx_buffer_id ^ 1;

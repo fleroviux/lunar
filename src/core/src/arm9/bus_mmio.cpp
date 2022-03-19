@@ -167,6 +167,9 @@ enum Registers {
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
   REG_POWCNT1 = 0x0400'0304,
+  REG_CLEAR_COLOR = 0x0400'0350,
+  REG_CLEAR_DEPTH = 0x0400'0354,
+  REG_CLRIMAGE_OFFSET = 0x0400'0356,
   REG_GXFIFO_LO = 0x0400'0400,
   REG_GXFIFO_HI = 0x0400'043F,
   REG_GXCMDPORT_LO = 0x0400'0440,
@@ -1703,6 +1706,24 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_POWCNT1|1:
       video_unit.powcnt1.WriteByte(1, value);
+      break;
+    case REG_CLEAR_COLOR|0:
+      gpu_io.clear_color.WriteByte(0, value);
+      break;
+    case REG_CLEAR_COLOR|1:
+      gpu_io.clear_color.WriteByte(1, value);
+      break;
+    case REG_CLEAR_DEPTH|0:
+      gpu_io.clear_depth.WriteByte(0, value);
+      break;
+    case REG_CLEAR_DEPTH|1:
+      gpu_io.clear_depth.WriteByte(1, value);
+      break;
+    case REG_CLRIMAGE_OFFSET|0:
+      gpu_io.clrimage_offset.WriteByte(0, value);
+      break;
+    case REG_CLRIMAGE_OFFSET|1:
+      gpu_io.clrimage_offset.WriteByte(1, value);
       break;
     case REG_GXSTAT|0:
       gpu_io.gxstat.WriteByte(0, value);

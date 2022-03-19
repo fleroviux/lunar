@@ -72,7 +72,7 @@ struct GPU {
     bool polyvert_ram_overflow = false;
     bool enable_rear_bitmap = false;
   } disp3dcnt;
-  
+
   struct GXSTAT {
     // TODO: implement (box)test and matrix stack bits.
     GXSTAT(GPU& gpu) : gpu(gpu) {}
@@ -95,6 +95,30 @@ struct GPU {
 
     GPU& gpu;
   } gxstat { *this };
+
+  struct ClearColor {
+    int color_r = 0;
+    int color_g = 0;
+    int color_b = 0;
+    int color_a = 0;
+    int polygon_id = 0;
+    bool enable_fog = false;
+
+    void WriteByte(uint offset, u8 value);
+  } clear_color;
+
+  struct ClearDepth {
+    u16 depth = 0;
+
+    void WriteByte(uint offset, u8 value);
+  } clear_depth;
+
+  struct ClearImageOffset {
+    int x = 0;
+    int y = 0;
+
+    void WriteByte(uint offset, u8 value);
+  } clrimage_offset;
 
 private:
   enum class MatrixMode {
