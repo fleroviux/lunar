@@ -173,6 +173,8 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
   return Color4{};
 }
 
+// TODO: what format should normalized w-Coordinates be stored in?
+
 // TODO: move this into the appropriate class and remove the GPU:: prefix.
 struct Point {
   s32 x;
@@ -182,17 +184,14 @@ struct Point {
   GPU::Vertex const* vertex;
 };
 
-// TODO: I don't really like that we need an extra struct for this...
-struct LerpPoint {
-
-};
-
 struct Edge {
   using fixed14x18 = s32;
 
   Edge(Point const& p0, Point const& p1) : p0(&p0), p1(&p1) {
     CalculateSlope();
   }
+
+  bool& IsXMajor() { return x_major; }
 
   void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
     // TODO: always calculating x1 is redundant.
@@ -232,16 +231,91 @@ private:
   bool x_major;
 };
 
+template<int precision>
+struct Interpolator {
+  void Setup(s32 w0, s32 w1, u16 w0_norm, u16 w1_norm, s32 x, s32 x_min, s32 x_max) {
+    CalculateLerpFactor(x, x_min, x_max);
+    CalculatePerpFactor(w0_norm, w1_norm, x, x_min, x_max);
+
+    // TODO: use 127 instead of 126 for span interpolation.
+    // Also, if possible, simply overwrite the perp factor with the lerp factor if this is true.
+    force_lerp = w0 == w1 && (w0 & 126) == 0 && (w1 & 126) == 0;
+  }
+
+  // TODO: use correct formulas and clean this up.
+
+  template<typename T>
+  auto Interpolate(T a, T b) -> T {
+    auto factor = force_lerp ? factor_lerp : factor_perp;
+
+    return (a * (((1 << precision) - 1) - factor) + b * factor) >> precision;
+  }
+
+  auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& result) {
+    auto factor = force_lerp ? factor_lerp : factor_perp;
+
+    for (int i = 0; i < 3; i++) {
+      result[i] = (color_a[i].raw() * (((1 << precision) - 1) - factor) + color_b[i].raw() * factor) >> precision;
+
+      // // Formula from melonDS interpolation article.
+      // // is there actually a mathematical difference?
+      // // This certainly causes interpolation issues unless we expand the interpolated values to higher precision.
+      // auto a = color_a[i].raw();
+      // auto b = color_b[i].raw();
+      // if (a < b) {
+      //   result[i] = (a + (b - a) * factor) >> precision;
+      // } else {
+      //   result[i] = (b + (a - b) * (((1 << precision) - 1) - factor)) >> precision;
+      // }
+    }
+  }
+
+private:
+  void CalculateLerpFactor(s32 x, s32 x_min, s32 x_max) {
+    // TODO: make sure that this uses the correct amount of precision.
+    // NOTE: this might (will) result in division-by-zero.
+    factor_lerp = ((x - x_min) << precision) / (x_max - x_min); 
+  }
+
+  void CalculatePerpFactor(u16 w0_norm, u16 w1_norm, s32 x, s32 x_min, s32 x_max) {
+    u16 w0_num;
+    u16 w0_denom;
+    u16 w1_denom;
+
+    if ((w0_norm & 1) && !(w1_norm & 1)) {
+      w0_num = w0_norm - 1;
+      w0_denom = w0_norm + 1;
+      w1_denom = w1_norm;
+    } else {
+      w0_num = w0_norm & 0xFFFE;
+      w0_denom = w0_num;
+      w1_denom = w1_norm & 0xFFFE;
+    }
+
+    auto t0 = x - x_min;
+    auto t1 = x_max - x;
+
+    // NOTE: this might (will) result in division-by-zero.
+    factor_perp = ((t0 << precision) * w0_num) / (t1 * w1_denom + t0 * w0_denom);
+  }
+
+  u32 factor_lerp;
+  u32 factor_perp;
+  bool force_lerp;
+};
+
+struct Span {
+  s32 x[2];
+  s32 w[2];
+  s32 w_norm[2];
+  u32 depth[2];
+  Vector2<Fixed12x4> uv[2];
+  Color4 color[2];
+};
+
 void GPU::Render() {
   Point points[10];
-
-  struct Span {
-    s32 x[2];
-    s32 w[2];
-    u32 depth[2];
-    Vector2<Fixed12x4> uv[2];
-    Color4 color[2];
-  } span;
+  Span span;
 
   if (disp3dcnt.enable_rear_bitmap) {
     ASSERT(false, "GPU: unhandled rear bitmap");
@@ -337,8 +411,13 @@ void GPU::Render() {
         }
       }
 
-      //LOG_ERROR("GPU: w0 =0x{:08X} w1 =0x{:08X} w2 =0x{:08X}", points[0].vertex->position.w().raw(), points[1].vertex->position.w().raw(), points[2].vertex->position.w().raw());
-      //LOG_ERROR("GPU: w0n=0x{:08X} w1n=0x{:08X} w2n=0x{:08X}", points[0].w_norm, points[1].w_norm, points[2].w_norm);
+      // LOG_ERROR(
+      //   "GPU: w0 =0x{:08X} w1 =0x{:08X} w2 =0x{:08X}", 
+      //   points[0].vertex->position.w().raw(), 
+      //   points[1].vertex->position.w().raw(),
+      //   points[2].vertex->position.w().raw()
+      // );
+      // LOG_ERROR("GPU: w0n=0x{:08X} w1n=0x{:08X} w2n=0x{:08X}", points[0].w_norm, points[1].w_norm, points[2].w_norm);
     }
 
     int s[2];
@@ -356,6 +435,9 @@ void GPU::Render() {
       {points[s[0]], points[e[0]]},
       {points[s[1]], points[e[1]]}
     };
+
+    auto edge_interpolator = Interpolator<9>{};
+    auto span_interpolator = Interpolator<8>{};
 
     for (s32 y = y_min; y <= y_max; y++) {
       // update clock-wise edge
@@ -376,17 +458,59 @@ void GPU::Render() {
 
       // interpolate both edges vertically
       for (int j = 0; j < 2; j++) {
+        auto const& p0 = points[s[j]];
+        auto const& p1 = points[e[j]];
+
         Edge::fixed14x18 x0;
         Edge::fixed14x18 x1;
 
         edge[j].Interpolate(y, x0, x1);
 
-        // This is just a basic debug draw...
-        x0 >>= 18;
-        x1 >>= 18;
-        for (s32 x = x0; x <= x1; x++) {
-          if (y >= 0 && y <= 191 && x >= 0 && x <= 255) {
-            draw_buffer[y * 256 + x] = Color4{63, 0, 63, 63};
+        s32 w0 = points[s[j]].vertex->position.w().raw();
+        s32 w1 = points[s[j]].vertex->position.w().raw();
+        s32 w0_norm = points[s[j]].w_norm;
+        s32 w1_norm = points[e[j]].w_norm;
+          
+        Color4 color;
+        
+        if (edge[j].IsXMajor()) {
+          // TODO: actually use the precision that we have...
+          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, x0 >> 18, p0.x, p1.x);
+        } else {
+          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, y, p0.y, p1.y);
+        }
+
+        // TODO: is it accurate to reduce the precision like that?
+        span.x[j] = x0 >> 18;
+        span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
+        span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
+        edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
+      }
+
+      // Left and right edge indices
+      int l;
+      int r;
+
+      if (span.x[0] > span.x[1]) {
+        l = 1;
+        r = 0;
+      } else {
+        l = 0;
+        r = 1;
+      }
+
+      // TODO: preferrably handle this outside the rasterization loop
+      // by limiting the minimum and maximum y-values.
+      if (y >= 0 && y <= 191) {
+        auto color = Color4{};
+
+        for (s32 x = span.x[l]; x < span.x[r]; x++) {
+          // TODO: cache calculations that do not depend on x.
+          span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x[l], span.x[r]);
+          span_interpolator.Interpolate(span.color[l], span.color[r], color);
+
+          if (x >= 0 && x <= 255) {
+            draw_buffer[y * 256 + x] = color;
           }
         }
       }
