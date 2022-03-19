@@ -248,14 +248,14 @@ struct Interpolator {
   auto Interpolate(T a, T b) -> T {
     auto factor = force_lerp ? factor_lerp : factor_perp;
 
-    return (a * (((1 << precision) - 1) - factor) + b * factor) >> precision;
+    return (a * ((1 << precision) - factor) + b * factor) >> precision;
   }
 
   auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& result) {
     auto factor = force_lerp ? factor_lerp : factor_perp;
 
     for (int i = 0; i < 3; i++) {
-      result[i] = (color_a[i].raw() * (((1 << precision) - 1) - factor) + color_b[i].raw() * factor) >> precision;
+      result[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
 
       // // Formula from melonDS interpolation article.
       // // is there actually a mathematical difference?
