@@ -305,7 +305,8 @@ private:
 };
 
 struct Span {
-  s32 x[2];
+  s32 x0[2];
+  s32 x1[2];
   s32 w[2];
   s32 w_norm[2];
   u32 depth[2];
@@ -481,7 +482,8 @@ void GPU::Render() {
         }
 
         // TODO: is it accurate to reduce the precision like that?
-        span.x[j] = x0 >> 18;
+        span.x0[j] = x0 >> 18;
+        span.x1[j] = x1 >> 18;
         span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
         span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
@@ -491,7 +493,7 @@ void GPU::Render() {
       int l;
       int r;
 
-      if (span.x[0] > span.x[1]) {
+      if (span.x0[0] > span.x1[1]) {
         l = 1;
         r = 0;
       } else {
@@ -502,14 +504,26 @@ void GPU::Render() {
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
+        // TODO: use specialized render method for wireframe drawing.
+        bool wireframe = poly.params.alpha == 0;
         auto color = Color4{};
 
-        for (s32 x = span.x[l]; x < span.x[r]; x++) {
-          // TODO: cache calculations that do not depend on x.
-          span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x[l], span.x[r]);
-          span_interpolator.Interpolate(span.color[l], span.color[r], color);
+        auto x_max = span.x1[r];
+
+        if (!wireframe) {
+          x_max--;
+        }
+
+        for (s32 x = span.x0[l]; x <= x_max; x++) {
+          if (wireframe && x > span.x1[l] && x < span.x0[r]) {
+            continue;
+          }
 
           if (x >= 0 && x <= 255) {
+            // TODO: cache calculations that do not depend on x.
+            span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x0[l], span.x1[r]);
+            span_interpolator.Interpolate(span.color[l], span.color[r], color);
+
             draw_buffer[y * 256 + x] = color;
           }
         }
