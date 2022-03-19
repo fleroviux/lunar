@@ -545,7 +545,7 @@ void GPU::ClearColor::WriteByte(uint offset, u8 value) {
 void GPU::ClearDepth::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0: {
-      depth = (depth& 0xFF00) | value;
+      depth = (depth & 0xFF00) | value;
       break;
     }
     case 1: {

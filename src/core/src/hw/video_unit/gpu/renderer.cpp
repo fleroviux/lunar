@@ -173,13 +173,66 @@ auto GPU::SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& u
   return Color4{};
 }
 
+// TODO: move this into the appropriate class and remove the GPU:: prefix.
+struct Point {
+  s32 x;
+  s32 y;
+  u32 depth;
+  GPU::Vertex const* vertex;
+};
+
+// TODO: I don't really like that we need an extra struct for this...
+struct LerpPoint {
+
+};
+
+struct Edge {
+  using fixed14x18 = s32;
+
+  Edge(Point const& p0, Point const& p1) : p0(&p0), p1(&p1) {
+    CalculateSlope();
+  }
+
+  void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
+    // TODO: always calculating x1 is redundant.
+    // I think this should only be necessary for wireframe rendering?
+    if (x_major) {
+      // TODO: make sure that the math is correct (especially for negative slopes)
+      if (x_slope >= 0) {
+        x0 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
+        x1 = (x0 & ~0x1FF) + x_slope - (1 << 18);
+      } else {
+        x1 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17) - (1 << 18);
+        x0 = (x1 & ~0x1FF) + x_slope;
+      }
+    } else {
+      x0 = (p0->x << 18) + x_slope * (y - p0->y);
+      x1 = x0;
+    }
+  }
+
+private:
+  void CalculateSlope() {
+    s32 x_diff = p1->x - p0->x;
+    s32 y_diff = p1->y - p0->y;
+
+    // TODO: how does hardware handle this edge-case? Does it ever happen?
+    if (y_diff == 0) y_diff = 1;
+
+    fixed14x18 y_reciprocal = (1 << 18) / y_diff;
+
+    x_slope = x_diff * y_reciprocal;
+    x_major = std::abs(x_diff) > std::abs(y_diff);
+  }
+
+  Point const* p0;
+  Point const* p1;
+  fixed14x18 x_slope;
+  bool x_major;
+};
+
 void GPU::Render() {
-  struct Point {
-    s32 x;
-    s32 y;
-    u32 depth;
-    Vertex const* vertex;
-  } points[10];
+  Point points[10];
 
   struct Span {
     s32 x[2];
@@ -259,7 +312,47 @@ void GPU::Render() {
     s[1] = start;
     e[1] = start == 0 ? (vert_count - 1) : (start - 1);
 
+    Edge edge[2]{
+      {points[s[0]], points[e[0]]},
+      {points[s[1]], points[e[1]]}
+    };
+
     for (s32 y = y_min; y <= y_max; y++) {
+      // update clock-wise edge
+      if (points[e[0]].y <= y) {
+        s[0] = e[0];
+        if (++e[0] == vert_count)
+          e[0] = 0;
+        edge[0] = Edge{points[s[0]], points[e[0]]};
+      }
+
+      // update counter clock-wise edge
+      if (points[e[1]].y <= y) {
+        s[1] = e[1];
+        if (--e[1] == -1)
+          e[1] = vert_count - 1;
+        edge[1] = Edge{points[s[1]], points[e[1]]};
+      }
+
+      // interpolate both edges vertically
+      for (int j = 0; j < 2; j++) {
+        Edge::fixed14x18 x0;
+        Edge::fixed14x18 x1;
+
+        edge[j].Interpolate(y, x0, x1);
+
+        // This is just a basic debug draw...
+        x0 >>= 18;
+        x1 >>= 18;
+        for (s32 x = x0; x <= x1; x++) {
+          if (y >= 0 && y <= 191 && x >= 0 && x <= 255) {
+            draw_buffer[y * 256 + x] = Color4{63, 0, 63, 63};
+          }
+        }
+      }
+    }
+
+    /*for (s32 y = y_min; y <= y_max; y++) {
       int a = 0; // left edge index
       int b = 1; // right edge index
 
@@ -391,7 +484,7 @@ void GPU::Render() {
           }
         }
       }
-    }
+    }*/
   }
 }
 

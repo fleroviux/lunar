@@ -120,7 +120,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
   } clrimage_offset;
 
-private:
+//private:
   enum class MatrixMode {
     Projection = 0,
     Modelview = 1,
