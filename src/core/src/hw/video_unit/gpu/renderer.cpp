@@ -474,6 +474,8 @@ void GPU::Render() {
         if (++e[0] == vert_count)
           e[0] = 0;
         edge[0] = Edge{points[s[0]], points[e[0]]};
+
+        LOG_INFO("GPU:  CW edge advance @ y={} (next y-target: {})", y, points[e[0]].y);
       }
 
       // update counter clock-wise edge
@@ -482,6 +484,8 @@ void GPU::Render() {
         if (--e[1] == -1)
           e[1] = vert_count - 1;
         edge[1] = Edge{points[s[1]], points[e[1]]};
+
+        LOG_INFO("GPU: CCW edge advance @ y={} (next y-target: {})", y, points[e[1]].y);
       }
 
       // interpolate both edges vertically
@@ -528,6 +532,8 @@ void GPU::Render() {
         l = 0;
         r = 1;
       }
+
+      LOG_INFO("GPU: span: {} ({} {}) {} @ y={}", span.x0[l], span.x1[l], span.x0[r], span.x1[r], y);
 
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
