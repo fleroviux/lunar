@@ -534,6 +534,13 @@ void GPU::Render() {
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
+        /* TODO: sometimes when one edge is x-major we swap the edges incorrectly.
+         * To work around this we calculate the min/max x to avoid interpolation bugs.
+         * Find a proper solution for this issue.
+         */
+        const auto min_x = std::min(span.x0[l], span.x0[r]);
+        const auto max_x = std::max(span.x1[l], span.x1[r]);
+
         const auto render_span = [&](s32 x_min, s32 x_max) {
           auto uv = Vector2<Fixed12x4>{};
           auto color = Color4{};
@@ -543,7 +550,7 @@ void GPU::Render() {
             if (x < 0 || x > 255) continue;
 
             // TODO: cache calculations that do not depend on x.
-            span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x0[l], span.x1[r]);
+            span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, min_x, max_x);
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
             span_interpolator.Interpolate(span.color[l], span.color[r], color);
 
@@ -568,28 +575,16 @@ void GPU::Render() {
           span.x1[r]--;
         }
 
-        // Sometimes the left and right edge intersect (when they meet I guess)
-        // In this case the fill will be rendered with bogus interpolated attributes.
-        // So prevent this issue with clamp the edges.
-        // TODO: fix this properly (stop the edges from intersecting I guess)
-        // span.x0[l] = std::min(span.x0[l], span.x0[r]);
-        // span.x1[l] = std::min(span.x1[l], span.x0[r]);
-        // span.x0[r] = std::max(span.x0[r], span.x1[l]);
-        // span.x1[r] = std::max(span.x1[r], span.x1[l]);
-
         if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
           render_span(span.x0[l], span.x1[l]);
-          //LOG_ERROR("GPU: LE {} {}", span.x0[l], span.x1[l]);
         }
         
         if (!wireframe) {
           render_span(span.x1[l] + 1, span.x0[r] - 1);
-          //LOG_ERROR("GPU: FI {} {}", span.x1[l], span.x0[r]);
         }
         
         if (force_draw_edges_b || edge[r].XSlope() > 0 && edge[r].IsXMajor() || edge[r].XSlope() == 0) {
           render_span(span.x0[r], span.x1[r]);
-          //LOG_ERROR("GPU: RE {} {}", span.x0[r], span.x1[r]);
         }
       }
     }
