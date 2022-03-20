@@ -525,6 +525,8 @@ void GPU::Render() {
 
         if (!wireframe) {
           x_max--;
+        } else {
+          alpha = 63;
         }
 
         for (s32 x = span.x0[l]; x <= x_max; x++) {
