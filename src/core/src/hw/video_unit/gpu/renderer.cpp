@@ -476,28 +476,8 @@ void GPU::Render() {
       alpha = 63;
     }
 
-    for (s32 y = y_min; y < y_max; y++) {
+    for (s32 y = y_min; y <= y_max; y++) {
       bool force_draw_edges_b = force_draw_edges_a || y == 191;
-
-      // update clock-wise edge
-      if (points[e[0]].y <= y) {
-        s[0] = e[0];
-        if (++e[0] == vert_count)
-          e[0] = 0;
-        edge[0] = Edge{points[s[0]], points[e[0]]};
-
-        LOG_INFO("GPU:  CW edge advance @ y={} (next y-target: {})", y, points[e[0]].y);
-      }
-
-      // update counter clock-wise edge
-      if (points[e[1]].y <= y) {
-        s[1] = e[1];
-        if (--e[1] == -1)
-          e[1] = vert_count - 1;
-        edge[1] = Edge{points[s[1]], points[e[1]]};
-
-        LOG_INFO("GPU: CCW edge advance @ y={} (next y-target: {})", y, points[e[1]].y);
-      }
 
       // interpolate both edges vertically
       for (int j = 0; j < 2; j++) {
@@ -601,6 +581,28 @@ void GPU::Render() {
         if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
           render_span(span.x0[r], span.x1[r]);
         }
+      }
+
+      auto next_y = y + 1;
+
+      // update clock-wise edge
+      if (points[e[0]].y <= next_y) {
+        s[0] = e[0];
+        if (++e[0] == vert_count)
+          e[0] = 0;
+        edge[0] = Edge{points[s[0]], points[e[0]]};
+
+        LOG_INFO("GPU:  CW edge advance @ y={} (next y-target: {})", y, points[e[0]].y);
+      }
+
+      // update counter clock-wise edge
+      if (points[e[1]].y <= next_y) {
+        s[1] = e[1];
+        if (--e[1] == -1)
+          e[1] = vert_count - 1;
+        edge[1] = Edge{points[s[1]], points[e[1]]};
+
+        LOG_INFO("GPU: CCW edge advance @ y={} (next y-target: {})", y, points[e[1]].y);
       }
     }
   }
