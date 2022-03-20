@@ -290,8 +290,14 @@ struct Interpolator {
 private:
   void CalculateLerpFactor(s32 x, s32 x_min, s32 x_max) {
     // TODO: make sure that this uses the correct amount of precision.
-    // NOTE: this might (will) result in division-by-zero.
-    factor_lerp = ((x - x_min) << precision) / (x_max - x_min); 
+    auto denominator = x_max - x_min;
+
+    // TODO: how does the DS GPU deal with division-by-zero?
+    if (denominator != 0) {
+      factor_lerp = ((x - x_min) << precision) / denominator;
+    } else {
+      factor_lerp = 0;
+    }
   }
 
   void CalculatePerpFactor(u16 w0_norm, u16 w1_norm, s32 x, s32 x_min, s32 x_max) {
@@ -311,9 +317,14 @@ private:
 
     auto t0 = x - x_min;
     auto t1 = x_max - x;
+    auto denominator = t1 * w1_denom + t0 * w0_denom;
 
-    // NOTE: this might (will) result in division-by-zero.
-    factor_perp = ((t0 << precision) * w0_num) / (t1 * w1_denom + t0 * w0_denom);
+    // TODO: how does the DS GPU deal with division-by-zero?
+    if (denominator != 0) {
+      factor_perp = ((t0 << precision) * w0_num) / denominator;
+    } else {
+      factor_perp = 0;
+    }
   }
 
   u32 factor_lerp;
