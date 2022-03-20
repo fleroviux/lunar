@@ -196,15 +196,13 @@ struct Edge {
   bool& IsXMajor() { return x_major; }
 
   void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
-    // TODO: always calculating x1 is redundant.
-    // I think this should only be necessary for wireframe rendering?
     if (x_major) {
-      // TODO: make sure that the math is correct (especially for negative slopes)
+      // TODO: make sure that the math is correct (especially negative slopes)
       if (x_slope >= 0) {
         x0 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
         x1 = (x0 & ~0x1FF) + x_slope - (1 << 18);
       } else {
-        x1 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17) - (1 << 18);
+        x1 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
         x0 = (x1 & ~0x1FF) + x_slope;
       }
     } else {
