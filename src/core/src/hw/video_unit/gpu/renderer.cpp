@@ -581,7 +581,7 @@ void GPU::Render() {
           render_span(span.x1[l] + 1, span.x0[r] - 1);
         }
         
-        if (force_draw_edges_b || edge[r].XSlope() > 0 && edge[r].IsXMajor() || edge[r].XSlope() == 0) {
+        if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
           render_span(span.x0[r], span.x1[r]);
         }
       }
