@@ -191,6 +191,8 @@ struct Edge {
     CalculateSlope();
   }
 
+  fixed14x18 XSlope() { return x_slope; }
+
   bool& IsXMajor() { return x_major; }
 
   void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
@@ -237,6 +239,9 @@ struct Interpolator {
     CalculateLerpFactor(x, x_min, x_max);
     CalculatePerpFactor(w0_norm, w1_norm, x, x_min, x_max);
 
+    // LOG_ERROR("GPU: w0={:08X} w1={:08X} w0n={:04X} w1n={:04X} x={} x_min={} x_max={}",
+    //   w0, w1, w0_norm, w1_norm, x, x_min, x_max);
+
     // TODO: use 127 instead of 126 for span interpolation.
     // Also, if possible, simply overwrite the perp factor with the lerp factor if this is true.
     force_lerp = w0 == w1 && (w0 & 126) == 0 && (w1 & 126) == 0;
@@ -255,6 +260,10 @@ struct Interpolator {
 
   auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& color_out) {
     auto factor = force_lerp ? factor_lerp : factor_perp;
+
+    // if (factor > 512) {
+    //   LOG_ERROR("GPU: bad factor: {}", factor);
+    // }
 
     for (int i = 0; i < 3; i++) {
       color_out[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
@@ -450,7 +459,17 @@ void GPU::Render() {
     auto edge_interpolator = Interpolator<9>{};
     auto span_interpolator = Interpolator<8>{};
 
-    for (s32 y = y_min; y <= y_max; y++) {
+    auto alpha = (poly.params.alpha << 1) | (poly.params.alpha >> 4);
+    bool wireframe = alpha == 0;
+    bool force_draw_edges_a = alpha != 63 || disp3dcnt.enable_antialias || disp3dcnt.enable_edge_marking;
+
+    if (wireframe) {
+      alpha = 63;
+    }
+
+    for (s32 y = y_min; y < y_max; y++) {
+      bool force_draw_edges_b = force_draw_edges_a || y == 191;
+
       // update clock-wise edge
       if (points[e[0]].y <= y) {
         s[0] = e[0];
@@ -515,26 +534,14 @@ void GPU::Render() {
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
-        // TODO: use specialized render method for wireframe drawing.
-        auto alpha = (poly.params.alpha << 1) | (poly.params.alpha >> 4);
-        bool wireframe = alpha == 0;
-        auto uv = Vector2<Fixed12x4>{};
-        auto color = Color4{};
+        const auto render_span = [&](s32 x_min, s32 x_max) {
+          auto uv = Vector2<Fixed12x4>{};
+          auto color = Color4{};
 
-        auto x_max = span.x1[r];
+          for (s32 x = x_min; x <= x_max; x++) {
+            // TODO: clamp x_min and x_max instead
+            if (x < 0 || x > 255) continue;
 
-        if (!wireframe) {
-          x_max--;
-        } else {
-          alpha = 63;
-        }
-
-        for (s32 x = span.x0[l]; x <= x_max; x++) {
-          if (wireframe && x > span.x1[l] && x < span.x0[r]) {
-            continue;
-          }
-
-          if (x >= 0 && x <= 255) {
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, span.x0[l], span.x1[r]);
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
@@ -553,6 +560,36 @@ void GPU::Render() {
 
             draw_buffer[y * 256 + x] = color;
           }
+        };
+
+        if (edge[r].XSlope() == 0) {
+          // TODO: the horizontal attribute interpolator's rightmost X coordinate is incremented by one
+          span.x0[r]--;
+          span.x1[r]--;
+        }
+
+        // Sometimes the left and right edge intersect (when they meet I guess)
+        // In this case the fill will be rendered with bogus interpolated attributes.
+        // So prevent this issue with clamp the edges.
+        // TODO: fix this properly (stop the edges from intersecting I guess)
+        // span.x0[l] = std::min(span.x0[l], span.x0[r]);
+        // span.x1[l] = std::min(span.x1[l], span.x0[r]);
+        // span.x0[r] = std::max(span.x0[r], span.x1[l]);
+        // span.x1[r] = std::max(span.x1[r], span.x1[l]);
+
+        if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
+          render_span(span.x0[l], span.x1[l]);
+          //LOG_ERROR("GPU: LE {} {}", span.x0[l], span.x1[l]);
+        }
+        
+        if (!wireframe) {
+          render_span(span.x1[l] + 1, span.x0[r] - 1);
+          //LOG_ERROR("GPU: FI {} {}", span.x1[l], span.x0[r]);
+        }
+        
+        if (force_draw_edges_b || edge[r].XSlope() > 0 && edge[r].IsXMajor() || edge[r].XSlope() == 0) {
+          render_span(span.x0[r], span.x1[r]);
+          //LOG_ERROR("GPU: RE {} {}", span.x0[r], span.x1[r]);
         }
       }
     }
