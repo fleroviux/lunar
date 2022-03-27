@@ -200,14 +200,28 @@ struct Edge {
       // TODO: make sure that the math is correct (especially negative slopes)
       if (x_slope >= 0) {
         x0 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
-        x1 = (x0 & ~0x1FF) + x_slope - (1 << 18);
+
+        if (y != p1->y || flat_horizontal) {
+          x1 = (x0 & ~0x1FF) + x_slope - (1 << 18);
+        } else {
+          x1 = x0;
+        }
       } else {
         x1 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
-        x0 = (x1 & ~0x1FF) + x_slope;
+
+        if (y != p1->y || flat_horizontal) {
+          x0 = (x1 & ~0x1FF) + x_slope;
+        } else {
+          x0 = x1;
+        }
       }
     } else {
       x0 = (p0->x << 18) + x_slope * (y - p0->y);
       x1 = x0;
+    }
+
+    if (flat_horizontal) {
+      LOG_ERROR("")
     }
   }
 
@@ -217,18 +231,24 @@ private:
     s32 y_diff = p1->y - p0->y;
 
     // TODO: how does hardware handle this edge-case? Does it ever happen?
-    if (y_diff == 0) y_diff = 1;
+    if (y_diff == 0) {
+      x_slope = x_diff << 18;
+      x_major = std::abs(x_diff) > 1;
+      flat_horizontal = true;
+    } else {
+      fixed14x18 y_reciprocal = (1 << 18) / y_diff;
 
-    fixed14x18 y_reciprocal = (1 << 18) / y_diff;
-
-    x_slope = x_diff * y_reciprocal;
-    x_major = std::abs(x_diff) > std::abs(y_diff);
+      x_slope = x_diff * y_reciprocal;
+      x_major = std::abs(x_diff) > std::abs(y_diff);
+      flat_horizontal = false;
+    }
   }
 
   Point const* p0;
   Point const* p1;
   fixed14x18 x_slope;
   bool x_major;
+  bool flat_horizontal;
 };
 
 template<int precision>
@@ -375,7 +395,8 @@ void GPU::Render() {
   for (int i = 0; i < poly_count; i++) {
     Polygon const& poly = poly_ram.data[i];
 
-    int start = 0;
+    int start;
+    int end;
     s32 y_min = 256;
     s32 y_max = 0;
 
@@ -403,6 +424,7 @@ void GPU::Render() {
       // Update the maximum y-Coordinate
       if (point.y > y_max) {
         y_max = point.y;
+        end = j;
       }
     }
 
@@ -479,44 +501,19 @@ void GPU::Render() {
     for (s32 y = y_min; y <= y_max; y++) {
       bool force_draw_edges_b = force_draw_edges_a || y == 191;
 
+      Edge::fixed14x18 x0[2];
+      Edge::fixed14x18 x1[2];
+
       // interpolate both edges vertically
       for (int j = 0; j < 2; j++) {
-        auto const& p0 = points[s[j]];
-        auto const& p1 = points[e[j]];
-
-        Edge::fixed14x18 x0;
-        Edge::fixed14x18 x1;
-
-        edge[j].Interpolate(y, x0, x1);
-
-        s32 w0 = points[s[j]].vertex->position.w().raw();
-        s32 w1 = points[s[j]].vertex->position.w().raw();
-        s32 w0_norm = points[s[j]].w_norm;
-        s32 w1_norm = points[e[j]].w_norm;
-          
-        Color4 color;
-        
-        if (edge[j].IsXMajor()) {
-          // TODO: actually use the precision that we have...
-          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, x0 >> 18, p0.x, p1.x);
-        } else {
-          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, y, p0.y, p1.y);
-        }
-
-        // TODO: is it accurate to reduce the precision like that?
-        span.x0[j] = x0 >> 18;
-        span.x1[j] = x1 >> 18;
-        span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
-        span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
-        edge_interpolator.Interpolate(p0.vertex->uv, p1.vertex->uv, span.uv[j]);
-        edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
+        edge[j].Interpolate(y, x0[j], x1[j]);
       }
 
       // Left and right edge indices
       int l;
       int r;
 
-      if (span.x0[0] > span.x1[1]) {
+      if (x1[0] > x0[1]) {
         l = 1;
         r = 0;
       } else {
@@ -524,17 +521,40 @@ void GPU::Render() {
         r = 1;
       }
 
+      for (int j = 0; j < 2; j++) {
+        auto const& p0 = points[s[j]];
+        auto const& p1 = points[e[j]];
+
+        s32 w0 = points[s[j]].vertex->position.w().raw();
+        s32 w1 = points[s[j]].vertex->position.w().raw();
+        s32 w0_norm = points[s[j]].w_norm;
+        s32 w1_norm = points[e[j]].w_norm;
+
+        if (edge[j].IsXMajor()) {
+          int x = (j == l) ? x0[l] : x1[r];
+
+          // TODO: actually use the precision that we have...
+          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, x >> 18, p0.x, p1.x);
+        } else {
+          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, y, p0.y, p1.y);
+        }
+
+        // TODO: is it accurate to reduce the precision like that?
+        span.x0[j] = x0[j] >> 18;
+        span.x1[j] = x1[j] >> 18;
+        span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
+        span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
+        edge_interpolator.Interpolate(p0.vertex->uv, p1.vertex->uv, span.uv[j]);
+        edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
+      }
+
       LOG_INFO("GPU: span: {} ({} {}) {} @ y={}", span.x0[l], span.x1[l], span.x0[r], span.x1[r], y);
 
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
-        /* TODO: sometimes when one edge is x-major we swap the edges incorrectly.
-         * To work around this we calculate the min/max x to avoid interpolation bugs.
-         * Find a proper solution for this issue.
-         */
-        const auto min_x = std::min(span.x0[l], span.x0[r]);
-        const auto max_x = std::max(span.x1[l], span.x1[r]);
+        const auto min_x = span.x0[l];
+        const auto max_x = span.x1[r];
 
         const auto render_span = [&](s32 x_min, s32 x_max) {
           auto uv = Vector2<Fixed12x4>{};
@@ -566,8 +586,8 @@ void GPU::Render() {
 
         if (edge[r].XSlope() == 0) {
           // TODO: the horizontal attribute interpolator's rightmost X coordinate is incremented by one
-          span.x0[r]--;
-          span.x1[r]--;
+          //span.x0[r]--;
+          //span.x1[r]--;
         }
 
         if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
@@ -586,7 +606,7 @@ void GPU::Render() {
       auto next_y = y + 1;
 
       // update clock-wise edge
-      if (points[e[0]].y <= next_y) {
+      if (points[e[0]].y <= next_y && e[0] != end) {
         s[0] = e[0];
         if (++e[0] == vert_count)
           e[0] = 0;
@@ -596,7 +616,7 @@ void GPU::Render() {
       }
 
       // update counter clock-wise edge
-      if (points[e[1]].y <= next_y) {
+      if (points[e[1]].y <= next_y && e[1] != end) {
         s[1] = e[1];
         if (--e[1] == -1)
           e[1] = vert_count - 1;
