@@ -219,10 +219,6 @@ struct Edge {
       x0 = (p0->x << 18) + x_slope * (y - p0->y);
       x1 = x0;
     }
-
-    if (flat_horizontal) {
-      LOG_ERROR("")
-    }
   }
 
 private:
@@ -230,7 +226,6 @@ private:
     s32 x_diff = p1->x - p0->x;
     s32 y_diff = p1->y - p0->y;
 
-    // TODO: how does hardware handle this edge-case? Does it ever happen?
     if (y_diff == 0) {
       x_slope = x_diff << 18;
       x_major = std::abs(x_diff) > 1;
@@ -586,8 +581,8 @@ void GPU::Render() {
 
         if (edge[r].XSlope() == 0) {
           // TODO: the horizontal attribute interpolator's rightmost X coordinate is incremented by one
-          //span.x0[r]--;
-          //span.x1[r]--;
+          span.x0[r]--;
+          span.x1[r]--;
         }
 
         if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
