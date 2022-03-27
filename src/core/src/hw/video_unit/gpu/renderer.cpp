@@ -508,7 +508,9 @@ void GPU::Render() {
       int l;
       int r;
 
-      if (x1[0] > x0[1]) {
+      // TODO: can we get rid of the second condition?
+      // Right now it exists to handle the case where the second edge is contained within the first edge.
+      if ((x1[0] >> 18) > (x0[1] >> 18) && (x0[1] >> 18) <= (x0[0] >> 18)) {
         l = 1;
         r = 0;
       } else {
@@ -543,7 +545,8 @@ void GPU::Render() {
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
       }
 
-      LOG_INFO("GPU: span: {} ({} {}) {} @ y={}", span.x0[l], span.x1[l], span.x0[r], span.x1[r], y);
+      LOG_INFO("GPU: span a: {} ({} {}) {} @ y={}", span.x0[0], span.x1[0], span.x0[1], span.x1[1], y);
+      LOG_INFO("GPU: span b: {} ({} {}) {} @ y={}", span.x0[l], span.x1[l], span.x0[r], span.x1[r], y);
 
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
