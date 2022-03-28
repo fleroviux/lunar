@@ -13,7 +13,7 @@ struct Point {
   s32 x;
   s32 y;
   u32 depth;
-  s32 w_norm;
+  s32 w;
   GPU::Vertex const* vertex;
 };
 
@@ -81,9 +81,9 @@ private:
 
 template<int precision>
 struct Interpolator {
-  void Setup(s32 w0, s32 w1, u16 w0_norm, u16 w1_norm, s32 x, s32 x_min, s32 x_max) {
+  void Setup(u16 w0, u16 w1, s32 x, s32 x_min, s32 x_max) {
     CalculateLerpFactor(x, x_min, x_max);
-    CalculatePerpFactor(w0_norm, w1_norm, x, x_min, x_max);
+    CalculatePerpFactor(w0, w1, x, x_min, x_max);
 
     // LOG_ERROR("GPU: w0={:08X} w1={:08X} w0n={:04X} w1n={:04X} x={} x_min={} x_max={}",
     //   w0, w1, w0_norm, w1_norm, x, x_min, x_max);
@@ -153,19 +153,19 @@ private:
     }
   }
 
-  void CalculatePerpFactor(u16 w0_norm, u16 w1_norm, s32 x, s32 x_min, s32 x_max) {
+  void CalculatePerpFactor(u16 w0, u16 w1, s32 x, s32 x_min, s32 x_max) {
     u16 w0_num;
     u16 w0_denom;
     u16 w1_denom;
 
-    if ((w0_norm & 1) && !(w1_norm & 1)) {
-      w0_num = w0_norm - 1;
-      w0_denom = w0_norm + 1;
-      w1_denom = w1_norm;
+    if ((w0 & 1) && !(w1 & 1)) {
+      w0_num = w0 - 1;
+      w0_denom = w0 + 1;
+      w1_denom = w1;
     } else {
-      w0_num = w0_norm & 0xFFFE;
+      w0_num = w0 & 0xFFFE;
       w0_denom = w0_num;
-      w1_denom = w1_norm & 0xFFFE;
+      w1_denom = w1 & 0xFFFE;
     }
 
     auto t0 = x - x_min;
@@ -189,7 +189,6 @@ struct Span {
   s32 x0[2];
   s32 x1[2];
   s32 w[2];
-  s32 w_norm[2];
   u32 depth[2];
   Vector2<Fixed12x4> uv[2];
   Color4 color[2];
@@ -248,7 +247,7 @@ void GPU::Render() {
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
       point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
       point.depth = (((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9;
-      point.w_norm = vert.position.w().raw();
+      point.w = vert.position.w().raw();
       point.vertex = &vert;
 
       // Pick the first vertex with the lowest y-Coordinate as the start node.
@@ -276,10 +275,10 @@ void GPU::Render() {
       for (int j = 0; j < vert_count; j++) {
         auto const& point = points[j];
 
-        if (point.w_norm < 0) {
-          min_leading = std::min(min_leading, __builtin_clz(~point.w_norm));
+        if (point.w < 0) {
+          min_leading = std::min(min_leading, __builtin_clz(~point.w));
         } else {
-          min_leading = std::min(min_leading, __builtin_clz( point.w_norm));
+          min_leading = std::min(min_leading, __builtin_clz( point.w));
         }
       }
 
@@ -291,13 +290,13 @@ void GPU::Render() {
         }
 
         for (int j = 0; j < vert_count; j++) {
-          points[j].w_norm >>= w_shift;
+          points[j].w >>= w_shift;
         }
       } else if (min_leading > 16) {
         w_shift = (min_leading - 16) & ~3 ;
       
         for (int j = 0; j < vert_count; j++) {
-          points[j].w_norm <<= w_shift;
+          points[j].w <<= w_shift;
         }
 
         w_shift = -w_shift;
@@ -366,27 +365,24 @@ void GPU::Render() {
         auto const& p0 = points[s[j]];
         auto const& p1 = points[e[j]];
 
-        s32 w0 = points[s[j]].vertex->position.w().raw();
-        s32 w1 = points[s[j]].vertex->position.w().raw();
-        s32 w0_norm = points[s[j]].w_norm;
-        s32 w1_norm = points[e[j]].w_norm;
+        s32 w0 = points[s[j]].w;
+        s32 w1 = points[e[j]].w;
 
         if (edge[j].IsXMajor()) {
           int x = (j == l) ? x0[l] : x1[r];
 
           // TODO: actually use the precision that we have...
-          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, x >> 18, p0.x, p1.x);
+          edge_interpolator.Setup(w0, w1, x >> 18, p0.x, p1.x);
         } else {
-          edge_interpolator.Setup(w0, w1, w0_norm, w1_norm, y, p0.y, p1.y);
+          edge_interpolator.Setup(w0, w1, y, p0.y, p1.y);
         }
 
         // TODO: is it accurate to reduce the precision like that?
         span.x0[j] = x0[j] >> 18;
         span.x1[j] = x1[j] >> 18;
-        span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
-        span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
+        span.w[j] = edge_interpolator.Interpolate(p0.w, p1.w);
         if (use_w_buffer) {
-          s32 w = span.w_norm[j];
+          s32 w = span.w[j];
 
           if (w_shift >= 0) {
             w <<= w_shift;
@@ -422,7 +418,7 @@ void GPU::Render() {
             int index = y * 256 + x;
 
             // TODO: cache calculations that do not depend on x.
-            span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, min_x, max_x);
+            span_interpolator.Setup(span.w[l], span.w[r], x, min_x, max_x);
 
             u32 depth_old = depth_buffer[index];
             u32 depth_new;
