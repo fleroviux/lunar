@@ -429,8 +429,7 @@ void GPU::Render() {
 
             if (use_w_buffer) {
               depth_new = span_interpolator.Interpolate(span.depth[l], span.depth[r]);
-            }
-            else {
+            } else {
               depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
             }
 
