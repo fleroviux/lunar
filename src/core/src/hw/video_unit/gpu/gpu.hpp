@@ -96,6 +96,12 @@ struct GPU {
     GPU& gpu;
   } gxstat { *this };
 
+  struct AlphaTest {
+    int alpha = 0;
+
+    void WriteByte(u8 value);
+  } alpha_test_ref;
+
   struct ClearColor {
     int color_r = 0;
     int color_g = 0;

@@ -51,6 +51,7 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  alpha_test_ref = {};
   clear_color = {};
   clear_depth = {};
   clrimage_offset = {};
@@ -523,6 +524,10 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
     default:
       UNREACHABLE;
   }
+}
+
+void GPU::AlphaTest::WriteByte(u8 value) {
+  alpha = value;
 }
 
 void GPU::ClearColor::WriteByte(uint offset, u8 value) {

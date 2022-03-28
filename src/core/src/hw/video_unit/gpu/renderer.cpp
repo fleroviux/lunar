@@ -327,6 +327,12 @@ void GPU::Render() {
       alpha = 63;
     }
 
+    int alpha_threshold = 0;
+
+    if (disp3dcnt.enable_alpha_test) {
+      alpha_threshold = (alpha_test_ref.alpha << 1) | (alpha_test_ref.alpha >> 4);
+    }
+
     for (s32 y = y_min; y <= y_max; y++) {
       bool force_draw_edges_b = force_draw_edges_a || y == 191;
 
@@ -401,22 +407,26 @@ void GPU::Render() {
             // TODO: clamp x_min and x_max instead
             if (x < 0 || x > 255) continue;
 
+            int index = y * 256 + x;
+
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, min_x, max_x);
 
-            u32 depth_old = depth_buffer[y * 256 + x];
+            u32 depth_old = depth_buffer[index];
             u32 depth_new;
 
             if (use_w_buffer) {
               depth_new = span_interpolator.Interpolate(span.depth[l], span.depth[r]);
-            } else {
+            }
+            else {
               depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
             }
 
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
               if (depth_new >= depth_old)
                 continue;
-            } else {
+            }
+            else {
               if (std::abs((s32)depth_new - (s32)depth_old) > (use_w_buffer ? 0xFF : 0x200))
                 continue;
             }
@@ -424,20 +434,29 @@ void GPU::Render() {
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
             span_interpolator.Interpolate(span.color[l], span.color[r], color);
 
-            color.a() = alpha; 
+            color.a() = alpha;
 
             if (disp3dcnt.enable_textures) {
               auto texel = SampleTexture(poly.texture_params, uv);
-              // TODO: perform alpha test
-              if (texel.a() == 0) {
+              if (texel.a() <= alpha_threshold) {
                 continue;
               }
               color *= texel;
             }
 
+            if (disp3dcnt.enable_alpha_blend && draw_buffer[index].a() != 0) {
+              auto a0 = color.a();
+              auto a1 = Fixed6{63} - a0;
+              for (uint j = 0; j < 3; j++)
+                color[j] = color[j] * a0 + draw_buffer[index][j] * a1;
+              color.a() = std::max(color.a(), draw_buffer[index].a());
+            }
+
             // TODO: what rules apply to updating the depth buffer?
-            draw_buffer[y * 256 + x] = color;
-            depth_buffer[y * 256 + x] = depth_new;
+            draw_buffer[index] = color;
+            if (alpha == 63 || poly.params.enable_translucent_depth_write) {
+              depth_buffer[index] = depth_new;
+            }
           }
         };
 
