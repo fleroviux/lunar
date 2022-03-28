@@ -102,6 +102,11 @@ struct Interpolator {
     return (a * ((1 << precision) - factor) + b * factor) >> precision;
   }
 
+  template<typename T>
+  auto InterpolateLinear(T a, T b) -> T {
+    return (a * ((1 << precision) - factor_lerp) + b * factor_lerp) >> precision;
+  }
+
   // TODO: generalize this for arbitrary vectors?
 
   auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& color_out) {
@@ -190,10 +195,7 @@ struct Span {
   Color4 color[2];
 };
 
-void GPU::Render() {
-  Point points[10];
-  Span span;
-
+void GPU::RenderRearPlane() {
   if (disp3dcnt.enable_rear_bitmap) {
     ASSERT(false, "GPU: unhandled rear bitmap");
   } else {
@@ -214,11 +216,18 @@ void GPU::Render() {
       depth_buffer[i] = depth;
     }
   }
+}
+
+void GPU::Render() {
+  Point points[10];
+  Span span;
 
   auto buffer_id = gx_buffer_id ^ 1;
   auto& vert_ram = vertex[buffer_id];
   auto& poly_ram = polygon[buffer_id];
   auto poly_count = poly_ram.count;
+
+  RenderRearPlane();
 
   for (int i = 0; i < poly_count; i++) {
     Polygon const& poly = poly_ram.data[i];
@@ -289,14 +298,6 @@ void GPU::Render() {
           points[j].w_norm <<= shift;
         }
       }
-
-      // LOG_ERROR(
-      //   "GPU: w0 =0x{:08X} w1 =0x{:08X} w2 =0x{:08X}", 
-      //   points[0].vertex->position.w().raw(), 
-      //   points[1].vertex->position.w().raw(),
-      //   points[2].vertex->position.w().raw()
-      // );
-      // LOG_ERROR("GPU: w0n=0x{:08X} w1n=0x{:08X} w2n=0x{:08X}", points[0].w_norm, points[1].w_norm, points[2].w_norm);
     }
 
     int s[2];
@@ -374,6 +375,7 @@ void GPU::Render() {
         span.x1[j] = x1[j] >> 18;
         span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
         span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
+        span.depth[j] = edge_interpolator.InterpolateLinear(p0.depth, p1.depth);
         edge_interpolator.Interpolate(p0.vertex->uv, p1.vertex->uv, span.uv[j]);
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
       }
@@ -387,16 +389,28 @@ void GPU::Render() {
         const auto min_x = span.x0[l];
         const auto max_x = span.x1[r];
 
-        const auto render_span = [&](s32 x_min, s32 x_max) {
+        const auto render_span = [&](s32 x0, s32 x1) {
           auto uv = Vector2<Fixed12x4>{};
           auto color = Color4{};
 
-          for (s32 x = x_min; x <= x_max; x++) {
+          for (s32 x = x0; x <= x1; x++) {
             // TODO: clamp x_min and x_max instead
             if (x < 0 || x > 255) continue;
 
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, min_x, max_x);
+
+            u32 depth_old = depth_buffer[y * 256 + x];
+            u32 depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
+
+            if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
+              if (depth_new >= depth_old)
+                continue;
+            } else {
+              if (std::abs((s32)depth_new - (s32)depth_old) > 0x200)
+                continue;
+            }
+
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
             span_interpolator.Interpolate(span.color[l], span.color[r], color);
 
@@ -411,7 +425,9 @@ void GPU::Render() {
               color *= texel;
             }
 
+            // TODO: what rules apply to updating the depth buffer?
             draw_buffer[y * 256 + x] = color;
+            depth_buffer[y * 256 + x] = depth_new;
           }
         };
 

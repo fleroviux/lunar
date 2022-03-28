@@ -286,6 +286,8 @@ struct GPU {
 
   void CMD_SwapBuffers();
 
+  void RenderRearPlane();
+
   bool in_vertex_list;
   bool is_quad;
   bool is_strip;
