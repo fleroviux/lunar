@@ -265,6 +265,8 @@ void GPU::Render() {
       }
     }
 
+    int w_shift = 0;
+
     // w-normalization.
     // TODO: move this to the correct place in the pipeline
     // Also make sure that this is actually correct.
@@ -282,21 +284,23 @@ void GPU::Render() {
       }
 
       if (min_leading < 16) {
-        int shift = 16 - min_leading;
+        w_shift = 16 - min_leading;
 
-        if ((shift & 3) != 0) {
-          shift += 4 - (shift & 3);
+        if ((w_shift & 3) != 0) {
+          w_shift += 4 - (w_shift & 3);
         }
 
         for (int j = 0; j < vert_count; j++) {
-          points[j].w_norm >>= shift;
+          points[j].w_norm >>= w_shift;
         }
       } else if (min_leading > 16) {
-        int shift = (min_leading - 16) & ~3 ;
+        w_shift = (min_leading - 16) & ~3 ;
       
         for (int j = 0; j < vert_count; j++) {
-          points[j].w_norm <<= shift;
+          points[j].w_norm <<= w_shift;
         }
+
+        w_shift = -w_shift;
       }
     }
 
@@ -382,7 +386,15 @@ void GPU::Render() {
         span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
         span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
         if (use_w_buffer) {
-          span.depth[j] = span.w_norm[j];
+          s32 w = span.w_norm[j];
+
+          if (w_shift >= 0) {
+            w <<= w_shift;
+          } else {
+            w >>= w_shift;
+          }
+
+          span.depth[j] = (u32)w;
         } else {
           span.depth[j] = edge_interpolator.InterpolateLinear(p0.depth, p1.depth);
         }
