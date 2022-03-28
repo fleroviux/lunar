@@ -81,6 +81,8 @@ void GPU::Reset() {
     draw_buffer[i] = {}; 
   }
 
+  use_w_buffer = false;
+  use_w_buffer_pending = false;
   swap_buffers_pending = false;
 }
 
@@ -242,6 +244,7 @@ void GPU::SwapBuffers() {
     gx_buffer_id ^= 1;
     vertex[gx_buffer_id].count = 0;
     polygon[gx_buffer_id].count = 0;
+    use_w_buffer = use_w_buffer_pending;
     swap_buffers_pending = false;
     ProcessCommands();
   }

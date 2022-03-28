@@ -375,7 +375,11 @@ void GPU::Render() {
         span.x1[j] = x1[j] >> 18;
         span.w[j] = edge_interpolator.Interpolate(p0.vertex->position.w().raw(), p1.vertex->position.w().raw());
         span.w_norm[j] = edge_interpolator.Interpolate(p0.w_norm, p1.w_norm);
-        span.depth[j] = edge_interpolator.InterpolateLinear(p0.depth, p1.depth);
+        if (use_w_buffer) {
+          span.depth[j] = span.w_norm[j];
+        } else {
+          span.depth[j] = edge_interpolator.InterpolateLinear(p0.depth, p1.depth);
+        }
         edge_interpolator.Interpolate(p0.vertex->uv, p1.vertex->uv, span.uv[j]);
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
       }
@@ -401,13 +405,19 @@ void GPU::Render() {
             span_interpolator.Setup(span.w[l], span.w[r], span.w_norm[l], span.w_norm[r], x, min_x, max_x);
 
             u32 depth_old = depth_buffer[y * 256 + x];
-            u32 depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
+            u32 depth_new;
+
+            if (use_w_buffer) {
+              depth_new = span_interpolator.Interpolate(span.depth[l], span.depth[r]);
+            } else {
+              depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
+            }
 
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
               if (depth_new >= depth_old)
                 continue;
             } else {
-              if (std::abs((s32)depth_new - (s32)depth_old) > 0x200)
+              if (std::abs((s32)depth_new - (s32)depth_old) > (use_w_buffer ? 0xFF : 0x200))
                 continue;
             }
 

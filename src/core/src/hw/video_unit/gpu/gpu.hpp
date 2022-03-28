@@ -368,6 +368,8 @@ struct GPU {
 
   Scheduler::Event* cmd_event = nullptr;
 
+  bool use_w_buffer;
+  bool use_w_buffer_pending;
   bool swap_buffers_pending;
 };
 
