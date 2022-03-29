@@ -154,18 +154,18 @@ private:
   }
 
   void CalculatePerpFactor(u16 w0, u16 w1, s32 x, s32 x_min, s32 x_max) {
-    u16 w0_num;
-    u16 w0_denom;
-    u16 w1_denom;
+    u16 w0_num = w0;
+    u16 w0_denom = w0;
+    u16 w1_denom = w1;
 
-    if ((w0 & 1) && !(w1 & 1)) {
-      w0_num = w0 - 1;
-      w0_denom = w0 + 1;
-      w1_denom = w1;
-    } else {
-      w0_num = w0 & 0xFFFE;
-      w0_denom = w0_num;
-      w1_denom = w1 & 0xFFFE;
+    if constexpr(precision == 9) {
+      w0_num   >>= 1;
+      w0_denom >>= 1;
+      w1_denom >>= 1;
+
+      if ((w0 & 1) && !(w1 & 1)) {
+        w0_denom++;
+      }
     }
 
     auto t0 = x - x_min;
@@ -432,8 +432,7 @@ void GPU::Render() {
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
               if (depth_new >= depth_old)
                 continue;
-            }
-            else {
+            } else {
               if (std::abs((s32)depth_new - (s32)depth_old) > (use_w_buffer ? 0xFF : 0x200))
                 continue;
             }
