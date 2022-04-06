@@ -85,12 +85,12 @@ struct Interpolator {
     CalculateLerpFactor(x, x_min, x_max);
     CalculatePerpFactor(w0, w1, x, x_min, x_max);
 
-    // LOG_ERROR("GPU: w0={:08X} w1={:08X} w0n={:04X} w1n={:04X} x={} x_min={} x_max={}",
-    //   w0, w1, w0_norm, w1_norm, x, x_min, x_max);
-
-    // TODO: use 127 instead of 126 for span interpolation.
-    // Also, if possible, simply overwrite the perp factor with the lerp factor if this is true.
-    force_lerp = w0 == w1 && (w0 & 126) == 0 && (w1 & 126) == 0;
+    // TODO: overwrite the perp factor instead of setting a flag?
+    if constexpr (precision == 9) {
+      force_lerp = w0 == w1 && (w0 & 126) == 0 && (w1 & 126) == 0;
+    } else {
+      force_lerp = w0 == w1 && (w0 & 127) == 0 && (w1 & 127) == 0;
+    }
   }
 
   // TODO: use correct formulas and clean this up.
@@ -111,10 +111,6 @@ struct Interpolator {
 
   auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& color_out) {
     auto factor = force_lerp ? factor_lerp : factor_perp;
-
-    // if (factor > 512) {
-    //   LOG_ERROR("GPU: bad factor: {}", factor);
-    // }
 
     for (int i = 0; i < 3; i++) {
       color_out[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
@@ -168,13 +164,14 @@ private:
       }
     }
 
-    auto t0 = x - x_min;
-    auto t1 = x_max - x;
-    auto denominator = t1 * w1_denom + t0 * w0_denom;
+    u32 t0 = x - x_min;
+    u32 t1 = x_max - x;
+    u32 denominator = t1 * w1_denom + t0 * w0_denom;
+    u32 numerator = (t0 << precision) * w0_num;
 
-    // TODO: how does the DS GPU deal with division-by-zero?
+    // TODO: how does the DS handle division-by-zero here?
     if (denominator != 0) {
-      factor_perp = ((t0 << precision) * w0_num) / denominator;
+      factor_perp = numerator / denominator;
     } else {
       factor_perp = 0;
     }
@@ -369,10 +366,17 @@ void GPU::Render() {
         s32 w1 = points[e[j]].w;
 
         if (edge[j].IsXMajor()) {
-          int x = (j == l) ? x0[l] : x1[r];
+          // TODO: is it accurate to truncate x like this?
+          s32 x = ((j == l) ? x0[l] : x1[r]) >> 18;
+          s32 x_min = p0.x;
+          s32 x_max = p1.x;
 
-          // TODO: actually use the precision that we have...
-          edge_interpolator.Setup(w0, w1, x >> 18, p0.x, p1.x);
+          if (x_min > x_max) {
+            std::swap(x_min, x_max);
+            x = x_max - (x - x_min);
+          }
+
+          edge_interpolator.Setup(w0, w1, x, x_min, x_max);
         } else {
           edge_interpolator.Setup(w0, w1, y, p0.y, p1.y);
         }
