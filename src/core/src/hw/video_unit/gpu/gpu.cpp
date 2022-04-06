@@ -372,56 +372,81 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 }
 
 auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {
-  int a = 0;
-  int b = 1;
   std::vector<Vertex> clipped[2];
 
-  clipped[a] = vertices;
+  clipped[0] = vertices;
 
   if (quadstrip) {
-    std::swap(clipped[a][2], clipped[a][3]);
+    std::swap(clipped[0][2], clipped[0][3]);
   }
 
-  for (int i = 0; i < 3; i++) {
-    auto size = clipped[a].size();
+  struct CompareLt {
+    bool operator()(Fixed20x12 x, Fixed20x12 w) { return x < -w; }
+  };
 
-    for (int j = 0; j < size; j++) {
-      auto& v0 = clipped[a][j];
-  
-      if (v0.position[i].absolute() > v0.position.w().absolute()) {
-        int c = j - 1;
-        int d = j + 1;
-        if (c == -1) c = size - 1;
-        if (d == size) d = 0;
+  struct CompareGt {
+    bool operator()(Fixed20x12 x, Fixed20x12 w) { return x >  w; }
+  };
 
-        for (int k : { c, d }) {
-          auto& v1 = clipped[a][k];
+  if (!poly_params.render_far_plane_polys && ClipPolygonOnPlane<2, CompareGt>(clipped[0], clipped[1])) {
+    return {};
+  }
+  clipped[0].clear();
+  ClipPolygonOnPlane<2, CompareLt>(clipped[1], clipped[0]);
+  clipped[1].clear();
 
-          if ((v0.position[i] >  v0.position.w() && v1.position[i] <  v1.position.w()) ||
-              (v0.position[i] < -v0.position.w() && v1.position[i] > -v1.position.w())) {
-            auto sign  = Fixed20x12::from_int((v0.position[i] < -v0.position.w()) ? 1 : -1);
-            auto numer = v1.position[i] + sign * v1.position[3];
-            auto denom = (v0.position.w() - v1.position.w()) + (v0.position[i] - v1.position[i]) * sign;
-            auto scale = -sign * numer / denom;
+  ClipPolygonOnPlane<1, CompareGt>(clipped[0], clipped[1]);
+  clipped[0].clear();
+  ClipPolygonOnPlane<1, CompareLt>(clipped[1], clipped[0]);
+  clipped[1].clear();
 
-            clipped[b].push_back({
-              .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
-              .color = Color4::interpolate(v1.color, v0.color, scale),
-              .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
-            });
-          }
+  ClipPolygonOnPlane<0, CompareGt>(clipped[0], clipped[1]);
+  clipped[0].clear();
+  ClipPolygonOnPlane<0, CompareLt>(clipped[1], clipped[0]);
+  // clipped[1].clear();
+
+  return clipped[0];
+}
+
+template<int axis, typename Comparator>
+bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
+  auto size = vertices_in.size();
+  bool clipped = false;
+
+  for (int i = 0; i < size; i++) {
+    auto& v0 = vertices_in[i];
+
+    if (Comparator{}(v0.position[axis], v0.position.w())) {  
+      int a = i - 1;
+      int b = i + 1;
+      if (a == -1) a = size - 1;
+      if (b == size) b = 0;
+
+      // TODO: can a point be generated in both iterations at the same time?
+      for (int j : { a, b }) {
+        auto& v1 = vertices_in[j];
+
+        if (!Comparator{}(v1.position[axis], v1.position.w())) {
+          auto sign  = Fixed20x12::from_int((v0.position[axis] < -v0.position.w()) ? 1 : -1);
+          auto numer = v1.position[axis] + sign * v1.position[3];
+          auto denom = (v0.position.w() - v1.position.w()) + (v0.position[axis] - v1.position[axis]) * sign;
+          auto scale = -sign * numer / denom;
+
+          vertices_out.push_back({
+            .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
+            .color = Color4::interpolate(v1.color, v0.color, scale),
+            .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
+          });
         }
-      } else {
-        clipped[b].push_back(v0);
       }
-    }
 
-    clipped[a].clear();
-    a ^= 1;
-    b ^= 1;
+      clipped = true;
+    } else {
+      vertices_out.push_back(v0);
+    }
   }
 
-  return clipped[a];
+  return clipped;
 }
 
 void GPU::CheckGXFIFO_IRQ() {
