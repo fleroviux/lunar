@@ -244,7 +244,7 @@ void GPU::Render() {
       // TODO: support w-Buffering mode.
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
       point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
-      point.depth = (((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9;
+      point.depth = (u32)((((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9);
       point.w = vert.position.w().raw();
       point.vertex = &vert;
 
