@@ -367,6 +367,7 @@ struct GPU {
   
   Color4 draw_buffer[256 * 192];
   u32 depth_buffer[256 * 192];
+  u8 stencil_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;

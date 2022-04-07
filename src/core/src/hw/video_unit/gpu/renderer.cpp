@@ -205,12 +205,18 @@ void GPU::RenderRearPlane() {
 
     auto depth = (s32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
 
+    auto stencil = clear_color.polygon_id; 
+
     for (uint i = 0; i < 256 * 192; i++) {
       draw_buffer[i] = color;
     }
 
     for (uint i = 0; i < 256 * 192; i++) {
       depth_buffer[i] = depth;
+    }
+
+    for (uint i = 0; i < 256 * 192; i++) {
+      stencil_buffer[i] = stencil;
     }
   }
 }
@@ -321,6 +327,7 @@ void GPU::Render() {
     auto span_interpolator = Interpolator<8>{};
 
     auto alpha = (poly.params.alpha << 1) | (poly.params.alpha >> 4);
+    auto poly_id = poly.params.polygon_id;
     bool wireframe = alpha == 0;
     bool force_draw_edges_a = alpha != 63 || disp3dcnt.enable_antialias || disp3dcnt.enable_edge_marking;
 
@@ -463,8 +470,23 @@ void GPU::Render() {
               color.a() = std::max(color.a(), draw_buffer[index].a());
             }
 
-            // TODO: what rules apply to updating the depth buffer?
-            draw_buffer[index] = color;
+            stencil_buffer[index] &= ~0x3F;
+            stencil_buffer[index] |= poly_id;
+
+            // TODO: make sure that shadow polygon logic is correct.
+            if (poly.params.mode == PolygonParams::Mode::Shadow) {
+              if (poly_id == 0) {
+                stencil_buffer[index] |= 0x80;
+              } else {
+                if (stencil_buffer[index] == 0) {
+                  draw_buffer[index] = color;
+                }
+                stencil_buffer[index] = 0;
+              }
+            } else {
+              draw_buffer[index] = color;
+            }
+
             if (alpha == 63 || poly.params.enable_translucent_depth_write) {
               depth_buffer[index] = depth_new;
             }
