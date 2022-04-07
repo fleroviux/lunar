@@ -422,21 +422,25 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert) {
   // auto normal = (v1.xyz() - v0.xyz()).cross(v2.xyz() - v0.xyz());
   // auto dot = v0.xyz().dot(normal);
+
   float a[3] {
     (v1.x() - v0.x()).raw() / (float)(1 << 12),
     (v1.y() - v0.y()).raw() / (float)(1 << 12),
     (v1.z() - v0.z()).raw() / (float)(1 << 12)
   };
+
   float b[3] {
     (v2.x() - v0.x()).raw() / (float)(1 << 12),
     (v2.y() - v0.y()).raw() / (float)(1 << 12),
     (v2.z() - v0.z()).raw() / (float)(1 << 12)
   };
+
   float normal[3] {
     a[1] * b[2] - a[2] * b[1],
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0]
   };
+
   float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
               (v0.y().raw() / (float)(1 << 12)) * normal[1] +
               (v0.z().raw() / (float)(1 << 12)) * normal[2];
