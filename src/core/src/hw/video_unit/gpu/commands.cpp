@@ -538,7 +538,7 @@ void GPU::CMD_EndVertexList() {
 
 void GPU::CMD_SwapBuffers() {
   auto arg = Dequeue().argument;
-  use_w_buffer_pending = arg & 1;
+  use_w_buffer_pending = arg & 2;
   swap_buffers_pending = true;
 }
 
