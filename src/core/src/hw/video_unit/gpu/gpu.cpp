@@ -305,6 +305,9 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       }
     }
 
+    // In a triangle strip the winding order of each second polygon is inverted.
+    bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
+
     if (needs_clipping) {
       poly.count = 0;
 
@@ -314,15 +317,22 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 2]);
       }
 
-      for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
-        // FIXME: this is disgusting.
-        if (vertex[gx_buffer_id].count == 6144) {
-          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-          break;
+      auto const& v0 = vertices[0].position;
+      auto const& v1 = vertices[vertices.size() - 1].position;
+      auto const& v2 = vertices[1].position;
+      bool front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
+
+      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
+        for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
+          // FIXME: this is disgusting.
+          if (vertex[gx_buffer_id].count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex[gx_buffer_id].count++;
+          vertex[gx_buffer_id].data[index] = v;
+          poly.indices[poly.count++] = index;
         }
-        auto index = vertex[gx_buffer_id].count++;
-        vertex[gx_buffer_id].data[index] = v;
-        poly.indices[poly.count++] = index;
       }
 
       // Restart polygon strip based on the last two unclipped vertifces.
@@ -336,39 +346,106 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.clear();
       }
     } else {
+      bool front_facing;
+
       if (is_strip && !is_first) {
         poly.indices[0] = vertex[gx_buffer_id].count - 2;
         poly.indices[1] = vertex[gx_buffer_id].count - 1;
         poly.count = 2;
+
+        // TODO: make this a bit nicer.
+        auto const& v0 = vertex[gx_buffer_id].data[poly.indices[0]].position;
+        auto const& v1 = vertices[vertices.size() - 1].position;
+        auto const& v2 = vertex[gx_buffer_id].data[poly.indices[1]].position;
+
+        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
       } else {
         poly.count = 0;
+
+        auto const& v0 = vertices[0].position;
+        auto const& v1 = vertices[vertices.size() - 1].position;
+        auto const& v2 = vertices[1].position;
+
+        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
       }
 
-      for (auto const& v : vertices) {
-        // FIXME: this is disgusting.
-        if (vertex[gx_buffer_id].count == 6144) {
-          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-          break;
+      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
+        for (auto const& v : vertices) {
+          // FIXME: this is disgusting.
+          if (vertex[gx_buffer_id].count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex[gx_buffer_id].count++;
+          vertex[gx_buffer_id].data[index] = v;
+          poly.indices[poly.count++] = index;
         }
-        auto index = vertex[gx_buffer_id].count++;
-        vertex[gx_buffer_id].data[index] = v;
-        poly.indices[poly.count++] = index;
+      } else {
+        poly.count = 0;
+
+        // Keep last up to two vertices in vertex RAM to continue the polygon strip.
+        // TODO: how does hardware handle this case?
+        if (is_strip) {
+          for (int i = vertices.size() - ((is_quad || is_first) ? 2 : 1); i < vertices.size(); i++) {
+            // FIXME: this is disgusting.
+            if (vertex[gx_buffer_id].count == 6144) {
+              LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+              break;
+            }
+            auto index = vertex[gx_buffer_id].count++;
+            vertex[gx_buffer_id].data[index] = vertices[i];
+            poly.indices[poly.count++] = index;
+          }
+        }
       }
+
+      is_first = false;
+      vertices.clear();
 
       if (is_quad && is_strip) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
-
-      vertices.clear();
-      is_first = false;
     }
 
-    poly.params = poly_params;
-    poly.texture_params = texture_params;
+    if (is_strip) {
+      polygon_strip_length++;
+    }
+
     if (poly.count != 0) {
       polygon[gx_buffer_id].count++;
+      poly.params = poly_params;
+      poly.texture_params = texture_params;
     }
   }
+}
+
+bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert) {
+  // auto normal = (v1.xyz() - v0.xyz()).cross(v2.xyz() - v0.xyz());
+  // auto dot = v0.xyz().dot(normal);
+  float a[3] {
+    (v1.x() - v0.x()).raw() / (float)(1 << 12),
+    (v1.y() - v0.y()).raw() / (float)(1 << 12),
+    (v1.z() - v0.z()).raw() / (float)(1 << 12)
+  };
+  float b[3] {
+    (v2.x() - v0.x()).raw() / (float)(1 << 12),
+    (v2.y() - v0.y()).raw() / (float)(1 << 12),
+    (v2.z() - v0.z()).raw() / (float)(1 << 12)
+  };
+  float normal[3] {
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  };
+  float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
+              (v0.y().raw() / (float)(1 << 12)) * normal[1] +
+              (v0.z().raw() / (float)(1 << 12)) * normal[2];
+
+  if (invert) {
+    return dot >= 0; 
+  }
+
+  return dot < 0;
 }
 
 auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {

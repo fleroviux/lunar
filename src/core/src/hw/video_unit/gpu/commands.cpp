@@ -525,6 +525,7 @@ void GPU::CMD_BeginVertexList() {
   is_quad = arg & 1;
   is_strip = arg & 2;
   is_first = true;
+  polygon_strip_length = 0;
 
   vertices.clear();
 }

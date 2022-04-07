@@ -249,6 +249,8 @@ struct GPU {
 
   void AddVertex(Vector4<Fixed20x12> const& position);
 
+  bool IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert);
+
   auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
 
   template<int axis, typename Comparator>
@@ -303,6 +305,7 @@ struct GPU {
   bool is_quad;
   bool is_strip;
   bool is_first;
+  int polygon_strip_length;
 
   struct VertexRAM {
     int count = 0;
