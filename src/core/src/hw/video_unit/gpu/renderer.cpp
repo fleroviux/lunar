@@ -87,9 +87,9 @@ struct Interpolator {
 
     // TODO: overwrite the perp factor instead of setting a flag?
     if constexpr (precision == 9) {
-      force_lerp = w0 == w1 && (w0 & 126) == 0 && (w1 & 126) == 0;
+      force_lerp = w0 == w1 && (w0 & 0x7E) == 0 && (w1 & 0x7E) == 0;
     } else {
-      force_lerp = w0 == w1 && (w0 & 127) == 0 && (w1 & 127) == 0;
+      force_lerp = w0 == w1 && (w0 & 0x7F) == 0 && (w1 & 0x7F) == 0;
     }
   }
 
@@ -139,11 +139,12 @@ struct Interpolator {
 private:
   void CalculateLerpFactor(s32 x, s32 x_min, s32 x_max) {
     // TODO: make sure that this uses the correct amount of precision.
-    auto denominator = x_max - x_min;
+    u32 denominator = x_max - x_min;
+    u32 numerator = (x - x_min) << precision;
 
     // TODO: how does the DS GPU deal with division-by-zero?
     if (denominator != 0) {
-      factor_lerp = ((x - x_min) << precision) / denominator;
+      factor_lerp = numerator / denominator;
     } else {
       factor_lerp = 0;
     }
