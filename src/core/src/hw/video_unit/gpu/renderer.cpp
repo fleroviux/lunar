@@ -538,6 +538,10 @@ void GPU::RenderPolygons(bool translucent) {
               }
             }
 
+            // if (color.a() != 63 && old_poly_id == poly_id && draw_buffer[index].a() != 63) {
+            //   continue;
+            // }
+
             if (disp3dcnt.enable_alpha_blend && draw_buffer[index].a() != 0) {
               auto a0 = color.a();
               auto a1 = Fixed6{63} - a0;
@@ -561,7 +565,8 @@ void GPU::RenderPolygons(bool translucent) {
               stencil_buffer[index] = poly_id;
             }
 
-            if (!translucent || poly.params.enable_translucent_depth_write) {
+            // TODO: should this check use the alpha-value before or after alpha-blending?
+            if (color.a() == 63 || poly.params.enable_translucent_depth_write) {
               depth_buffer[index] = depth_new;
             }
           }

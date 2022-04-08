@@ -91,7 +91,7 @@ struct CoreImpl {
   }
 
   void Load(std::string const& rom_path) {
-    bool direct_boot = false;
+    bool direct_boot = true;
 
     if (direct_boot) {
       DirectBoot(rom_path);
