@@ -545,7 +545,7 @@ void GPU::RenderPolygons(bool translucent) {
 
             // TODO: reject translucent pixel if the polygon ID is equal and the destination (old?) pixel isn't opaque.
 
-            if (disp3dcnt.enable_alpha_blend && color_buffer[index].a() != 0) {
+            if (!is_opaque_pixel && disp3dcnt.enable_alpha_blend && color_buffer[index].a() != 0) {
               auto a0 = color.a();
               auto a1 = Fixed6{63} - a0;
               for (uint j = 0; j < 3; j++)
