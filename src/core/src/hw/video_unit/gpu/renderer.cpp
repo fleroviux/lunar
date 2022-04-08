@@ -227,6 +227,12 @@ void GPU::RenderPolygons(bool translucent) {
 
   const s32 depth_test_threshold = use_w_buffer ? 0xFF : 0x200;
 
+  // TODO: use real viewport information
+  const int viewport_x = 0;
+  const int viewport_y = 0;
+  const int viewport_width = 255;
+  const int viewport_height = 191;
+
   auto buffer_id = gx_buffer_id ^ 1;
   auto& vert_ram = vertex[buffer_id];
   auto& poly_ram = polygon[buffer_id];
@@ -246,11 +252,13 @@ void GPU::RenderPolygons(bool translucent) {
       auto& point = points[j];
       auto const& vert = vert_ram.data[poly.indices[j]];
 
-      // TODO: use the provided viewport configuration.
-      point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
-      point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
-      point.depth = (u32)((((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9);
-      point.w = vert.position.w().raw();
+      auto w = vert.position.w().raw();
+      auto two_w = w << 1;
+
+      point.x = (( vert.position.x().raw() + w) * viewport_width  / two_w) + viewport_x;
+      point.y = ((-vert.position.y().raw() + w) * viewport_height / two_w) + viewport_y;
+      point.depth = (u32)((((s64(vert.position.z().raw()) << 14) / w) + 0x3FFF) << 9);
+      point.w = w;
       point.vertex = &vert;
 
       // Pick the first vertex with the lowest y-Coordinate as the start node.
@@ -443,7 +451,7 @@ void GPU::RenderPolygons(bool translucent) {
               depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
             }
 
-            bool depth_test_passed = true;
+            bool depth_test_passed;
 
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
               depth_test_passed = depth_new < depth_old;
@@ -494,7 +502,7 @@ void GPU::RenderPolygons(bool translucent) {
               stencil_buffer[index] = poly_id;
             }
 
-            if (translucent || poly.params.enable_translucent_depth_write) {
+            if (!translucent || poly.params.enable_translucent_depth_write) {
               depth_buffer[index] = depth_new;
             }
           }
