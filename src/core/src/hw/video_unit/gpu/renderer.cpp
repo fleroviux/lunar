@@ -241,6 +241,10 @@ void GPU::RenderPolygons(bool translucent) {
   for (int i = 0; i < poly_count; i++) {
     Polygon const& poly = poly_ram.data[i];
 
+    if (poly.params.mode == PolygonParams::Mode::Decal || poly.params.mode == PolygonParams::Mode::Shaded) {
+      ASSERT(false, "GPU: unhandled polygon mode: {}", (int)poly.params.mode);
+    }
+
     int start;
     int end;
     s32 y_min = 256;
@@ -255,9 +259,9 @@ void GPU::RenderPolygons(bool translucent) {
       auto w = vert.position.w().raw();
       auto two_w = w << 1;
 
-      point.x = (( vert.position.x().raw() + w) * viewport_width  / two_w) + viewport_x;
-      point.y = ((-vert.position.y().raw() + w) * viewport_height / two_w) + viewport_y;
-      point.depth = (u32)((((s64(vert.position.z().raw()) << 14) / w) + 0x3FFF) << 9);
+      point.x = (( (s64)vert.position.x().raw() + w) * viewport_width  / two_w) + viewport_x;
+      point.y = ((-(s64)vert.position.y().raw() + w) * viewport_height / two_w) + viewport_y;
+      point.depth = (u32)(((((s64)vert.position.z().raw() << 14) / w) + 0x3FFF) << 9);
       point.w = w;
       point.vertex = &vert;
 
