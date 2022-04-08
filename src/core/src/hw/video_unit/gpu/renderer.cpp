@@ -225,12 +225,12 @@ void GPU::RenderPolygons(bool translucent) {
   Point points[10];
   Span span;
 
+  const s32 depth_test_threshold = use_w_buffer ? 0xFF : 0x200;
+
   auto buffer_id = gx_buffer_id ^ 1;
   auto& vert_ram = vertex[buffer_id];
   auto& poly_ram = polygon[buffer_id];
   auto poly_count = poly_ram.count;
-
-  const s32 depth_test_threshold = use_w_buffer ? 0xFF : 0x200;
 
   for (int i = 0; i < poly_count; i++) {
     Polygon const& poly = poly_ram.data[i];
@@ -247,7 +247,6 @@ void GPU::RenderPolygons(bool translucent) {
       auto const& vert = vert_ram.data[poly.indices[j]];
 
       // TODO: use the provided viewport configuration.
-      // TODO: support w-Buffering mode.
       point.x = ( vert.position.x() / vert.position.w() * Fixed20x12::from_int(128)).integer() + 128;
       point.y = (-vert.position.y() / vert.position.w() * Fixed20x12::from_int( 96)).integer() +  96;
       point.depth = (u32)((((s64(vert.position.z().raw()) << 14) / vert.position.w().raw()) + 0x3FFF) << 9);
@@ -495,7 +494,7 @@ void GPU::RenderPolygons(bool translucent) {
               stencil_buffer[index] = poly_id;
             }
 
-            if (alpha == 63 || poly.params.enable_translucent_depth_write) {
+            if (translucent || poly.params.enable_translucent_depth_write) {
               depth_buffer[index] = depth_new;
             }
           }
