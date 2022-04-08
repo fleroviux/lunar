@@ -483,12 +483,12 @@ void GPU::RenderPolygons(bool translucent) {
             // TODO: make sure that shadow polygon logic is correct.
             if (poly.params.mode == PolygonParams::Mode::Shadow) {
               if (poly_id == 0) {
-                stencil_buffer[index] = 0; // accurate?
+                stencil_buffer[index] = 0;
               } else {
                 if (stencil_buffer[index] & 0x80 && (stencil_buffer[index] & 0x3F) != poly_id) {
                   draw_buffer[index] = color;
                 }
-                // stencil_buffer[index] = 0;
+                stencil_buffer[index] = 0;
               }
             } else {
               draw_buffer[index] = color;
