@@ -471,13 +471,12 @@ void GPU::RenderPolygons(bool translucent) {
 
             color.a() = alpha;
 
-            if (disp3dcnt.enable_textures) {
+            if (disp3dcnt.enable_textures && poly.texture_params.format != TextureParams::Format::None) {
               auto texel = SampleTexture(poly.texture_params, uv);
 
               if (texel.a() <= alpha_threshold) {
                 continue;
               }
-              // color *= texel;
 
               // TODO: what happens if no texture is used?
               switch (poly.params.mode) {
@@ -492,7 +491,12 @@ void GPU::RenderPolygons(bool translucent) {
                 }
                 case PolygonParams::Mode::Shadow:
                 case PolygonParams::Mode::Decal: {
-                  // ASSERT(false, "GPU: unhandled decal texture blend mode");
+                  int s = texel.a().raw();
+                  int t = 63 - s;
+
+                  for (int k = 0; k < 3; k++) {
+                    color[k] = (texel[k].raw() * s + color[k].raw() * t) >> 6;
+                  }
                   break;
                 }
                 case PolygonParams::Mode::Shaded: {
@@ -509,15 +513,28 @@ void GPU::RenderPolygons(bool translucent) {
                   } else {
                     for (int k = 0; k < 3; k++) {
                       int a = texel[k].raw();
-                      int b = toon_color[k].raw();
+                      int b = color[k].raw();
+                      int c = toon_color[k].raw();
 
-                      color[k] = std::min(64, (((a + 1) * (b + 1) - 1) >> 6) + b);
+                      color[k] = std::min(64, (((a + 1) * (b + 1) - 1) >> 6) + c);
                     }
                   }
 
                   color.a() = ((texel.a().raw() + 1) * (color.a().raw() + 1) - 1) >> 6;
                   break;
                 }
+              }
+            } else if (poly.params.mode == PolygonParams::Mode::Shaded) {
+              auto toon_color = Color4::from_rgb555(toon_table[color.r().raw() >> 1]);
+
+              if (disp3dcnt.shading_mode == DISP3DCNT::Shading::Toon) {
+                color.r() = toon_color.r();
+                color.g() = toon_color.g();
+                color.b() = toon_color.b();
+              } else {
+                color.r() = std::min(64, color.r().raw() + toon_color.r().raw());
+                color.g() = std::min(64, color.g().raw() + toon_color.g().raw());
+                color.b() = std::min(64, color.b().raw() + toon_color.b().raw());
               }
             }
 
