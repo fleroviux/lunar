@@ -71,6 +71,7 @@ void GPU::Reset() {
   }
   material = {};
   toon_table.fill(0x7FFF);
+  edge_color_table.fill(0x7FFF);
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -134,6 +135,13 @@ void GPU::WriteToonTable(uint offset, u8 value) {
   auto shift = (offset & 1) * 8;
 
   toon_table[index] = (toon_table[index] & ~(0xFF << shift)) | (value << shift);
+}
+
+void GPU::WriteEdgeColorTable(uint offset, u8 value) {
+  auto index = offset >> 1;
+  auto shift = (offset & 1) * 8;
+
+  edge_color_table[index] = (edge_color_table[index] & ~(0xFF << shift)) | (value << shift);
 }
 
 void GPU::Enqueue(CmdArgPack pack) {
@@ -563,9 +571,10 @@ auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
     case 0:
       return (enable_textures ? 1 : 0) |
              (static_cast<u8>(shading_mode) << 1) |
-             (enable_alpha_test  ? 4 : 0) |
-             (enable_alpha_blend ? 8 : 0) |
-             (enable_antialias  ? 16 : 0) |
+             (enable_alpha_test   ?  4 : 0) |
+             (enable_alpha_blend  ?  8 : 0) |
+             (enable_antialias    ? 16 : 0) |
+             (enable_edge_marking ? 32 : 0) |
              (static_cast<u8>(fog_mode) << 6) |
              (enable_fog ? 128 : 0);
     case 1:

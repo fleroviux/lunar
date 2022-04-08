@@ -203,8 +203,7 @@ void GPU::RenderRearPlane() {
       (s8)((clear_color.color_a << 1) | (clear_color.color_a >> 4))
     };
 
-    auto depth = (s32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
-
+    auto depth = (u32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
     auto stencil = clear_color.polygon_id; 
 
     for (uint i = 0; i < 256 * 192; i++) {
@@ -429,7 +428,7 @@ void GPU::RenderPolygons(bool translucent) {
         const auto min_x = span.x0[l];
         const auto max_x = span.x1[r];
 
-        const auto render_span = [&](s32 x0, s32 x1) {
+        const auto render_span = [&](s32 x0, s32 x1, bool wireframe) {
           auto uv = Vector2<Fixed12x4>{};
           auto color = Color4{};
 
@@ -478,7 +477,6 @@ void GPU::RenderPolygons(bool translucent) {
                 continue;
               }
 
-              // TODO: what happens if no texture is used?
               switch (poly.params.mode) {
                 case PolygonParams::Mode::Modulation: {
                   for (int k = 0; k < 4; k++) {
@@ -563,6 +561,11 @@ void GPU::RenderPolygons(bool translucent) {
             } else {
               draw_buffer[index] = color;
               stencil_buffer[index] = poly_id;
+
+              // TODO: figure out when exactly hardware sets the edge flag?
+              if (wireframe) {
+                stencil_buffer[index] |= 0x40;
+              }
             }
 
             // TODO: should this check use the alpha-value before or after alpha-blending?
@@ -579,15 +582,15 @@ void GPU::RenderPolygons(bool translucent) {
         }
 
         if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
-          render_span(span.x0[l], span.x1[l]);
+          render_span(span.x0[l], span.x1[l], true);
         }
         
         if (!wireframe) {
-          render_span(span.x1[l] + 1, span.x0[r] - 1);
+          render_span(span.x1[l] + 1, span.x0[r] - 1, false);
         }
         
         if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
-          render_span(span.x0[r], span.x1[r]);
+          render_span(span.x0[r], span.x1[r], true);
         }
       }
 
@@ -616,10 +619,52 @@ void GPU::RenderPolygons(bool translucent) {
   }
 }
 
+void GPU::RenderEdgeMarking() {
+  bool edge;
+
+  // TODO: the expanded clear depth is already calculated in "RenderRearPlane". Do not calculate it twice.
+  auto border_depth = (u32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
+  auto border_poly_id = clear_color.polygon_id;
+
+  for (int y = 0; y < 192; y++) {
+    for (int x = 0; x < 256; x++) {
+      int c = y * 256 + x;
+
+      u8 stencil = stencil_buffer[c];
+
+      if (stencil & 0x40) {
+        int l = c - 1;
+        int r = c + 1;
+        int u = c - 256;
+        int d = c + 256;
+
+        u32 depth = depth_buffer[c];
+        int poly_id = stencil & 0x3F;
+        bool border_edge = border_poly_id != poly_id && depth < border_depth;
+
+        edge  = x == 0   ? border_edge : ((stencil_buffer[l] & 0x3F) != poly_id && depth < depth_buffer[l]);
+        edge |= x == 255 ? border_edge : ((stencil_buffer[r] & 0x3F) != poly_id && depth < depth_buffer[r]);
+        edge |= y == 0   ? border_edge : ((stencil_buffer[u] & 0x3F) != poly_id && depth < depth_buffer[u]);
+        edge |= y == 191 ? border_edge : ((stencil_buffer[d] & 0x3F) != poly_id && depth < depth_buffer[d]);
+
+        if (edge) {
+          // TODO: decode color on write to the edge color table.
+          draw_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
+        }
+      }
+    }
+  }
+}
+
 void GPU::Render() {
   RenderRearPlane();
+
   RenderPolygons(false);
   RenderPolygons(true);
+
+  if (disp3dcnt.enable_edge_marking) {
+    RenderEdgeMarking();
+  }
 }
 
 } // namespace Duality::Core

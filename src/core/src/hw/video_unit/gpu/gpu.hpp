@@ -28,6 +28,7 @@ struct GPU {
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
   void WriteToonTable(uint offset, u8 value);
+  void WriteEdgeColorTable(uint offset, u8 value);
   void SwapBuffers();
 
   template<typename T>
@@ -303,6 +304,7 @@ struct GPU {
 
   void RenderRearPlane();
   void RenderPolygons(bool translucent);
+  void RenderEdgeMarking();
 
   bool in_vertex_list;
   bool is_quad;
@@ -359,6 +361,7 @@ struct GPU {
   } material;
 
   std::array<u16, 32> toon_table;
+  std::array<u16, 8> edge_color_table;
 
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
