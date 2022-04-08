@@ -70,6 +70,7 @@ void GPU::Reset() {
     lights[i] = {};
   }
   material = {};
+  toon_table.fill(0x7FFF);
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -126,6 +127,13 @@ void GPU::WriteCommandPort(uint port, u32 value) {
   }
 
   Enqueue({ static_cast<u8>(port >> 2), value });
+}
+
+void GPU::WriteToonTable(uint offset, u8 value) {
+  auto index = offset >> 1;
+  auto shift = (offset & 1) * 8;
+
+  toon_table[index] = (toon_table[index] & ~(0xFF << shift)) | (value << shift);
 }
 
 void GPU::Enqueue(CmdArgPack pack) {

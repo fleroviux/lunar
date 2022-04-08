@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <util/integer.hpp>
 #include <util/meta.hpp>
 #include <util/fifo.hpp>
@@ -26,6 +27,7 @@ struct GPU {
   void Reset();
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
+  void WriteToonTable(uint offset, u8 value);
   void SwapBuffers();
 
   template<typename T>
@@ -355,6 +357,8 @@ struct GPU {
 
     bool enable_shinyness_table = false;
   } material;
+
+  std::array<u16, 32> toon_table;
 
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
