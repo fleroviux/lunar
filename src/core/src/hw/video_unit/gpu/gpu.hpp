@@ -300,6 +300,7 @@ struct GPU {
   void CMD_SwapBuffers();
 
   void RenderRearPlane();
+  void RenderPolygons(bool translucent);
 
   bool in_vertex_list;
   bool is_quad;

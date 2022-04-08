@@ -221,7 +221,7 @@ void GPU::RenderRearPlane() {
   }
 }
 
-void GPU::Render() {
+void GPU::RenderPolygons(bool translucent) {
   Point points[10];
   Span span;
 
@@ -230,7 +230,7 @@ void GPU::Render() {
   auto& poly_ram = polygon[buffer_id];
   auto poly_count = poly_ram.count;
 
-  RenderRearPlane();
+  const s32 depth_test_threshold = use_w_buffer ? 0xFF : 0x200;
 
   for (int i = 0; i < poly_count; i++) {
     Polygon const& poly = poly_ram.data[i];
@@ -335,6 +335,12 @@ void GPU::Render() {
       alpha = 63;
     }
 
+    // Opaque and translucent polygons are rendered in separate passes.
+    // TODO: move this check to an earlier point.
+    if (translucent != (alpha != 63)) {
+      continue;
+    }
+
     int alpha_threshold = 0;
 
     if (disp3dcnt.enable_alpha_test) {
@@ -410,9 +416,6 @@ void GPU::Render() {
         edge_interpolator.Interpolate(p0.vertex->color, p1.vertex->color, span.color[j]);
       }
 
-      //LOG_INFO("GPU: span a: {} ({} {}) {} @ y={}", span.x0[0], span.x1[0], span.x0[1], span.x1[1], y);
-      //LOG_INFO("GPU: span b: {} ({} {}) {} @ y={}", span.x0[l], span.x1[l], span.x0[r], span.x1[r], y);
-
       // TODO: preferrably handle this outside the rasterization loop
       // by limiting the minimum and maximum y-values.
       if (y >= 0 && y <= 191) {
@@ -441,12 +444,19 @@ void GPU::Render() {
               depth_new = span_interpolator.InterpolateLinear(span.depth[l], span.depth[r]);
             }
 
+            bool depth_test_passed = true;
+
             if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
-              if (depth_new >= depth_old)
-                continue;
+              depth_test_passed = depth_new < depth_old;
             } else {
-              if (std::abs((s32)depth_new - (s32)depth_old) > (use_w_buffer ? 0xFF : 0x200))
-                continue;
+              depth_test_passed = std::abs((s32)depth_new - (s32)depth_old) <= depth_test_threshold;
+            }
+
+            if (!depth_test_passed) {
+              if (poly.params.mode == PolygonParams::Mode::Shadow && poly_id == 0) {
+                stencil_buffer[index] = 0x80;
+              }
+              continue;
             }
 
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
@@ -470,21 +480,19 @@ void GPU::Render() {
               color.a() = std::max(color.a(), draw_buffer[index].a());
             }
 
-            stencil_buffer[index] &= ~0x3F;
-            stencil_buffer[index] |= poly_id;
-
             // TODO: make sure that shadow polygon logic is correct.
             if (poly.params.mode == PolygonParams::Mode::Shadow) {
               if (poly_id == 0) {
-                stencil_buffer[index] |= 0x80;
+                stencil_buffer[index] = 0; // accurate?
               } else {
-                if (stencil_buffer[index] == 0) {
+                if (stencil_buffer[index] & 0x80 && (stencil_buffer[index] & 0x3F) != poly_id) {
                   draw_buffer[index] = color;
                 }
-                stencil_buffer[index] = 0;
+                // stencil_buffer[index] = 0;
               }
             } else {
               draw_buffer[index] = color;
+              stencil_buffer[index] = poly_id;
             }
 
             if (alpha == 63 || poly.params.enable_translucent_depth_write) {
@@ -535,6 +543,12 @@ void GPU::Render() {
       }
     }
   }
+}
+
+void GPU::Render() {
+  RenderRearPlane();
+  RenderPolygons(false);
+  RenderPolygons(true);
 }
 
 } // namespace Duality::Core
