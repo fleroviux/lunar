@@ -81,7 +81,7 @@ void GPU::Reset() {
   clip_matrix.identity();
   
   for (uint i = 0; i < 256 * 192; i++) {
-    draw_buffer[i] = {}; 
+    color_buffer[i] = {};  
   }
 
   use_w_buffer = false;

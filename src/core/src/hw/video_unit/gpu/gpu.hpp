@@ -43,7 +43,7 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> Color4 const* { return &draw_buffer[0]; }
+  auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
 
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -373,9 +373,18 @@ struct GPU {
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  Color4 draw_buffer[256 * 192];
+  Color4 color_buffer[256 * 192];
   u32 depth_buffer[256 * 192];
-  u8 stencil_buffer[256 * 192];
+
+  enum AttributeFlags {
+    ATTRIBUTE_FLAG_SHADOW = 1,
+    ATTRIBUTE_FLAG_EDGE = 2
+  };
+
+  struct Attribute {
+    u16 flags;
+    u8  poly_id[2];
+  } attribute_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;

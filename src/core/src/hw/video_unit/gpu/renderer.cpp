@@ -204,10 +204,10 @@ void GPU::RenderRearPlane() {
     };
 
     auto depth = (u32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
-    auto stencil = clear_color.polygon_id; 
+    auto poly_id = clear_color.polygon_id;
 
     for (uint i = 0; i < 256 * 192; i++) {
-      draw_buffer[i] = color;
+      color_buffer[i] = color;
     }
 
     for (uint i = 0; i < 256 * 192; i++) {
@@ -215,7 +215,10 @@ void GPU::RenderRearPlane() {
     }
 
     for (uint i = 0; i < 256 * 192; i++) {
-      stencil_buffer[i] = stencil;
+      // TODO: check that translucent polygon ID is initialized correctly.
+      attribute_buffer[i].flags = 0;
+      attribute_buffer[i].poly_id[0] = poly_id;
+      attribute_buffer[i].poly_id[1] = poly_id;
     }
   }
 }
@@ -428,7 +431,7 @@ void GPU::RenderPolygons(bool translucent) {
         const auto min_x = span.x0[l];
         const auto max_x = span.x1[r];
 
-        const auto render_span = [&](s32 x0, s32 x1, bool wireframe) {
+        const auto render_span = [&](s32 x0, s32 x1, bool edge) {
           auto uv = Vector2<Fixed12x4>{};
           auto color = Color4{};
 
@@ -437,6 +440,8 @@ void GPU::RenderPolygons(bool translucent) {
             if (x < 0 || x > 255) continue;
 
             int index = y * 256 + x;
+
+            auto& attributes = attribute_buffer[index];
 
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], x, min_x, max_x);
@@ -460,7 +465,7 @@ void GPU::RenderPolygons(bool translucent) {
 
             if (!depth_test_passed) {
               if (poly.params.mode == PolygonParams::Mode::Shadow && poly_id == 0) {
-                stencil_buffer[index] = 0x80;
+                attribute_buffer[index].flags |= ATTRIBUTE_FLAG_SHADOW;
               }
               continue;
             }
@@ -536,41 +541,41 @@ void GPU::RenderPolygons(bool translucent) {
               }
             }
 
-            // if (color.a() != 63 && old_poly_id == poly_id && draw_buffer[index].a() != 63) {
-            //   continue;
-            // }
+            bool is_opaque_pixel = color.a() == 63;
 
-            if (disp3dcnt.enable_alpha_blend && draw_buffer[index].a() != 0) {
+            // TODO: reject translucent pixel if the polygon ID is equal and the destination (old?) pixel isn't opaque.
+
+            if (disp3dcnt.enable_alpha_blend && color_buffer[index].a() != 0) {
               auto a0 = color.a();
               auto a1 = Fixed6{63} - a0;
               for (uint j = 0; j < 3; j++)
-                color[j] = color[j] * a0 + draw_buffer[index][j] * a1;
-              color.a() = std::max(color.a(), draw_buffer[index].a());
+                color[j] = color[j] * a0 + color_buffer[index][j] * a1;
+              color.a() = std::max(color.a(), color_buffer[index].a());
             }
 
             // TODO: make sure that shadow polygon logic is correct.
             if (poly.params.mode == PolygonParams::Mode::Shadow) {
-              if (poly_id == 0) {
-                stencil_buffer[index] = 0;
-              } else {
-                if ((stencil_buffer[index] & 0x80) && (stencil_buffer[index] & 0x3F) != poly_id) {
-                  draw_buffer[index] = color;
-                }
-                stencil_buffer[index] = poly_id;
+              if (poly_id != 0 && (attributes.flags & ATTRIBUTE_FLAG_SHADOW) && (attributes.poly_id[1]) != poly_id) {
+                color_buffer[index] = color;
               }
+              attributes.flags &= ~ATTRIBUTE_FLAG_SHADOW;
             } else {
-              draw_buffer[index] = color;
-              stencil_buffer[index] = poly_id;
+              color_buffer[index] = color;
 
               // TODO: figure out when exactly hardware sets the edge flag?
-              if (wireframe) {
-                stencil_buffer[index] |= 0x40;
+              if (edge) {
+                attributes.flags |= ATTRIBUTE_FLAG_EDGE;
               }
             }
 
-            // TODO: should this check use the alpha-value before or after alpha-blending?
-            if (color.a() == 63 || poly.params.enable_translucent_depth_write) {
+            if (is_opaque_pixel) {
               depth_buffer[index] = depth_new;
+              attributes.poly_id[0] = poly_id;
+            } else {
+              if (poly.params.enable_translucent_depth_write) {
+                depth_buffer[index] = depth_new;
+              }
+              attributes.poly_id[1] = poly_id;
             }
           }
         };
@@ -630,26 +635,26 @@ void GPU::RenderEdgeMarking() {
     for (int x = 0; x < 256; x++) {
       int c = y * 256 + x;
 
-      u8 stencil = stencil_buffer[c];
+      auto attributes = attribute_buffer[c];
 
-      if (stencil & 0x40) {
+      if (attributes.flags & ATTRIBUTE_FLAG_EDGE) {
         int l = c - 1;
         int r = c + 1;
         int u = c - 256;
         int d = c + 256;
 
         u32 depth = depth_buffer[c];
-        int poly_id = stencil & 0x3F;
+        int poly_id = attributes.poly_id[0];
         bool border_edge = border_poly_id != poly_id && depth < border_depth;
 
-        edge  = x == 0   ? border_edge : ((stencil_buffer[l] & 0x3F) != poly_id && depth < depth_buffer[l]);
-        edge |= x == 255 ? border_edge : ((stencil_buffer[r] & 0x3F) != poly_id && depth < depth_buffer[r]);
-        edge |= y == 0   ? border_edge : ((stencil_buffer[u] & 0x3F) != poly_id && depth < depth_buffer[u]);
-        edge |= y == 191 ? border_edge : ((stencil_buffer[d] & 0x3F) != poly_id && depth < depth_buffer[d]);
+        edge  = x == 0   ? border_edge : (attribute_buffer[l].poly_id[0] != poly_id && depth < depth_buffer[l]);
+        edge |= x == 255 ? border_edge : (attribute_buffer[r].poly_id[0] != poly_id && depth < depth_buffer[r]);
+        edge |= y == 0   ? border_edge : (attribute_buffer[u].poly_id[0] != poly_id && depth < depth_buffer[u]);
+        edge |= y == 191 ? border_edge : (attribute_buffer[d].poly_id[0] != poly_id && depth < depth_buffer[d]);
 
         if (edge) {
           // TODO: decode color on write to the edge color table.
-          draw_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
+          color_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
         }
       }
     }
