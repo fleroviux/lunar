@@ -81,7 +81,7 @@ void GPU::Reset() {
   clip_matrix.identity();
   
   for (uint i = 0; i < 256 * 192; i++) {
-    color_buffer[i] = {};  
+    color_buffer[0][i] = {};  
   }
 
   use_w_buffer = false;
@@ -101,7 +101,7 @@ void GPU::WriteGXFIFO(u32 value) {
     if (--packed_args_left != 0) {
       return;
     }
-    
+
     packed_cmds >>= 8;
   } else {
     packed_cmds = value;

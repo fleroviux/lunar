@@ -26,7 +26,8 @@ struct Edge {
 
   fixed14x18 XSlope() { return x_slope; }
 
-  bool& IsXMajor() { return x_major; }
+  bool IsXMajor() { return x_major; }
+  bool IsHorizontallyFlat() { return flat_horizontal; }
 
   void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
     if (x_major) {
@@ -206,12 +207,24 @@ void GPU::RenderRearPlane() {
     auto depth = (u32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
     auto poly_id = clear_color.polygon_id;
 
+    // TODO: move this all into one loop, 
+    // doesn't make sense to use multiple loops I think?
+
     for (uint i = 0; i < 256 * 192; i++) {
-      color_buffer[i] = color;
+      color_buffer[0][i] = color;
+    }
+
+    // TODO: make sure that this uses the correct clear alpha.
+    for (uint i = 0; i < 256 * 192; i++) {
+      color_buffer[1][i] = Color4{0, 0, 0, 0};
     }
 
     for (uint i = 0; i < 256 * 192; i++) {
-      depth_buffer[i] = depth;
+      depth_buffer[0][i] = depth;
+    }
+
+    for (uint i = 0; i < 256 * 192; i++) {
+      depth_buffer[1][i] = depth;
     }
 
     for (uint i = 0; i < 256 * 192; i++) {
@@ -219,6 +232,10 @@ void GPU::RenderRearPlane() {
       attribute_buffer[i].flags = 0;
       attribute_buffer[i].poly_id[0] = poly_id;
       attribute_buffer[i].poly_id[1] = poly_id;
+    }
+
+    for (uint i = 0; i < 256 * 192; i++) {
+      coverage_buffer[i] = 0;
     }
   }
 }
@@ -431,7 +448,7 @@ void GPU::RenderPolygons(bool translucent) {
         const auto min_x = span.x0[l];
         const auto max_x = span.x1[r];
 
-        const auto render_span = [&](s32 x0, s32 x1, bool edge) {
+        const auto render_span = [&](s32 x0, s32 x1, bool edge, int coverage0, int coverage1) {
           auto uv = Vector2<Fixed12x4>{};
           auto color = Color4{};
 
@@ -446,7 +463,7 @@ void GPU::RenderPolygons(bool translucent) {
             // TODO: cache calculations that do not depend on x.
             span_interpolator.Setup(span.w[l], span.w[r], x, min_x, max_x);
 
-            u32 depth_old = depth_buffer[index];
+            u32 depth_old = depth_buffer[0][index];
             u32 depth_new;
 
             if (use_w_buffer) {
@@ -461,6 +478,15 @@ void GPU::RenderPolygons(bool translucent) {
               depth_test_passed = depth_new < depth_old;
             } else {
               depth_test_passed = std::abs((s32)depth_new - (s32)depth_old) <= depth_test_threshold;
+            }
+
+            // TODO: make sure that this is correct and clean it up.
+            if (!depth_test_passed && edge && (attribute_buffer[index].flags & ATTRIBUTE_FLAG_EDGE)) {
+              if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
+                depth_test_passed = depth_new < depth_buffer[1][index];
+              } else {
+                depth_test_passed = std::abs((s32)depth_new - (s32)depth_buffer[1][index]) <= depth_test_threshold;
+              }
             }
 
             if (!depth_test_passed) {
@@ -545,35 +571,55 @@ void GPU::RenderPolygons(bool translucent) {
 
             // TODO: reject translucent pixel if the polygon ID is equal and the destination (old?) pixel isn't opaque.
 
-            if (!is_opaque_pixel && disp3dcnt.enable_alpha_blend && color_buffer[index].a() != 0) {
+            if (!is_opaque_pixel && disp3dcnt.enable_alpha_blend && color_buffer[0][index].a() != 0) {
               auto a0 = color.a();
               auto a1 = Fixed6{63} - a0;
               for (uint j = 0; j < 3; j++)
-                color[j] = color[j] * a0 + color_buffer[index][j] * a1;
-              color.a() = std::max(color.a(), color_buffer[index].a());
+                color[j] = color[j] * a0 + color_buffer[0][index][j] * a1;
+              color.a() = std::max(color.a(), color_buffer[0][index].a());
             }
 
             // TODO: make sure that shadow polygon logic is correct.
             if (poly.params.mode == PolygonParams::Mode::Shadow) {
               if (poly_id != 0 && (attributes.flags & ATTRIBUTE_FLAG_SHADOW) && (attributes.poly_id[1]) != poly_id) {
-                color_buffer[index] = color;
+                // TODO: make this less redundant.
+                color_buffer[1][index] = color_buffer[0][index];
+                color_buffer[0][index] = color;
+      
+                // TODO: make this not totally wrong and hacky.
+                if (x0 == x1) {
+                  coverage_buffer[index] = coverage0;
+                } else {
+                  coverage_buffer[index] = (coverage0 * (x1 - x) + coverage1 * (x - x0)) / (x1 - x0);
+                }
               }
               attributes.flags &= ~ATTRIBUTE_FLAG_SHADOW;
             } else {
-              color_buffer[index] = color;
+              color_buffer[1][index] = color_buffer[0][index];
+              color_buffer[0][index] = color;            
 
-              // TODO: figure out when exactly hardware sets the edge flag?
+              if (x0 == x1) {
+                coverage_buffer[index] = coverage0;
+              } else {
+                coverage_buffer[index] = (coverage0 * (x1 - x) + coverage1 * (x - x0)) / (x1 - x0);
+              }
+
+              // TODO: figure out when exactly hardware sets and clears the edge flag?
               if (edge) {
-                attributes.flags |= ATTRIBUTE_FLAG_EDGE;
+                attributes.flags |=  ATTRIBUTE_FLAG_EDGE;
+              } else {
+                attributes.flags &= ~ATTRIBUTE_FLAG_EDGE;
               }
             }
 
             if (is_opaque_pixel) {
-              depth_buffer[index] = depth_new;
+              depth_buffer[1][index] = depth_buffer[0][index];
+              depth_buffer[0][index] = depth_new;
               attributes.poly_id[0] = poly_id;
             } else {
               if (poly.params.enable_translucent_depth_write) {
-                depth_buffer[index] = depth_new;
+                depth_buffer[1][index] = depth_buffer[0][index];
+                depth_buffer[0][index] = depth_new;
               }
               attributes.poly_id[1] = poly_id;
             }
@@ -586,16 +632,97 @@ void GPU::RenderPolygons(bool translucent) {
           span.x1[r]--;
         }
 
-        if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
-          render_span(span.x0[l], span.x1[l], true);
+        int coverage[2][2];
+
+        // TODO: move this into the Edge class?
+        const auto calculate_coverage = [](Edge::fixed14x18 x, Edge::fixed14x18 x_slope) -> int {
+          int coverage;
+          
+          // TODO: make the code smaller, less redundant.
+          if (x_slope >= 0) {
+            int x_frac = x & 0x3FFFF;
+
+            // Calculate the width between the point where the edge
+            // enters the pixel and the point where it leaves the pixel.
+            // TODO: it is possible that the edges leaves the pixel at the side,
+            // instead of at the bottom. Handle this case (if hardware bothers with it?)
+            int x_diff = std::min(x_slope, 0x40000 - x_frac);
+
+            coverage  = x_frac >> 12;
+            coverage += x_diff >> 13;
+          } else {
+            int x_frac = x & 0x3FFFF;
+
+            // Calculate the width between the point where the edge
+            // enters the pixel and the point where it leaves the pixel.
+            // TODO: it is possible that the edges leaves the pixel at the side,
+            // instead of at the bottom. Handle this case (if hardware bothers with it?)
+            int x_diff = std::min(-x_slope, x_frac);
+
+            coverage  = x_frac >> 12;
+            coverage -= x_diff >> 13;
+          }
+
+          return coverage;
+        };
+
+        // calculate coverage information for AA
+        for (int j = 0; j < 2; j++) {
+          auto x_slope = edge[j].XSlope();
+
+          if (edge[j].IsHorizontallyFlat()) {
+            // TODO: confirm that this is accurate
+            coverage[j][0] = 31;
+            coverage[j][1] = 31;
+          } else if (!edge[j].IsXMajor()) {
+            int cov = calculate_coverage(x0[j], x_slope);
+
+            // left edge always covers the inverted area.
+            if (j == l) {
+              cov = 63 - cov;
+            }
+
+            coverage[j][0] = cov;
+            coverage[j][1] = cov;
+          } else {
+            // TODO: this is very incorrect atm, think of something different.
+
+            // int cov0 = calculate_coverage(x0[j], x_slope);
+            // int cov1 = calculate_coverage(x1[j], x_slope);
+
+            // // left edge always covers the inverted area.
+            // // is this actually true for x-major edges???
+            // if (j == l) {
+            //   cov0 = 63 - cov0;
+            //   cov1 = 63 - cov1;
+            // }
+
+            // coverage[j][0] = cov0;
+            // coverage[j][1] = cov1;
+
+            coverage[j][0] = 63;
+            coverage[j][1] = 0;
+            if (j == l) {
+              coverage[j][0] = 63 - coverage[j][0];
+              coverage[j][1] = 63 - coverage[j][1];
+            }
+          }
+        }
+
+        // TODO: disable AA in wireframe mode? (set coverage to 63 I guess)
+
+        // if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
+        if (true) {
+          render_span(span.x0[l], span.x1[l], true, coverage[l][0], coverage[l][1]);
         }
         
         if (!wireframe) {
-          render_span(span.x1[l] + 1, span.x0[r] - 1, false);
+          render_span(span.x1[l] + 1, span.x0[r] - 1, false, 63, 63);
         }
         
-        if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
-          render_span(span.x0[r], span.x1[r], true);
+        // if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
+        if (true) {
+          render_span(span.x0[r], span.x1[r], true, coverage[r][0], coverage[r][1]);
         }
       }
 
@@ -643,20 +770,32 @@ void GPU::RenderEdgeMarking() {
         int u = c - 256;
         int d = c + 256;
 
-        u32 depth = depth_buffer[c];
+        u32 depth = depth_buffer[0][c];
         int poly_id = attributes.poly_id[0];
         bool border_edge = border_poly_id != poly_id && depth < border_depth;
 
-        edge  = x == 0   ? border_edge : (attribute_buffer[l].poly_id[0] != poly_id && depth < depth_buffer[l]);
-        edge |= x == 255 ? border_edge : (attribute_buffer[r].poly_id[0] != poly_id && depth < depth_buffer[r]);
-        edge |= y == 0   ? border_edge : (attribute_buffer[u].poly_id[0] != poly_id && depth < depth_buffer[u]);
-        edge |= y == 191 ? border_edge : (attribute_buffer[d].poly_id[0] != poly_id && depth < depth_buffer[d]);
+        edge  = x == 0   ? border_edge : (attribute_buffer[l].poly_id[0] != poly_id && depth < depth_buffer[0][l]);
+        edge |= x == 255 ? border_edge : (attribute_buffer[r].poly_id[0] != poly_id && depth < depth_buffer[0][r]);
+        edge |= y == 0   ? border_edge : (attribute_buffer[u].poly_id[0] != poly_id && depth < depth_buffer[0][u]);
+        edge |= y == 191 ? border_edge : (attribute_buffer[d].poly_id[0] != poly_id && depth < depth_buffer[0][d]);
 
         if (edge) {
           // TODO: decode color on write to the edge color table.
-          color_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
+          color_buffer[0][c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
         }
       }
+    }
+  }
+}
+
+void GPU::RenderAntiAlias() {
+  for (int i = 0; i < 256 * 192; i++) {
+    int coverage = coverage_buffer[i];
+
+    auto bottom_color = color_buffer[1][i];
+
+    if (bottom_color.a() != 0 && (attribute_buffer[i].flags & ATTRIBUTE_FLAG_EDGE)) {
+      color_buffer[0][i] = (color_buffer[0][i] * coverage) + (bottom_color * (63 - coverage));
     }
   }
 }
@@ -669,6 +808,10 @@ void GPU::Render() {
 
   if (disp3dcnt.enable_edge_marking) {
     RenderEdgeMarking();
+  }
+
+  if (true) {
+    RenderAntiAlias();
   }
 }
 

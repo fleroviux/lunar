@@ -15,7 +15,7 @@
 void loop(const char* rom_path) {
   SDL_Init(SDL_INIT_VIDEO);
 
-  auto scale = 2;
+  auto scale = 3;
   auto window = SDL_CreateWindow(
     "Duality",
     SDL_WINDOWPOS_CENTERED,

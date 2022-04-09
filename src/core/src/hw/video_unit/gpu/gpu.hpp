@@ -43,7 +43,7 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
+  auto GetOutput() -> Color4 const* { return &color_buffer[0][0]; }
 
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -305,6 +305,7 @@ struct GPU {
   void RenderRearPlane();
   void RenderPolygons(bool translucent);
   void RenderEdgeMarking();
+  void RenderAntiAlias();
 
   bool in_vertex_list;
   bool is_quad;
@@ -373,8 +374,8 @@ struct GPU {
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  Color4 color_buffer[256 * 192];
-  u32 depth_buffer[256 * 192];
+  Color4 color_buffer[2][256 * 192];
+  u32 depth_buffer[2][256 * 192];
 
   enum AttributeFlags {
     ATTRIBUTE_FLAG_SHADOW = 1,
@@ -385,6 +386,8 @@ struct GPU {
     u16 flags;
     u8  poly_id[2];
   } attribute_buffer[256 * 192];
+
+  int coverage_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;
