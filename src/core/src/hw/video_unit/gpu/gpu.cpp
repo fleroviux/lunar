@@ -507,7 +507,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
 
 template<int axis, typename Comparator>
 bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
-  const int precision = 9;
+  const int precision = 18;
 
   auto size = vertices_in.size();
   bool clipped = false;
