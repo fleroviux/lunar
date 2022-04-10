@@ -507,6 +507,8 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
 
 template<int axis, typename Comparator>
 bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
+  const int precision = 9;
+
   auto size = vertices_in.size();
   bool clipped = false;
 
@@ -524,23 +526,23 @@ bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector
         auto& v1 = vertices_in[j];
 
         if (!Comparator{}(v1.position[axis], v1.position.w())) {
-          auto sign  = Fixed20x12::from_int((v0.position[axis] < -v0.position.w()) ? 1 : -1);
-          auto numer = v1.position[axis] + sign * v1.position[3];
-          auto denom = (v0.position.w() - v1.position.w()) + (v0.position[axis] - v1.position[axis]) * sign;
-          auto scale = (s64)(-sign * numer / denom).raw();
-          auto scale_inv = 0x1000 - scale;
+          auto sign  = v0.position[axis] < -v0.position.w() ? 1 : -1;
+          auto numer = v1.position[axis].raw() + sign * v1.position[3].raw();
+          auto denom = (v0.position.w() - v1.position.w()).raw() + (v0.position[axis] - v1.position[axis]).raw() * sign;
+          auto scale =  -sign * ((s64)numer << precision) / denom;
+          auto scale_inv = (1 << precision) - scale;
 
           auto position = Vector4<Fixed20x12>{};
           auto color = Color4{};
           auto uv = Vector2<Fixed12x4>{};
 
           for (int k = 0; k < 4; k++) {
-            position[k] = (v1.position[k].raw() * scale_inv + v0.position[k].raw() * scale) >> 12;
-            color[k] = (v1.color[k].raw() * scale_inv + v0.color[k].raw() * scale) >> 12;
+            position[k] = (v1.position[k].raw() * scale_inv + v0.position[k].raw() * scale) >> precision;
+            color[k] = (v1.color[k].raw() * scale_inv + v0.color[k].raw() * scale) >> precision;
           }
 
           for (int k = 0; k < 2; k++) {
-            uv[k] = (v1.uv[k].raw() * scale_inv + v0.uv[k].raw() * scale) >> 12;
+            uv[k] = (v1.uv[k].raw() * scale_inv + v0.uv[k].raw() * scale) >> precision;
           }
 
           vertices_out.push_back({position, color, uv});
