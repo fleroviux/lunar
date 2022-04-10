@@ -97,15 +97,6 @@ struct Vector {
     return result;
   }
 
-  template<typename U>
-  static auto interpolate(Derived const& a, Derived const& b, U factor) -> Derived {
-    Derived result{};
-    U one_minus_factor = NumericConstants<U>::one() - factor;
-    for (uint i = 0; i < n; i++)
-      result[i] = a[i] * one_minus_factor + b[i] * factor;
-    return result;
-  }
-
 protected:
   T data[n] { NumericConstants<T>::zero() };
 };

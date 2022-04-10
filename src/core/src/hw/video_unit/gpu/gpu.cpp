@@ -527,13 +527,23 @@ bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector
           auto sign  = Fixed20x12::from_int((v0.position[axis] < -v0.position.w()) ? 1 : -1);
           auto numer = v1.position[axis] + sign * v1.position[3];
           auto denom = (v0.position.w() - v1.position.w()) + (v0.position[axis] - v1.position[axis]) * sign;
-          auto scale = -sign * numer / denom;
+          auto scale = (s64)(-sign * numer / denom).raw();
+          auto scale_inv = 0x1000 - scale;
 
-          vertices_out.push_back({
-            .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
-            .color = Color4::interpolate(v1.color, v0.color, scale),
-            .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
-          });
+          auto position = Vector4<Fixed20x12>{};
+          auto color = Color4{};
+          auto uv = Vector2<Fixed12x4>{};
+
+          for (int k = 0; k < 4; k++) {
+            position[k] = (v1.position[k].raw() * scale_inv + v0.position[k].raw() * scale) >> 12;
+            color[k] = (v1.color[k].raw() * scale_inv + v0.color[k].raw() * scale) >> 12;
+          }
+
+          for (int k = 0; k < 2; k++) {
+            uv[k] = (v1.uv[k].raw() * scale_inv + v0.uv[k].raw() * scale) >> 12;
+          }
+
+          vertices_out.push_back({position, color, uv});
         }
       }
 
