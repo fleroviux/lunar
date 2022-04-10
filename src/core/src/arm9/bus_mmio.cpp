@@ -1724,6 +1724,12 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_CLEAR_COLOR|1:
       gpu_io.clear_color.WriteByte(1, value);
       break;
+    case REG_CLEAR_COLOR|2:
+      gpu_io.clear_color.WriteByte(2, value);
+      break;
+    case REG_CLEAR_COLOR|3:
+      gpu_io.clear_color.WriteByte(3, value);
+      break;
     case REG_CLEAR_DEPTH|0:
       gpu_io.clear_depth.WriteByte(0, value);
       break;
