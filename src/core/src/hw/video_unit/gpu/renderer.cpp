@@ -562,9 +562,11 @@ void GPU::RenderPolygons(bool translucent) {
             } else {
               color_buffer[index] = color;
 
-              // TODO: figure out when exactly hardware sets the edge flag?
+              // TODO: figure out when exactly hardware sets and unsets the edge flag?
               if (edge) {
-                attributes.flags |= ATTRIBUTE_FLAG_EDGE;
+                attributes.flags |=  ATTRIBUTE_FLAG_EDGE;
+              } else {
+                attributes.flags &= ~ATTRIBUTE_FLAG_EDGE;
               }
             }
 
