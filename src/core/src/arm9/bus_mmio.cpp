@@ -167,9 +167,14 @@ enum Registers {
   // GPU
   REG_DISP3DCNT = 0x0400'0060,
   REG_POWCNT1 = 0x0400'0304,
+  REG_EDGE_COLOR_LO = 0x0400'0330,
+  REG_EDGE_COLOR_HI = 0x0400'033F,
+  REG_ALPHA_TEST_REF = 0x0400'0340,
   REG_CLEAR_COLOR = 0x0400'0350,
   REG_CLEAR_DEPTH = 0x0400'0354,
   REG_CLRIMAGE_OFFSET = 0x0400'0356,
+  REG_TOON_TABLE_LO = 0x0400'0380,
+  REG_TOON_TABLE_HI = 0x0400'03BF,
   REG_GXFIFO_LO = 0x0400'0400,
   REG_GXFIFO_HI = 0x0400'043F,
   REG_GXCMDPORT_LO = 0x0400'0440,
@@ -1707,11 +1712,23 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
     case REG_POWCNT1|1:
       video_unit.powcnt1.WriteByte(1, value);
       break;
+    case REG_EDGE_COLOR_LO ... REG_EDGE_COLOR_HI:
+      gpu_io.WriteEdgeColorTable(address & 0xF, value);
+      break;
+    case REG_ALPHA_TEST_REF:
+      gpu_io.alpha_test_ref.WriteByte(value);
+      break;
     case REG_CLEAR_COLOR|0:
       gpu_io.clear_color.WriteByte(0, value);
       break;
     case REG_CLEAR_COLOR|1:
       gpu_io.clear_color.WriteByte(1, value);
+      break;
+    case REG_CLEAR_COLOR|2:
+      gpu_io.clear_color.WriteByte(2, value);
+      break;
+    case REG_CLEAR_COLOR|3:
+      gpu_io.clear_color.WriteByte(3, value);
       break;
     case REG_CLEAR_DEPTH|0:
       gpu_io.clear_depth.WriteByte(0, value);
@@ -1724,6 +1741,9 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_CLRIMAGE_OFFSET|1:
       gpu_io.clrimage_offset.WriteByte(1, value);
+      break;
+    case REG_TOON_TABLE_LO ... REG_TOON_TABLE_HI:
+      gpu_io.WriteToonTable(address & 0x3F, value);
       break;
     case REG_GXSTAT|0:
       gpu_io.gxstat.WriteByte(0, value);

@@ -440,8 +440,9 @@ void GPU::CMD_SetPolygonAttributes() {
   poly_params.enable_light[1] = arg & 2;
   poly_params.enable_light[2] = arg & 4;
   poly_params.enable_light[3] = arg & 8;
-  poly_params.render_back_side = arg & 16;
-  poly_params.render_front_side = arg & 32;
+  poly_params.mode = static_cast<PolygonParams::Mode>((arg >> 4) & 3);
+  poly_params.render_back_side = arg & 64;
+  poly_params.render_front_side = arg & 128;
   poly_params.enable_translucent_depth_write = arg & (1 << 11);
   poly_params.render_far_plane_polys = arg & (1 << 12);
   poly_params.render_1dot_depth_tested = arg & (1 << 13);
@@ -524,6 +525,7 @@ void GPU::CMD_BeginVertexList() {
   is_quad = arg & 1;
   is_strip = arg & 2;
   is_first = true;
+  polygon_strip_length = 0;
 
   vertices.clear();
 }
@@ -535,7 +537,8 @@ void GPU::CMD_EndVertexList() {
 }
 
 void GPU::CMD_SwapBuffers() {
-  Dequeue();
+  auto arg = Dequeue().argument;
+  use_w_buffer_pending = arg & 2;
   swap_buffers_pending = true;
 }
 

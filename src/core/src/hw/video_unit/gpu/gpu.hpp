@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <util/integer.hpp>
 #include <util/meta.hpp>
 #include <util/fifo.hpp>
@@ -26,6 +27,8 @@ struct GPU {
   void Reset();
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
+  void WriteToonTable(uint offset, u8 value);
+  void WriteEdgeColorTable(uint offset, u8 value);
   void SwapBuffers();
 
   template<typename T>
@@ -40,7 +43,7 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> Color4 const* { return &draw_buffer[0]; }
+  auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
 
   struct DISP3DCNT {
     auto ReadByte (uint offset) -> u8;
@@ -96,6 +99,12 @@ struct GPU {
     GPU& gpu;
   } gxstat { *this };
 
+  struct AlphaTest {
+    int alpha = 0;
+
+    void WriteByte(u8 value);
+  } alpha_test_ref;
+
   struct ClearColor {
     int color_r = 0;
     int color_g = 0;
@@ -120,7 +129,7 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
   } clrimage_offset;
 
-private:
+//private:
   enum class MatrixMode {
     Projection = 0,
     Modelview = 1,
@@ -242,7 +251,14 @@ private:
   }
 
   void AddVertex(Vector4<Fixed20x12> const& position);
+
+  bool IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert);
+
   auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
+
+  template<int axis, typename Comparator>
+  bool ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out);
+
   auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
 
   /// Matrix commands
@@ -286,10 +302,15 @@ private:
 
   void CMD_SwapBuffers();
 
+  void RenderRearPlane();
+  void RenderPolygons(bool translucent);
+  void RenderEdgeMarking();
+
   bool in_vertex_list;
   bool is_quad;
   bool is_strip;
   bool is_first;
+  int polygon_strip_length;
 
   struct VertexRAM {
     int count = 0;
@@ -339,6 +360,9 @@ private:
     bool enable_shinyness_table = false;
   } material;
 
+  std::array<u16, 32> toon_table;
+  std::array<u16, 8> edge_color_table;
+
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
   Region<8> const& vram_palette { 7 };
@@ -349,8 +373,18 @@ private:
   common::FIFO<CmdArgPack, 256> gxfifo;
   common::FIFO<CmdArgPack, 4> gxpipe;
   
-  Color4 draw_buffer[256 * 192];
+  Color4 color_buffer[256 * 192];
   u32 depth_buffer[256 * 192];
+
+  enum AttributeFlags {
+    ATTRIBUTE_FLAG_SHADOW = 1,
+    ATTRIBUTE_FLAG_EDGE = 2
+  };
+
+  struct Attribute {
+    u16 flags;
+    u8  poly_id[2];
+  } attribute_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;
@@ -366,6 +400,8 @@ private:
 
   Scheduler::Event* cmd_event = nullptr;
 
+  bool use_w_buffer;
+  bool use_w_buffer_pending;
   bool swap_buffers_pending;
 };
 

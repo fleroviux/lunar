@@ -51,6 +51,7 @@ void GPU::Reset() {
   gxpipe.Reset();
   packed_cmds = 0;
   packed_args_left = 0;
+  alpha_test_ref = {};
   clear_color = {};
   clear_depth = {};
   clrimage_offset = {};
@@ -69,6 +70,8 @@ void GPU::Reset() {
     lights[i] = {};
   }
   material = {};
+  toon_table.fill(0x7FFF);
+  edge_color_table.fill(0x7FFF);
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -78,9 +81,11 @@ void GPU::Reset() {
   clip_matrix.identity();
   
   for (uint i = 0; i < 256 * 192; i++) {
-    draw_buffer[i] = {}; 
+    color_buffer[i] = {};  
   }
 
+  use_w_buffer = false;
+  use_w_buffer_pending = false;
   swap_buffers_pending = false;
 }
 
@@ -123,6 +128,20 @@ void GPU::WriteCommandPort(uint port, u32 value) {
   }
 
   Enqueue({ static_cast<u8>(port >> 2), value });
+}
+
+void GPU::WriteToonTable(uint offset, u8 value) {
+  auto index = offset >> 1;
+  auto shift = (offset & 1) * 8;
+
+  toon_table[index] = (toon_table[index] & ~(0xFF << shift)) | (value << shift);
+}
+
+void GPU::WriteEdgeColorTable(uint offset, u8 value) {
+  auto index = offset >> 1;
+  auto shift = (offset & 1) * 8;
+
+  edge_color_table[index] = (edge_color_table[index] & ~(0xFF << shift)) | (value << shift);
 }
 
 void GPU::Enqueue(CmdArgPack pack) {
@@ -242,6 +261,7 @@ void GPU::SwapBuffers() {
     gx_buffer_id ^= 1;
     vertex[gx_buffer_id].count = 0;
     polygon[gx_buffer_id].count = 0;
+    use_w_buffer = use_w_buffer_pending;
     swap_buffers_pending = false;
     ProcessCommands();
   }
@@ -301,6 +321,9 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       }
     }
 
+    // In a triangle strip the winding order of each second polygon is inverted.
+    bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
+
     if (needs_clipping) {
       poly.count = 0;
 
@@ -310,15 +333,22 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 2]);
       }
 
-      for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
-        // FIXME: this is disgusting.
-        if (vertex[gx_buffer_id].count == 6144) {
-          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-          break;
+      auto const& v0 = vertices[0].position;
+      auto const& v1 = vertices[vertices.size() - 1].position;
+      auto const& v2 = vertices[1].position;
+      bool front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
+
+      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
+        for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
+          // FIXME: this is disgusting.
+          if (vertex[gx_buffer_id].count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex[gx_buffer_id].count++;
+          vertex[gx_buffer_id].data[index] = v;
+          poly.indices[poly.count++] = index;
         }
-        auto index = vertex[gx_buffer_id].count++;
-        vertex[gx_buffer_id].data[index] = v;
-        poly.indices[poly.count++] = index;
       }
 
       // Restart polygon strip based on the last two unclipped vertifces.
@@ -332,92 +362,188 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.clear();
       }
     } else {
+      bool front_facing;
+
       if (is_strip && !is_first) {
         poly.indices[0] = vertex[gx_buffer_id].count - 2;
         poly.indices[1] = vertex[gx_buffer_id].count - 1;
         poly.count = 2;
+
+        // TODO: make this a bit nicer.
+        auto const& v0 = vertex[gx_buffer_id].data[poly.indices[0]].position;
+        auto const& v1 = vertices[vertices.size() - 1].position;
+        auto const& v2 = vertex[gx_buffer_id].data[poly.indices[1]].position;
+
+        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
       } else {
         poly.count = 0;
+
+        auto const& v0 = vertices[0].position;
+        auto const& v1 = vertices[vertices.size() - 1].position;
+        auto const& v2 = vertices[1].position;
+
+        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
       }
 
-      for (auto const& v : vertices) {
-        // FIXME: this is disgusting.
-        if (vertex[gx_buffer_id].count == 6144) {
-          LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-          break;
+      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
+        for (auto const& v : vertices) {
+          // FIXME: this is disgusting.
+          if (vertex[gx_buffer_id].count == 6144) {
+            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+            break;
+          }
+          auto index = vertex[gx_buffer_id].count++;
+          vertex[gx_buffer_id].data[index] = v;
+          poly.indices[poly.count++] = index;
         }
-        auto index = vertex[gx_buffer_id].count++;
-        vertex[gx_buffer_id].data[index] = v;
-        poly.indices[poly.count++] = index;
+      } else {
+        poly.count = 0;
+
+        // Keep last up to two vertices in vertex RAM to continue the polygon strip.
+        // TODO: how does hardware handle this case?
+        if (is_strip) {
+          for (int i = vertices.size() - ((is_quad || is_first) ? 2 : 1); i < vertices.size(); i++) {
+            // FIXME: this is disgusting.
+            if (vertex[gx_buffer_id].count == 6144) {
+              LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+              break;
+            }
+            auto index = vertex[gx_buffer_id].count++;
+            vertex[gx_buffer_id].data[index] = vertices[i];
+            poly.indices[poly.count++] = index;
+          }
+        }
       }
+
+      is_first = false;
+      vertices.clear();
 
       if (is_quad && is_strip) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
-
-      vertices.clear();
-      is_first = false;
     }
 
-    poly.params = poly_params;
-    poly.texture_params = texture_params;
+    if (is_strip) {
+      polygon_strip_length++;
+    }
+
     if (poly.count != 0) {
       polygon[gx_buffer_id].count++;
+      poly.params = poly_params;
+      poly.texture_params = texture_params;
     }
   }
 }
 
+bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert) {
+  // auto normal = (v1.xyz() - v0.xyz()).cross(v2.xyz() - v0.xyz());
+  // auto dot = v0.xyz().dot(normal);
+
+  float a[3] {
+    (v1.x() - v0.x()).raw() / (float)(1 << 12),
+    (v1.y() - v0.y()).raw() / (float)(1 << 12),
+    (v1.z() - v0.z()).raw() / (float)(1 << 12)
+  };
+
+  float b[3] {
+    (v2.x() - v0.x()).raw() / (float)(1 << 12),
+    (v2.y() - v0.y()).raw() / (float)(1 << 12),
+    (v2.z() - v0.z()).raw() / (float)(1 << 12)
+  };
+
+  float normal[3] {
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  };
+
+  float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
+              (v0.y().raw() / (float)(1 << 12)) * normal[1] +
+              (v0.z().raw() / (float)(1 << 12)) * normal[2];
+
+  if (invert) {
+    return dot >= 0; 
+  }
+
+  return dot < 0;
+}
+
 auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {
-  int a = 0;
-  int b = 1;
   std::vector<Vertex> clipped[2];
 
-  clipped[a] = vertices;
+  clipped[0] = vertices;
 
   if (quadstrip) {
-    std::swap(clipped[a][2], clipped[a][3]);
+    std::swap(clipped[0][2], clipped[0][3]);
   }
 
-  for (int i = 0; i < 3; i++) {
-    auto size = clipped[a].size();
+  struct CompareLt {
+    bool operator()(Fixed20x12 x, Fixed20x12 w) { return x < -w; }
+  };
 
-    for (int j = 0; j < size; j++) {
-      auto& v0 = clipped[a][j];
-  
-      if (v0.position[i].absolute() > v0.position.w().absolute()) {
-        int c = j - 1;
-        int d = j + 1;
-        if (c == -1) c = size - 1;
-        if (d == size) d = 0;
+  struct CompareGt {
+    bool operator()(Fixed20x12 x, Fixed20x12 w) { return x >  w; }
+  };
 
-        for (int k : { c, d }) {
-          auto& v1 = clipped[a][k];
+  if (!poly_params.render_far_plane_polys && ClipPolygonOnPlane<2, CompareGt>(clipped[0], clipped[1])) {
+    return {};
+  }
+  clipped[0].clear();
+  ClipPolygonOnPlane<2, CompareLt>(clipped[1], clipped[0]);
+  clipped[1].clear();
 
-          if ((v0.position[i] >  v0.position.w() && v1.position[i] <  v1.position.w()) ||
-              (v0.position[i] < -v0.position.w() && v1.position[i] > -v1.position.w())) {
-            auto sign  = Fixed20x12::from_int((v0.position[i] < -v0.position.w()) ? 1 : -1);
-            auto numer = v1.position[i] + sign * v1.position[3];
-            auto denom = (v0.position.w() - v1.position.w()) + (v0.position[i] - v1.position[i]) * sign;
-            auto scale = -sign * numer / denom;
+  ClipPolygonOnPlane<1, CompareGt>(clipped[0], clipped[1]);
+  clipped[0].clear();
+  ClipPolygonOnPlane<1, CompareLt>(clipped[1], clipped[0]);
+  clipped[1].clear();
 
-            clipped[b].push_back({
-              .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
-              .color = Color4::interpolate(v1.color, v0.color, scale),
-              .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
-            });
-          }
+  ClipPolygonOnPlane<0, CompareGt>(clipped[0], clipped[1]);
+  clipped[0].clear();
+  ClipPolygonOnPlane<0, CompareLt>(clipped[1], clipped[0]);
+  // clipped[1].clear();
+
+  return clipped[0];
+}
+
+template<int axis, typename Comparator>
+bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
+  auto size = vertices_in.size();
+  bool clipped = false;
+
+  for (int i = 0; i < size; i++) {
+    auto& v0 = vertices_in[i];
+
+    if (Comparator{}(v0.position[axis], v0.position.w())) {  
+      int a = i - 1;
+      int b = i + 1;
+      if (a == -1) a = size - 1;
+      if (b == size) b = 0;
+
+      // TODO: can a point be generated in both iterations at the same time?
+      for (int j : { a, b }) {
+        auto& v1 = vertices_in[j];
+
+        if (!Comparator{}(v1.position[axis], v1.position.w())) {
+          auto sign  = Fixed20x12::from_int((v0.position[axis] < -v0.position.w()) ? 1 : -1);
+          auto numer = v1.position[axis] + sign * v1.position[3];
+          auto denom = (v0.position.w() - v1.position.w()) + (v0.position[axis] - v1.position[axis]) * sign;
+          auto scale = -sign * numer / denom;
+
+          vertices_out.push_back({
+            .position = Vector4<Fixed20x12>::interpolate(v1.position, v0.position, scale),
+            .color = Color4::interpolate(v1.color, v0.color, scale),
+            .uv = Vector2<Fixed12x4>::interpolate(v1.uv, v0.uv, scale)
+          });
         }
-      } else {
-        clipped[b].push_back(v0);
       }
-    }
 
-    clipped[a].clear();
-    a ^= 1;
-    b ^= 1;
+      clipped = true;
+    } else {
+      vertices_out.push_back(v0);
+    }
   }
 
-  return clipped[a];
+  return clipped;
 }
 
 void GPU::CheckGXFIFO_IRQ() {
@@ -445,9 +571,10 @@ auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
     case 0:
       return (enable_textures ? 1 : 0) |
              (static_cast<u8>(shading_mode) << 1) |
-             (enable_alpha_test  ? 4 : 0) |
-             (enable_alpha_blend ? 8 : 0) |
-             (enable_antialias  ? 16 : 0) |
+             (enable_alpha_test   ?  4 : 0) |
+             (enable_alpha_blend  ?  8 : 0) |
+             (enable_antialias    ? 16 : 0) |
+             (enable_edge_marking ? 32 : 0) |
              (static_cast<u8>(fog_mode) << 6) |
              (enable_fog ? 128 : 0);
     case 1:
@@ -522,18 +649,29 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
   }
 }
 
+void GPU::AlphaTest::WriteByte(u8 value) {
+  alpha = value;
+}
+
 void GPU::ClearColor::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0: {
-      color_r = (value >>  0) & 31;
-      color_g = (value >>  5) & 31;
-      color_b = (value >> 10) & 31;
-      enable_fog = value & 128;
+      color_r = value & 31;
+      color_g = (color_g & ~7) | ((value >> 5) & 7);
       break;
     }
     case 1: {
+      color_g = (color_g & 7) | ((value & 3) << 3);
+      color_b = (value >> 2) & 31;
+      enable_fog = value & 128;
+      break;
+    }
+    case 2: {
       color_a = value & 31;
-      polygon_id = (value >> 8) & 63;
+      break;
+    }
+    case 3: {
+      polygon_id = value & 63;
       break;
     }
     default: {
@@ -545,7 +683,7 @@ void GPU::ClearColor::WriteByte(uint offset, u8 value) {
 void GPU::ClearDepth::WriteByte(uint offset, u8 value) {
   switch (offset) {
     case 0: {
-      depth = (depth& 0xFF00) | value;
+      depth = (depth & 0xFF00) | value;
       break;
     }
     case 1: {
