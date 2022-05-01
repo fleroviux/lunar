@@ -485,28 +485,28 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
     bool operator()(Fixed20x12 x, Fixed20x12 w) { return x >  w; }
   };
 
-  if (!poly_params.render_far_plane_polys && ClipPolygonOnPlane<2, CompareGt>(clipped[0], clipped[1])) {
+  if (!poly_params.render_far_plane_polys && ClipPolygonAgainstPlane<2, CompareGt>(clipped[0], clipped[1])) {
     return {};
   }
   clipped[0].clear();
-  ClipPolygonOnPlane<2, CompareLt>(clipped[1], clipped[0]);
+  ClipPolygonAgainstPlane<2, CompareLt>(clipped[1], clipped[0]);
   clipped[1].clear();
 
-  ClipPolygonOnPlane<1, CompareGt>(clipped[0], clipped[1]);
+  ClipPolygonAgainstPlane<1, CompareGt>(clipped[0], clipped[1]);
   clipped[0].clear();
-  ClipPolygonOnPlane<1, CompareLt>(clipped[1], clipped[0]);
+  ClipPolygonAgainstPlane<1, CompareLt>(clipped[1], clipped[0]);
   clipped[1].clear();
 
-  ClipPolygonOnPlane<0, CompareGt>(clipped[0], clipped[1]);
+  ClipPolygonAgainstPlane<0, CompareGt>(clipped[0], clipped[1]);
   clipped[0].clear();
-  ClipPolygonOnPlane<0, CompareLt>(clipped[1], clipped[0]);
+  ClipPolygonAgainstPlane<0, CompareLt>(clipped[1], clipped[0]);
   // clipped[1].clear();
 
   return clipped[0];
 }
 
 template<int axis, typename Comparator>
-bool GPU::ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
+bool GPU::ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
   const int precision = 18;
 
   auto size = vertices_in.size();

@@ -257,7 +257,7 @@ struct GPU {
   auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
 
   template<int axis, typename Comparator>
-  bool ClipPolygonOnPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out);
+  bool ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out);
 
   auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
 
