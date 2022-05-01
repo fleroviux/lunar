@@ -232,8 +232,8 @@ void GPU::RenderPolygons(bool translucent) {
   // TODO: use real viewport information
   const int viewport_x = 0;
   const int viewport_y = 0;
-  const int viewport_width = 255;
-  const int viewport_height = 191;
+  const int viewport_width = 256;
+  const int viewport_height = 192;
 
   auto buffer_id = gx_buffer_id ^ 1;
   auto& vert_ram = vertex[buffer_id];
@@ -257,8 +257,8 @@ void GPU::RenderPolygons(bool translucent) {
       auto w = vert.position.w().raw();
       auto two_w = w << 1;
 
-      point.x = (( (s64)vert.position.x().raw() + w) * viewport_width  / two_w) + viewport_x;
-      point.y = ((-(s64)vert.position.y().raw() + w) * viewport_height / two_w) + viewport_y;
+      point.x = ((( (s64)vert.position.x().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
+      point.y = (((-(s64)vert.position.y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
       point.depth = (u32)(((((s64)vert.position.z().raw() << 14) / w) + 0x3FFF) << 9);
       point.w = w;
       point.vertex = &vert;
