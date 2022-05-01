@@ -291,7 +291,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
   auto clip_position = clip_matrix * position;
 
-  vertices.push_back({ clip_position, vertex_color, vertex_uv });
+  vertices.push_back({clip_position, vertex_color, vertex_uv});
 
   position_old = position;
 
@@ -310,6 +310,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     auto& poly = polygon[gx_buffer_id].data[polygon[gx_buffer_id].count];
 
     // Determine if the polygon must be clipped.
+    // TODO: this can be calculated as submit vertices.
     bool needs_clipping = false;
     for (auto const& v : vertices) {
       auto w = v.position[3];
@@ -324,7 +325,70 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     // In a triangle strip the winding order of each second polygon is inverted.
     bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
 
+    auto& vertex_ram = vertex[gx_buffer_id];
+    auto new_vertices = std::vector<Vertex>{};
+
+    poly.count = 0;
+
+    // Append the last two vertices from vertex RAM to the polygon.
+    if (is_strip && !is_first) {
+      if (needs_clipping) {
+        // TODO: can we do this more efficiently?
+        vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 1]);
+        vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 2]);
+      } else {
+        poly.indices[0] = vertex_ram.count - 2;
+        poly.indices[1] = vertex_ram.count - 1;
+        poly.count = 2;
+      }
+    }
+
     if (needs_clipping) {
+      // Keep the last two unclipped vertices to restart the polygon strip.
+      if (is_strip) {
+        new_vertices.push_back(vertices[vertices.size() - 2]);
+        new_vertices.push_back(vertices[vertices.size() - 1]);
+      }
+
+      vertices = ClipPolygon(vertices, is_quad && is_strip);
+    }
+
+    for (auto const& v : vertices) {
+      // TODO: can we do this more efficiently?
+      if (vertex_ram.count == 6144) {
+        LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+        break;
+      }
+
+      size_t i = vertex_ram.count++;
+
+      vertex_ram.data[i] = v;
+      poly.indices[poly.count++] = i; 
+    }
+
+    // ClipPolygon() will have already swapped the vertices.
+    if (!needs_clipping) {
+      /**
+       * v0---v2     v0---v3
+       *  |    | -->  |    |
+       * v1---v3     v1---v2
+       */
+      if (is_strip && is_quad) {
+        std::swap(poly.indices[2], poly.indices[3]);
+      }
+    }
+
+    // Setup state for the next polygon.
+    if (needs_clipping && is_strip) {
+      // Restart the polygon strip based on the last two submitted vertices.
+      is_first = true;
+      vertices = std::move(new_vertices);
+    } else {
+      is_first = false;
+      vertices.clear();
+    }
+
+    /*if (needs_clipping) {
       poly.count = 0;
 
       // TODO: this isn't going to cut it efficiency-wise.
@@ -421,7 +485,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       if (is_quad && is_strip) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
-    }
+    }*/
 
     if (is_strip) {
       polygon_strip_length++;
@@ -521,7 +585,6 @@ bool GPU::ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::v
       if (a == -1) a = size - 1;
       if (b == size) b = 0;
 
-      // TODO: can a point be generated in both iterations at the same time?
       for (int j : { a, b }) {
         auto& v1 = vertices_in[j];
 
