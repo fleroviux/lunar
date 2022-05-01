@@ -291,7 +291,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
   auto clip_position = clip_matrix * position;
 
-  vertices.push_back({ clip_position, vertex_color, vertex_uv });
+  vertices.push_back({clip_position, vertex_color, vertex_uv});
 
   position_old = position;
 
@@ -310,6 +310,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     auto& poly = polygon[gx_buffer_id].data[polygon[gx_buffer_id].count];
 
     // Determine if the polygon must be clipped.
+    // TODO: this can be calculated as submit vertices.
     bool needs_clipping = false;
     for (auto const& v : vertices) {
       auto w = v.position[3];
@@ -324,103 +325,121 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     // In a triangle strip the winding order of each second polygon is inverted.
     bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
 
-    if (needs_clipping) {
-      poly.count = 0;
+    auto& vertex_ram = vertex[gx_buffer_id];
+    auto new_vertices = std::vector<Vertex>{};
 
-      // TODO: this isn't going to cut it efficiency-wise.
-      if (is_strip && !is_first) {
-        vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 1]);
-        vertices.insert(vertices.begin(), vertex[gx_buffer_id].data[vertex[gx_buffer_id].count - 2]);
+    poly.count = 0;
+
+    // Append the last two vertices from vertex RAM to the polygon.
+    if (is_strip && !is_first) {
+      if (needs_clipping) {
+        // TODO: can we do this more efficiently?
+        vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 1]);
+        vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 2]);
+      } else {
+        poly.indices[0] = vertex_ram.count - 2;
+        poly.indices[1] = vertex_ram.count - 1;
+        poly.count = 2;
       }
+    }
 
+    bool front_facing;
+
+    if (poly.count == 2) {
+      auto const& v0 = vertex_ram.data[poly.indices[0]].position;
+      auto const& v1 = vertices.back().position;
+      auto const& v2 = vertex_ram.data[poly.indices[1]].position;
+
+      front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
+    } else {
       auto const& v0 = vertices[0].position;
-      auto const& v1 = vertices[vertices.size() - 1].position;
+      auto const& v1 = vertices.back().position;
       auto const& v2 = vertices[1].position;
-      bool front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
 
-      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
-        for (auto const& v : ClipPolygon(vertices, is_quad && is_strip)) {
-          // FIXME: this is disgusting.
-          if (vertex[gx_buffer_id].count == 6144) {
-            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-            break;
-          }
-          auto index = vertex[gx_buffer_id].count++;
-          vertex[gx_buffer_id].data[index] = v;
-          poly.indices[poly.count++] = index;
-        }
+      front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
+    }
+
+    bool cull = !((poly_params.render_front_side &&  front_facing) || 
+                  (poly_params.render_back_side  && !front_facing));
+
+    if (cull) {
+      if (is_strip) {
+        polygon_strip_length++;
       }
 
-      // Restart polygon strip based on the last two unclipped vertifces.
-      if (is_strip) {
-        is_first = true;
+      if (needs_clipping && is_strip) {
         vertices.erase(vertices.begin());
         if (is_quad) {
           vertices.erase(vertices.begin());
         }
+
+        is_first = true;
       } else {
-        vertices.clear();
-      }
-    } else {
-      bool front_facing;
-
-      if (is_strip && !is_first) {
-        poly.indices[0] = vertex[gx_buffer_id].count - 2;
-        poly.indices[1] = vertex[gx_buffer_id].count - 1;
-        poly.count = 2;
-
-        // TODO: make this a bit nicer.
-        auto const& v0 = vertex[gx_buffer_id].data[poly.indices[0]].position;
-        auto const& v1 = vertices[vertices.size() - 1].position;
-        auto const& v2 = vertex[gx_buffer_id].data[poly.indices[1]].position;
-
-        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
-      } else {
-        poly.count = 0;
-
-        auto const& v0 = vertices[0].position;
-        auto const& v1 = vertices[vertices.size() - 1].position;
-        auto const& v2 = vertices[1].position;
-
-        front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
-      }
-
-      if ((front_facing && poly_params.render_front_side) || (!front_facing && poly_params.render_back_side)) {
-        for (auto const& v : vertices) {
-          // FIXME: this is disgusting.
-          if (vertex[gx_buffer_id].count == 6144) {
-            LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
-            break;
-          }
-          auto index = vertex[gx_buffer_id].count++;
-          vertex[gx_buffer_id].data[index] = v;
-          poly.indices[poly.count++] = index;
-        }
-      } else {
-        poly.count = 0;
-
-        // Keep last up to two vertices in vertex RAM to continue the polygon strip.
-        // TODO: how does hardware handle this case?
         if (is_strip) {
-          for (int i = vertices.size() - ((is_quad || is_first) ? 2 : 1); i < vertices.size(); i++) {
-            // FIXME: this is disgusting.
-            if (vertex[gx_buffer_id].count == 6144) {
+          int size = vertices.size();
+
+          for (int i = std::max(0, size - 2); i < size; i++) {
+            // TODO: can we do this more efficiently?
+            if (vertex_ram.count == 6144) {
               LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
               break;
             }
-            auto index = vertex[gx_buffer_id].count++;
-            vertex[gx_buffer_id].data[index] = vertices[i];
-            poly.indices[poly.count++] = index;
+
+            vertex_ram.data[vertex_ram.count++] = vertices[i];
           }
+
+          is_first = false;
         }
+
+        vertices.clear();
       }
 
-      is_first = false;
-      vertices.clear();
+      return;
+    }
 
-      if (is_quad && is_strip) {
+    if (needs_clipping) {
+      // Keep the last two unclipped vertices to restart the polygon strip.
+      if (is_strip) {
+        new_vertices.push_back(vertices[vertices.size() - 2]);
+        new_vertices.push_back(vertices[vertices.size() - 1]);
+      }
+
+      vertices = ClipPolygon(vertices, is_quad && is_strip);
+    }
+
+    for (auto const& v : vertices) {
+      // TODO: can we do this more efficiently?
+      if (vertex_ram.count == 6144) {
+        LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+        break;
+      }
+
+      size_t i = vertex_ram.count++;
+
+      vertex_ram.data[i] = v;
+      poly.indices[poly.count++] = i; 
+    }
+
+    // ClipPolygon() will have already swapped the vertices.
+    if (!needs_clipping) {
+      /**
+       * v0---v2     v0---v3
+       *  |    | -->  |    |
+       * v1---v3     v1---v2
+       */
+      if (is_strip && is_quad) {
         std::swap(poly.indices[2], poly.indices[3]);
       }
+    }
+
+    // Setup state for the next polygon.
+    if (needs_clipping && is_strip) {
+      // Restart the polygon strip based on the last two submitted vertices.
+      is_first = true;
+      vertices = std::move(new_vertices);
+    } else {
+      is_first = false;
+      vertices.clear();
     }
 
     if (is_strip) {
@@ -442,13 +461,13 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
   float a[3] {
     (v1.x() - v0.x()).raw() / (float)(1 << 12),
     (v1.y() - v0.y()).raw() / (float)(1 << 12),
-    (v1.z() - v0.z()).raw() / (float)(1 << 12)
+    (v1.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float b[3] {
     (v2.x() - v0.x()).raw() / (float)(1 << 12),
     (v2.y() - v0.y()).raw() / (float)(1 << 12),
-    (v2.z() - v0.z()).raw() / (float)(1 << 12)
+    (v2.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float normal[3] {
@@ -459,7 +478,7 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
 
   float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
               (v0.y().raw() / (float)(1 << 12)) * normal[1] +
-              (v0.z().raw() / (float)(1 << 12)) * normal[2];
+              (v0.w().raw() / (float)(1 << 12)) * normal[2];
 
   if (invert) {
     return dot >= 0; 
@@ -521,7 +540,6 @@ bool GPU::ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::v
       if (a == -1) a = size - 1;
       if (b == size) b = 0;
 
-      // TODO: can a point be generated in both iterations at the same time?
       for (int j : { a, b }) {
         auto& v1 = vertices_in[j];
 
