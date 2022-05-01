@@ -506,13 +506,13 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
   float a[3] {
     (v1.x() - v0.x()).raw() / (float)(1 << 12),
     (v1.y() - v0.y()).raw() / (float)(1 << 12),
-    (v1.z() - v0.z()).raw() / (float)(1 << 12)
+    (v1.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float b[3] {
     (v2.x() - v0.x()).raw() / (float)(1 << 12),
     (v2.y() - v0.y()).raw() / (float)(1 << 12),
-    (v2.z() - v0.z()).raw() / (float)(1 << 12)
+    (v2.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float normal[3] {
@@ -523,7 +523,7 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
 
   float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
               (v0.y().raw() / (float)(1 << 12)) * normal[1] +
-              (v0.z().raw() / (float)(1 << 12)) * normal[2];
+              (v0.w().raw() / (float)(1 << 12)) * normal[2];
 
   if (invert) {
     return dot >= 0; 
