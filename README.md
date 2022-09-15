@@ -1,4 +1,4 @@
-## lunar
+# lunar🌒
 
 ![license](https://img.shields.io/github/license/fleroviux/lunar)
 
