@@ -7,7 +7,7 @@ A fast-ish Nintendo DS emulator with a [JIT recompiler](https://github.com/flero
 **This is highly experimental software.** 
 I am developing this emulator for fun and learning only.
 I do **not** intend to replace any of the established DS emulators.  
-**If you are looking for a mature emulator, [melonDS](github.com/melonDS-emu/melonDS) is the way to go.**
+**If you are looking for a mature emulator, [melonDS](https://github.com/melonDS-emu/melonDS) is the way to go.**
 
 ## Media
 
