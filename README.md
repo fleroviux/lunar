@@ -1,6 +1,9 @@
-# Duality
+# lunar
 
-Duality is a Nintendo DS emulator in early development,
-that can already play some games.
+An experimental, fast Nintendo DS emulator using multithreading and dynamic code recompilation.
 
-![screenshot](screenshot.png)
+![screenshot1](media/screenshot.png)
+
+## Copyright
+
+lunar is Copyright © 2020 - 2022 fleroviux.<br>
