@@ -1,6 +1,6 @@
 # lunar
 
-An experimental, fast Nintendo DS emulator using multithreaded and dynamic code recompilation.
+An experimental, fast Nintendo DS emulator using multithreading and dynamic code recompilation.
 
 ![screenshot1](media/screenshot.png)
 
