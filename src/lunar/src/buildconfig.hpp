@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2022 fleroviux.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
 
 // TODO: replace this file with a proper configuration file.
 
