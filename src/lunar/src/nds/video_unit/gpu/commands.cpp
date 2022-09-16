@@ -530,7 +530,7 @@ void GPU::CMD_BeginVertexList() {
   is_first = true;
   polygon_strip_length = 0;
 
-  vertices.clear();
+  current_vertex_list.clear();
 }
 
 void GPU::CMD_EndVertexList() {

@@ -347,8 +347,8 @@ struct GPU {
   /// ID of the buffer the geometry engine currently writes into.
   int gx_buffer_id = 0;
 
-  /// Temporary vertex buffer for the primitive being submitted at the moment.
-  StaticVec<Vertex, 10> vertices;
+  /// List of vertices for the primitive that is being submitted.
+  StaticVec<Vertex, 10> current_vertex_list;
 
   /// Untransformed vertex from the previous vertex submission command.
   Vector4<Fixed20x12> position_old;
