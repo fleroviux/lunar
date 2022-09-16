@@ -82,14 +82,15 @@ void VideoUnit::OnHdrawBegin(int late) {
   if (++vcount.value == kTotalLines) {
     ppu_b.WaitForRenderWorker();
 
-    // TODO: use double-buffering at avoid issues when the result is read later.
     if (video_device != nullptr) {
       video_device->Draw(GetOutput(Screen::Top), GetOutput(Screen::Bottom));
     }
+    ppu_a.SwapBuffers();
+    ppu_b.SwapBuffers();
 
+    display_swap = powcnt1.display_swap;
     vcount.value = 0;
     capturing = dispcapcnt.busy;
-    display_swap = powcnt1.display_swap;
     gpu.WaitForRenderWorkers();
   }
 

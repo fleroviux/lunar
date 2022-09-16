@@ -177,7 +177,7 @@ void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
 }
 
 void PPU::RenderDisplayOff(u16 vcount) {
-  u32* line = &output[vcount * 256];
+  u32* line = &output[frame][vcount * 256];
 
   for (uint x = 0; x < 256; x++) {
     line[x] = ConvertColor(0x7FFF);
@@ -185,7 +185,7 @@ void PPU::RenderDisplayOff(u16 vcount) {
 }
 
 void PPU::RenderNormal(u16 vcount) {
-  u32* line = &output[vcount * 256];
+  u32* line = &output[frame][vcount * 256];
 
   for (uint x = 0; x < 256; x++) {
     line[x] = ConvertColor(buffer_compose[x]);
@@ -193,7 +193,7 @@ void PPU::RenderNormal(u16 vcount) {
 }
 
 void PPU::RenderVideoMemoryDisplay(u16 vcount) {
-  u32* line = &output[vcount * 256];
+  u32* line = &output[frame][vcount * 256];
   auto vram_block = mmio_copy[vcount].dispcnt.vram_block;
   u16 const* source = (u16 const*)&render_vram_lcdc[vram_block * 0x20000 + vcount * 256 * sizeof(u16)];
 

@@ -63,8 +63,18 @@ struct PPU {
   } mmio;
 
   void Reset();
-  auto GetOutput() -> u32 const* { return &output[0]; }
-  auto GetComposerOutput() -> u16 const* { return &buffer_compose[0]; }
+
+  auto GetOutput() -> u32 const* {
+    return &output[frame][0];
+  }
+
+  void SwapBuffers() {
+    frame ^= 1;
+  }
+
+  auto GetComposerOutput() -> u16 const* {
+    return &buffer_compose[0];
+  }
 
   void WaitForRenderWorker() {
     while (render_worker.vcount <= render_worker.vcount_max) {}
@@ -274,7 +284,7 @@ private:
   }
 
   int id;
-  u32 output[256 * 192];
+  u32 output[2][256 * 192];
   u16 buffer_compose[256];
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
@@ -331,6 +341,8 @@ private:
 
   // Full-frame output of the 3D engine 
   Color4 const* gpu_output;
+
+  int frame = 0;
 
   static constexpr u16 s_color_transparent = 0x8000;
   static const int s_obj_size[4][4][2];
