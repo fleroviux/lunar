@@ -346,8 +346,8 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
         vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 1]);
         vertices.insert(vertices.begin(), vertex_ram.data[vertex_ram.count - 2]);
       } else {
-        poly.indices[0] = vertex_ram.count - 2;
-        poly.indices[1] = vertex_ram.count - 1;
+        poly.vertices[0] = &vertex_ram.data[vertex_ram.count - 2];
+        poly.vertices[1] = &vertex_ram.data[vertex_ram.count - 1];
         poly.count = 2;
       }
     }
@@ -355,9 +355,9 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     bool front_facing;
 
     if (poly.count == 2) {
-      auto const& v0 = vertex_ram.data[poly.indices[0]].position;
+      auto const& v0 = poly.vertices[0]->position;
       auto const& v1 = vertices.back().position;
-      auto const& v2 = vertex_ram.data[poly.indices[1]].position;
+      auto const& v2 = poly.vertices[1]->position;
 
       front_facing = IsFrontFacing(v0, v1, v2, invert_winding);
     } else {
@@ -426,7 +426,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
       size_t i = vertex_ram.count++;
 
       vertex_ram.data[i] = v;
-      poly.indices[poly.count++] = i; 
+      poly.vertices[poly.count++] = &vertex_ram.data[i];
     }
 
     // ClipPolygon() will have already swapped the vertices.
@@ -437,7 +437,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
        * v1---v3     v1---v2
        */
       if (is_strip && is_quad) {
-        std::swap(poly.indices[2], poly.indices[3]);
+        std::swap(poly.vertices[2], poly.vertices[3]);
       }
     }
 

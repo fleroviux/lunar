@@ -258,7 +258,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
 
     for (int j = 0; j < vert_count; j++) {
       auto& point = points[j];
-      auto const& vert = vert_ram.data[poly.indices[j]];
+      auto const& vert = *poly.vertices[j];
 
       auto w = vert.position.w().raw();
       auto two_w = w << 1;

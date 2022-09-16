@@ -216,7 +216,7 @@ struct GPU {
 
   struct Polygon {
     int count;
-    int indices[10];
+    Vertex* vertices[10];
     // TODO: unify polygon and texture parameters?
     PolygonParams params;
     TextureParams texture_params;
