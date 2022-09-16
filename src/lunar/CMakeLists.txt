@@ -68,6 +68,7 @@ set(HEADERS
   src/common/meta.hpp
   src/common/punning.hpp
   src/common/scheduler.hpp
+  src/common/static_vec.hpp
   src/nds/arm7/apu/apu.hpp
   src/nds/arm7/bus/bus.hpp
   src/nds/arm7/dma/dma.hpp

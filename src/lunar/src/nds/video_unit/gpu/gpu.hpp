@@ -14,12 +14,12 @@
 #include <memory>
 #include <mutex>
 #include <thread>
-#include <vector>
 
 #include "common/fifo.hpp"
 #include "common/meta.hpp"
 #include "common/punning.hpp"
 #include "common/scheduler.hpp"
+#include "common/static_vec.hpp"
 #include "nds/arm9/dma/dma.hpp"
 #include "nds/irq/irq.hpp"
 #include "nds/video_unit/vram.hpp"
@@ -264,10 +264,10 @@ struct GPU {
 
   bool IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert);
 
-  auto ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex>;
+  auto ClipPolygon(StaticVec<Vertex, 10> const& vertices, bool quadstrip) -> StaticVec<Vertex, 10>;
 
   template<int axis, typename Comparator>
-  bool ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out);
+  bool ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, StaticVec<Vertex, 10>& vertices_out);
 
   auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
 
@@ -348,8 +348,7 @@ struct GPU {
   int gx_buffer_id = 0;
 
   /// Temporary vertex buffer for the primitive being submitted at the moment.
-  /// TODO: figure out a name that doesn't completely suck.
-  std::vector<Vertex> vertices;
+  StaticVec<Vertex, 10> vertices;
 
   /// Untransformed vertex from the previous vertex submission command.
   Vector4<Fixed20x12> position_old;

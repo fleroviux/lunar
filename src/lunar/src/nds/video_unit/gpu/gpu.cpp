@@ -319,7 +319,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     auto& poly = polygon[gx_buffer_id].data[polygon[gx_buffer_id].count];
 
     // Determine if the polygon must be clipped.
-    // TODO: this can be calculated as submit vertices.
+    // TODO: this can be calculated as we submit vertices.
     bool needs_clipping = false;
     for (auto const& v : vertices) {
       auto w = v.position[3];
@@ -335,7 +335,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
 
     auto& vertex_ram = vertex[gx_buffer_id];
-    auto new_vertices = std::vector<Vertex>{};
+    auto new_vertices = StaticVec<Vertex, 10>{};
 
     poly.count = 0;
 
@@ -445,7 +445,7 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     if (needs_clipping && is_strip) {
       // Restart the polygon strip based on the last two submitted vertices.
       is_first = true;
-      vertices = std::move(new_vertices);
+      vertices = new_vertices;
     } else {
       is_first = false;
       vertices.clear();
@@ -496,8 +496,8 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
   return dot < 0;
 }
 
-auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> std::vector<Vertex> {
-  std::vector<Vertex> clipped[2];
+auto GPU::ClipPolygon(StaticVec<Vertex, 10> const& vertices, bool quadstrip) -> StaticVec<Vertex, 10> {
+  StaticVec<Vertex, 10> clipped[2];
 
   clipped[0] = vertices;
 
@@ -534,7 +534,7 @@ auto GPU::ClipPolygon(std::vector<Vertex> const& vertices, bool quadstrip) -> st
 }
 
 template<int axis, typename Comparator>
-bool GPU::ClipPolygonAgainstPlane(std::vector<Vertex> const& vertices_in, std::vector<Vertex>& vertices_out) {
+bool GPU::ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, StaticVec<Vertex, 10>& vertices_out) {
   const int precision = 18;
 
   auto size = vertices_in.size();
