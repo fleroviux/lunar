@@ -31,6 +31,7 @@ set(SOURCES
   src/nds/irq/irq.cpp
   src/nds/keypad/keypad.cpp
   src/nds/timer/timer.cpp
+  src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.cpp
   src/nds/video_unit/gpu/commands.cpp
   src/nds/video_unit/gpu/gpu.cpp
   src/nds/video_unit/gpu/io.cpp
@@ -93,6 +94,8 @@ set(HEADERS
   src/nds/irq/irq.hpp
   src/nds/keypad/keypad.hpp
   src/nds/timer/timer.hpp
+  src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
+  src/nds/video_unit/gpu/renderer/renderer_base.hpp
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp
   src/nds/video_unit/gpu/gpu.hpp
@@ -121,3 +124,8 @@ target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
 target_link_libraries(lunar PRIVATE lunatic)
 target_link_libraries(lunar PUBLIC fmt)
+
+# TODO: remove this before merging the OpenGL renderer
+find_package(SDL2 REQUIRED)
+target_include_directories(lunar PRIVATE ${SDL2_INCLUDE_DIR})
+target_link_libraries(lunar PRIVATE ${SDL2_LIBRARY})

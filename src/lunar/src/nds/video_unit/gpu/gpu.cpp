@@ -7,6 +7,7 @@
 
 #include <lunar/log.hpp>
 
+#include "renderer/opengl/opengl_renderer.hpp"
 #include "gpu.hpp"
 
 namespace lunar::nds {
@@ -67,6 +68,8 @@ void GPU::Reset() {
   swap_buffers_pending = false;
 
   SetupRenderWorkers();
+
+  renderer = std::make_unique<OpenGLRenderer>();
 }
 
 void GPU::WriteToonTable(uint offset, u8 value) {

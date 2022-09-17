@@ -25,6 +25,7 @@
 #include "nds/video_unit/vram.hpp"
 #include "color.hpp"
 #include "matrix_stack.hpp"
+#include "renderer/renderer_base.hpp"
 
 namespace lunar::nds {
 
@@ -453,6 +454,8 @@ struct GPU {
     std::mutex rendering_mutex;
     std::condition_variable rendering_cv;
   } render_workers[kRenderThreadCount];
+
+  std::unique_ptr<RendererBase> renderer;
 };
 
 } // namespace lunar::nds

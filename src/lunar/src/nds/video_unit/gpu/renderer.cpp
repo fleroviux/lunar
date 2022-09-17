@@ -674,6 +674,11 @@ void GPU::RenderEdgeMarking() {
 }
 
 void GPU::Render() {
+  auto const& poly_ram = polygons[buffer ^ 1];
+  renderer->Render(poly_ram.data, poly_ram.count);
+
+  // ------------------------------------
+
   for (u32 address = 0; address < 0x80000; address += 8) {
     *(u64*)&vram_texture_copy[address] = vram_texture.Read<u64>(address);
   }
@@ -714,9 +719,9 @@ void GPU::SetupRenderWorkers() {
           const int thread_min_y = render_worker.min_y;
           const int thread_max_y = render_worker.max_y;
 
-          RenderRearPlane(thread_min_y, thread_max_y);
-          RenderPolygons(false, thread_min_y, thread_max_y);
-          RenderPolygons(true, thread_min_y, thread_max_y);
+//          RenderRearPlane(thread_min_y, thread_max_y);
+//          RenderPolygons(false, thread_min_y, thread_max_y);
+//          RenderPolygons(true, thread_min_y, thread_max_y);
 
           std::unique_lock lock{render_worker.rendering_mutex};
           render_worker.rendering = false;
