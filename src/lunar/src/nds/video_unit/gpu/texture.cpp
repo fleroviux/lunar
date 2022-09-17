@@ -49,13 +49,8 @@ auto GPU::SampleTexture(
 
       auto rgb555 = ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF;
       auto rgb6666 = Color4::from_rgb555(rgb555);
-      
-      if (params.color0_transparent && index == 0) {
-        rgb6666.a() = 0;
-      } else {
-        rgb6666.a() = (alpha << 3) | alpha; // 3-bit alpha to 6-bit alpha  
-      }
 
+      rgb6666.a() = (alpha << 3) | alpha; // 3-bit alpha to 6-bit alpha
       return rgb6666;
     }
     case TextureParams::Format::Palette2BPP: {
@@ -158,13 +153,8 @@ auto GPU::SampleTexture(
 
       auto rgb555 = ReadPaletteVRAM<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
       auto rgb6666 = Color4::from_rgb555(rgb555);
-      
-      if (params.color0_transparent && index == 0) {
-        rgb6666.a() = 0;
-      } else {
-        rgb6666.a() = (alpha << 1) | (alpha >> 4); // 5-bit alpha to 6-bit alpha  
-      }
 
+      rgb6666.a() = (alpha << 1) | (alpha >> 4); // 5-bit alpha to 6-bit alpha
       return rgb6666;
     }
     case TextureParams::Format::Direct: {
