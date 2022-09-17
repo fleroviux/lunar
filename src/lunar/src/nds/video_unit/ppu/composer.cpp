@@ -129,18 +129,19 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
       if (is_alpha_obj && have_src) {
         Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
       } if (blend_mode == BlendControl::Effect::SFX_BLEND) {
-        if (have_dst && have_src) {
-          // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
-          if (layer[0] == 0 && (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6)) {
-            // Someone should revoke my coding license for this.
-            auto tmp = mmio.bldalpha;
-            mmio.bldalpha.a = gpu_output[vcount * 256 + x].a().raw() >> 2;
-            mmio.bldalpha.b = 16 - mmio.bldalpha.a;
-            Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
-            mmio.bldalpha = tmp;
-          } else if (sfx_enable) {
-            Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
-          }
+        // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
+        if (layer[0] == 0 && (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) && have_src) {
+          auto real_bldalpha = mmio.bldalpha;
+
+          // Someone should revoke my coding license for this.
+          mmio.bldalpha.a = gpu_output[vcount * 256 + x].a().raw() >> 2;
+          mmio.bldalpha.b = 16 - mmio.bldalpha.a;
+
+          Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
+
+          mmio.bldalpha = real_bldalpha;
+        } else if (have_dst && have_src) {
+          Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
         }
       } else if (blend_mode != BlendControl::Effect::SFX_NONE) {
         if (have_dst && sfx_enable) {
