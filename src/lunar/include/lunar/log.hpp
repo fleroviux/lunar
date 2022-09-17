@@ -28,7 +28,7 @@ enum Level {
 namespace detail {
 
 #if defined(NDEBUG)
-  static constexpr int kLogMask = 0;//Info | Warn | Error | Fatal;
+  static constexpr int kLogMask = Error | Fatal;
 #else
   static constexpr int kLogMask = All;
 #endif
