@@ -13,6 +13,8 @@
 
 #include "common/static_vec.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
 
@@ -20,7 +22,7 @@ namespace lunar::nds {
 
 struct OpenGLRenderer final : RendererBase {
   OpenGLRenderer();
- ~OpenGLRenderer();
+ ~OpenGLRenderer() override;
 
   void Render(void const* polygons, int polygon_count) override;
 
@@ -50,23 +52,10 @@ private:
     float a;
   } __attribute__((packed));
 
+  ProgramObject* program;
   VertexArrayObject* vao;
   BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
-
-  // ---------------------------------------
-
-  auto CompileShader(
-    GLenum type,
-    char const* source
-  ) -> std::pair<bool, GLuint>;
-
-  auto CompileProgram(
-    char const* vertex_src,
-    char const* fragment_src
-  ) -> std::pair<bool, GLuint>;
-
-  GLuint test_program;
 };
 
 } // namespace lunar::nds

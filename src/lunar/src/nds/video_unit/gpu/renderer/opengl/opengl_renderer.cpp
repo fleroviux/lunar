@@ -19,7 +19,7 @@ namespace lunar::nds {
 OpenGLRenderer::OpenGLRenderer() {
   glEnable(GL_DEPTH_TEST);
 
-  test_program = CompileProgram(test_vert, test_frag).second;
+  program = ProgramObject::Create(test_vert, test_frag);
 
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
   vao = VertexArrayObject::Create();
@@ -28,6 +28,9 @@ OpenGLRenderer::OpenGLRenderer() {
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
+  delete program;
+  delete vao;
+  delete vbo;
 }
 
 void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
@@ -66,61 +69,11 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   glClearColor(0.01, 0.01, 0.01, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glUseProgram(test_program);
+  program->Use();
   vao->Bind();
   glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size());
 
   SDL_GL_SwapWindow(g_window);
-}
-
-// -------------------------------------------------
-
-auto OpenGLRenderer::CompileShader(
-  GLenum type,
-  char const* source
-) -> std::pair<bool, GLuint> {
-  char const* source_array[] = { source };
-
-  auto shader = glCreateShader(type);
-
-  glShaderSource(shader, 1, source_array, nullptr);
-  glCompileShader(shader);
-
-  GLint compiled = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-  if(compiled == GL_FALSE) {
-    GLint max_length = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
-
-    auto error_log = std::make_unique<GLchar[]>(max_length);
-    glGetShaderInfoLog(shader, max_length, &max_length, error_log.get());
-    Log<Error>("OGLVideoDevice: failed to compile shader:\n{0}", error_log.get());
-    return std::make_pair(false, shader);
-  }
-
-  return std::make_pair(true, shader);
-}
-
-auto OpenGLRenderer::CompileProgram(
-  char const* vertex_src,
-  char const* fragment_src
-) -> std::pair<bool, GLuint> {
-  auto [vert_success, vert_id] = CompileShader(GL_VERTEX_SHADER, vertex_src);
-  auto [frag_success, frag_id] = CompileShader(GL_FRAGMENT_SHADER, fragment_src);
-
-  if (!vert_success || !frag_success) {
-    return std::make_pair<bool, GLuint>(false, 0);
-  } else {
-    auto prog_id = glCreateProgram();
-
-    glAttachShader(prog_id, vert_id);
-    glAttachShader(prog_id, frag_id);
-    glLinkProgram(prog_id);
-    glDeleteShader(vert_id);
-    glDeleteShader(frag_id);
-
-    return std::make_pair(true, prog_id);
-  }
 }
 
 } // namespace lunar::nds

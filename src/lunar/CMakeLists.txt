@@ -95,6 +95,8 @@ set(HEADERS
   src/nds/keypad/keypad.hpp
   src/nds/timer/timer.hpp
   src/nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp
+  src/nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp
+  src/nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp
   src/nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
   src/nds/video_unit/gpu/renderer/renderer_base.hpp
