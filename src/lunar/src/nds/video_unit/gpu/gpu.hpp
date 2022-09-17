@@ -30,7 +30,13 @@ namespace lunar::nds {
 
 // 3D graphics processing unit (GPU)
 struct GPU {
-  GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram);
+  GPU(
+    Scheduler& scheduler,
+    IRQ& irq9,
+    DMA9& dma9,
+    VRAM const& vram
+  );
+
  ~GPU();
   
   void Reset();
