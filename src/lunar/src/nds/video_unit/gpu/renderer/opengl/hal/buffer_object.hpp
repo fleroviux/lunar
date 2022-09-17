@@ -14,12 +14,8 @@
 namespace lunar::nds {
 
 struct BufferObject {
-  BufferObject(GLenum target, size_t size, GLenum usage)
-      : target(target), size(size) {
-    // TODO: this is not nice for keeping *BOs in class memory.
-    glGenBuffers(1, &buffer);
-    glBindBuffer(target, buffer);
-    glBufferData(target, (GLsizeiptr)size, nullptr, usage);
+  static auto CreateArrayBuffer(size_t size, GLenum usage) -> BufferObject* {
+    return new BufferObject{GL_ARRAY_BUFFER, size, usage};
   }
 
  ~BufferObject() {
@@ -41,13 +37,17 @@ struct BufferObject {
   }
 
 private:
+  BufferObject(GLenum target, size_t size, GLenum usage)
+      : target(target), size(size) {
+    glGenBuffers(1, &buffer);
+    glBindBuffer(target, buffer);
+    glBufferData(target, (GLsizeiptr)size, nullptr, usage);
+  }
+
+
   GLenum target;
   size_t size;
   GLuint buffer = 0;
-};
-
-struct ArrayBufferObject : BufferObject {
-  ArrayBufferObject(size_t size, GLenum usage) : BufferObject(GL_ARRAY_BUFFER, size, usage) {}
 };
 
 } // namespace lunar::nds

@@ -25,9 +25,8 @@ struct VertexArrayObject {
     GLsizei offset = 0;
   };
 
-  VertexArrayObject() {
-    // TODO: this is not nice for keeping VAOs in class memory.
-    glGenVertexArrays(1, &vao);
+  static auto Create() -> VertexArrayObject* {
+    return new VertexArrayObject{};
   }
 
  ~VertexArrayObject() {
@@ -59,6 +58,10 @@ struct VertexArrayObject {
   }
 
 private:
+  VertexArrayObject() {
+    glGenVertexArrays(1, &vao);
+  }
+
   GLuint vao = 0;
 };
 

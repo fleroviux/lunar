@@ -21,8 +21,10 @@ OpenGLRenderer::OpenGLRenderer() {
 
   test_program = CompileProgram(test_vert, test_frag).second;
 
-  vao.SetAttribute(0, VertexArrayObject::Attribute{&vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0});
-  vao.SetAttribute(1, VertexArrayObject::Attribute{&vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 4 * sizeof(float)});
+  vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
+  vao = VertexArrayObject::Create();
+  vao->SetAttribute(0, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0});
+  vao->SetAttribute(1, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 4 * sizeof(float)});
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -58,14 +60,14 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
     }
   }
 
-  vbo.Upload(vertex_buffer.data(), vertex_buffer.size());
+  vbo->Upload(vertex_buffer.data(), vertex_buffer.size());
 
   glViewport(0, 384, 512, 384);
   glClearColor(0.01, 0.01, 0.01, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glUseProgram(test_program);
-  vao.Bind();
+  vao->Bind();
   glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size());
 
   SDL_GL_SwapWindow(g_window);

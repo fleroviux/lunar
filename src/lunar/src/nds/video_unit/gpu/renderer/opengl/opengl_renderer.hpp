@@ -50,8 +50,8 @@ private:
     float a;
   } __attribute__((packed));
 
-  VertexArrayObject vao;
-  ArrayBufferObject vbo{k_total_vertices * sizeof(BufferVertex), GL_DYNAMIC_DRAW};
+  VertexArrayObject* vao;
+  BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
 
   // ---------------------------------------
