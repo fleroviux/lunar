@@ -168,13 +168,48 @@ void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
     case 2: RenderVideoMemoryDisplay(vcount); break;
     case 3: RenderMainMemoryDisplay(vcount);  break;
   }
+}
 
+void PPU::RenderDisplayOff(u16 vcount) {
+  u32* line = &output[frame][vcount * 256];
+
+  for (uint x = 0; x < 256; x++) {
+    line[x] = ConvertColor(0x7FFF);
+  }
+}
+
+void PPU::RenderNormal(u16 vcount) {
+  u32* line = &output[frame][vcount * 256];
+
+  for (uint x = 0; x < 256; x++) {
+    line[x] = ConvertColor(buffer_compose[x]);
+  }
+
+  RenderMasterBrightness(vcount);
+}
+
+void PPU::RenderVideoMemoryDisplay(u16 vcount) {
+  u32* line = &output[frame][vcount * 256];
+  auto vram_block = mmio_copy[vcount].dispcnt.vram_block;
+  u16 const* source = (u16 const*)&render_vram_lcdc[vram_block * 0x20000 + vcount * 256 * sizeof(u16)];
+
+  if (source != nullptr) {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(*source++);
+    }
+  } else {
+    for (uint x = 0; x < 256; x++) {
+      line[x] = ConvertColor(0);
+    }
+  }
+
+  RenderMasterBrightness(vcount);
+}
+
+void PPU::RenderMasterBrightness(int vcount) {
   auto const& master_bright = mmio_copy[vcount].master_bright;
 
-  if (master_bright.mode != MasterBrightness::Mode::Disable &&
-      master_bright.factor != 0 &&
-      display_mode != 0
-  ) {
+  if (master_bright.mode != MasterBrightness::Mode::Disable && master_bright.factor != 0) {
     int  factor = std::min(master_bright.factor, 16);
     u32* buffer = &output[frame][vcount * 256];
 
@@ -199,40 +234,10 @@ void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
   }
 }
 
-void PPU::RenderDisplayOff(u16 vcount) {
-  u32* line = &output[frame][vcount * 256];
-
-  for (uint x = 0; x < 256; x++) {
-    line[x] = ConvertColor(0x7FFF);
-  }
-}
-
-void PPU::RenderNormal(u16 vcount) {
-  u32* line = &output[frame][vcount * 256];
-
-  for (uint x = 0; x < 256; x++) {
-    line[x] = ConvertColor(buffer_compose[x]);
-  }
-}
-
-void PPU::RenderVideoMemoryDisplay(u16 vcount) {
-  u32* line = &output[frame][vcount * 256];
-  auto vram_block = mmio_copy[vcount].dispcnt.vram_block;
-  u16 const* source = (u16 const*)&render_vram_lcdc[vram_block * 0x20000 + vcount * 256 * sizeof(u16)];
-
-  if (source != nullptr) {
-    for (uint x = 0; x < 256; x++) {
-      line[x] = ConvertColor(*source++);
-    }
-  } else {
-    for (uint x = 0; x < 256; x++) {
-      line[x] = ConvertColor(0);
-    }
-  }
-}
-
 void PPU::RenderMainMemoryDisplay(u16 vcount) {
   ASSERT(false, "PPU: unimplemented main memory display mode.");
+
+  //RenderMasterBrightness(vcount);
 }
 
 void PPU::RenderBackgroundsAndComposite(u16 vcount) {

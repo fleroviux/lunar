@@ -167,6 +167,7 @@ private:
   void RenderVideoMemoryDisplay(u16 vcount);
   void RenderMainMemoryDisplay(u16 vcount);
   void RenderBackgroundsAndComposite(u16 vcount);
+  void RenderMasterBrightness(int vcount);
 
   void RenderLayerText(uint id, u16 vcount);
   void RenderLayerAffine(uint id, u16 vcount);
