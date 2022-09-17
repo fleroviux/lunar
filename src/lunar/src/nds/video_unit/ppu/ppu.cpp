@@ -163,18 +163,10 @@ void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
   }
 
   switch (display_mode) {
-    case 0:
-      RenderDisplayOff(vcount);
-      break;
-    case 1:
-      RenderNormal(vcount);
-      break;
-    case 2:
-      RenderVideoMemoryDisplay(vcount);
-      break;
-    case 3:
-      RenderMainMemoryDisplay(vcount);
-      break;
+    case 0: RenderDisplayOff(vcount); break;
+    case 1: RenderNormal(vcount);     break;
+    case 2: RenderVideoMemoryDisplay(vcount); break;
+    case 3: RenderMainMemoryDisplay(vcount);  break;
   }
 
   auto const& master_bright = mmio_copy[vcount].master_bright;
