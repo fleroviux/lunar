@@ -21,16 +21,8 @@ OpenGLRenderer::OpenGLRenderer() {
 
   test_program = CompileProgram(test_vert, test_frag).second;
 
-  // Create VAO and VBO
-  glGenVertexArrays(1, &vao);
-  glGenBuffers(1, &vbo);
-  glBindVertexArray(vao);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, k_total_vertices * sizeof(BufferVertex), nullptr, GL_DYNAMIC_DRAW);
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); // clip-space position
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float))); // vertex color
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
+  vao.SetAttribute(0, VertexArrayObject::Attribute{&vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0});
+  vao.SetAttribute(1, VertexArrayObject::Attribute{&vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 4 * sizeof(float)});
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -66,16 +58,14 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
     }
   }
 
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, vertex_buffer.size() * sizeof(BufferVertex), vertex_buffer.data());
+  vbo.Upload(vertex_buffer.data(), vertex_buffer.size());
 
   glViewport(0, 384, 512, 384);
   glClearColor(0.01, 0.01, 0.01, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glUseProgram(test_program);
-  glBindVertexArray(vao);
-
+  vao.Bind();
   glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size());
 
   SDL_GL_SwapWindow(g_window);

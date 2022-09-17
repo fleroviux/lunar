@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "common/static_vec.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
 
 namespace lunar::nds {
@@ -23,7 +25,15 @@ struct OpenGLRenderer final : RendererBase {
   void Render(void const* polygons, int polygon_count) override;
 
 private:
-  // max_polygons * max_triangles_per_polygon * vertices_per_polygon
+  /**
+   * Up to 2048 n-gons can be rendered in a single frame.
+   * A single n-gon may have up to ten vertices (10-gon).
+   *
+   * We render each n-gon with `n - 2` triangles, meaning there are
+   * up to 8 triangles per n-gon.
+   *
+   * Each triangle consists of three vertices.
+   */
   static constexpr size_t k_total_vertices = 2048 * 8 * 3;
 
   struct BufferVertex {
@@ -40,10 +50,9 @@ private:
     float a;
   } __attribute__((packed));
 
+  VertexArrayObject vao;
+  ArrayBufferObject vbo{k_total_vertices * sizeof(BufferVertex), GL_DYNAMIC_DRAW};
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
-
-  GLuint vao;
-  GLuint vbo;
 
   // ---------------------------------------
 
