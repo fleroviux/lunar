@@ -279,36 +279,22 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
     switch (mmio.dispcnt.bg_mode) {
       case 0:
       case 1:
-      case 3:
-        RenderLayerText(2, vcount);
-        break;
+      case 3: RenderLayerText(2, vcount); break;
       case 2:
-      case 4:
-        RenderLayerAffine(0, vcount);
-        break;
-      case 5:
-        RenderLayerExtended(0, vcount);
-        break;
-      case 6:
-        RenderLayerLarge(vcount);
-        break;
+      case 4: RenderLayerAffine(0, vcount); break;
+      case 5: RenderLayerExtended(0, vcount); break;
+      case 6: RenderLayerLarge(vcount); break;
     }
   }
 
   if (mmio.dispcnt.enable[ENABLE_BG3]) {
     switch (mmio.dispcnt.bg_mode) {
-      case 0:
-        RenderLayerText(3, vcount);
-        break;
+      case 0: RenderLayerText(3, vcount); break;
       case 1:
-      case 2:
-        RenderLayerAffine(1, vcount);
-        break;
+      case 2: RenderLayerAffine(1, vcount); break;
       case 3:
       case 4:
-      case 5:
-        RenderLayerExtended(1, vcount);
-        break;
+      case 5: RenderLayerExtended(1, vcount); break;
     }
   }
 
