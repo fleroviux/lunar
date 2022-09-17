@@ -211,13 +211,11 @@ struct GPU {
     Vector4<Fixed20x12> position;
     Color4 color;
     Vector2<Fixed12x4> uv;
-    // ...
   };
 
   struct Polygon {
     int count;
     Vertex* vertices[10];
-    // TODO: unify polygon and texture parameters?
     PolygonParams params;
     TextureParams texture_params;
   };
@@ -262,12 +260,23 @@ struct GPU {
 
   void AddVertex(Vector4<Fixed20x12> const& position);
 
-  bool IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert);
+  bool IsFrontFacing(
+    Vector4<Fixed20x12> const& v0,
+    Vector4<Fixed20x12> const& v1,
+    Vector4<Fixed20x12> const& v2,
+    bool invert
+  );
 
-  auto ClipPolygon(StaticVec<Vertex, 10> const& vertices, bool quadstrip) -> StaticVec<Vertex, 10>;
+  auto ClipPolygon(
+    StaticVec<Vertex, 10> const& vertex_list,
+    bool quadstrip
+  ) -> StaticVec<Vertex, 10>;
 
   template<int axis, typename Comparator>
-  bool ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, StaticVec<Vertex, 10>& vertices_out);
+  bool ClipPolygonAgainstPlane(
+    StaticVec<Vertex, 10> const& vertex_list_in,
+    StaticVec<Vertex, 10>& vertex_list_out
+  );
 
   auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
 
@@ -337,15 +346,15 @@ struct GPU {
   struct VertexRAM {
     int count = 0;
     Vertex data[6144];
-  } vertex[2];
+  } vertices[2];
 
   struct PolygonRAM {
     int count = 0;
     Polygon data[2048];
-  } polygon[2];
+  } polygons[2];
 
-  /// ID of the buffer the geometry engine currently writes into.
-  int gx_buffer_id = 0;
+  /// ID of the buffer the geometry engine currently writes into (between 0 and 1).
+  int buffer = 0;
 
   /// List of vertices for the primitive that is being submitted.
   StaticVec<Vertex, 10> current_vertex_list;

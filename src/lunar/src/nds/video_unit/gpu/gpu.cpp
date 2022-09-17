@@ -64,10 +64,10 @@ void GPU::Reset() {
   clrimage_offset = {};
   
   for (int  i = 0; i < 2; i++) {
-    vertex[i] = {};
-    polygon[i] = {};
+    vertices[i] = {};
+    polygons[i] = {};
   }
-  gx_buffer_id = 0;
+  buffer = 0;
   
   in_vertex_list = false;
   position_old = {};
@@ -267,9 +267,9 @@ void GPU::ProcessCommands() {
 
 void GPU::SwapBuffers() {
   if (swap_buffers_pending) {
-    gx_buffer_id ^= 1;
-    vertex[gx_buffer_id].count = 0;
-    polygon[gx_buffer_id].count = 0;
+    buffer ^= 1;
+    vertices[buffer].count = 0;
+    polygons[buffer].count = 0;
     use_w_buffer = use_w_buffer_pending;
     swap_buffers_pending = false;
     ProcessCommands();
@@ -310,19 +310,23 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
   }
 
   if (current_vertex_list.size() == required) {
-    // FIXME: this is disgusting.
-    if (polygon[gx_buffer_id].count == 2048) {
-      current_vertex_list.clear();
+    auto& poly_ram = polygons[buffer];
+    auto& vert_ram = vertices[buffer];
+
+    int polygon_count = poly_ram.count;
+
+    if (polygon_count == 2048) {
       return;
     }
 
-    auto& poly = polygon[gx_buffer_id].data[polygon[gx_buffer_id].count];
+    auto& poly = poly_ram.data[polygon_count];
 
-    // Determine if the polygon must be clipped.
-    // TODO: this can be calculated as we submit vertices.
     bool needs_clipping = false;
+
+    // Determine if the polygon needs to be clipped.
     for (auto const& v : current_vertex_list) {
       auto w = v.position[3];
+
       for (int i = 0; i < 3; i++) {
         if (v.position[i] < -w || v.position[i] > w) {
           needs_clipping = true;
@@ -334,7 +338,6 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     // In a triangle strip the winding order of each second polygon is inverted.
     bool invert_winding = is_strip && !is_quad && (polygon_strip_length % 2) == 1;
 
-    auto& vertex_ram = vertex[gx_buffer_id];
     auto next_vertex_list = StaticVec<Vertex, 10>{};
 
     poly.count = 0;
@@ -343,11 +346,11 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     if (is_strip && !is_first) {
       if (needs_clipping) {
         // TODO: can we do this more efficiently?
-        current_vertex_list.insert(current_vertex_list.begin(), vertex_ram.data[vertex_ram.count - 1]);
-        current_vertex_list.insert(current_vertex_list.begin(), vertex_ram.data[vertex_ram.count - 2]);
+        current_vertex_list.insert(current_vertex_list.begin(), vert_ram.data[vert_ram.count - 1]);
+        current_vertex_list.insert(current_vertex_list.begin(), vert_ram.data[vert_ram.count - 2]);
       } else {
-        poly.vertices[0] = &vertex_ram.data[vertex_ram.count - 2];
-        poly.vertices[1] = &vertex_ram.data[vertex_ram.count - 1];
+        poly.vertices[0] = &vert_ram.data[vert_ram.count - 2];
+        poly.vertices[1] = &vert_ram.data[vert_ram.count - 1];
         poly.count = 2;
       }
     }
@@ -389,12 +392,12 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
           for (int i = std::max(0, size - 2); i < size; i++) {
             // TODO: can we do this more efficiently?
-            if (vertex_ram.count == 6144) {
+            if (vert_ram.count == 6144) {
               LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
               break;
             }
 
-            vertex_ram.data[vertex_ram.count++] = current_vertex_list[i];
+            vert_ram.data[vert_ram.count++] = current_vertex_list[i];
           }
 
           is_first = false;
@@ -418,15 +421,14 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
 
     for (auto const& v : current_vertex_list) {
       // TODO: can we do this more efficiently?
-      if (vertex_ram.count == 6144) {
+      if (vert_ram.count == 6144) {
         LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
         break;
       }
 
-      size_t i = vertex_ram.count++;
-
-      vertex_ram.data[i] = v;
-      poly.vertices[poly.count++] = &vertex_ram.data[i];
+      size_t index = vert_ram.count++;
+      vert_ram.data[index] = v;
+      poly.vertices[poly.count++] = &vert_ram.data[index];
     }
 
     // ClipPolygon() will have already swapped the vertices.
@@ -456,27 +458,29 @@ void GPU::AddVertex(Vector4<Fixed20x12> const& position) {
     }
 
     if (poly.count != 0) {
-      polygon[gx_buffer_id].count++;
+      poly_ram.count++;
       poly.params = poly_params;
       poly.texture_params = texture_params;
     }
   }
 }
 
-bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const& v1, Vector4<Fixed20x12> const& v2, bool invert) {
-  // auto normal = (v1.xyz() - v0.xyz()).cross(v2.xyz() - v0.xyz());
-  // auto dot = v0.xyz().dot(normal);
-
+bool GPU::IsFrontFacing(
+  Vector4<Fixed20x12> const& v0,
+  Vector4<Fixed20x12> const& v1,
+  Vector4<Fixed20x12> const& v2,
+  bool invert
+) {
   float a[3] {
-    (v1.x() - v0.x()).raw() / (float)(1 << 12),
-    (v1.y() - v0.y()).raw() / (float)(1 << 12),
-    (v1.w() - v0.w()).raw() / (float)(1 << 12)
+    (float)(v1.x() - v0.x()).raw() / (float)(1 << 12),
+    (float)(v1.y() - v0.y()).raw() / (float)(1 << 12),
+    (float)(v1.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float b[3] {
-    (v2.x() - v0.x()).raw() / (float)(1 << 12),
-    (v2.y() - v0.y()).raw() / (float)(1 << 12),
-    (v2.w() - v0.w()).raw() / (float)(1 << 12)
+    (float)(v2.x() - v0.x()).raw() / (float)(1 << 12),
+    (float)(v2.y() - v0.y()).raw() / (float)(1 << 12),
+    (float)(v2.w() - v0.w()).raw() / (float)(1 << 12)
   };
 
   float normal[3] {
@@ -496,10 +500,13 @@ bool GPU::IsFrontFacing(Vector4<Fixed20x12> const& v0, Vector4<Fixed20x12> const
   return dot < 0;
 }
 
-auto GPU::ClipPolygon(StaticVec<Vertex, 10> const& vertices, bool quadstrip) -> StaticVec<Vertex, 10> {
+auto GPU::ClipPolygon(
+  StaticVec<Vertex, 10> const& vertex_list,
+  bool quadstrip
+) -> StaticVec<Vertex, 10> {
   StaticVec<Vertex, 10> clipped[2];
 
-  clipped[0] = vertices;
+  clipped[0] = vertex_list;
 
   if (quadstrip) {
     std::swap(clipped[0][2], clipped[0][3]);
@@ -534,14 +541,17 @@ auto GPU::ClipPolygon(StaticVec<Vertex, 10> const& vertices, bool quadstrip) -> 
 }
 
 template<int axis, typename Comparator>
-bool GPU::ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, StaticVec<Vertex, 10>& vertices_out) {
+bool GPU::ClipPolygonAgainstPlane(
+  StaticVec<Vertex, 10> const& vertex_list_in,
+  StaticVec<Vertex, 10>& vertex_list_out
+) {
   const int precision = 18;
 
-  auto size = vertices_in.size();
+  auto size = (int)vertex_list_in.size();
   bool clipped = false;
 
   for (int i = 0; i < size; i++) {
-    auto& v0 = vertices_in[i];
+    auto& v0 = vertex_list_in[i];
 
     if (Comparator{}(v0.position[axis], v0.position.w())) {  
       int a = i - 1;
@@ -550,7 +560,7 @@ bool GPU::ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, Stat
       if (b == size) b = 0;
 
       for (int j : { a, b }) {
-        auto& v1 = vertices_in[j];
+        auto& v1 = vertex_list_in[j];
 
         if (!Comparator{}(v1.position[axis], v1.position.w())) {
           auto sign  = v0.position[axis] < -v0.position.w() ? 1 : -1;
@@ -572,13 +582,13 @@ bool GPU::ClipPolygonAgainstPlane(StaticVec<Vertex, 10> const& vertices_in, Stat
             uv[k] = (v1.uv[k].raw() * scale_inv + v0.uv[k].raw() * scale) >> precision;
           }
 
-          vertices_out.push_back({position, color, uv});
+          vertex_list_out.push_back({position, color, uv});
         }
       }
 
       clipped = true;
     } else {
-      vertices_out.push_back(v0);
+      vertex_list_out.push_back(v0);
     }
   }
 

@@ -241,9 +241,9 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
   const int viewport_width = 256;
   const int viewport_height = 192;
 
-  auto buffer_id = gx_buffer_id ^ 1;
-  auto& vert_ram = vertex[buffer_id];
-  auto& poly_ram = polygon[buffer_id];
+  auto buffer_id = buffer ^ 1;
+  auto& vert_ram = vertices[buffer_id];
+  auto& poly_ram = polygons[buffer_id];
   auto poly_count = poly_ram.count;
 
   for (int i = 0; i < poly_count; i++) {
