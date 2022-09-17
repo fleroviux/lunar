@@ -34,6 +34,7 @@ set(SOURCES
   src/nds/video_unit/gpu/commands.cpp
   src/nds/video_unit/gpu/gpu.cpp
   src/nds/video_unit/gpu/io.cpp
+  src/nds/video_unit/gpu/primitive_assembly.cpp
   src/nds/video_unit/gpu/renderer.cpp
   src/nds/video_unit/gpu/texture.cpp
   src/nds/video_unit/ppu/render/affine.cpp

@@ -378,62 +378,62 @@ void GPU::CMD_SetUV() {
 void GPU::CMD_SubmitVertex_16() {
   auto arg0 = Dequeue().argument;
   auto arg1 = Dequeue().argument;
-  AddVertex({
-    s16(arg0 & 0xFFFF),
-    s16(arg0 >> 16),
-    s16(arg1 & 0xFFFF),
-    0x1000
-  });
+  SubmitVertex({
+                 s16(arg0 & 0xFFFF),
+                 s16(arg0 >> 16),
+                 s16(arg1 & 0xFFFF),
+                 0x1000
+               });
 }
 
 void GPU::CMD_SubmitVertex_10() {
   auto arg = Dequeue().argument;
-  AddVertex({
-    s16((arg >>  0) << 6),
-    s16((arg >> 10) << 6),
-    s16((arg >> 20) << 6),
-    0x1000
-  });
+  SubmitVertex({
+                 s16((arg >> 0) << 6),
+                 s16((arg >> 10) << 6),
+                 s16((arg >> 20) << 6),
+                 0x1000
+               });
 }
 
 void GPU::CMD_SubmitVertex_XY() {
   auto arg = Dequeue().argument;
-  AddVertex({
-    s16(arg & 0xFFFF),
-    s16(arg >> 16),
-    position_old[2],
-    0x1000
-  });
+  SubmitVertex({
+                 s16(arg & 0xFFFF),
+                 s16(arg >> 16),
+                 position_old[2],
+                 0x1000
+               });
 }
 
 void GPU::CMD_SubmitVertex_XZ() {
   auto arg = Dequeue().argument;
-  AddVertex({
-    s16(arg & 0xFFFF),
-    position_old[1],
-    s16(arg >> 16),
-    0x1000
-  });
+  SubmitVertex({
+                 s16(arg & 0xFFFF),
+                 position_old[1],
+                 s16(arg >> 16),
+                 0x1000
+               });
 }
 
 void GPU::CMD_SubmitVertex_YZ() {
   auto arg = Dequeue().argument;
-  AddVertex({
-    position_old[0],
-    s16(arg & 0xFFFF),
-    s16(arg >> 16),
-    0x1000
-  });
+  SubmitVertex({
+                 position_old[0],
+                 s16(arg & 0xFFFF),
+                 s16(arg >> 16),
+                 0x1000
+               });
 }
 
 void GPU::CMD_SubmitVertex_Offset() {
   auto arg = Dequeue().argument;
-  AddVertex({
-    position_old[0] + (s16((arg >>  0) << 6) >> 6),
-    position_old[1] + (s16((arg >> 10) << 6) >> 6),
-    position_old[2] + (s16((arg >> 20) << 6) >> 6),
-    0x1000
-  });
+  SubmitVertex({
+                 position_old[0] + (s16((arg >> 0) << 6) >> 6),
+                 position_old[1] + (s16((arg >> 10) << 6) >> 6),
+                 position_old[2] + (s16((arg >> 20) << 6) >> 6),
+                 0x1000
+               });
 }
 
 void GPU::CMD_SetPolygonAttributes() {

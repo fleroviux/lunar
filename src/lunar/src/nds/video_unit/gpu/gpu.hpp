@@ -264,7 +264,7 @@ struct GPU {
     return mat;
   }
 
-  void AddVertex(Vector4<Fixed20x12> const& position);
+  void SubmitVertex(Vector4<Fixed20x12> const& position);
 
   bool IsFrontFacing(
     Vector4<Fixed20x12> const& v0,
