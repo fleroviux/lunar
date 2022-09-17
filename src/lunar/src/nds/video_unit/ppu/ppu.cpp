@@ -75,6 +75,8 @@ void PPU::Reset() {
 
   mmio.mosaic.Reset();
 
+  mmio.master_bright.Reset();
+
   current_vcount = 0;
 
   vram_bg_dirty = {0, sizeof(render_vram_bg)};
@@ -173,6 +175,35 @@ void PPU::RenderScanline(u16 vcount, bool capture_bg_and_3d) {
     case 3:
       RenderMainMemoryDisplay(vcount);
       break;
+  }
+
+  auto const& master_bright = mmio_copy[vcount].master_bright;
+
+  if (master_bright.mode != MasterBrightness::Mode::Disable &&
+      master_bright.factor != 0 &&
+      display_mode != 0
+  ) {
+    int  factor = std::min(master_bright.factor, 16);
+    u32* buffer = &output[frame][vcount * 256];
+
+    if (master_bright.mode == MasterBrightness::Mode::Up) {
+      for(int x = 0; x < 256; x++) {
+        u32 rgba = *buffer;
+        u32 rgba_inv = ~rgba;
+
+        rgba += ((((rgba_inv & 0xFF00FF) * factor) & 0xFF00FF0) |
+                 (((rgba_inv & 0x00FF00) * factor) & 0x00FF000)) >> 4;
+        *buffer++ = rgba;
+      }
+    } else {
+      for(int x = 0; x < 256; x++) {
+        u32 rgba = *buffer;
+
+        rgba -= ((((rgba & 0xFF00FF) * factor) & 0xFF00FF0) |
+                 (((rgba & 0x00FF00) * factor) & 0x00FF000)) >> 4;
+        *buffer++ = rgba;
+      }
+    }
   }
 }
 

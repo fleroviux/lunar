@@ -59,6 +59,8 @@ struct PPU {
 
     Mosaic mosaic;
 
+    MasterBrightness master_bright;
+
     bool capture_bg_and_3d;
   } mmio;
 

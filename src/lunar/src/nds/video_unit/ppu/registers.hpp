@@ -149,4 +149,19 @@ struct Mosaic {
   void WriteByte(uint offset, u8 value);
 };
 
+struct MasterBrightness {
+  enum class Mode {
+    Disable = 0,
+    Up = 1,
+    Down = 2,
+    Reserved = 3
+  } mode;
+
+  int factor;
+
+  void Reset();
+  auto ReadByte(uint offset) -> u8;
+  void WriteByte(uint offset, u8 value);
+};
+
 } // namespace lunar::nds

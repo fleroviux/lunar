@@ -356,4 +356,38 @@ void Mosaic::WriteByte(uint offset, u8 value) {
   }
 }
 
+void MasterBrightness::Reset() {
+  factor = 0;
+  mode = Mode::Disable;
+}
+
+auto MasterBrightness::ReadByte(uint offset) -> u8 {
+  switch (offset) {
+    case 0: {
+      return factor;
+    }
+    case 1: {
+      return (int)mode << 6;
+    }
+  }
+
+  UNREACHABLE;
+}
+
+void MasterBrightness::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      factor = value & 31;
+      break;
+    }
+    case 1: {
+      mode = (Mode)(value >> 6);
+      break;
+    }
+    default: {
+      UNREACHABLE;
+    }
+  }
+}
+
 } // namespace lunar::nds
