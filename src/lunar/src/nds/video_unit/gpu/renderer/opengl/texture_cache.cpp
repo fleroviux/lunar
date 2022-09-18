@@ -57,13 +57,16 @@ auto TextureCache::Get(void const* params_) -> GLuint {
       Decode_Palette4BPP(width, height, params, data);
       break;
     }
+    case GPU::TextureParams::Format::Palette8BPP: {
+      Decode_Palette8BPP(width, height, params, data);
+      break;
+    }
     default: {
-      // initialize with some sane default data
-      for (int i = 0; i < width * height; i++) {
-        data[i] = 0xFFFF00FF;
-      }
-
       fmt::print("texture cache: unsupported format: {}\n", (int)format);
+
+      for (int i = 0; i < width * height; i++) {
+        data[i] = 0xFFFF00FF; // missing texture pink
+      }
       break;
     }
   }
@@ -167,6 +170,27 @@ void TextureCache::Decode_Palette4BPP(int width, int height, void const* params_
       }
 
       indices >>= 4;
+    }
+
+    texture_address++;
+  }
+}
+
+void TextureCache::Decode_Palette8BPP(int width, int height, void const* params_, u32* data) {
+  auto params = (GPU::TextureParams*)params_;
+  int texels  = width * height;
+  u32 texture_address = params->address;
+  u32 palette_address = params->palette_base << 4;
+  bool color0_transparent = params->color0_transparent;
+
+  // TODO: think about fetching 8 pixels (64-bits) at once
+  for (int i = 0; i < texels; i++) {
+    u8 index = vram_texture.Read<u8>(texture_address);
+
+    if (color0_transparent && index == 0) {
+      *data++ = 0;
+    } else {
+      *data++ = ConvertColor(vram_palette.Read<u16>(palette_address + index * sizeof(u16)) & 0x7FFF);
     }
 
     texture_address++;

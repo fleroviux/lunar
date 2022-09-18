@@ -86,11 +86,14 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
 
     int real_vertices = (polygon.count - 2) * 3;
 
-    GLuint texture = texture_cache.Get(&polygon.texture_params);
+    // @todo: properly handle case when no texture is bound.
+    if (polygon.texture_params.format != GPU::TextureParams::Format::None) {
+      GLuint texture = texture_cache.Get(&polygon.texture_params);
+      // @todo: bind texture the right way
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, texture);
+    }
 
-    // TODO: bind texture the right way
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
     glDrawArrays(GL_TRIANGLES, offset, real_vertices);
 
     offset += real_vertices;

@@ -36,6 +36,7 @@ private:
   void Decode_A5I3(int width, int height, void const* params, u32* data);
   void Decode_Palette2BPP(int width, int height, void const* params, u32* data);
   void Decode_Palette4BPP(int width, int height, void const* params, u32* data);
+  void Decode_Palette8BPP(int width, int height, void const* params, u32* data);
 
   Region<4, 131072> const& vram_texture;
   Region<8> const& vram_palette;
