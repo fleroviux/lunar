@@ -63,12 +63,6 @@ struct GPU {
   auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
 
   struct DISP3DCNT {
-    auto ReadByte (uint offset) -> u8;
-    void WriteByte(uint offset, u8 value);
-    
-  private:
-    friend struct lunar::nds::GPU;
-    
     enum class Shading {
       Toon = 0,
       Highlight = 1
@@ -91,6 +85,9 @@ struct GPU {
     bool rdlines_underflow = false;
     bool polyvert_ram_overflow = false;
     bool enable_rear_bitmap = false;
+
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
   } disp3dcnt;
 
   struct GXSTAT {

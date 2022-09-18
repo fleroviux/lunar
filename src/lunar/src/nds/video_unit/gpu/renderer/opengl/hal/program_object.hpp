@@ -8,6 +8,7 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <string_view>
 
 #include "shader_object.hpp"
 
@@ -58,8 +59,25 @@ struct ProgramObject {
     glUseProgram(program);
   }
 
-private:
+  void SetUniformBool(std::string_view name, bool value) {
+    glUniform1i(GetUniformLocation(name), value ? 1 : 0);
+  }
+
+  void SetUniformFloat(std::string_view name, float value) {
+    glUniform1f(GetUniformLocation(name), value);
+  }
+
+  private:
   explicit ProgramObject(GLuint program) : program(program) {}
+
+  auto GetUniformLocation(std::string_view name) -> GLint {
+    GLint location = glGetUniformLocation(program, name.data());
+
+    if (location == -1) {
+      Assert(false, "ShaderProgram: cannot find uniform: {}", name);
+    }
+    return location;
+  }
 
   GLuint program;
 };

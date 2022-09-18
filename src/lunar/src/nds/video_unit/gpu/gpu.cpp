@@ -69,7 +69,7 @@ void GPU::Reset() {
 
   SetupRenderWorkers();
 
-  renderer = std::make_unique<OpenGLRenderer>(vram_texture, vram_palette);
+  renderer = std::make_unique<OpenGLRenderer>(vram_texture, vram_palette, disp3dcnt, alpha_test_ref);
 }
 
 void GPU::WriteToonTable(uint offset, u8 value) {

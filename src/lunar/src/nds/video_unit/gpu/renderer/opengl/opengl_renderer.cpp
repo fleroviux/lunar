@@ -5,9 +5,6 @@
  * found in the LICENSE file.
  */
 
-// Include gpu.hpp for definitions... (need to find a better solution for this)
-#include "nds/video_unit/gpu/gpu.hpp"
-
 #include "shader/test.glsl.hpp"
 #include "opengl_renderer.hpp"
 
@@ -18,9 +15,12 @@ namespace lunar::nds {
 
 OpenGLRenderer::OpenGLRenderer(
   Region<4, 131072> const& vram_texture,
-  Region<8> const& vram_palette
-)   : texture_cache{vram_texture, vram_palette} {
+  Region<8> const& vram_palette,
+  GPU::DISP3DCNT const& disp3dcnt,
+  GPU::AlphaTest const& alpha_test
+)   : texture_cache{vram_texture, vram_palette}, disp3dcnt{disp3dcnt}, alpha_test{alpha_test} {
   glEnable(GL_DEPTH_TEST);
+//  glEnable(GL_BLEND);
 
   program = ProgramObject::Create(test_vert, test_frag);
 
@@ -64,6 +64,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   vao->Bind();
   glDepthFunc(GL_LEQUAL);
 
+//  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   // @todo: combine polygons into batches to reduce draw calls
   int offset = 0;
   for (int i = 0; i < polygon_count; i++) {
@@ -82,12 +84,20 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     if (translucent == (alpha != 31)) {
       glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
-      // @todo: properly handle case when no texture is bound.
-      if(polygon.texture_params.format != GPU::TextureParams::Format::None) {
+      bool use_map = disp3dcnt.enable_textures && polygon.texture_params.format != GPU::TextureParams::Format::None;
+      bool use_alpha_test = disp3dcnt.enable_alpha_test;
+
+      program->SetUniformBool("u_use_map", use_map);
+
+      if(use_map) {
         GLuint texture = texture_cache.Get(&polygon.texture_params);
         // @todo: bind texture the right way
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
+
+        // update related uniforms
+        program->SetUniformBool("u_use_alpha_test", use_alpha_test);
+        program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
       }
 
       glDrawArrays(GL_TRIANGLES, offset, real_vertices);

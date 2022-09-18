@@ -32,13 +32,28 @@ constexpr auto test_frag = R"(
   in vec4 v_color;
   in vec2 v_uv;
 
+  uniform bool u_use_map;
+  uniform bool u_use_alpha_test;
+  uniform float u_alpha_test_threshold;
+
   // TODO: properly initialize texture uniform
   uniform sampler2D u_map;
 
   void main() {
-    vec2 scaled_uv = v_uv / vec2(textureSize(u_map, 0));
+    vec2 uv = v_uv / vec2(textureSize(u_map, 0));
 
-    //frag_color = vec4(scaled_uv, 0.0, 1.0);
-    frag_color = v_color * texture2D(u_map, scaled_uv);
+    vec4 color = v_color;
+
+    if (u_use_map) {
+      vec4 texel = texture2D(u_map, uv);
+
+      if (texel.a <= (u_use_alpha_test ? u_alpha_test_threshold : 0.0)) {
+        discard;
+      }
+
+      color *= texel;
+    }
+
+    frag_color = color;
   }
 )";

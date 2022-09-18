@@ -11,6 +11,9 @@
 #include <GL/glew.h>
 #include <utility>
 
+// Include gpu.hpp for definitions... (need to find a better solution for this)
+#include "nds/video_unit/gpu/gpu.hpp"
+
 #include "common/static_vec.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp"
@@ -25,7 +28,9 @@ namespace lunar::nds {
 struct OpenGLRenderer final : RendererBase {
   OpenGLRenderer(
     Region<4, 131072> const& vram_texture,
-    Region<8> const& vram_palette
+    Region<8> const& vram_palette,
+    GPU::DISP3DCNT const& disp3dcnt,
+    GPU::AlphaTest const& alpha_test
   );
 
  ~OpenGLRenderer() override;
@@ -72,6 +77,10 @@ private:
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
 
   TextureCache texture_cache;
+
+  // MMIO passed through from the GPU:
+  GPU::DISP3DCNT const& disp3dcnt;
+  GPU::AlphaTest const& alpha_test;
 };
 
 } // namespace lunar::nds
