@@ -32,6 +32,9 @@ constexpr auto test_frag = R"(
   in vec4 v_color;
   in vec2 v_uv;
 
+  uniform bool u_enable_translucent_depth_write;
+  uniform bool u_discard_opaque_or_translucent;
+
   uniform float u_polygon_alpha;
 
   uniform bool u_use_map;
@@ -54,6 +57,12 @@ constexpr auto test_frag = R"(
       }
 
       color *= texel;
+    }
+
+    // discard if we're in the opaque pass and the pixel is translucent
+    // or if we're in the translucent pass and the pixel is opaque
+    if (!u_enable_translucent_depth_write && u_discard_opaque_or_translucent != (color.a >= 1.0)) {
+      discard;
     }
 
     frag_color = color;

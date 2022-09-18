@@ -53,16 +53,19 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
 
 void OpenGLRenderer::RenderRearPlane() {
   // @todo: replace this stub with a real implementation
+  glDepthMask(GL_TRUE);
   glClearColor(0.01, 0.01, 0.01, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bool translucent) {
+  using Format = GPU::TextureParams::Format;
+
   auto polygons = (GPU::Polygon const*)polygons_;
 
   program->Use();
   vao->Bind();
-  glDepthFunc(GL_LEQUAL);
+  glDepthFunc(GL_LEQUAL); // TODO: set this according to polygon parameters
 
   if (disp3dcnt.enable_alpha_blend) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
@@ -71,6 +74,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
   }
 
+  // @todo: do basic state tracking to avoid redundant GL calls.
+  
   // @todo: combine polygons into batches to reduce draw calls
   int offset = 0;
   for (int i = 0; i < polygon_count; i++) {
@@ -89,7 +94,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     if (translucent == (alpha != 31)) {
       glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
-      bool use_map = disp3dcnt.enable_textures && polygon.texture_params.format != GPU::TextureParams::Format::None;
+      auto format = polygon.texture_params.format;
+      bool use_map = disp3dcnt.enable_textures && format != GPU::TextureParams::Format::None;
       bool use_alpha_test = disp3dcnt.enable_alpha_test;
 
       program->SetUniformBool("u_use_map", use_map);
@@ -107,7 +113,28 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
       program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
 
-      glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+      if (polygon.params.enable_translucent_depth_write || (
+          alpha == 31 && !polygon.texture_params.color0_transparent && (
+                           format == Format::Palette2BPP ||
+                           format == Format::Palette4BPP ||
+                           format == Format::Palette8BPP))) {
+        program->SetUniformBool("u_enable_translucent_depth_write", true);
+
+        glDepthMask(GL_TRUE);
+        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+      } else {
+        program->SetUniformBool("u_enable_translucent_depth_write", false);
+
+        // render opaque pixels first and write to the depth buffer.
+        program->SetUniformBool("u_discard_opaque_or_translucent", true);
+        glDepthMask(GL_TRUE);
+        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+
+        // then render translucent pixels without updating the depth buffer.
+        program->SetUniformBool("u_discard_opaque_or_translucent", false);
+        glDepthMask(GL_FALSE);
+        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+      }
     }
 
     offset += real_vertices;
