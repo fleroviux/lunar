@@ -32,6 +32,8 @@ constexpr auto test_frag = R"(
   in vec4 v_color;
   in vec2 v_uv;
 
+  uniform float u_polygon_alpha;
+
   uniform bool u_use_map;
   uniform bool u_use_alpha_test;
   uniform float u_alpha_test_threshold;
@@ -42,7 +44,7 @@ constexpr auto test_frag = R"(
   void main() {
     vec2 uv = v_uv / vec2(textureSize(u_map, 0));
 
-    vec4 color = v_color;
+    vec4 color = vec4(v_color.rgb, u_polygon_alpha);
 
     if (u_use_map) {
       vec4 texel = texture2D(u_map, uv);

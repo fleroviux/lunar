@@ -105,6 +105,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
         program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
       }
 
+      program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
+
       glDrawArrays(GL_TRIANGLES, offset, real_vertices);
     }
 
