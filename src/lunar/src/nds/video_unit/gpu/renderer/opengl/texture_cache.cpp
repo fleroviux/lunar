@@ -61,6 +61,10 @@ auto TextureCache::Get(void const* params_) -> GLuint {
       Decode_Palette8BPP(width, height, params, data);
       break;
     }
+    case GPU::TextureParams::Format::Compressed4x4: {
+      Decode_Compressed4x4(width, height, params, data);
+      break;
+    }
     default: {
       fmt::print("texture cache: unsupported format: {}\n", (int)format);
 
@@ -194,6 +198,44 @@ void TextureCache::Decode_Palette8BPP(int width, int height, void const* params_
     }
 
     texture_address++;
+  }
+}
+
+void TextureCache::Decode_Compressed4x4(int width, int height, void const* params_, u32* data) {
+  auto params = (GPU::TextureParams*)params_;
+  u32 texture_address = params->address;
+  u32 palette_address = params->palette_base << 4;
+
+  int rows = width >> 2;
+
+  for (int block_y = 0; block_y < height; block_y += 4) {
+    for (int block_x = 0; block_x < width; block_x += 4) {
+      u32 block_data_address = texture_address + block_y * rows + block_x;
+
+      u32 block_data_slot_index  = block_data_address >> 18;
+      u32 block_data_slot_offset = block_data_address & 0x1FFFF;
+      u32 block_info_address = 0x20000 + (block_data_slot_offset >> 1) + (block_data_slot_index * 0x10000);
+
+      u32 block_data = vram_texture.Read<u32>(block_data_address);
+      u16 block_info = vram_texture.Read<u16>(block_info_address);
+
+      // decode block information
+      int palette_offset = block_info & 0x3FFF;
+      int blend_mode = block_info >> 14;
+
+      for (int inner_y = 0; inner_y < 4; inner_y++) {
+        for(int inner_x = 0; inner_x < 4; inner_x++) {
+          uint index = block_data & 3;
+
+          // TODO: handle blend modes and transparency
+          u16 color = vram_palette.Read<u16>(palette_address + palette_offset * sizeof(u32) + index * sizeof(u16)) & 0x7FFF;
+
+          data[(block_y + inner_y) * width + block_x + inner_x] = ConvertColor(color);
+
+          block_data >>= 2;
+        }
+      }
+    }
   }
 }
 
