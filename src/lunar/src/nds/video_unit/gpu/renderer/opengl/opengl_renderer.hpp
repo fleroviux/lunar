@@ -18,6 +18,7 @@
 #include "nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
 #include "nds/video_unit/vram_region.hpp"
+#include "texture_cache.hpp"
 
 namespace lunar::nds {
 
@@ -55,6 +56,10 @@ private:
     float g;
     float b;
     float a;
+
+    // texture coordinate
+    float s;
+    float t;
   } __attribute__((packed));
 
   ProgramObject* program;
@@ -62,8 +67,7 @@ private:
   BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
 
-  Region<4, 131072> const& vram_texture;
-  Region<8> const& vram_palette;
+  TextureCache texture_cache;
 };
 
 } // namespace lunar::nds

@@ -44,7 +44,6 @@ private:
     glBufferData(target, (GLsizeiptr)size, nullptr, usage);
   }
 
-
   GLenum target;
   size_t size;
   GLuint buffer = 0;

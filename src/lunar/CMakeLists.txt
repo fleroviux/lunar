@@ -32,6 +32,7 @@ set(SOURCES
   src/nds/keypad/keypad.cpp
   src/nds/timer/timer.cpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.cpp
+  src/nds/video_unit/gpu/renderer/opengl/texture_cache.cpp
   src/nds/video_unit/gpu/commands.cpp
   src/nds/video_unit/gpu/gpu.cpp
   src/nds/video_unit/gpu/io.cpp
@@ -99,6 +100,7 @@ set(HEADERS
   src/nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp
   src/nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
+  src/nds/video_unit/gpu/renderer/opengl/texture_cache.hpp
   src/nds/video_unit/gpu/renderer/renderer_base.hpp
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp

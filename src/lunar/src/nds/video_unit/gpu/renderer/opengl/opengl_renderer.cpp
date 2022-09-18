@@ -19,15 +19,17 @@ namespace lunar::nds {
 OpenGLRenderer::OpenGLRenderer(
   Region<4, 131072> const& vram_texture,
   Region<8> const& vram_palette
-)   : vram_texture(vram_texture), vram_palette(vram_palette) {
+)   : texture_cache{vram_texture, vram_palette} {
   glEnable(GL_DEPTH_TEST);
 
   program = ProgramObject::Create(test_vert, test_frag);
 
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
   vao = VertexArrayObject::Create();
-  vao->SetAttribute(0, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0});
-  vao->SetAttribute(1, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 4 * sizeof(float)});
+  // TODO: we can probably set stride to zero since the VBO is tightly packed.
+  vao->SetAttribute(0, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 0});
+  vao->SetAttribute(1, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 4 * sizeof(float)});
+  vao->SetAttribute(2, VertexArrayObject::Attribute{vbo, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 8 * sizeof(float)});
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -58,7 +60,10 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
         float color_g = (float)vert->color.g().raw() / (float)(1 << 6);
         float color_b = (float)vert->color.b().raw() / (float)(1 << 6);
 
-        vertex_buffer.push_back({position_x, position_y, position_z, position_w, color_r, color_g, color_b, color_a});
+        float texcoord_s = (float)vert->uv.x().raw() / (float)(1 << 4);
+        float texcoord_t = (float)vert->uv.y().raw() / (float)(1 << 4);
+
+        vertex_buffer.push_back({position_x, position_y, position_z, position_w, color_r, color_g, color_b, color_a, texcoord_s, texcoord_t});
       }
     }
   }
@@ -72,7 +77,24 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   program->Use();
   vao->Bind();
   glDepthFunc(GL_LEQUAL);
-  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertex_buffer.size());
+  //glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertex_buffer.size());
+
+  // TODO: combine polygons into batches to reduce draw calls
+  int offset = 0;
+  for (int i = 0; i < polygon_count; i++) {
+    auto& polygon = polygons[i];
+
+    int real_vertices = (polygon.count - 2) * 3;
+
+    GLuint texture = texture_cache.Get(&polygon.texture_params);
+
+    // TODO: bind texture the right way
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+
+    offset += real_vertices;
+  }
 
   SDL_GL_SwapWindow(g_window);
 }

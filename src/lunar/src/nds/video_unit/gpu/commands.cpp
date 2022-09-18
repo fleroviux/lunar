@@ -661,6 +661,7 @@ void GPU::CMD_SetPolygonAttributes() {
 void GPU::CMD_SetTextureParameters() {
   auto arg = Dequeue().argument;
 
+  texture_params.raw_value = arg;
   texture_params.address = (arg & 0xFFFF) << 3;
   texture_params.repeat[0] = arg & (1 << 16);
   texture_params.repeat[1]= arg & (1 << 17);

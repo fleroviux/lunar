@@ -186,6 +186,8 @@ struct GPU {
   };
 
   struct TextureParams {
+    u32 raw_value = 0;
+
     u32 address = 0;
     bool repeat[2] { false };
     bool flip[2] { false };
