@@ -62,6 +62,10 @@ private:
     float t;
   } __attribute__((packed));
 
+  void RenderRearPlane();
+  void RenderPolygons(void const* polygons, int polygon_count, bool translucent);
+  void SetupAndUploadVBO(void const* polygons, int polygon_count);
+
   ProgramObject* program;
   VertexArrayObject* vao;
   BufferObject* vbo;
