@@ -78,6 +78,18 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
   delete[] data;
 
+  for (int i : {0, 1}) {
+    constexpr GLenum parameter[2] {GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T};
+
+    GLint mode = GL_CLAMP_TO_EDGE;
+
+    if (params->repeat[i]) {
+      mode = params->flip[i] ? GL_MIRRORED_REPEAT : GL_REPEAT;
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, parameter[i], mode);
+  }
+
   // TODO: we probably don't want to include all bits in the cache key.
   cache[params->raw_value] = texture;
   return texture;
