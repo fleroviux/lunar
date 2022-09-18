@@ -16,6 +16,7 @@ TextureCache::TextureCache(
   Region<4, 131072> const& vram_texture,
   Region<8> const& vram_palette
 )   : vram_texture(vram_texture), vram_palette(vram_palette) {
+  RegisterVRAMMapUnmapHandlers();
 }
 
 auto TextureCache::Get(void const* params_) -> GLuint {
@@ -285,7 +286,21 @@ void TextureCache::Decode_Direct(int width, int height, void const* params_, u32
     *data++ = ConvertColor(abgr1555, (abgr1555 >> 15) * 255);
     texture_address += sizeof(u16);
   }
+}
 
+void TextureCache::RegisterVRAMMapUnmapHandlers() {
+  const auto OnMapUnmap = [&](u32 offset, size_t size) {
+    // this is the poor girl's cache invalidation.
+    // @todo: do not invalidate textures which aren't affected.
+    for (auto& entry : cache) {
+      glDeleteTextures(1, &entry.second);
+    }
+
+    cache = {};
+  };
+
+  vram_texture.AddCallback(OnMapUnmap);
+  vram_palette.AddCallback(OnMapUnmap);
 }
 
 } // namespace lunar::nds
