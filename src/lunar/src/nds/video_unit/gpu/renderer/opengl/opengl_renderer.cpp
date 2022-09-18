@@ -20,7 +20,7 @@ OpenGLRenderer::OpenGLRenderer(
   GPU::AlphaTest const& alpha_test
 )   : texture_cache{vram_texture, vram_palette}, disp3dcnt{disp3dcnt}, alpha_test{alpha_test} {
   glEnable(GL_DEPTH_TEST);
-//  glEnable(GL_BLEND);
+  glEnable(GL_BLEND);
 
   program = ProgramObject::Create(test_vert, test_frag);
 
@@ -64,7 +64,12 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   vao->Bind();
   glDepthFunc(GL_LEQUAL);
 
-//  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  if (disp3dcnt.enable_alpha_blend) {
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+  } else {
+    glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
+  }
 
   // @todo: combine polygons into batches to reduce draw calls
   int offset = 0;
@@ -95,7 +100,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
 
-        // update related uniforms
+        // update alpha-test uniforms
         program->SetUniformBool("u_use_alpha_test", use_alpha_test);
         program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
       }
