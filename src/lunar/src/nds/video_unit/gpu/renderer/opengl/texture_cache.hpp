@@ -33,6 +33,7 @@ private:
   }
 
   void Decode_A3I5(int width, int height, void const* params, u32* data);
+  void Decode_A5I3(int width, int height, void const* params, u32* data);
   void Decode_Palette2BPP(int width, int height, void const* params, u32* data);
   void Decode_Palette4BPP(int width, int height, void const* params, u32* data);
 
