@@ -241,76 +241,70 @@ void TextureCache::Decode_Compressed4x4(int width, int height, void const* param
         return ConvertColor(vram_palette.Read<u16>(final_palette_address + index * sizeof(u16)) & 0x7FFF);
       };
 
+      u32 palette[4];
+      u32 color0 = FetchPRAM(0);
+      u32 color1 = FetchPRAM(1);
+
+      palette[0] = color0;
+      palette[1] = color1;
+
+      switch (blend_mode) {
+        case 0: {
+          palette[2] = FetchPRAM(2);
+          palette[3] = 0;
+          break;
+        }
+        case 1: {
+          int r0 = (int)(color0 >>  0) & 0xFF;
+          int g0 = (int)(color0 >>  8) & 0xFF;
+          int b0 = (int)(color0 >> 16) & 0xFF;
+
+          int r1 = (int)(color1 >>  0) & 0xFF;
+          int g1 = (int)(color1 >>  8) & 0xFF;
+          int b1 = (int)(color1 >> 16) & 0xFF;
+
+          int r2 = (r0 + r1) >> 1;
+          int g2 = (g0 + g1) >> 1;
+          int b2 = (b0 + b1) >> 1;
+
+          palette[2] = 0xFF000000 | r2 << 16 | g2 << 8 | b2;
+          palette[3] = 0;
+          break;
+        }
+        case 2: {
+          palette[2] = FetchPRAM(2);
+          palette[3] = FetchPRAM(3);
+          break;
+        }
+        case 3: {
+          int r0 = (int)(color0 >>  0) & 0xFF;
+          int g0 = (int)(color0 >>  8) & 0xFF;
+          int b0 = (int)(color0 >> 16) & 0xFF;
+
+          int r1 = (int)(color1 >>  0) & 0xFF;
+          int g1 = (int)(color1 >>  8) & 0xFF;
+          int b1 = (int)(color1 >> 16) & 0xFF;
+
+          int r2 = (r0 * 5 + r1 * 3) >> 3;
+          int g2 = (g0 * 5 + g1 * 3) >> 3;
+          int b2 = (b0 * 5 + b1 * 3) >> 3;
+
+          palette[2] = 0xFF000000 | r2 << 16 | g2 << 8 | b2;
+
+          int r3 = (r0 * 3 + r1 * 5) >> 3;
+          int g3 = (g0 * 3 + g1 * 5) >> 3;
+          int b3 = (b0 * 3 + b1 * 5) >> 3;
+
+          palette[3] = 0xFF000000 | r3 << 16 | g3 << 8 | b3;
+          break;
+        }
+      }
+
       for (int inner_y = 0; inner_y < 4; inner_y++) {
         u32* row_data = &data[(block_y + inner_y) * width + block_x];
 
         for(int inner_x = 0; inner_x < 4; inner_x++) {
-          uint index = block_data & 3;
-
-          // TODO: handle blend modes and transparency
-          u16 color = FetchPRAM(index);
-
-          // TODO: at least build palette outside the two for-loops...
-          switch (blend_mode) {
-            case 0: {
-              *row_data++ = index == 3 ? 0 : FetchPRAM(index);
-              break;
-            }
-            case 1: {
-              if (index == 2) {
-                u32 color0 = FetchPRAM(0);
-                u32 color1 = FetchPRAM(1);
-
-                int r0 = (int)(color0 >>  0) & 0xFF;
-                int g0 = (int)(color0 >>  8) & 0xFF;
-                int b0 = (int)(color0 >> 16) & 0xFF;
-
-                int r1 = (int)(color1 >>  0) & 0xFF;
-                int g1 = (int)(color1 >>  8) & 0xFF;
-                int b1 = (int)(color1 >> 16) & 0xFF;
-
-                int ro = (r0 + r1) >> 1;
-                int go = (g0 + g1) >> 1;
-                int bo = (b0 + b1) >> 1;
-
-                *row_data++ = 0xFF000000 | (ro << 16) | (go << 8) | bo;
-              } else {
-                *row_data++ = index == 3 ? 0 : FetchPRAM(index);
-              }
-              break;
-            }
-            case 2: {
-              *row_data++ = FetchPRAM(index);
-              break;
-            }
-            case 3: {
-              if (index == 2 || index == 3) {
-                int coeff0 = index == 2 ? 5 : 3;
-                int coeff1 = index == 2 ? 3 : 5;
-
-                u32 color0 = FetchPRAM(0);
-                u32 color1 = FetchPRAM(1);
-
-                int r0 = (int)(color0 >>  0) & 0xFF;
-                int g0 = (int)(color0 >>  8) & 0xFF;
-                int b0 = (int)(color0 >> 16) & 0xFF;
-
-                int r1 = (int)(color1 >>  0) & 0xFF;
-                int g1 = (int)(color1 >>  8) & 0xFF;
-                int b1 = (int)(color1 >> 16) & 0xFF;
-
-                int ro = (r0 * coeff0 + r1 * coeff1) >> 3;
-                int go = (g0 * coeff0 + g1 * coeff1) >> 3;
-                int bo = (b0 * coeff0 + b1 * coeff1) >> 3;
-
-                *row_data++ = 0xFF000000 | (ro << 16) | (go << 8) | bo;
-              } else {
-                *row_data++ = FetchPRAM(index);
-              }
-              break;
-            }
-          }
-          
+          *row_data++ = palette[block_data & 3];
           block_data >>= 2;
         }
       }
