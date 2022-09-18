@@ -17,11 +17,16 @@
 #include "nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
+#include "nds/video_unit/vram_region.hpp"
 
 namespace lunar::nds {
 
 struct OpenGLRenderer final : RendererBase {
-  OpenGLRenderer();
+  OpenGLRenderer(
+    Region<4, 131072> const& vram_texture,
+    Region<8> const& vram_palette
+  );
+
  ~OpenGLRenderer() override;
 
   void Render(void const* polygons, int polygon_count) override;
@@ -56,6 +61,9 @@ private:
   VertexArrayObject* vao;
   BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
+
+  Region<4, 131072> const& vram_texture;
+  Region<8> const& vram_palette;
 };
 
 } // namespace lunar::nds

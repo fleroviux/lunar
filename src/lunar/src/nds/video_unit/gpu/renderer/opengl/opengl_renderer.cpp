@@ -16,7 +16,10 @@ extern SDL_Window* g_window;
 
 namespace lunar::nds {
 
-OpenGLRenderer::OpenGLRenderer() {
+OpenGLRenderer::OpenGLRenderer(
+  Region<4, 131072> const& vram_texture,
+  Region<8> const& vram_palette
+)   : vram_texture(vram_texture), vram_palette(vram_palette) {
   glEnable(GL_DEPTH_TEST);
 
   program = ProgramObject::Create(test_vert, test_frag);
@@ -36,9 +39,6 @@ OpenGLRenderer::~OpenGLRenderer() {
 void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   auto polygons = (GPU::Polygon const*)polygons_;
 
-  // TODO: do not do this every frame...
-  glDepthFunc(GL_LEQUAL);
-
   vertex_buffer.clear();
 
   for (int i = 0; i < polygon_count; i++) {
@@ -48,15 +48,15 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
       for (int k : {0, j, j + 1}) {
         auto vert = polygon.vertices[k];
 
-        float position_x = (float) vert->position.x().raw() / (float) (1 << 12);
-        float position_y = (float) vert->position.y().raw() / (float) (1 << 12);
-        float position_z = (float) vert->position.z().raw() / (float) (1 << 12);
-        float position_w = (float) vert->position.w().raw() / (float) (1 << 12);
+        float position_x = (float)vert->position.x().raw() / (float)(1 << 12);
+        float position_y = (float)vert->position.y().raw() / (float)(1 << 12);
+        float position_z = (float)vert->position.z().raw() / (float)(1 << 12);
+        float position_w = (float)vert->position.w().raw() / (float)(1 << 12);
 
-        float color_a = (float) vert->color.a().raw() / (float) (1 << 6);
-        float color_r = (float) vert->color.r().raw() / (float) (1 << 6);
-        float color_g = (float) vert->color.g().raw() / (float) (1 << 6);
-        float color_b = (float) vert->color.b().raw() / (float) (1 << 6);
+        float color_a = (float)vert->color.a().raw() / (float)(1 << 6);
+        float color_r = (float)vert->color.r().raw() / (float)(1 << 6);
+        float color_g = (float)vert->color.g().raw() / (float)(1 << 6);
+        float color_b = (float)vert->color.b().raw() / (float)(1 << 6);
 
         vertex_buffer.push_back({position_x, position_y, position_z, position_w, color_r, color_g, color_b, color_a});
       }
@@ -71,7 +71,8 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
 
   program->Use();
   vao->Bind();
-  glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size());
+  glDepthFunc(GL_LEQUAL);
+  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertex_buffer.size());
 
   SDL_GL_SwapWindow(g_window);
 }
