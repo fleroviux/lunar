@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <optional>
+
 #include "shader/test.glsl.hpp"
 #include "opengl_renderer.hpp"
 
@@ -74,14 +76,47 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
   }
 
-  // @todo: do basic state tracking to avoid redundant GL calls.
-  
-  // @todo: combine polygons into batches to reduce draw calls
-  int offset = 0;
+  // @todo: could use different VBOs for opaque and translucent.
+
+  Batch current_batch;
+  int next_batch_start = 0;
+
+  batch_list.clear();
+
+  const auto FinalizeBatch = [&]() {
+    current_batch.vertex_count = next_batch_start - current_batch.vertex_start;
+    if (current_batch.vertex_count != 0) {
+      batch_list.push_back(current_batch);
+    }
+  };
+
   for (int i = 0; i < polygon_count; i++) {
     auto& polygon = polygons[i];
 
-    int alpha = polygon.params.alpha;
+    int vertices = (polygon.count - 2) * 3;
+
+    RenderState current_state{};
+    current_state.texture_params = &polygon.texture_params;
+    current_state.alpha = polygon.params.alpha;
+    current_state.enable_translucent_depth_write = polygon.params.enable_translucent_depth_write;
+
+    // make sure current batch state is initialized
+    if (i == 0) {
+      current_batch.state = current_state;
+    }
+
+    if (current_state != current_batch.state) {
+      FinalizeBatch();
+      current_batch = {current_state, next_batch_start, 0};
+    }
+
+    next_batch_start += vertices;
+  }
+
+  FinalizeBatch();
+
+  for (auto const& batch : batch_list) {
+    int alpha = batch.state.alpha;
     bool wireframe = false;
 
     if (alpha == 0) {
@@ -89,19 +124,19 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       alpha = 31;
     }
 
-    int real_vertices = (polygon.count - 2) * 3;
-
     if (translucent == (alpha != 31)) {
       glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
-      auto format = polygon.texture_params.format;
+      auto texture_params = (GPU::TextureParams const*)batch.state.texture_params;
+
+      auto format = texture_params->format;
       bool use_map = disp3dcnt.enable_textures && format != GPU::TextureParams::Format::None;
       bool use_alpha_test = disp3dcnt.enable_alpha_test;
 
       program->SetUniformBool("u_use_map", use_map);
 
       if(use_map) {
-        GLuint texture = texture_cache.Get(&polygon.texture_params);
+        GLuint texture = texture_cache.Get(texture_params);
         // @todo: bind texture the right way
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -113,31 +148,29 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
       program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
 
-      if (polygon.params.enable_translucent_depth_write || (
-          alpha == 31 && !polygon.texture_params.color0_transparent && (
-                           format == Format::Palette2BPP ||
-                           format == Format::Palette4BPP ||
-                           format == Format::Palette8BPP))) {
-        program->SetUniformBool("u_enable_translucent_depth_write", true);
-
+      if (batch.state.enable_translucent_depth_write || (
+        alpha == 31 && !texture_params->color0_transparent && (
+          format == Format::Palette2BPP ||
+          format == Format::Palette4BPP ||
+          format == Format::Palette8BPP))) {
         glDepthMask(GL_TRUE);
-        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
       } else {
-        program->SetUniformBool("u_enable_translucent_depth_write", false);
+        // @todo: make sure that the depth test does not break
 
-        // render opaque pixels first and write to the depth buffer.
-        program->SetUniformBool("u_discard_opaque_or_translucent", true);
+        // render opaque pixels to the depth-buffer only first.
+        program->SetUniformBool("u_discard_translucent_pixels", true);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_TRUE);
-        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
 
-        // then render translucent pixels without updating the depth buffer.
-        program->SetUniformBool("u_discard_opaque_or_translucent", false);
+        // then render both opaque and translucent pixels without updating the depth buffer.
+        program->SetUniformBool("u_discard_translucent_pixels", false);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glDepthMask(GL_FALSE);
-        glDrawArrays(GL_TRIANGLES, offset, real_vertices);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
       }
     }
-
-    offset += real_vertices;
   }
 }
 
@@ -172,6 +205,13 @@ void OpenGLRenderer::SetupAndUploadVBO(void const* polygons_, int polygon_count)
   }
 
   vbo->Upload(vertex_buffer.data(), vertex_buffer.size());
+}
+
+bool OpenGLRenderer::RenderState::operator==(OpenGLRenderer::RenderState const& other) const {
+  // @todo: move this back into the header file, once the GPU definition thing is fixed.
+  return ((GPU::TextureParams*)texture_params)->raw_value == ((GPU::TextureParams*)other.texture_params)->raw_value &&
+         alpha == other.alpha &&
+         enable_translucent_depth_write == other.enable_translucent_depth_write;
 }
 
 } // namespace lunar::nds

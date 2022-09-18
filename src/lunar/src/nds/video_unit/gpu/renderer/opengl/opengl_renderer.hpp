@@ -67,6 +67,24 @@ private:
     float t;
   } __attribute__((packed));
 
+  struct RenderState {
+    void const* texture_params;
+    int alpha = 0;
+    bool enable_translucent_depth_write = false;
+
+    bool operator==(RenderState const& other) const;
+
+    bool operator!=(RenderState const& other) const {
+      return !(*this == other);
+    }
+  };
+
+  struct Batch {
+    RenderState state{};
+    int vertex_start = 0;
+    int vertex_count = 0;
+  };
+
   void RenderRearPlane();
   void RenderPolygons(void const* polygons, int polygon_count, bool translucent);
   void SetupAndUploadVBO(void const* polygons, int polygon_count);
@@ -75,6 +93,9 @@ private:
   VertexArrayObject* vao;
   BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
+
+  // @todo: make sure that 2048 *really* is enough.
+  StaticVec<Batch, 2048> batch_list;
 
   TextureCache texture_cache;
 
