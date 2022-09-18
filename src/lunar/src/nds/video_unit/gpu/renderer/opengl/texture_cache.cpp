@@ -41,6 +41,10 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   u32* data = new u32[width * height];
 
   switch (format) {
+    case GPU::TextureParams::Format::Palette2BPP: {
+      Decode_Palette2BPP(width, height, params, data);
+      break;
+    }
     case GPU::TextureParams::Format::Palette4BPP: {
       Decode_Palette4BPP(width, height, params, data);
       break;
@@ -64,6 +68,34 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   return texture;
 }
 
+void TextureCache::Decode_Palette2BPP(int width, int height, void const* params_, u32* data) {
+  auto params = (GPU::TextureParams*)params_;
+  int texels  = width * height;
+  u32 texture_address = params->address;
+  u32 palette_address = params->palette_base << 3;
+  bool color0_transparent = params->color0_transparent;
+
+  // TODO: think about fetching 32 pixels (64-bits) at once
+  for (int i = 0; i < texels; i += 4) {
+    u8 indices = vram_texture.Read<u8>(texture_address);
+
+    for (int j = 0; j < 4; j++) {
+      int index = indices & 2;
+
+      // @todo: do 2BPP textures actually honor the color0_transparent flag?
+      if (color0_transparent && index == 0) {
+        *data++ = 0;
+      } else {
+        *data++ = ConvertColor(vram_palette.Read<u16>(palette_address + index * sizeof(u16)) & 0x7FFF);
+      }
+
+      indices >>= 2;
+    }
+
+    texture_address++;
+  }
+}
+
 void TextureCache::Decode_Palette4BPP(int width, int height, void const* params_, u32* data) {
   auto params = (GPU::TextureParams*)params_;
   int texels  = width * height;
@@ -81,14 +113,7 @@ void TextureCache::Decode_Palette4BPP(int width, int height, void const* params_
       if (color0_transparent && index == 0) {
         *data++ = 0;
       } else {
-        u16 color = vram_palette.Read<u16>(palette_address + index * sizeof(u16)) & 0x7FFF;
-
-        // @todo factor out RGB555 to ARGB8888 conversion
-        int r = color & 31;
-        int g = (color >> 5) & 31;
-        int b = (color >> 10) & 31;
-
-        *data++ = 0xFF000000 | (r << 19) | (g << 11) | (b << 3);
+        *data++ = ConvertColor(vram_palette.Read<u16>(palette_address + index * sizeof(u16)) & 0x7FFF);
       }
 
       indices >>= 4;
