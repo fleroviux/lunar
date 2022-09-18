@@ -41,6 +41,10 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   u32* data = new u32[width * height];
 
   switch (format) {
+    case GPU::TextureParams::Format::A3I5: {
+      Decode_A3I5(width, height, params, data);
+      break;
+    }
     case GPU::TextureParams::Format::Palette2BPP: {
       Decode_Palette2BPP(width, height, params, data);
       break;
@@ -66,6 +70,27 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   // TODO: we probably don't want to include all bits in the cache key.
   cache[params->raw_value] = texture;
   return texture;
+}
+
+void TextureCache::Decode_A3I5(int width, int height, const void *params_, u32 *data) {
+  auto params = (GPU::TextureParams*)params_;
+  int texels  = width * height;
+  u32 texture_address = params->address;
+  u32 palette_address = params->palette_base << 4;
+
+  for (int i = 0; i < texels; i++) {
+    u8 texel = vram_texture.Read<u8>(texture_address);
+    int index = texel & 31;
+    int alpha = texel >> 5;
+    u16 rgb555 = vram_palette.Read<u16>(palette_address + index * sizeof(u16)) & 0x7FFF;
+
+    // 3-bit alpha to 8-bit alpha conversion
+    alpha = (alpha << 5) | (alpha << 2) | (alpha >> 1);
+
+    *data++ = ConvertColor(rgb555, alpha);
+    
+    texture_address++;
+  }
 }
 
 void TextureCache::Decode_Palette2BPP(int width, int height, void const* params_, u32* data) {
