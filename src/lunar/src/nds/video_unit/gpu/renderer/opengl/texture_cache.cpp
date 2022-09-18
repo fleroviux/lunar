@@ -255,13 +255,13 @@ void TextureCache::Decode_Compressed4x4(int width, int height, void const* param
           break;
         }
         case 1: {
-          int r0 = (int)(color0 >>  0) & 0xFF;
+          int r0 = (int)(color0 >> 16) & 0xFF;
           int g0 = (int)(color0 >>  8) & 0xFF;
-          int b0 = (int)(color0 >> 16) & 0xFF;
+          int b0 = (int)(color0 >>  0) & 0xFF;
 
-          int r1 = (int)(color1 >>  0) & 0xFF;
+          int r1 = (int)(color1 >> 16) & 0xFF;
           int g1 = (int)(color1 >>  8) & 0xFF;
-          int b1 = (int)(color1 >> 16) & 0xFF;
+          int b1 = (int)(color1 >>  0) & 0xFF;
 
           int r2 = (r0 + r1) >> 1;
           int g2 = (g0 + g1) >> 1;
@@ -277,23 +277,23 @@ void TextureCache::Decode_Compressed4x4(int width, int height, void const* param
           break;
         }
         case 3: {
-          int r0 = (int)(color0 >>  0) & 0xFF;
-          int g0 = (int)(color0 >>  8) & 0xFF;
-          int b0 = (int)(color0 >> 16) & 0xFF;
+          int r0 = (int)((color0 >> 16) & 0xFF);
+          int g0 = (int)((color0 >>  8) & 0xFF);
+          int b0 = (int)((color0 >>  0) & 0xFF);
 
-          int r1 = (int)(color1 >>  0) & 0xFF;
-          int g1 = (int)(color1 >>  8) & 0xFF;
-          int b1 = (int)(color1 >> 16) & 0xFF;
+          int r1 = (int)((color1 >> 16) & 0xFF);
+          int g1 = (int)((color1 >>  8) & 0xFF);
+          int b1 = (int)((color1 >>  0) & 0xFF);
 
-          int r2 = (r0 * 5 + r1 * 3) >> 3;
-          int g2 = (g0 * 5 + g1 * 3) >> 3;
-          int b2 = (b0 * 5 + b1 * 3) >> 3;
+          int r2 = (r0 * 5 + r1 * 3) / 8;
+          int g2 = (g0 * 5 + g1 * 3) / 8;
+          int b2 = (b0 * 5 + b1 * 3) / 8;
 
           palette[2] = 0xFF000000 | r2 << 16 | g2 << 8 | b2;
 
-          int r3 = (r0 * 3 + r1 * 5) >> 3;
-          int g3 = (g0 * 3 + g1 * 5) >> 3;
-          int b3 = (b0 * 3 + b1 * 5) >> 3;
+          int r3 = (r0 * 3 + r1 * 5) / 8;
+          int g3 = (g0 * 3 + g1 * 5) / 8;
+          int b3 = (b0 * 3 + b1 * 5) / 8;
 
           palette[3] = 0xFF000000 | r3 << 16 | g3 << 8 | b3;
           break;
