@@ -19,6 +19,8 @@ TextureCache::TextureCache(
 }
 
 auto TextureCache::Get(void const* params_) -> GLuint {
+  using Format = GPU::TextureParams::Format;
+
   auto params = (GPU::TextureParams*)params_;
 
   if (auto match = cache.find(params->raw_value); match != cache.end()) {
@@ -32,7 +34,6 @@ auto TextureCache::Get(void const* params_) -> GLuint {
 
   GLuint texture;
 
-  // TODO: configure wrap behaviour
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -41,38 +42,14 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   u32* data = new u32[width * height];
 
   switch (format) {
-    case GPU::TextureParams::Format::A3I5: {
-      Decode_A3I5(width, height, params, data);
-      break;
-    }
-    case GPU::TextureParams::Format::A5I3: {
-      Decode_A5I3(width, height, params, data);
-      break;
-    }
-    case GPU::TextureParams::Format::Palette2BPP: {
-      Decode_Palette2BPP(width, height, params, data);
-      break;
-    }
-    case GPU::TextureParams::Format::Palette4BPP: {
-      Decode_Palette4BPP(width, height, params, data);
-      break;
-    }
-    case GPU::TextureParams::Format::Palette8BPP: {
-      Decode_Palette8BPP(width, height, params, data);
-      break;
-    }
-    case GPU::TextureParams::Format::Compressed4x4: {
-      Decode_Compressed4x4(width, height, params, data);
-      break;
-    }
-    default: {
-      fmt::print("texture cache: unsupported format: {}\n", (int)format);
-
-      for (int i = 0; i < width * height; i++) {
-        data[i] = 0xFFFF00FF; // missing texture pink
-      }
-      break;
-    }
+    case Format::None: break;
+    case Format::A3I5: Decode_A3I5(width, height, params, data); break;
+    case Format::A5I3: Decode_A5I3(width, height, params, data); break;
+    case Format::Palette2BPP:   Decode_Palette2BPP(width, height, params, data); break;
+    case Format::Palette4BPP:   Decode_Palette4BPP(width, height, params, data); break;
+    case Format::Palette8BPP:   Decode_Palette8BPP(width, height, params, data); break;
+    case Format::Compressed4x4: Decode_Compressed4x4(width, height, params, data); break;
+    case Format::Direct: Decode_Direct(width, height, params, data); break;
   }
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
@@ -90,7 +67,7 @@ auto TextureCache::Get(void const* params_) -> GLuint {
     glTexParameteri(GL_TEXTURE_2D, parameter[i], mode);
   }
 
-  // TODO: we probably don't want to include all bits in the cache key.
+  // @todo: we probably don't want to include all bits in the cache key.
   cache[params->raw_value] = texture;
   return texture;
 }
@@ -144,7 +121,7 @@ void TextureCache::Decode_Palette2BPP(int width, int height, void const* params_
   u32 palette_address = params->palette_base << 3;
   bool color0_transparent = params->color0_transparent;
 
-  // TODO: think about fetching 32 pixels (64-bits) at once
+  // @todo: think about fetching 32 pixels (64-bits) at once
   for (int i = 0; i < texels; i += 4) {
     u8 indices = vram_texture.Read<u8>(texture_address);
 
@@ -172,7 +149,7 @@ void TextureCache::Decode_Palette4BPP(int width, int height, void const* params_
   u32 palette_address = params->palette_base << 4;
   bool color0_transparent = params->color0_transparent;
 
-  // TODO: think about fetching 16 pixels (64-bits) at once
+  // @todo: think about fetching 16 pixels (64-bits) at once
   for (int i = 0; i < texels; i += 2) {
     u8 indices = vram_texture.Read<u8>(texture_address);
 
@@ -199,7 +176,7 @@ void TextureCache::Decode_Palette8BPP(int width, int height, void const* params_
   u32 palette_address = params->palette_base << 4;
   bool color0_transparent = params->color0_transparent;
 
-  // TODO: think about fetching 8 pixels (64-bits) at once
+  // @todo: think about fetching 8 pixels (64-bits) at once
   for (int i = 0; i < texels; i++) {
     u8 index = vram_texture.Read<u8>(texture_address);
 
@@ -310,6 +287,20 @@ void TextureCache::Decode_Compressed4x4(int width, int height, void const* param
       }
     }
   }
+}
+
+void TextureCache::Decode_Direct(int width, int height, void const* params_, u32* data) {
+  auto params = (GPU::TextureParams*)params_;
+  int texels  = width * height;
+  u32 texture_address = params->address;
+
+  for (int i = 0; i < texels; i++) {
+    u16 abgr1555 = vram_texture.Read<u16>(texture_address);
+
+    *data++ = ConvertColor(abgr1555, (abgr1555 >> 15) * 255);
+    texture_address += sizeof(u16);
+  }
+
 }
 
 } // namespace lunar::nds
