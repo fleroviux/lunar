@@ -89,6 +89,11 @@ private:
   void RenderPolygons(void const* polygons, int polygon_count, bool translucent);
   void SetupAndUploadVBO(void const* polygons, int polygon_count);
 
+  // FBO
+  GLuint fbo;
+  GLuint color_texture;
+  GLuint depth_texture;
+
   ProgramObject* program;
   VertexArrayObject* vao;
   BufferObject* vbo;

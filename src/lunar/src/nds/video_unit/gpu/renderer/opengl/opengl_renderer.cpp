@@ -10,8 +10,7 @@
 #include "shader/test.glsl.hpp"
 #include "opengl_renderer.hpp"
 
-#include <SDL.h>
-extern SDL_Window* g_window;
+GLuint opengl_color_texture;
 
 namespace lunar::nds {
 
@@ -24,6 +23,36 @@ OpenGLRenderer::OpenGLRenderer(
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
 
+  // TODO: abstract FBO and texture creation
+  {
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenTextures(1, &color_texture);
+    glBindTexture(GL_TEXTURE_2D, color_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 384, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture, 0);
+
+    glGenTextures(1, &depth_texture);
+    glBindTexture(GL_TEXTURE_2D, depth_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 512, 384, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    opengl_color_texture = color_texture; // @hack: for reading in the frontend
+  }
+
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+    fmt::print("Framebuffer is complete ^-^\n");
+  } else {
+    fmt::print("Framebuffer is not complete :C\n");
+  }
+
   program = ProgramObject::Create(test_vert, test_frag);
 
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
@@ -35,6 +64,12 @@ OpenGLRenderer::OpenGLRenderer(
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
+  {
+    glDeleteFramebuffers(1, &fbo);
+    glDeleteTextures(1, &color_texture);
+    glDeleteTextures(1, &depth_texture);
+  }
+
   delete program;
   delete vao;
   delete vbo;
@@ -45,12 +80,14 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
 
   SetupAndUploadVBO(polygons, polygon_count);
 
-  glViewport(0, 384, 512, 384);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  glViewport(0, 0, 512, 384);
   RenderRearPlane();
   RenderPolygons(polygons, polygon_count, false);
   RenderPolygons(polygons, polygon_count, true);
 
-  SDL_GL_SwapWindow(g_window);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void OpenGLRenderer::RenderRearPlane() {
@@ -172,6 +209,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       }
     }
   }
+
+  glUseProgram(0);
 }
 
 void OpenGLRenderer::SetupAndUploadVBO(void const* polygons_, int polygon_count) {

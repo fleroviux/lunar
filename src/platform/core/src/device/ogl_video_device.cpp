@@ -7,6 +7,8 @@
 
 #include <platform/device/ogl_video_device.hpp>
 
+extern GLuint opengl_color_texture;
+
 namespace lunar {
 
 OGLVideoDevice::OGLVideoDevice(SDL_Window* window) : window(window) {
@@ -37,21 +39,26 @@ void OGLVideoDevice::Draw(u32 const* top, u32 const* bottom) {
 }
 
 void OGLVideoDevice::Present() {
-  glClear(GL_COLOR_BUFFER_BIT);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  glBindTexture(GL_TEXTURE_2D, textures[0]);
-  if (buffer_top != nullptr) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
-  }
+  glViewport(0, 0, 512, 768);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//  glBindTexture(GL_TEXTURE_2D, textures[0]);
+//  if (buffer_top != nullptr) {
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
+//  }
+  glBindTexture(GL_TEXTURE_2D, opengl_color_texture);
 
   glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex2f(-1.0f,  1.0f);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex2f( 1.0f,  1.0f);
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex2f( 1.0f,  0.0f);
   glTexCoord2f(0.0f, 1.0f);
+  glVertex2f(-1.0f,  1.0f);
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex2f( 1.0f,  1.0f);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex2f( 1.0f,  0.0f);
+  glTexCoord2f(0.0f, 0.0f);
   glVertex2f(-1.0f,  0.0f);
   glEnd();
 

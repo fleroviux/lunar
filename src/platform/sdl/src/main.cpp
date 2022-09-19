@@ -14,8 +14,6 @@
 
 #undef main
 
-SDL_Window* g_window;
-
 void loop(const char* rom_path) {
   SDL_Init(SDL_INIT_VIDEO);
 
@@ -28,8 +26,6 @@ void loop(const char* rom_path) {
     384 * scale,
     SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
   );
-
-  g_window = window;
 
   auto gl_context = SDL_GL_CreateContext(window);
 
@@ -69,7 +65,7 @@ void loop(const char* rom_path) {
     }
 
     core->Run(559241);
-//    video_device.Present();
+    video_device.Present();
     frames++;
 
     while (SDL_PollEvent(&event)) {
