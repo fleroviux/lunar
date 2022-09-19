@@ -78,6 +78,7 @@ private:
     bool enable_translucent_depth_write;
     int polygon_id;
     int polygon_mode; // @todo: use correct data type
+    int depth_test; // @todo: use correct data type
 
     bool operator==(RenderState const& other) const;
 

@@ -129,6 +129,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     current_state.enable_translucent_depth_write = polygon.params.enable_translucent_depth_write;
     current_state.polygon_id = polygon.params.polygon_id;
     current_state.polygon_mode = (int)polygon.params.mode;
+    current_state.depth_test = (int)polygon.params.depth_test;
 
     // make sure current batch state is initialized
     if (i == 0) {
@@ -149,7 +150,6 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
   program->Use();
   vao->Bind();
-  glDepthFunc(GL_LEQUAL); // TODO: set this according to polygon parameters
 
   if (disp3dcnt.enable_alpha_blend) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
@@ -168,8 +168,6 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     }
 
     if (translucent == (alpha != 31)) {
-      glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-
       auto texture_params = (GPU::TextureParams const *) batch.state.texture_params;
 
       auto format = texture_params->format;
@@ -190,6 +188,15 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       }
 
       program->SetUniformFloat("u_polygon_alpha", (float) alpha / 31.0f);
+
+      if (batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
+        // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
+        glDepthFunc(GL_LEQUAL);
+      } else {
+        glDepthFunc(GL_EQUAL);
+      }
+
+      glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
       if(batch.state.polygon_mode == (int) GPU::PolygonParams::Mode::Shadow) {
         if (batch.state.polygon_id == 0) {
@@ -299,7 +306,8 @@ bool OpenGLRenderer::RenderState::operator==(OpenGLRenderer::RenderState const& 
          alpha == other.alpha &&
          enable_translucent_depth_write == other.enable_translucent_depth_write &&
          polygon_id == other.polygon_id &&
-         polygon_mode == other.polygon_mode;
+         polygon_mode == other.polygon_mode &&
+         depth_test == other.depth_test;
 }
 
 } // namespace lunar::nds
