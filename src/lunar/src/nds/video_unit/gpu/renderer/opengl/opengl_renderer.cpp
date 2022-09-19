@@ -216,13 +216,17 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
           glDepthMask(GL_TRUE);
           glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         } else {
-          glDepthMask(GL_FALSE);
+          glStencilMask(STENCIL_FLAG_SHADOW);
           glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW, STENCIL_FLAG_SHADOW);
+          glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO); // consume shadow flag
 
+          glDepthMask(GL_FALSE);
           glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
 
-          glDepthMask(GL_TRUE);
+          glStencilMask(0xFF);
           glStencilFunc(GL_ALWAYS, 0, 0);
+          glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+          glDepthMask(GL_TRUE);
         }
       } else {
         if(batch.state.enable_translucent_depth_write || (
