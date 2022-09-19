@@ -150,7 +150,6 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   program->Use();
   vao->Bind();
   glDepthFunc(GL_LEQUAL); // TODO: set this according to polygon parameters
-  glStencilFunc(GL_ALWAYS, 0, 0);
 
   if (disp3dcnt.enable_alpha_blend) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
