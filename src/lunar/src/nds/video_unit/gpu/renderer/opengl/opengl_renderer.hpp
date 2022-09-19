@@ -49,6 +49,10 @@ private:
    */
   static constexpr size_t k_total_vertices = 2048 * 8 * 3;
 
+  enum StencilBufferBits {
+    STENCIL_FLAG_SHADOW = 1
+  };
+
   struct BufferVertex {
     // clip-space position
     float x;
@@ -69,8 +73,10 @@ private:
 
   struct RenderState {
     void const* texture_params;
-    int alpha = 0;
-    bool enable_translucent_depth_write = false;
+    int alpha;
+    bool enable_translucent_depth_write;
+    int polygon_id;
+    int polygon_mode; // @todo: use correct data type
 
     bool operator==(RenderState const& other) const;
 
