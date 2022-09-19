@@ -194,41 +194,44 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
       if(batch.state.polygon_mode == (int) GPU::PolygonParams::Mode::Shadow) {
         if (batch.state.polygon_id == 0) {
-          // Set STENCIL_FLAG_SHADOW bit if the z-test fails
+          // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
+          glDepthMask(GL_FALSE);
+          glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+          // Set STENCIL_FLAG_SHADOW bit for pixels which fail the depth-buffer test.
           glStencilMask(STENCIL_FLAG_SHADOW);
           glStencilFunc(GL_ALWAYS, STENCIL_FLAG_SHADOW, 0);
           glStencilOp(GL_KEEP, GL_REPLACE, GL_KEEP);
 
-          /* Do not update the color or depth buffer.
-           * @todo: will the depth buffer be updated if the pixel is opaque or
-           * enable_translucent_depth_write is set?
-           */
-          glDepthMask(GL_FALSE);
-          glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
           glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
 
-          // restore original state
-          // @todo: can this be optimized?
-          glStencilMask(0xFF);
-          glStencilFunc(GL_ALWAYS, 0, 0);
-          glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
           glDepthMask(GL_TRUE);
           glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         } else {
-          glStencilMask(STENCIL_FLAG_SHADOW);
-          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW, STENCIL_FLAG_SHADOW);
-          glStencilOp(GL_ZERO, GL_ZERO, GL_ZERO); // consume shadow flag
-
+          // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
           glDepthMask(GL_FALSE);
+
+          // Reset the shadow flag for pixels where the polygon ID matches the one already in the stencil buffer.
+          glStencilMask(STENCIL_FLAG_SHADOW);
+          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW | batch.state.polygon_id, STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID);
+          glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+          glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
           glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
 
-          glStencilMask(0xFF);
-          glStencilFunc(GL_ALWAYS, 0, 0);
-          glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+          // Draw the shadow polygon pixels where the shadow flag is still set.
+          glStencilMask(0);
+          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW, STENCIL_FLAG_SHADOW);
+          glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+
           glDepthMask(GL_TRUE);
         }
       } else {
+        // Write polygon ID to the stencil buffer and reset the shadow flag
+        glStencilMask(STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID),
+        glStencilFunc(GL_ALWAYS, batch.state.polygon_id, 0);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
         if(batch.state.enable_translucent_depth_write || (
           alpha == 31 && !texture_params->color0_transparent && (
             format == Format::Palette2BPP ||

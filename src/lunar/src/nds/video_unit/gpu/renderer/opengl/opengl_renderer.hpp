@@ -50,7 +50,8 @@ private:
   static constexpr size_t k_total_vertices = 2048 * 8 * 3;
 
   enum StencilBufferBits {
-    STENCIL_FLAG_SHADOW = 1
+    STENCIL_MASK_POLY_ID = 31,
+    STENCIL_FLAG_SHADOW = 128
   };
 
   struct BufferVertex {
