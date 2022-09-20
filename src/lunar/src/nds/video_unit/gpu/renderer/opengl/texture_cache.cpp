@@ -19,7 +19,7 @@ TextureCache::TextureCache(
   RegisterVRAMMapUnmapHandlers();
 }
 
-auto TextureCache::Get(void const* params_) -> GLuint {
+auto TextureCache::Get(void const* params_) -> Texture2D* {
   using Format = GPU::TextureParams::Format;
 
   auto params = (GPU::TextureParams*)params_;
@@ -32,13 +32,6 @@ auto TextureCache::Get(void const* params_) -> GLuint {
   const int height = 8 << params->size[1];
 
   const GPU::TextureParams::Format format = params->format;
-
-  GLuint texture;
-
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   u32* data = new u32[width * height];
 
@@ -53,7 +46,10 @@ auto TextureCache::Get(void const* params_) -> GLuint {
     case Format::Direct: Decode_Direct(width, height, params, data); break;
   }
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+  Texture2D* texture = Texture2D::Create(width, height, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE, data);
+  texture->SetMinFilter(GL_LINEAR);
+  texture->SetMagFilter(GL_LINEAR);
+
   delete[] data;
 
   for (int i : {0, 1}) {
@@ -293,7 +289,7 @@ void TextureCache::RegisterVRAMMapUnmapHandlers() {
     // this is the poor girl's cache invalidation.
     // @todo: do not invalidate textures which aren't affected.
     for (auto& entry : cache) {
-      glDeleteTextures(1, &entry.second);
+      delete entry.second;
     }
 
     cache = {};

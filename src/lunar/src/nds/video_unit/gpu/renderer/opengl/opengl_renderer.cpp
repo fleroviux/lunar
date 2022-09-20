@@ -25,52 +25,28 @@ OpenGLRenderer::OpenGLRenderer(
   glEnable(GL_STENCIL_TEST);
   glEnable(GL_BLEND);
 
-  // TODO: abstract FBO and texture creation
+  // TODO: abstract FBO creation
   {
     constexpr GLenum k_draw_buffers[2] {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 
+    color_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    opaque_poly_id_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+    opengl_color_texture = color_texture->Handle(); // @hack: for reading in the frontend
+
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    glGenTextures(1, &color_texture);
-    glBindTexture(GL_TEXTURE_2D, color_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 384, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture, 0);
-
-    glGenTextures(1, &opaque_poly_id_texture);
-    glBindTexture(GL_TEXTURE_2D, opaque_poly_id_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 384, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, opaque_poly_id_texture, 0);
-
-    glGenTextures(1, &depth_texture);
-    glBindTexture(GL_TEXTURE_2D, depth_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 512, 384, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
-
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture->Handle(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, opaque_poly_id_texture->Handle(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_texture->Handle(), 0);
     glDrawBuffers(2, k_draw_buffers);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    opengl_color_texture = color_texture; // @hack: for reading in the frontend
-  }
-
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
-    fmt::print("Framebuffer is complete ^-^\n");
-  } else {
-    fmt::print("Framebuffer is not complete :C\n");
   }
 
   program = ProgramObject::Create(test_vert, test_frag);
   program->SetUniformInt("u_map", 0);
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
   vao = VertexArrayObject::Create();
-  // TODO: we can probably set stride to zero since the VBO is tightly packed.
   vao->SetAttribute(0, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 0});
   vao->SetAttribute(1, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 4 * sizeof(float)});
   vao->SetAttribute(2, VertexArrayObject::Attribute{vbo, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 8 * sizeof(float)});
@@ -97,9 +73,9 @@ OpenGLRenderer::OpenGLRenderer(
 OpenGLRenderer::~OpenGLRenderer() {
   {
     glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &color_texture);
-    glDeleteTextures(1, &opaque_poly_id_texture);
-    glDeleteTextures(1, &depth_texture);
+    delete color_texture;
+    delete opaque_poly_id_texture;
+    delete depth_texture;
   }
 
   delete program;
@@ -217,9 +193,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       program->SetUniformBool("u_use_map", use_map);
 
       if(use_map) {
-        GLuint texture = texture_cache.Get(texture_params);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        texture_cache.Get(texture_params)->Bind(GL_TEXTURE0);
 
         // update alpha-test uniforms
         program->SetUniformBool("u_use_alpha_test", use_alpha_test);
@@ -322,14 +296,9 @@ void OpenGLRenderer::RenderEdgeMarking() {
   glDepthFunc(GL_ALWAYS);
 
   program_edge_marking->Use();
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, color_texture);
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, depth_texture);
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, opaque_poly_id_texture);
-
+  color_texture->Bind(GL_TEXTURE0);
+  depth_texture->Bind(GL_TEXTURE1);
+  opaque_poly_id_texture->Bind(GL_TEXTURE2);
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
 

@@ -10,6 +10,7 @@
 #include <GL/glew.h>
 #include <unordered_map>
 
+#include "nds/video_unit/gpu/renderer/opengl/hal/texture_2d.hpp"
 #include "nds/video_unit/vram_region.hpp"
 
 namespace lunar::nds {
@@ -20,7 +21,7 @@ struct TextureCache {
     Region<8> const& vram_palette
   );
 
-  auto Get(void const* params) -> GLuint;
+  auto Get(void const* params) -> Texture2D*;
 
 private:
   // @fixme: this more or less is a copy from ppu.hpp:
@@ -45,7 +46,7 @@ private:
   Region<4, 131072> const& vram_texture;
   Region<8> const& vram_palette;
 
-  std::unordered_map<u32, GLuint> cache;
+  std::unordered_map<u32, Texture2D*> cache;
 };
 
 } // namespace lunar::nds

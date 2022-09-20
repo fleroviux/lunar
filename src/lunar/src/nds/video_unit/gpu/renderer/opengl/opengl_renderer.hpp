@@ -18,6 +18,7 @@
 #include "nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/texture_2d.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
 #include "nds/video_unit/vram_region.hpp"
@@ -100,9 +101,9 @@ private:
 
   // FBO
   GLuint fbo;
-  GLuint color_texture;
-  GLuint opaque_poly_id_texture;
-  GLuint depth_texture;
+  Texture2D* color_texture;
+  Texture2D* opaque_poly_id_texture;
+  Texture2D* depth_texture;
 
   // Main render pass
   ProgramObject* program;
