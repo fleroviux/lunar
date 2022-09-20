@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <lunar/integer.hpp>
 #include <GL/glew.h>
 #include <utility>
@@ -32,7 +33,8 @@ struct OpenGLRenderer final : RendererBase {
     Region<4, 131072> const& vram_texture,
     Region<8> const& vram_palette,
     GPU::DISP3DCNT const& disp3dcnt,
-    GPU::AlphaTest const& alpha_test
+    GPU::AlphaTest const& alpha_test,
+    std::array<u16, 8> const& edge_color_table
   );
 
  ~OpenGLRenderer() override;
@@ -53,6 +55,7 @@ private:
 
   enum StencilBufferBits {
     STENCIL_MASK_POLY_ID = 31,
+    STENCIL_FLAG_EDGE = 64,
     STENCIL_FLAG_SHADOW = 128
   };
 
@@ -125,6 +128,7 @@ private:
   // MMIO passed through from the GPU:
   GPU::DISP3DCNT const& disp3dcnt;
   GPU::AlphaTest const& alpha_test;
+  std::array<u16, 8> const& edge_color_table;
 };
 
 } // namespace lunar::nds

@@ -74,6 +74,11 @@ struct ProgramObject {
     glUniform1f(GetUniformLocation(name), value);
   }
 
+  void SetUniformVec3Array(std::string_view name, float const* values, int count) {
+    Use();
+    glUniform3fv(GetUniformLocation(name), count, values);
+  }
+
 private:
   explicit ProgramObject(GLuint program) : program(program) {}
 

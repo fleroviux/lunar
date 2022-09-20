@@ -19,8 +19,9 @@ OpenGLRenderer::OpenGLRenderer(
   Region<4, 131072> const& vram_texture,
   Region<8> const& vram_palette,
   GPU::DISP3DCNT const& disp3dcnt,
-  GPU::AlphaTest const& alpha_test
-)   : texture_cache{vram_texture, vram_palette}, disp3dcnt{disp3dcnt}, alpha_test{alpha_test} {
+  GPU::AlphaTest const& alpha_test,
+  std::array<u16, 8> const& edge_color_table
+)   : texture_cache{vram_texture, vram_palette}, disp3dcnt{disp3dcnt}, alpha_test{alpha_test}, edge_color_table{edge_color_table} {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glEnable(GL_BLEND);
@@ -204,7 +205,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       }
 
       program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
-      program->SetUniformFloat("u_polygon_id", (float)batch.state.polygon_id / 31.0f);
+      program->SetUniformFloat("u_polygon_id", (float)batch.state.polygon_id / 63.0f);
 
       if (batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
         // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
@@ -294,6 +295,24 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 }
 
 void OpenGLRenderer::RenderEdgeMarking() {
+  float edge_colors[24];
+
+  // @todo: do not update if nothing has changed
+  for (int i = 0; i < 8; i++) {
+    u16 color = edge_color_table[i];
+
+    float r = (float)((color >>  0) & 0x1F) / 31.0f;
+    float g = (float)((color >>  5) & 0x1F) / 31.0f;
+    float b = (float)((color >> 10) & 0x1F) / 31.0f;
+
+    edge_colors[i * 3 + 0] = r;
+    edge_colors[i * 3 + 1] = g;
+    edge_colors[i * 3 + 2] = b;
+  }
+
+  program_edge_marking->SetUniformVec3Array("u_edge_colors", edge_colors, 8);
+
+  // @todo: do we need to disable edge-marking for pixels covered by translucent polygons?
   fbo_edge_marking->Bind();
   program_edge_marking->Use();
   depth_texture->Bind(GL_TEXTURE0);
