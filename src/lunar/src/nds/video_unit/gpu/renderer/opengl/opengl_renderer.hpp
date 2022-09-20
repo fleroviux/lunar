@@ -16,6 +16,7 @@
 
 #include "common/static_vec.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp"
+#include "nds/video_unit/gpu/renderer/opengl/hal/frame_buffer_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp"
 #include "nds/video_unit/gpu/renderer/opengl/hal/texture_2d.hpp"
@@ -100,7 +101,7 @@ private:
   void SetupAndUploadVBO(void const* polygons, int polygon_count);
 
   // FBO
-  GLuint fbo;
+  FrameBufferObject* fbo;
   Texture2D* color_texture;
   Texture2D* opaque_poly_id_texture;
   Texture2D* depth_texture;

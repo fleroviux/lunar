@@ -74,7 +74,7 @@ struct ProgramObject {
     glUniform1f(GetUniformLocation(name), value);
   }
 
-  private:
+private:
   explicit ProgramObject(GLuint program) : program(program) {}
 
   auto GetUniformLocation(std::string_view name) const -> GLint {

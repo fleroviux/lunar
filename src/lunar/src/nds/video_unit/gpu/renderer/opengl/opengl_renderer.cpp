@@ -34,13 +34,19 @@ OpenGLRenderer::OpenGLRenderer(
     depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
     opengl_color_texture = color_texture->Handle(); // @hack: for reading in the frontend
 
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture->Handle(), 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, opaque_poly_id_texture->Handle(), 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_texture->Handle(), 0);
-    glDrawBuffers(2, k_draw_buffers);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    glGenFramebuffers(1, &fbo);
+//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture->Handle(), 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, opaque_poly_id_texture->Handle(), 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_texture->Handle(), 0);
+//    glDrawBuffers(2, k_draw_buffers);
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    fbo = FrameBufferObject::Create();
+    fbo->Attach(GL_COLOR_ATTACHMENT0, color_texture);
+    fbo->Attach(GL_COLOR_ATTACHMENT1, opaque_poly_id_texture);
+    fbo->Attach(GL_DEPTH_STENCIL_ATTACHMENT, depth_texture);
+    fbo->DrawBuffers({GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1});
   }
 
   program = ProgramObject::Create(test_vert, test_frag);
@@ -71,12 +77,10 @@ OpenGLRenderer::OpenGLRenderer(
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
-  {
-    glDeleteFramebuffers(1, &fbo);
-    delete color_texture;
-    delete opaque_poly_id_texture;
-    delete depth_texture;
-  }
+  delete fbo;
+  delete color_texture;
+  delete opaque_poly_id_texture;
+  delete depth_texture;
 
   delete program;
   delete vao;
@@ -92,7 +96,7 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
 
   SetupAndUploadVBO(polygons, polygon_count);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  fbo->Bind();
 
   glViewport(0, 0, 512, 384);
   RenderRearPlane();
@@ -100,7 +104,7 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   RenderPolygons(polygons, polygon_count, true);
   RenderEdgeMarking();
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  fbo->Unbind();
 }
 
 void OpenGLRenderer::RenderRearPlane() {
