@@ -46,7 +46,13 @@ struct Texture2D {
 
   void SetMagFilter(GLint filter) {
     Bind();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+  }
+
+  void SetWrapBehaviour(GLint wrap_s, GLint wrap_t) {
+    Bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
   }
 
   void Bind() { // NOLINT(readability-make-member-function-const)

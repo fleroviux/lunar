@@ -52,17 +52,13 @@ auto TextureCache::Get(void const* params_) -> Texture2D* {
 
   delete[] data;
 
-  for (int i : {0, 1}) {
-    constexpr GLenum parameter[2] {GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T};
+  const GLint wrap_s = params->repeat[0] ?
+    (params->flip[0] ? GL_MIRRORED_REPEAT : GL_REPEAT) : GL_CLAMP_TO_EDGE;
 
-    GLint mode = GL_CLAMP_TO_EDGE;
+  const GLint wrap_t = params->repeat[1] ?
+    (params->flip[1] ? GL_MIRRORED_REPEAT : GL_REPEAT) : GL_CLAMP_TO_EDGE;
 
-    if (params->repeat[i]) {
-      mode = params->flip[i] ? GL_MIRRORED_REPEAT : GL_REPEAT;
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, parameter[i], mode);
-  }
+  texture->SetWrapBehaviour(wrap_s, wrap_t);
 
   // @todo: we probably don't want to include all bits in the cache key.
   cache[params->raw_value] = texture;
