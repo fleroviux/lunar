@@ -67,6 +67,7 @@ OpenGLRenderer::OpenGLRenderer(
   }
 
   program = ProgramObject::Create(test_vert, test_frag);
+  program->SetUniformInt("u_map", 0);
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
   vao = VertexArrayObject::Create();
   // TODO: we can probably set stride to zero since the VBO is tightly packed.
@@ -217,7 +218,6 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
       if(use_map) {
         GLuint texture = texture_cache.Get(texture_params);
-        // @todo: bind texture the right way
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
 

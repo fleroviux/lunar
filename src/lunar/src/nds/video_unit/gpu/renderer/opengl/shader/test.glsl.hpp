@@ -42,7 +42,6 @@ constexpr auto test_frag = R"(
   uniform bool u_use_alpha_test;
   uniform float u_alpha_test_threshold;
 
-  // TODO: properly initialize texture uniform
   uniform sampler2D u_map;
 
   void main() {
