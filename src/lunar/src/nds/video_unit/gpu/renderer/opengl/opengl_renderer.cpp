@@ -95,7 +95,10 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   RenderRearPlane();
   RenderPolygons(polygons, polygon_count, false);
   RenderPolygons(polygons, polygon_count, true);
-  RenderEdgeMarking();
+
+  if (disp3dcnt.enable_edge_marking) {
+    RenderEdgeMarking();
+  }
 
   fbo->Unbind();
 }
@@ -297,7 +300,6 @@ void OpenGLRenderer::RenderEdgeMarking() {
   opaque_poly_id_texture->Bind(GL_TEXTURE1);
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
-
   glUseProgram(0);
 }
 
