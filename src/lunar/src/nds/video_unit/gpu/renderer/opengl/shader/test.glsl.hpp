@@ -28,6 +28,7 @@ constexpr auto test_frag = R"(
   #version 330 core
 
   layout(location = 0) out vec4 frag_color;
+  layout(location = 1) out vec4 frag_poly_id;
 
   in vec4 v_color;
   in vec2 v_uv;
@@ -35,6 +36,7 @@ constexpr auto test_frag = R"(
   uniform bool u_discard_translucent_pixels;
 
   uniform float u_polygon_alpha;
+  uniform float u_polygon_id;
 
   uniform bool u_use_map;
   uniform bool u_use_alpha_test;
@@ -63,5 +65,6 @@ constexpr auto test_frag = R"(
     }
 
     frag_color = color;
+    frag_poly_id = vec4(u_polygon_id, 0.0, 0.0, 1.0);
   }
 )";

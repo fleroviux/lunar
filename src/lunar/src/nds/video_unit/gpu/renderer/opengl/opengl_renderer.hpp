@@ -95,20 +95,27 @@ private:
 
   void RenderRearPlane();
   void RenderPolygons(void const* polygons, int polygon_count, bool translucent);
+  void RenderEdgeMarking();
   void SetupAndUploadVBO(void const* polygons, int polygon_count);
 
   // FBO
   GLuint fbo;
   GLuint color_texture;
+  GLuint opaque_poly_id_texture;
   GLuint depth_texture;
 
+  // Main render pass
   ProgramObject* program;
   VertexArrayObject* vao;
   BufferObject* vbo;
   StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
-
   // @todo: make sure that 2048 *really* is enough.
   StaticVec<Batch, 2048> batch_list;
+
+  // Edge-marking pass
+  ProgramObject* program_edge_marking;
+  VertexArrayObject* quad_vao;
+  BufferObject* quad_vbo;
 
   TextureCache texture_cache;
 

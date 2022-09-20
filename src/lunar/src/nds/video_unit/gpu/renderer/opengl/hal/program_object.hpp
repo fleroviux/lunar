@@ -60,17 +60,24 @@ struct ProgramObject {
   }
 
   void SetUniformBool(std::string_view name, bool value) {
+    Use();
     glUniform1i(GetUniformLocation(name), value ? 1 : 0);
   }
 
+  void SetUniformInt(std::string_view name, int value) {
+    Use();
+    glUniform1i(GetUniformLocation(name), value);
+  }
+
   void SetUniformFloat(std::string_view name, float value) {
+    Use();
     glUniform1f(GetUniformLocation(name), value);
   }
 
   private:
   explicit ProgramObject(GLuint program) : program(program) {}
 
-  auto GetUniformLocation(std::string_view name) -> GLint {
+  auto GetUniformLocation(std::string_view name) const -> GLint {
     GLint location = glGetUniformLocation(program, name.data());
 
     if (location == -1) {
