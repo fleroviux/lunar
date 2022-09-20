@@ -45,6 +45,8 @@ void OGLVideoDevice::Present() {
   glClearColor(0, 0, 0, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  glActiveTexture(GL_TEXTURE0);
+
 //  glBindTexture(GL_TEXTURE_2D, textures[0]);
 //  if (buffer_top != nullptr) {
 //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);

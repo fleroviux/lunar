@@ -34,14 +34,6 @@ OpenGLRenderer::OpenGLRenderer(
     depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
     opengl_color_texture = color_texture->Handle(); // @hack: for reading in the frontend
 
-//    glGenFramebuffers(1, &fbo);
-//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture->Handle(), 0);
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, opaque_poly_id_texture->Handle(), 0);
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_texture->Handle(), 0);
-//    glDrawBuffers(2, k_draw_buffers);
-//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     fbo = FrameBufferObject::Create();
     fbo->Attach(GL_COLOR_ATTACHMENT0, color_texture);
     fbo->Attach(GL_COLOR_ATTACHMENT1, opaque_poly_id_texture);
@@ -65,10 +57,11 @@ OpenGLRenderer::OpenGLRenderer(
     -1.0,  1.0,    0.0, 1.0
   };
 
+  fbo_edge_marking = FrameBufferObject::Create();
+  fbo_edge_marking->Attach(GL_COLOR_ATTACHMENT0, color_texture);
   program_edge_marking = ProgramObject::Create(edge_marking_vert, edge_marking_frag);
-  program_edge_marking->SetUniformInt("u_color_map", 0);
-  program_edge_marking->SetUniformInt("u_depth_map", 1);
-  program_edge_marking->SetUniformInt("u_opaque_poly_id_map", 2);
+  program_edge_marking->SetUniformInt("u_depth_map", 0);
+  program_edge_marking->SetUniformInt("u_opaque_poly_id_map", 1);
   quad_vao = VertexArrayObject::Create();
   quad_vbo = BufferObject::CreateArrayBuffer(sizeof(k_quad_vertices), GL_STATIC_DRAW);
   quad_vao->SetAttribute(0, VertexArrayObject::Attribute{quad_vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0});
@@ -167,6 +160,9 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   FinalizeBatch();
 
   // --------------------------------------------------
+
+  // @todo: render batches as we build them, instead of buffering them first.
+  // this should improve the GPU utilization, as rendering and batch generation can happen in parallel.
 
   program->Use();
   vao->Bind();
@@ -289,20 +285,16 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   }
 
   glUseProgram(0);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glBlendEquation(GL_FUNC_ADD);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void OpenGLRenderer::RenderEdgeMarking() {
-  // TODO: do not commit sins like this:
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glDepthFunc(GL_ALWAYS);
-
+  fbo_edge_marking->Bind();
   program_edge_marking->Use();
-  color_texture->Bind(GL_TEXTURE0);
-  depth_texture->Bind(GL_TEXTURE1);
-  opaque_poly_id_texture->Bind(GL_TEXTURE2);
+  depth_texture->Bind(GL_TEXTURE0);
+  opaque_poly_id_texture->Bind(GL_TEXTURE1);
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
 

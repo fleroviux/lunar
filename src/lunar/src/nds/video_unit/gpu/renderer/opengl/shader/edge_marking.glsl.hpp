@@ -45,12 +45,10 @@ constexpr auto edge_marking_frag = R"(
   in vec2 v_uv_w;
   in vec2 v_uv_e;
 
-  uniform sampler2D u_color_map;
   uniform sampler2D u_depth_map;
   uniform sampler2D u_opaque_poly_id_map;
 
   void main() {
-    vec4 color = texture2D(u_color_map, v_uv);
     float center_depth = texture2D(u_depth_map, v_uv).r;
     float center_poly_id = texture2D(u_opaque_poly_id_map, v_uv).r;
 
@@ -60,6 +58,6 @@ constexpr auto edge_marking_frag = R"(
     edge = edge || (texture2D(u_opaque_poly_id_map, v_uv_w).r != center_poly_id && texture2D(u_depth_map, v_uv_w).r < center_depth);
     edge = edge || (texture2D(u_opaque_poly_id_map, v_uv_e).r != center_poly_id && texture2D(u_depth_map, v_uv_e).r < center_depth);
 
-    frag_color = edge ? vec4(1.0, 0.0, 0.0, 1.0) : color;
+    frag_color = vec4(1.0, 1.0, 0.0, edge ? 1.0 : 0.0);
   }
 )";

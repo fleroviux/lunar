@@ -115,6 +115,7 @@ private:
   StaticVec<Batch, 2048> batch_list;
 
   // Edge-marking pass
+  FrameBufferObject* fbo_edge_marking;
   ProgramObject* program_edge_marking;
   VertexArrayObject* quad_vao;
   BufferObject* quad_vbo;
