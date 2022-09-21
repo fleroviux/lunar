@@ -398,6 +398,7 @@ struct GPU {
 
   std::array<u16, 32> toon_table;
   std::array<u16, 8> edge_color_table;
+  bool toon_table_dirty;
 
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };

@@ -675,17 +675,23 @@ void GPU::RenderEdgeMarking() {
 
 void GPU::Render() {
   auto const& poly_ram = polygons[buffer ^ 1];
+
+  if (toon_table_dirty) {
+    renderer->UpdateToonTable(toon_table);
+    toon_table_dirty = false;
+  }
+
   renderer->Render(poly_ram.data, poly_ram.count);
 
   // ------------------------------------
 
-  for (u32 address = 0; address < 0x80000; address += 8) {
-    *(u64*)&vram_texture_copy[address] = vram_texture.Read<u64>(address);
-  }
-
-  for (u32 address = 0; address < 0x20000; address += 8) {
-    *(u64*)&vram_palette_copy[address] = vram_palette.Read<u64>(address);
-  }
+//  for (u32 address = 0; address < 0x80000; address += 8) {
+//    *(u64*)&vram_texture_copy[address] = vram_texture.Read<u64>(address);
+//  }
+//
+//  for (u32 address = 0; address < 0x20000; address += 8) {
+//    *(u64*)&vram_palette_copy[address] = vram_palette.Read<u64>(address);
+//  }
 
   for (auto& render_worker : render_workers) {
     std::lock_guard lock{render_worker.rendering_mutex};

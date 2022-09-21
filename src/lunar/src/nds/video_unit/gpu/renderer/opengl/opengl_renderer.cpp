@@ -26,10 +26,7 @@ OpenGLRenderer::OpenGLRenderer(
   glEnable(GL_STENCIL_TEST);
   glEnable(GL_BLEND);
 
-  // TODO: abstract FBO creation
   {
-    constexpr GLenum k_draw_buffers[2] {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-
     color_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
     opaque_poly_id_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
     depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
@@ -44,6 +41,7 @@ OpenGLRenderer::OpenGLRenderer(
 
   program = ProgramObject::Create(test_vert, test_frag);
   program->SetUniformInt("u_map", 0);
+  program->SetUniformInt("u_toon_table", 1);
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
   vao = VertexArrayObject::Create();
   vao->SetAttribute(0, VertexArrayObject::Attribute{vbo, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), 0});
@@ -68,6 +66,8 @@ OpenGLRenderer::OpenGLRenderer(
   quad_vao->SetAttribute(0, VertexArrayObject::Attribute{quad_vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0});
   quad_vao->SetAttribute(1, VertexArrayObject::Attribute{quad_vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 2 * sizeof(float)});
   quad_vbo->Upload(k_quad_vertices, sizeof(k_quad_vertices) / sizeof(float));
+
+  toon_table_texture = Texture2D::Create(32, 1, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -102,6 +102,23 @@ void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
   }
 
   fbo->Unbind();
+}
+
+void OpenGLRenderer::UpdateToonTable(std::array<u16, 32> const& toon_table) {
+  u32 rgba[32];
+
+  for (int i = 0; i < 32; i++) {
+    u16 bgr555 = toon_table[i];
+
+    // @todo: deduplicate this logic across the codebase
+    int r = (bgr555 >>  0) & 31;
+    int g = (bgr555 >>  5) & 31;
+    int b = (bgr555 >> 10) & 31;
+
+    rgba[i] = 0xFF000000 | r << 19 | g << 11 | b << 3;
+  }
+
+  toon_table_texture->Upload(rgba);
 }
 
 void OpenGLRenderer::RenderRearPlane() {
@@ -169,7 +186,9 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   // this should improve the GPU utilization, as rendering and batch generation can happen in parallel.
 
   program->Use();
+  program->SetUniformInt("u_shading_mode", (int)disp3dcnt.shading_mode);
   vao->Bind();
+  toon_table_texture->Bind(GL_TEXTURE1);
 
   if (disp3dcnt.enable_alpha_blend) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
@@ -193,6 +212,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       auto format = texture_params->format;
       bool use_map = disp3dcnt.enable_textures && format != GPU::TextureParams::Format::None;
       bool use_alpha_test = disp3dcnt.enable_alpha_test;
+      int polygon_id = batch.state.polygon_id;
+      int polygon_mode = batch.state.polygon_mode;
 
       program->SetUniformBool("u_use_map", use_map);
 
@@ -205,9 +226,10 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       }
 
       program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
-      program->SetUniformFloat("u_polygon_id", (float)batch.state.polygon_id / 63.0f);
+      program->SetUniformFloat("u_polygon_id", (float)polygon_id / 63.0f);
+      program->SetUniformInt("u_polygon_mode", polygon_mode);
 
-      if (batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
+      if(batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
         // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
         glDepthFunc(GL_LEQUAL);
       } else {
@@ -216,8 +238,8 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
       glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
-      if(batch.state.polygon_mode == (int) GPU::PolygonParams::Mode::Shadow) {
-        if (batch.state.polygon_id == 0) {
+      if(polygon_mode == (int)GPU::PolygonParams::Mode::Shadow) {
+        if (polygon_id == 0) {
           // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
           glDepthMask(GL_FALSE);
           glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -240,7 +262,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
 
           // Reset the shadow flag for pixels where the polygon ID matches the one already in the stencil buffer.
           glStencilMask(STENCIL_FLAG_SHADOW);
-          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW | batch.state.polygon_id, STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID);
+          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW | polygon_id, STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID);
           glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
           glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
           glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
@@ -257,7 +279,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       } else {
         // Write polygon ID to the stencil buffer and reset the shadow flag
         glStencilMask(STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID),
-        glStencilFunc(GL_ALWAYS, batch.state.polygon_id, 0);
+        glStencilFunc(GL_ALWAYS, polygon_id, 0);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
         if(batch.state.enable_translucent_depth_write || (

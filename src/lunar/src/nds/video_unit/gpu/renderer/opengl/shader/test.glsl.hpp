@@ -37,12 +37,15 @@ constexpr auto test_frag = R"(
 
   uniform float u_polygon_alpha;
   uniform float u_polygon_id;
+  uniform int u_polygon_mode;
+  uniform int u_shading_mode;
 
   uniform bool u_use_map;
   uniform bool u_use_alpha_test;
   uniform float u_alpha_test_threshold;
 
   uniform sampler2D u_map;
+  uniform sampler2D u_toon_table;
 
   void main() {
     vec2 uv = v_uv / vec2(textureSize(u_map, 0));
@@ -56,7 +59,42 @@ constexpr auto test_frag = R"(
         discard;
       }
 
-      color *= texel;
+      switch (u_polygon_mode) {
+        case 0: {
+          // modulation
+          color *= texel;
+          break;
+        }
+        case 1:
+        case 3: {
+          // decal (and textured shadow polygons)
+          color.rgb = mix(color.rgb, texel.rgb, texel.a);
+          break;
+        }
+        case 2: {
+          // shaded
+          vec4 toon_color = texture2D(u_toon_table, vec2(color.r, 0.0));
+
+          if (u_shading_mode == 0) {
+            color.rgb = texel.rgb * toon_color.rgb;
+          } else {
+            color.rgb = min(texel.rgb * color.rgb + toon_color.rgb, vec3(1.0));
+          }
+
+          color.a = texel.a * color.a;
+          break;
+        }
+        default: color = vec4(1.0, 1.0, 0.0, 1.0); break;
+      }
+    } else if (u_polygon_mode == 2) {
+      // shaded polygon mode with no texture
+      vec4 toon_color = texture2D(u_toon_table, vec2(color.r, 0.0));
+
+      if (u_shading_mode == 0) {
+        color.rgb = toon_color.rgb;
+      } else {
+        color.rgb = min(color.rgb + toon_color.rgb, vec3(1.0));
+      }
     }
 
     if (u_discard_translucent_pixels && color.a < 1.0) {

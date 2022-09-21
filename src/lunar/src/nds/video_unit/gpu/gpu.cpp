@@ -53,6 +53,7 @@ void GPU::Reset() {
   material = {};
   toon_table.fill(0x7FFF);
   edge_color_table.fill(0x7FFF);
+  toon_table_dirty = true;
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -78,6 +79,7 @@ void GPU::WriteToonTable(uint offset, u8 value) {
   auto shift = (offset & 1) * 8;
 
   toon_table[index] = (toon_table[index] & ~(0xFF << shift)) | (value << shift);
+  toon_table_dirty = true;
 }
 
 void GPU::WriteEdgeColorTable(uint offset, u8 value) {

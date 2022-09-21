@@ -18,7 +18,7 @@ struct Texture2D {
     GLint internal_format,
     GLenum format,
     GLenum type,
-    void* data = nullptr
+    void const* data = nullptr
   ) -> Texture2D* {
     GLuint texture;
 
@@ -28,7 +28,7 @@ struct Texture2D {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    return new Texture2D{texture};
+    return new Texture2D{width, height, internal_format, format, type, texture};
   }
 
  ~Texture2D() {
@@ -64,9 +64,26 @@ struct Texture2D {
     glBindTexture(GL_TEXTURE_2D, texture);
   }
 
-private:
-  explicit Texture2D(GLuint texture) : texture(texture) {}
+  void Upload(void const* data) {
+    Bind();
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data);
+  }
 
+private:
+  Texture2D(
+    int width,
+    int height,
+    GLint internal_format,
+    GLenum format,
+    GLenum type,
+    GLuint texture
+  ) : width(width), height(height), internal_format(internal_format), format(format), type(type), texture(texture) {}
+
+  int width;
+  int height;
+  GLint internal_format;
+  GLenum format;
+  GLenum type;
   GLuint texture;
 };
 

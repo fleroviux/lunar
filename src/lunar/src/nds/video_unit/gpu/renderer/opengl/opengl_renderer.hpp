@@ -40,6 +40,7 @@ struct OpenGLRenderer final : RendererBase {
  ~OpenGLRenderer() override;
 
   void Render(void const* polygons, int polygon_count) override;
+  void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
 
 private:
   /**
@@ -122,6 +123,8 @@ private:
   ProgramObject* program_edge_marking;
   VertexArrayObject* quad_vao;
   BufferObject* quad_vbo;
+
+  Texture2D* toon_table_texture;
 
   TextureCache texture_cache;
 
