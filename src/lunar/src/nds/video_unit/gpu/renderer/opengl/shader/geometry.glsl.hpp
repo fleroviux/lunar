@@ -7,7 +7,7 @@
 
 #pragma once
 
-constexpr auto test_vert = R"(
+constexpr auto geometry_vert = R"(
   #version 330 core
 
   layout(location = 0) in vec4 a_position;
@@ -24,7 +24,7 @@ constexpr auto test_vert = R"(
   }
 )";
 
-constexpr auto test_frag = R"(
+constexpr auto geometry_frag = R"(
   #version 330 core
 
   layout(location = 0) out vec4 frag_color;

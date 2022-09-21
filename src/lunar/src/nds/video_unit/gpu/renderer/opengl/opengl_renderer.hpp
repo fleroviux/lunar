@@ -110,7 +110,7 @@ private:
   Texture2D* opaque_poly_id_texture;
   Texture2D* depth_texture;
 
-  // Main render pass
+  // Geoemtry render pass
   ProgramObject* program;
   VertexArrayObject* vao;
   BufferObject* vbo;

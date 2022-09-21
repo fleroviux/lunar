@@ -8,7 +8,7 @@
 #include <optional>
 
 #include "shader/edge_marking.glsl.hpp"
-#include "shader/test.glsl.hpp"
+#include "shader/geometry.glsl.hpp"
 #include "opengl_renderer.hpp"
 
 GLuint opengl_color_texture;
@@ -39,7 +39,7 @@ OpenGLRenderer::OpenGLRenderer(
     fbo->DrawBuffers({GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1});
   }
 
-  program = ProgramObject::Create(test_vert, test_frag);
+  program = ProgramObject::Create(geometry_vert, geometry_frag);
   program->SetUniformInt("u_map", 0);
   program->SetUniformInt("u_toon_table", 1);
   vbo = BufferObject::CreateArrayBuffer(sizeof(BufferVertex) * k_total_vertices, GL_DYNAMIC_DRAW);
