@@ -164,6 +164,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
     current_state.polygon_id = polygon.params.polygon_id;
     current_state.polygon_mode = (int)polygon.params.mode;
     current_state.depth_test = (int)polygon.params.depth_test;
+    current_state.translucent = polygon.translucent;
 
     // make sure current batch state is initialized
     if (i == 0) {
@@ -206,7 +207,7 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       alpha = 31;
     }
 
-    if (translucent == (alpha != 31)) {
+    if (translucent == batch.state.translucent) {
       auto texture_params = (GPU::TextureParams const*)batch.state.texture_params;
 
       auto format = texture_params->format;

@@ -196,6 +196,16 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
       poly_ram.count++;
       poly.params = poly_params;
       poly.texture_params = texture_params;
+
+      bool has_translucent_polygon_alpha = poly.params.alpha != 0 && poly.params.alpha != 31;
+
+      bool has_translucent_texture_format = poly.texture_params.format == TextureParams::Format::A3I5 ||
+                                            poly.texture_params.format == TextureParams::Format::A5I3;
+
+      bool uses_texture_alpha = poly.params.mode == PolygonParams::Mode::Modulation ||
+                                poly.params.mode == PolygonParams::Mode::Shaded;
+
+      poly.translucent = has_translucent_polygon_alpha || (has_translucent_texture_format && uses_texture_alpha);
     }
   }
 }

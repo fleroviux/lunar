@@ -224,6 +224,7 @@ struct GPU {
     Vertex* vertices[10];
     PolygonParams params;
     TextureParams texture_params;
+    bool translucent;
   };
 
   void Enqueue(CmdArgPack pack);

@@ -86,6 +86,10 @@ private:
     int polygon_mode; // @todo: use correct data type
     int depth_test; // @todo: use correct data type
 
+    // This flag can be computed from existing render state,
+    // it is just kept here for convenience.
+    bool translucent;
+
     bool operator==(RenderState const& other) const;
 
     bool operator!=(RenderState const& other) const {

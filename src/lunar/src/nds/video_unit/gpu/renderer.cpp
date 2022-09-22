@@ -356,7 +356,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
 
     // Opaque and translucent polygons are rendered in separate passes.
     // TODO: move this check to an earlier point.
-    if (translucent != (alpha != 63)) {
+    if (translucent != poly.translucent) {
       continue;
     }
 
