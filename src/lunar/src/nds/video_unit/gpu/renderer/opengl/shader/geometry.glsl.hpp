@@ -84,7 +84,6 @@ constexpr auto geometry_frag = R"(
           color.a = texel.a * color.a;
           break;
         }
-        default: color = vec4(1.0, 1.0, 0.0, 1.0); break;
       }
     } else if (u_polygon_mode == 2) {
       // shaded polygon mode with no texture
