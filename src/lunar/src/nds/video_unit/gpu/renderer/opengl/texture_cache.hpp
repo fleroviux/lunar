@@ -46,7 +46,7 @@ private:
   Region<4, 131072> const& vram_texture;
   Region<8> const& vram_palette;
 
-  std::unordered_map<u32, Texture2D*> cache;
+  std::unordered_map<u64, Texture2D*> cache;
 };
 
 } // namespace lunar::nds

@@ -24,7 +24,10 @@ auto TextureCache::Get(void const* params_) -> Texture2D* {
 
   auto params = (GPU::TextureParams*)params_;
 
-  if (auto match = cache.find(params->raw_value); match != cache.end()) {
+  // @todo: maybe we don't want to include all bits in the cache key.
+  u64 key = params->raw_value | ((u64)params->palette_base << 32);
+
+  if (auto match = cache.find(key); match != cache.end()) {
     return match->second;
   }
 
@@ -60,8 +63,7 @@ auto TextureCache::Get(void const* params_) -> Texture2D* {
 
   texture->SetWrapBehaviour(wrap_s, wrap_t);
 
-  // @todo: we probably don't want to include all bits in the cache key.
-  cache[params->raw_value] = texture;
+  cache[key] = texture;
   return texture;
 }
 

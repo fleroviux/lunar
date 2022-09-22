@@ -379,6 +379,7 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
 bool OpenGLRenderer::RenderState::operator==(OpenGLRenderer::RenderState const& other) const {
   // @todo: move this back into the header file, once the GPU definition thing is fixed.
   return ((GPU::TextureParams*)texture_params)->raw_value == ((GPU::TextureParams*)other.texture_params)->raw_value &&
+         ((GPU::TextureParams*)texture_params)->palette_base == ((GPU::TextureParams*)other.texture_params)->palette_base &&
          alpha == other.alpha &&
          enable_translucent_depth_write == other.enable_translucent_depth_write &&
          polygon_id == other.polygon_id &&
