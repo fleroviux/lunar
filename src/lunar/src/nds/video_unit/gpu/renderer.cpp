@@ -247,7 +247,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
   auto poly_count = poly_ram.count;
 
   for (int i = 0; i < poly_count; i++) {
-    Polygon const& poly = poly_ram.data[i];
+    Polygon const& poly = *polygons_sorted[i];
 
     int start;
     int end;
@@ -681,7 +681,7 @@ void GPU::Render() {
     toon_table_dirty = false;
   }
 
-  renderer->Render(poly_ram.data, poly_ram.count);
+  renderer->Render((void const**)polygons_sorted.begin(), (int)polygons_sorted.size());
 
   // ------------------------------------
 

@@ -225,6 +225,7 @@ struct GPU {
     PolygonParams params;
     TextureParams texture_params;
     bool translucent;
+    u32 sorting_key;
   };
 
   void Enqueue(CmdArgPack pack);
@@ -360,6 +361,8 @@ struct GPU {
     Polygon data[2048];
   } polygons[2];
 
+  StaticVec<Polygon*, 2048> polygons_sorted;
+
   /// ID of the buffer the geometry engine currently writes into (between 0 and 1).
   int buffer = 0;
 
@@ -440,6 +443,8 @@ struct GPU {
 
   Scheduler::Event* cmd_event = nullptr;
 
+  bool manual_translucent_y_sorting;
+  bool manual_translucent_y_sorting_pending;
   bool use_w_buffer;
   bool use_w_buffer_pending;
   bool swap_buffers_pending;

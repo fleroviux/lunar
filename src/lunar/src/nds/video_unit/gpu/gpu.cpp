@@ -64,6 +64,8 @@ void GPU::Reset() {
   
   for (auto& color : color_buffer) color = {};
 
+  manual_translucent_y_sorting = false;
+  manual_translucent_y_sorting_pending = false;
   use_w_buffer = false;
   use_w_buffer_pending = false;
   swap_buffers_pending = false;
@@ -91,9 +93,20 @@ void GPU::WriteEdgeColorTable(uint offset, u8 value) {
 
 void GPU::SwapBuffers() {
   if (swap_buffers_pending) {
+    polygons_sorted.clear();
+
+    for (int i = 0; i < polygons[buffer].count; i++) {
+      polygons_sorted.push_back(&polygons[buffer].data[i]);
+    }
+
+    std::stable_sort(polygons_sorted.begin(), polygons_sorted.end(), [](auto a, auto b) {
+      return a->sorting_key < b->sorting_key;
+    });
+
     buffer ^= 1;
     vertices[buffer].count = 0;
     polygons[buffer].count = 0;
+    manual_translucent_y_sorting = manual_translucent_y_sorting_pending;
     use_w_buffer = use_w_buffer_pending;
     swap_buffers_pending = false;
     ProcessCommands();

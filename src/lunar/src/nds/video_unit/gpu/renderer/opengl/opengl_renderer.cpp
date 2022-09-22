@@ -85,17 +85,16 @@ OpenGLRenderer::~OpenGLRenderer() {
   delete quad_vbo;
 }
 
-void OpenGLRenderer::Render(void const* polygons_, int polygon_count) {
-  auto polygons = (GPU::Polygon const*)polygons_;
+void OpenGLRenderer::Render(void const** polygons_, int polygon_count) {
+  auto polygons = (GPU::Polygon const**)polygons_;
 
-  SetupAndUploadVBO(polygons, polygon_count);
+  SetupAndUploadVBO(polygons_, polygon_count);
 
   fbo->Bind();
 
   glViewport(0, 0, 512, 384);
   RenderRearPlane();
-  RenderPolygons(polygons, polygon_count, false);
-  RenderPolygons(polygons, polygon_count, true);
+  RenderPolygons(polygons_, polygon_count);
 
   if (disp3dcnt.enable_edge_marking) {
     RenderEdgeMarking();
@@ -133,10 +132,10 @@ void OpenGLRenderer::RenderRearPlane() {
   glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bool translucent) {
+void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
   using Format = GPU::TextureParams::Format;
 
-  auto polygons = (GPU::Polygon const*)polygons_;
+  auto polygons = (GPU::Polygon const**)polygons_;
 
   // @todo: could use different VBOs for opaque and translucent.
 
@@ -153,18 +152,18 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
   };
 
   for (int i = 0; i < polygon_count; i++) {
-    auto& polygon = polygons[i];
+    auto polygon = polygons[i];
 
-    int vertices = (polygon.count - 2) * 3;
+    int vertices = (polygon->count - 2) * 3;
 
     RenderState current_state{};
-    current_state.texture_params = &polygon.texture_params;
-    current_state.alpha = polygon.params.alpha;
-    current_state.enable_translucent_depth_write = polygon.params.enable_translucent_depth_write;
-    current_state.polygon_id = polygon.params.polygon_id;
-    current_state.polygon_mode = (int)polygon.params.mode;
-    current_state.depth_test = (int)polygon.params.depth_test;
-    current_state.translucent = polygon.translucent;
+    current_state.texture_params = &polygon->texture_params;
+    current_state.alpha = polygon->params.alpha;
+    current_state.enable_translucent_depth_write = polygon->params.enable_translucent_depth_write;
+    current_state.polygon_id = polygon->params.polygon_id;
+    current_state.polygon_mode = (int)polygon->params.mode;
+    current_state.depth_test = (int)polygon->params.depth_test;
+    current_state.translucent = polygon->translucent;
 
     // make sure current batch state is initialized
     if (i == 0) {
@@ -207,106 +206,105 @@ void OpenGLRenderer::RenderPolygons(void const* polygons_, int polygon_count, bo
       alpha = 31;
     }
 
-    if (translucent == batch.state.translucent) {
-      auto texture_params = (GPU::TextureParams const*)batch.state.texture_params;
+    auto texture_params = (GPU::TextureParams const*)batch.state.texture_params;
 
-      auto format = texture_params->format;
-      bool use_map = disp3dcnt.enable_textures && format != GPU::TextureParams::Format::None;
-      bool use_alpha_test = disp3dcnt.enable_alpha_test;
-      int polygon_id = batch.state.polygon_id;
-      int polygon_mode = batch.state.polygon_mode;
+    auto format = texture_params->format;
+    bool use_map = disp3dcnt.enable_textures && format != GPU::TextureParams::Format::None;
+    bool use_alpha_test = disp3dcnt.enable_alpha_test;
+    int polygon_id = batch.state.polygon_id;
+    int polygon_mode = batch.state.polygon_mode;
 
-      program->SetUniformBool("u_use_map", use_map);
+    program->SetUniformBool("u_use_map", use_map);
 
-      if(use_map) {
-        texture_cache.Get(texture_params)->Bind(GL_TEXTURE0);
+    if(use_map) {
+      texture_cache.Get(texture_params)->Bind(GL_TEXTURE0);
 
-        // update alpha-test uniforms
-        program->SetUniformBool("u_use_alpha_test", use_alpha_test);
-        program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
-      }
+      // update alpha-test uniforms
+      program->SetUniformBool("u_use_alpha_test", use_alpha_test);
+      program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
+    }
 
-      program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
-      program->SetUniformFloat("u_polygon_id", (float)polygon_id / 63.0f);
-      program->SetUniformInt("u_polygon_mode", polygon_mode);
+    program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
+    program->SetUniformFloat("u_polygon_id", (float)polygon_id / 63.0f);
+    program->SetUniformInt("u_polygon_mode", polygon_mode);
 
-      if(batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
-        // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
-        glDepthFunc(GL_LEQUAL);
+    if(batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
+      // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
+      glDepthFunc(GL_LEQUAL);
+    } else {
+      glDepthFunc(GL_EQUAL);
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+
+    if(polygon_mode == (int)GPU::PolygonParams::Mode::Shadow) {
+      if (polygon_id == 0) {
+        // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
+        glDepthMask(GL_FALSE);
+        glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+        // Set STENCIL_FLAG_SHADOW bit for pixels which fail the depth-buffer test.
+        glStencilMask(STENCIL_FLAG_SHADOW);
+        glStencilFunc(GL_ALWAYS, STENCIL_FLAG_SHADOW, 0);
+        glStencilOp(GL_KEEP, GL_REPLACE, GL_KEEP);
+
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+
+        glDepthMask(GL_TRUE);
+        glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       } else {
-        glDepthFunc(GL_EQUAL);
+        // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
+        glDepthMask(GL_FALSE);
+        glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+        // Reset the shadow flag for pixels where the polygon ID matches the one already in the stencil buffer.
+        glStencilMask(STENCIL_FLAG_SHADOW);
+        glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW | polygon_id, STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+        glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+        glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        // Draw the shadow polygon pixels where the shadow flag is still set.
+        glStencilMask(0);
+        glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW, STENCIL_FLAG_SHADOW);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+
+        glDepthMask(GL_TRUE);
+        glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       }
+    } else {
+      // Write polygon ID to the stencil buffer and reset the shadow flag
+      glStencilMask(STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID),
+      glStencilFunc(GL_ALWAYS, polygon_id, 0);
+      glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-      glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-
-      if(polygon_mode == (int)GPU::PolygonParams::Mode::Shadow) {
-        if (polygon_id == 0) {
-          // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
-          glDepthMask(GL_FALSE);
-          glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-          glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-          // Set STENCIL_FLAG_SHADOW bit for pixels which fail the depth-buffer test.
-          glStencilMask(STENCIL_FLAG_SHADOW);
-          glStencilFunc(GL_ALWAYS, STENCIL_FLAG_SHADOW, 0);
-          glStencilOp(GL_KEEP, GL_REPLACE, GL_KEEP);
-
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-
-          glDepthMask(GL_TRUE);
-          glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-          glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        } else {
-          // @todo: should the depth buffer be updated if alpha==63 (or when translucent depth write is active)
-          glDepthMask(GL_FALSE);
-          glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-          // Reset the shadow flag for pixels where the polygon ID matches the one already in the stencil buffer.
-          glStencilMask(STENCIL_FLAG_SHADOW);
-          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW | polygon_id, STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID);
-          glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-          glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-          glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-          // Draw the shadow polygon pixels where the shadow flag is still set.
-          glStencilMask(0);
-          glStencilFunc(GL_EQUAL, STENCIL_FLAG_SHADOW, STENCIL_FLAG_SHADOW);
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-
-          glDepthMask(GL_TRUE);
-          glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        }
+      // @todo: try to simplify this by checking batch.state.translucent
+      if(batch.state.enable_translucent_depth_write || (
+        alpha == 31 && !texture_params->color0_transparent && (
+          format == Format::Palette2BPP ||
+          format == Format::Palette4BPP ||
+          format == Format::Palette8BPP))) {
+        glDepthMask(GL_TRUE);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
       } else {
-        // Write polygon ID to the stencil buffer and reset the shadow flag
-        glStencilMask(STENCIL_FLAG_SHADOW | STENCIL_MASK_POLY_ID),
-        glStencilFunc(GL_ALWAYS, polygon_id, 0);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        // @todo: make sure that the depth test does not break
 
-        if(batch.state.enable_translucent_depth_write || (
-          alpha == 31 && !texture_params->color0_transparent && (
-            format == Format::Palette2BPP ||
-            format == Format::Palette4BPP ||
-            format == Format::Palette8BPP))) {
-          glDepthMask(GL_TRUE);
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-        } else {
-          // @todo: make sure that the depth test does not break
+        // render opaque pixels to the depth-buffer only first.
+        program->SetUniformBool("u_discard_translucent_pixels", true);
+        glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_TRUE);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+        glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-          // render opaque pixels to the depth-buffer only first.
-          program->SetUniformBool("u_discard_translucent_pixels", true);
-          glColorMaski(0, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-          glDepthMask(GL_TRUE);
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-          glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-          // then render both opaque and translucent pixels without updating the depth buffer.
-          program->SetUniformBool("u_discard_translucent_pixels", false);
-          glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-          glDepthMask(GL_FALSE);
-          glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
-          glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        }
+        // then render both opaque and translucent pixels without updating the depth buffer.
+        program->SetUniformBool("u_discard_translucent_pixels", false);
+        glColorMaski(1, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
+        glDrawArrays(GL_TRIANGLES, batch.vertex_start, batch.vertex_count);
+        glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       }
     }
   }
@@ -345,17 +343,17 @@ void OpenGLRenderer::RenderEdgeMarking() {
   glUseProgram(0);
 }
 
-void OpenGLRenderer::SetupAndUploadVBO(void const* polygons_, int polygon_count) {
-  auto polygons = (GPU::Polygon const*)polygons_;
+void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count) {
+  auto polygons = (GPU::Polygon const**)polygons_;
 
   vertex_buffer.clear();
 
   for (int i = 0; i < polygon_count; i++) {
     auto& polygon = polygons[i];
 
-    for (int j = 1; j < polygon.count - 1; j++) {
+    for (int j = 1; j < polygon->count - 1; j++) {
       for (int k : {0, j, j + 1}) {
-        auto vert = polygon.vertices[k];
+        auto vert = polygon->vertices[k];
 
         float position_x = (float)vert->position.x().raw() / (float)(1 << 12);
         float position_y = (float)vert->position.y().raw() / (float)(1 << 12);

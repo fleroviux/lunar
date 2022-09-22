@@ -17,7 +17,7 @@ namespace lunar::nds {
 struct RendererBase {
   virtual ~RendererBase() = default;
 
-  virtual void Render(void const* polygons, int polygon_count) = 0;
+  virtual void Render(void const** polygons, int polygon_count) = 0;
   virtual void UpdateToonTable(std::array<u16, 32> const& toon_table) = 0;
 };
 

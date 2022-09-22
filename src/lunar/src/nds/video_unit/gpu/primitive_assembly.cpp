@@ -206,6 +206,26 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
                                 poly.params.mode == PolygonParams::Mode::Shaded;
 
       poly.translucent = has_translucent_polygon_alpha || (has_translucent_texture_format && uses_texture_alpha);
+
+      Fixed20x12 min_y = std::numeric_limits<s32>::max();
+      Fixed20x12 max_y = std::numeric_limits<s32>::min();
+
+      for (int i = 0; i < poly.count; i++) {
+        auto const& vert_position = poly.vertices[i]->position;
+
+        Fixed20x12 y = vert_position.y() / vert_position.w();
+
+        if (y < min_y) min_y = y;
+        if (y > max_y) max_y = y;
+      }
+
+      poly.sorting_key = poly.translucent ? 0x8000'0000 : 0;
+
+      if (!poly.translucent || !manual_translucent_y_sorting) {
+        // @todo: using viewport-transformed coordinates might be more accurate.
+        poly.sorting_key |=  (min_y.raw() + 0x2000) & 0x3FFF;
+        poly.sorting_key |= ((max_y.raw() + 0x2000) & 0x3FFF) << 14;
+      }
     }
   }
 }

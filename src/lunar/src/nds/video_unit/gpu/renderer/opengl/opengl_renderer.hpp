@@ -39,7 +39,7 @@ struct OpenGLRenderer final : RendererBase {
 
  ~OpenGLRenderer() override;
 
-  void Render(void const* polygons, int polygon_count) override;
+  void Render(void const** polygons, int polygon_count) override;
   void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
 
 private:
@@ -104,9 +104,9 @@ private:
   };
 
   void RenderRearPlane();
-  void RenderPolygons(void const* polygons, int polygon_count, bool translucent);
+  void RenderPolygons(void const** polygons, int polygon_count);
   void RenderEdgeMarking();
-  void SetupAndUploadVBO(void const* polygons, int polygon_count);
+  void SetupAndUploadVBO(void const** polygons, int polygon_count);
 
   // FBO
   FrameBufferObject* fbo;
