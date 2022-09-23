@@ -120,6 +120,10 @@ void OpenGLRenderer::UpdateToonTable(std::array<u16, 32> const& toon_table) {
   toon_table_texture->Upload(rgba);
 }
 
+void OpenGLRenderer::SetWBufferEnable(bool enable) {
+  use_w_buffer = enable;
+}
+
 void OpenGLRenderer::RenderRearPlane() {
   const float clear_color_0[4] {0, 0, 0, 1};
   const float clear_color_1[4] {0, 0, 0, 0};
@@ -187,6 +191,7 @@ void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
 
   program->Use();
   program->SetUniformInt("u_shading_mode", (int)disp3dcnt.shading_mode);
+  program->SetUniformBool("u_use_w_buffer", use_w_buffer);
   vao->Bind();
   toon_table_texture->Bind(GL_TEXTURE1);
 

@@ -110,6 +110,8 @@ void GPU::SwapBuffers() {
     use_w_buffer = use_w_buffer_pending;
     swap_buffers_pending = false;
     ProcessCommands();
+
+    renderer->SetWBufferEnable(use_w_buffer);
   }
 }
 

@@ -16,10 +16,12 @@ constexpr auto geometry_vert = R"(
 
   out vec4 v_color;
   out vec2 v_uv;
+  out float v_w_coordinate;
 
   void main() {
     v_color = a_color;
     v_uv = a_uv;
+    v_w_coordinate = a_position.w;
     gl_Position = a_position;
   }
 )";
@@ -32,8 +34,10 @@ constexpr auto geometry_frag = R"(
 
   in vec4 v_color;
   in vec2 v_uv;
+  in float v_w_coordinate;
 
   uniform bool u_discard_translucent_pixels;
+  uniform bool u_use_w_buffer;
 
   uniform float u_polygon_alpha;
   uniform float u_polygon_id;
@@ -102,5 +106,16 @@ constexpr auto geometry_frag = R"(
 
     frag_color = color;
     frag_poly_id = vec4(u_polygon_id, 0.0, 0.0, 1.0);
+
+    gl_FragDepth = gl_FragCoord.z;
+
+    if (u_use_w_buffer) {
+      /* On the DS GPU the depth buffer has 24-bit precision and
+       * the w-coordinate is a 32-bit fixed point number with a 12-bit fractional part.
+       * This means the lower 12-bit of the *integer* part span the full 24-bit depth buffer range.
+       * To get a depth value in the -1 to +1 range we should therefore divide the w-coordinate by 2^12.
+       */
+      gl_FragDepth = v_w_coordinate * 0.000244140625;
+    }
   }
 )";

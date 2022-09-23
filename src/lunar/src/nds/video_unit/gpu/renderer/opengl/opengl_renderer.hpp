@@ -41,6 +41,7 @@ struct OpenGLRenderer final : RendererBase {
 
   void Render(void const** polygons, int polygon_count) override;
   void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
+  void SetWBufferEnable(bool enable) override;
 
 private:
   /**
@@ -136,6 +137,8 @@ private:
   GPU::DISP3DCNT const& disp3dcnt;
   GPU::AlphaTest const& alpha_test;
   std::array<u16, 8> const& edge_color_table;
+
+  bool use_w_buffer = false;
 };
 
 } // namespace lunar::nds
