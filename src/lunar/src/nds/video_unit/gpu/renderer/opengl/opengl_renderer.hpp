@@ -60,7 +60,6 @@ private:
 
   enum StencilBufferBits {
     STENCIL_MASK_POLY_ID = 31,
-    STENCIL_FLAG_FOG = 64,
     STENCIL_FLAG_SHADOW = 128
   };
 

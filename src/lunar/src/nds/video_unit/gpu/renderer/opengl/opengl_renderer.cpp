@@ -383,10 +383,11 @@ void OpenGLRenderer::RenderEdgeMarking() {
   program_edge_marking->SetUniformVec3Array("u_edge_colors", edge_colors, 8);
 
   // @todo: do we need to disable edge-marking for pixels covered by translucent polygons?
-  fbo_edge_marking->Bind();
   program_edge_marking->Use();
   depth_texture->Bind(GL_TEXTURE0);
   opaque_poly_id_texture->Bind(GL_TEXTURE1);
+
+  fbo_edge_marking->Bind();
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
   glUseProgram(0);
@@ -401,14 +402,22 @@ void OpenGLRenderer::RenderFog() {
   float color_b = (float)fog_color.b / 31.0f;
   float color_a = (float)fog_color.a / 31.0f;
 
-  fbo_fog->Bind();
   program_fog->Use();
   program_fog->SetUniformFloat("u_fog_offset", offset);
   program_fog->SetUniformFloat("u_fog_width", width);
   program_fog->SetUniformVec4("u_fog_color", color_r, color_g, color_b, color_a);
+
+  if(disp3dcnt.fog_mode == GPU::DISP3DCNT::FogMode::ColorAndAlpha) {
+    program_fog->SetUniformVec4("u_fog_blend_mask", 1.0, 1.0, 1.0, 1.0);
+  } else {
+    program_fog->SetUniformVec4("u_fog_blend_mask", 0.0, 0.0, 0.0, 1.0);
+  }
+
   depth_texture->Bind(GL_TEXTURE0);
   fog_density_table_texture->Bind(GL_TEXTURE1);
   color_texture->Bind(GL_TEXTURE2);
+
+  fbo_fog->Bind();
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
   glUseProgram(0);

@@ -36,6 +36,7 @@ constexpr auto fog_frag = R"(
   uniform float u_fog_offset;
   uniform float u_fog_width;
   uniform vec4 u_fog_color;
+  uniform vec4 u_fog_blend_mask;
 
   void main() {
     float depth = texture2D(u_depth_map, v_uv).r;
@@ -43,6 +44,6 @@ constexpr auto fog_frag = R"(
     float s = (depth - u_fog_offset) / u_fog_width;
     s = texture2D(u_fog_density_table, vec2(s, 0.0)).r;
 
-    frag_color = mix(texture2D(u_color_map, v_uv), u_fog_color, s);
+    frag_color = mix(texture2D(u_color_map, v_uv), u_fog_color, s * u_fog_blend_mask);
   }
 )";
