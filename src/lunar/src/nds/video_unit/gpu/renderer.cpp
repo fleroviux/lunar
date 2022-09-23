@@ -681,6 +681,11 @@ void GPU::Render() {
     toon_table_dirty = false;
   }
 
+  if (fog_density_table_dirty) {
+    renderer->UpdateFogDensityTable(fog_density_table);
+    fog_density_table_dirty = false;
+  }
+
   renderer->Render((void const**)polygons_sorted.begin(), (int)polygons_sorted.size());
 
   // ------------------------------------

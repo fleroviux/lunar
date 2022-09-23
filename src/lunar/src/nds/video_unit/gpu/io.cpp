@@ -166,4 +166,36 @@ void GPU::ClearImageOffset::WriteByte(uint offset, u8 value) {
   }
 }
 
+void GPU::FogColor::WriteByte(uint offset, u8 value) {
+  switch (offset) {
+    case 0: {
+      r = value & 0x1F;
+      g = (g & ~7) | (value >> 5);
+      break;
+    }
+    case 1: {
+      g = (g & 7) | ((value & 3) << 3);
+      b = (value >> 2) & 0x1F;
+      break;
+    }
+    case 2: {
+      a = value & 0x1F;
+      break;
+    }
+  }
+}
+
+void GPU::FogOffset::WriteByte(uint offset, u8 byte) {
+  switch (offset) {
+    case 0: {
+      value = (value & 0x7F00) | byte;
+      break;
+    }
+    case 1: {
+      value = (value & 0x00FF) | ((byte << 8) & 0x7F00);
+      break;
+    }
+  }
+}
+
 } // namespace lunar::nds

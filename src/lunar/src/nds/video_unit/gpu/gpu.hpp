@@ -45,6 +45,7 @@ struct GPU {
   void WriteCommandPort(uint port, u32 value);
   void WriteToonTable(uint offset, u8 value);
   void WriteEdgeColorTable(uint offset, u8 value);
+  void WriteFogDensityTable(uint offset, u8 value);
   void SwapBuffers();
   void WaitForRenderWorkers();
 
@@ -142,6 +143,21 @@ struct GPU {
 
     void WriteByte(uint offset, u8 value);
   } clrimage_offset;
+
+  struct FogColor {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    int a = 0;
+
+    void WriteByte(uint offset, u8 value);
+  } fog_color;
+
+  struct FogOffset {
+    u16 value = 0;
+
+    void WriteByte(uint offset, u8 byte);
+  } fog_offset;
 
 //private:
   enum class MatrixMode {
@@ -402,7 +418,9 @@ struct GPU {
 
   std::array<u16, 32> toon_table;
   std::array<u16, 8> edge_color_table;
+  std::array<u8, 32> fog_density_table;
   bool toon_table_dirty;
+  bool fog_density_table_dirty;
 
   /// GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };

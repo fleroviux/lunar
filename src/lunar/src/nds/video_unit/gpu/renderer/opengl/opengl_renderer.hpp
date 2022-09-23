@@ -34,6 +34,8 @@ struct OpenGLRenderer final : RendererBase {
     Region<8> const& vram_palette,
     GPU::DISP3DCNT const& disp3dcnt,
     GPU::AlphaTest const& alpha_test,
+    GPU::FogColor const& fog_color,
+    GPU::FogOffset const& fog_offset,
     std::array<u16, 8> const& edge_color_table
   );
 
@@ -41,6 +43,7 @@ struct OpenGLRenderer final : RendererBase {
 
   void Render(void const** polygons, int polygon_count) override;
   void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
+  void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) override;
   void SetWBufferEnable(bool enable) override;
 
 private:
@@ -57,7 +60,7 @@ private:
 
   enum StencilBufferBits {
     STENCIL_MASK_POLY_ID = 31,
-    STENCIL_FLAG_EDGE = 64,
+    STENCIL_FLAG_FOG = 64,
     STENCIL_FLAG_SHADOW = 128
   };
 
@@ -107,6 +110,7 @@ private:
   void RenderRearPlane();
   void RenderPolygons(void const** polygons, int polygon_count);
   void RenderEdgeMarking();
+  void RenderFog();
   void SetupAndUploadVBO(void const** polygons, int polygon_count);
 
   // FBO
@@ -129,6 +133,12 @@ private:
   VertexArrayObject* quad_vao;
   BufferObject* quad_vbo;
 
+  // Fog pass
+  FrameBufferObject* fbo_fog;
+  Texture2D* fog_output_texture;
+  ProgramObject* program_fog;
+  Texture2D* fog_density_table_texture;
+
   Texture2D* toon_table_texture;
 
   TextureCache texture_cache;
@@ -136,6 +146,8 @@ private:
   // MMIO passed through from the GPU:
   GPU::DISP3DCNT const& disp3dcnt;
   GPU::AlphaTest const& alpha_test;
+  GPU::FogColor const& fog_color;
+  GPU::FogOffset const& fog_offset;
   std::array<u16, 8> const& edge_color_table;
 
   bool use_w_buffer = false;

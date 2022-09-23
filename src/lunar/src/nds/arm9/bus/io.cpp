@@ -179,6 +179,10 @@ enum Registers {
   REG_CLEAR_COLOR = 0x0400'0350,
   REG_CLEAR_DEPTH = 0x0400'0354,
   REG_CLRIMAGE_OFFSET = 0x0400'0356,
+  REG_FOG_COLOR = 0x0400'0358,
+  REG_FOG_OFFSET = 0x0400'035C,
+  REG_FOG_TABLE_LO = 0x0400'0360,
+  REG_FOG_TABLE_HI = 0x0400'037F,
   REG_TOON_TABLE_LO = 0x0400'0380,
   REG_TOON_TABLE_HI = 0x0400'03BF,
   REG_GXFIFO_LO = 0x0400'0400,
@@ -1779,6 +1783,26 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
     case REG_CLRIMAGE_OFFSET|1:
       gpu_io.clrimage_offset.WriteByte(1, value);
+      break;
+    case REG_FOG_COLOR|0:
+      gpu_io.fog_color.WriteByte(0, value);
+      break;
+    case REG_FOG_COLOR|1:
+      gpu_io.fog_color.WriteByte(1, value);
+      break;
+    case REG_FOG_COLOR|2:
+      gpu_io.fog_color.WriteByte(2, value);
+      break;
+    case REG_FOG_COLOR|3:
+      break;
+    case REG_FOG_OFFSET|0:
+      gpu_io.fog_offset.WriteByte(0, value);
+      break;
+    case REG_FOG_OFFSET|1:
+      gpu_io.fog_offset.WriteByte(1, value);
+      break;
+    case REG_FOG_TABLE_LO ... REG_FOG_TABLE_HI:
+      gpu_io.WriteFogDensityTable(address & 0x1F, value);
       break;
     case REG_TOON_TABLE_LO ... REG_TOON_TABLE_HI:
       gpu_io.WriteToonTable(address & 0x3F, value);

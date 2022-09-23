@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "shader/edge_marking.glsl.hpp"
+#include "shader/fog.glsl.hpp"
 #include "shader/geometry.glsl.hpp"
 #include "opengl_renderer.hpp"
 
@@ -20,8 +21,15 @@ OpenGLRenderer::OpenGLRenderer(
   Region<8> const& vram_palette,
   GPU::DISP3DCNT const& disp3dcnt,
   GPU::AlphaTest const& alpha_test,
+  GPU::FogColor const& fog_color,
+  GPU::FogOffset const& fog_offset,
   std::array<u16, 8> const& edge_color_table
-)   : texture_cache{vram_texture, vram_palette}, disp3dcnt{disp3dcnt}, alpha_test{alpha_test}, edge_color_table{edge_color_table} {
+)   : texture_cache{vram_texture, vram_palette}
+    , disp3dcnt{disp3dcnt}
+    , alpha_test{alpha_test}
+    , fog_color{fog_color}
+    , fog_offset{fog_offset}
+    , edge_color_table{edge_color_table} {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glEnable(GL_BLEND);
@@ -67,6 +75,17 @@ OpenGLRenderer::OpenGLRenderer(
   quad_vao->SetAttribute(1, VertexArrayObject::Attribute{quad_vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 2 * sizeof(float)});
   quad_vbo->Upload(k_quad_vertices, sizeof(k_quad_vertices) / sizeof(float));
 
+  fbo_fog = FrameBufferObject::Create();
+  fog_output_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+  fbo_fog->Attach(GL_COLOR_ATTACHMENT0, fog_output_texture);
+  program_fog = ProgramObject::Create(fog_vert, fog_frag);
+  program_fog->SetUniformInt("u_depth_map", 0);
+  program_fog->SetUniformInt("u_fog_density_table", 1);
+  program_fog->SetUniformInt("u_color_map", 2);
+  fog_density_table_texture = Texture2D::Create(32, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE);
+  fog_density_table_texture->SetMagFilter(GL_LINEAR);
+  fog_density_table_texture->SetWrapBehaviour(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
   toon_table_texture = Texture2D::Create(32, 1, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
 }
 
@@ -80,9 +99,17 @@ OpenGLRenderer::~OpenGLRenderer() {
   delete vao;
   delete vbo;
 
+  delete fbo_edge_marking;
   delete program_edge_marking;
   delete quad_vao;
   delete quad_vbo;
+
+  delete fbo_fog;
+  delete fog_output_texture;
+  delete program_fog;
+  delete fog_density_table_texture;
+
+  delete toon_table_texture;
 }
 
 void OpenGLRenderer::Render(void const** polygons_, int polygon_count) {
@@ -98,6 +125,13 @@ void OpenGLRenderer::Render(void const** polygons_, int polygon_count) {
 
   if (disp3dcnt.enable_edge_marking) {
     RenderEdgeMarking();
+  }
+
+  if (disp3dcnt.enable_fog) {
+    RenderFog();
+    opengl_color_texture = fog_output_texture->Handle();
+  } else {
+    opengl_color_texture = color_texture->Handle();
   }
 
   fbo->Unbind();
@@ -118,6 +152,16 @@ void OpenGLRenderer::UpdateToonTable(std::array<u16, 32> const& toon_table) {
   }
 
   toon_table_texture->Upload(rgba);
+}
+
+void OpenGLRenderer::UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) {
+  u8 data[32];
+
+  for (int i = 0; i < 32; i++) {
+    data[i] = (fog_density_table[i] << 1) | (fog_density_table[i] >> 6);
+  }
+
+  fog_density_table_texture->Upload(data);
 }
 
 void OpenGLRenderer::SetWBufferEnable(bool enable) {
@@ -343,6 +387,28 @@ void OpenGLRenderer::RenderEdgeMarking() {
   program_edge_marking->Use();
   depth_texture->Bind(GL_TEXTURE0);
   opaque_poly_id_texture->Bind(GL_TEXTURE1);
+  quad_vao->Bind();
+  glDrawArrays(GL_QUADS, 0, 4);
+  glUseProgram(0);
+}
+
+void OpenGLRenderer::RenderFog() {
+  float offset = (float)fog_offset.value / (float)0x8000;
+  float width = 32 * (float)(0x400 >> disp3dcnt.fog_depth_shift) / (float)0x8000;
+
+  float color_r = (float)fog_color.r / 31.0f;
+  float color_g = (float)fog_color.g / 31.0f;
+  float color_b = (float)fog_color.b / 31.0f;
+  float color_a = (float)fog_color.a / 31.0f;
+
+  fbo_fog->Bind();
+  program_fog->Use();
+  program_fog->SetUniformFloat("u_fog_offset", offset);
+  program_fog->SetUniformFloat("u_fog_width", width);
+  program_fog->SetUniformVec4("u_fog_color", color_r, color_g, color_b, color_a);
+  depth_texture->Bind(GL_TEXTURE0);
+  fog_density_table_texture->Bind(GL_TEXTURE1);
+  color_texture->Bind(GL_TEXTURE2);
   quad_vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
   glUseProgram(0);

@@ -37,6 +37,8 @@ void GPU::Reset() {
   clear_color = {};
   clear_depth = {};
   clrimage_offset = {};
+  fog_color = {};
+  fog_offset = {};
   
   for (int  i = 0; i < 2; i++) {
     vertices[i] = {};
@@ -53,7 +55,9 @@ void GPU::Reset() {
   material = {};
   toon_table.fill(0x7FFF);
   edge_color_table.fill(0x7FFF);
+  fog_density_table.fill(0);
   toon_table_dirty = true;
+  fog_density_table_dirty = true;
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -73,7 +77,7 @@ void GPU::Reset() {
   SetupRenderWorkers();
 
   renderer = std::make_unique<OpenGLRenderer>(
-    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, edge_color_table);
+    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, fog_color, fog_offset, edge_color_table);
 }
 
 void GPU::WriteToonTable(uint offset, u8 value) {
@@ -89,6 +93,11 @@ void GPU::WriteEdgeColorTable(uint offset, u8 value) {
   auto shift = (offset & 1) * 8;
 
   edge_color_table[index] = (edge_color_table[index] & ~(0xFF << shift)) | (value << shift);
+}
+
+void GPU::WriteFogDensityTable(uint offset, u8 value) {
+  fog_density_table[offset] = value & 0x7F;
+  fog_density_table_dirty = true;
 }
 
 void GPU::SwapBuffers() {
