@@ -29,9 +29,10 @@ constexpr auto fog_frag = R"(
 
   in vec2 v_uv;
 
-  uniform sampler2D u_depth_map;
-  uniform sampler2D u_fog_density_table;
   uniform sampler2D u_color_map;
+  uniform sampler2D u_depth_map;
+  uniform sampler2D u_attribute_map;
+  uniform sampler2D u_fog_density_table;
 
   uniform float u_fog_offset;
   uniform float u_fog_width;
@@ -43,6 +44,9 @@ constexpr auto fog_frag = R"(
 
     float s = (depth - u_fog_offset) / u_fog_width;
     s = texture2D(u_fog_density_table, vec2(s, 0.0)).r;
+
+    // mask fog for pixels that have fog disabled.
+    s *= texture2D(u_attribute_map, v_uv).g;
 
     frag_color = mix(texture2D(u_color_map, v_uv), u_fog_color, s * u_fog_blend_mask);
   }

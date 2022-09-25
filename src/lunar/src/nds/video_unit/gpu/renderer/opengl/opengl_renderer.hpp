@@ -88,6 +88,7 @@ private:
     int polygon_id;
     int polygon_mode; // @todo: use correct data type
     int depth_test; // @todo: use correct data type
+    bool fog;
 
     // This flag can be computed from existing render state,
     // it is just kept here for convenience.
@@ -115,7 +116,7 @@ private:
   // FBO
   FrameBufferObject* fbo;
   Texture2D* color_texture;
-  Texture2D* opaque_poly_id_texture;
+  Texture2D* attribute_texture;
   Texture2D* depth_texture;
 
   // Geoemtry render pass

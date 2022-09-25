@@ -36,13 +36,13 @@ OpenGLRenderer::OpenGLRenderer(
 
   {
     color_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
-    opaque_poly_id_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    attribute_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
     depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
     opengl_color_texture = color_texture->Handle(); // @hack: for reading in the frontend
 
     fbo = FrameBufferObject::Create();
     fbo->Attach(GL_COLOR_ATTACHMENT0, color_texture);
-    fbo->Attach(GL_COLOR_ATTACHMENT1, opaque_poly_id_texture);
+    fbo->Attach(GL_COLOR_ATTACHMENT1, attribute_texture);
     fbo->Attach(GL_DEPTH_STENCIL_ATTACHMENT, depth_texture);
     fbo->DrawBuffers({GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1});
   }
@@ -68,7 +68,7 @@ OpenGLRenderer::OpenGLRenderer(
   fbo_edge_marking->Attach(GL_COLOR_ATTACHMENT0, color_texture);
   program_edge_marking = ProgramObject::Create(edge_marking_vert, edge_marking_frag);
   program_edge_marking->SetUniformInt("u_depth_map", 0);
-  program_edge_marking->SetUniformInt("u_opaque_poly_id_map", 1);
+  program_edge_marking->SetUniformInt("u_attribute_map", 1);
   quad_vao = VertexArrayObject::Create();
   quad_vbo = BufferObject::CreateArrayBuffer(sizeof(k_quad_vertices), GL_STATIC_DRAW);
   quad_vao->SetAttribute(0, VertexArrayObject::Attribute{quad_vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0});
@@ -79,9 +79,10 @@ OpenGLRenderer::OpenGLRenderer(
   fog_output_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
   fbo_fog->Attach(GL_COLOR_ATTACHMENT0, fog_output_texture);
   program_fog = ProgramObject::Create(fog_vert, fog_frag);
-  program_fog->SetUniformInt("u_depth_map", 0);
-  program_fog->SetUniformInt("u_fog_density_table", 1);
-  program_fog->SetUniformInt("u_color_map", 2);
+  program_fog->SetUniformInt("u_color_map", 0);
+  program_fog->SetUniformInt("u_depth_map", 1);
+  program_fog->SetUniformInt("u_attribute_map", 2);
+  program_fog->SetUniformInt("u_fog_density_table", 3);
   fog_density_table_texture = Texture2D::Create(32, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE);
   fog_density_table_texture->SetMagFilter(GL_LINEAR);
   fog_density_table_texture->SetWrapBehaviour(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
@@ -92,7 +93,7 @@ OpenGLRenderer::OpenGLRenderer(
 OpenGLRenderer::~OpenGLRenderer() {
   delete fbo;
   delete color_texture;
-  delete opaque_poly_id_texture;
+  delete attribute_texture;
   delete depth_texture;
 
   delete program;
@@ -211,6 +212,7 @@ void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
     current_state.polygon_id = polygon->params.polygon_id;
     current_state.polygon_mode = (int)polygon->params.mode;
     current_state.depth_test = (int)polygon->params.depth_test;
+    current_state.fog = polygon->params.enable_fog;
     current_state.translucent = polygon->translucent;
 
     // make sure current batch state is initialized
@@ -276,6 +278,7 @@ void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
     program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
     program->SetUniformFloat("u_polygon_id", (float)polygon_id / 63.0f);
     program->SetUniformInt("u_polygon_mode", polygon_mode);
+    program->SetUniformFloat("u_fog_flag", batch.state.fog ? 1.0 : 0.0);
 
     if(batch.state.depth_test == (int)GPU::PolygonParams::DepthTest::Less) {
       // @todo: use GL_LESS. this might require extra care with the per-pixel depth update logic though.
@@ -385,7 +388,7 @@ void OpenGLRenderer::RenderEdgeMarking() {
   // @todo: do we need to disable edge-marking for pixels covered by translucent polygons?
   program_edge_marking->Use();
   depth_texture->Bind(GL_TEXTURE0);
-  opaque_poly_id_texture->Bind(GL_TEXTURE1);
+  attribute_texture->Bind(GL_TEXTURE1);
 
   fbo_edge_marking->Bind();
   quad_vao->Bind();
@@ -413,9 +416,10 @@ void OpenGLRenderer::RenderFog() {
     program_fog->SetUniformVec4("u_fog_blend_mask", 0.0, 0.0, 0.0, 1.0);
   }
 
-  depth_texture->Bind(GL_TEXTURE0);
-  fog_density_table_texture->Bind(GL_TEXTURE1);
-  color_texture->Bind(GL_TEXTURE2);
+  color_texture->Bind(GL_TEXTURE0);
+  depth_texture->Bind(GL_TEXTURE1);
+  attribute_texture->Bind(GL_TEXTURE2);
+  fog_density_table_texture->Bind(GL_TEXTURE3);
 
   fbo_fog->Bind();
   quad_vao->Bind();
@@ -464,7 +468,8 @@ bool OpenGLRenderer::RenderState::operator==(OpenGLRenderer::RenderState const& 
          enable_translucent_depth_write == other.enable_translucent_depth_write &&
          polygon_id == other.polygon_id &&
          polygon_mode == other.polygon_mode &&
-         depth_test == other.depth_test;
+         depth_test == other.depth_test &&
+         fog == other.fog;
 }
 
 } // namespace lunar::nds
