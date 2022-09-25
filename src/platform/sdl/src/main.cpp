@@ -27,15 +27,15 @@ void loop(const char* rom_path) {
     SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
-  auto gl_context = SDL_GL_CreateContext(window);
-
-  glewInit();
-
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetSwapInterval(1);
+
+  auto gl_context = SDL_GL_CreateContext(window);
+
+  glewInit();
 
   auto audio_device = lunar::SDL2AudioDevice{};
   auto input_device = lunar::BasicInputDevice{};
