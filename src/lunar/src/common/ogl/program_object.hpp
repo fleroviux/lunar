@@ -12,7 +12,7 @@
 
 #include "shader_object.hpp"
 
-namespace lunar::nds {
+namespace lunar {
 
 struct ProgramObject {
   static auto Create(char const* vert, char const* frag) -> ProgramObject* {
@@ -99,4 +99,4 @@ private:
   GLuint program;
 };
 
-} // namespace lunar::nds
+} // namespace lunar

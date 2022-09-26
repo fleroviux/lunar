@@ -9,7 +9,7 @@
 
 #include <GL/glew.h>
 
-namespace lunar::nds {
+namespace lunar {
 
 struct Texture2D {
   static auto Create(
@@ -87,4 +87,4 @@ private:
   GLuint texture;
 };
 
-} // namespace lunar::nds
+} // namespace lunar

@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <optional>
 
-namespace lunar::nds {
+namespace lunar {
 
 struct BufferObject {
   static auto CreateArrayBuffer(size_t size, GLenum usage) -> BufferObject* {
@@ -49,4 +49,4 @@ private:
   GLuint buffer = 0;
 };
 
-} // namespace lunar::nds
+} // namespace lunar

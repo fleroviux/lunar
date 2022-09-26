@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <unordered_map>
 
-#include "nds/video_unit/gpu/renderer/opengl/hal/texture_2d.hpp"
+#include "common/ogl/texture_2d.hpp"
 #include "nds/video_unit/vram_region.hpp"
 
 namespace lunar::nds {

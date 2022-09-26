@@ -13,7 +13,7 @@
 
 #include "buffer_object.hpp"
 
-namespace lunar::nds {
+namespace lunar {
 
 struct VertexArrayObject {
   struct Attribute {
@@ -65,4 +65,4 @@ private:
   GLuint vao = 0;
 };
 
-} // namespace lunar::nds
+} // namespace lunar

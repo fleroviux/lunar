@@ -10,7 +10,7 @@
 #include <lunar/log.hpp>
 #include <GL/glew.h>
 
-namespace lunar::nds {
+namespace lunar {
 
 struct ShaderObject {
   static auto CreateVert(char const* source) -> ShaderObject* {
@@ -61,4 +61,4 @@ private:
   GLuint shader;
 };
 
-} // namespace lunar::nds
+} // namespace lunar

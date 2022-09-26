@@ -66,6 +66,12 @@ set(HEADERS
   src/common/math/matrix.hpp
   src/common/math/numeric_traits.hpp
   src/common/math/vector.hpp
+  src/common/ogl/buffer_object.hpp
+  src/common/ogl/frame_buffer_object.hpp
+  src/common/ogl/program_object.hpp
+  src/common/ogl/shader_object.hpp
+  src/common/ogl/texture_2d.hpp
+  src/common/ogl/vertex_array_object.hpp
   src/common/backup_file.hpp
   src/common/fifo.hpp
   src/common/likely.hpp
@@ -95,12 +101,6 @@ set(HEADERS
   src/nds/irq/irq.hpp
   src/nds/keypad/keypad.hpp
   src/nds/timer/timer.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/buffer_object.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/frame_buffer_object.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/program_object.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/shader_object.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/texture_2d.hpp
-  src/nds/video_unit/gpu/renderer/opengl/hal/vertex_array_object.hpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
   src/nds/video_unit/gpu/renderer/opengl/texture_cache.hpp
   src/nds/video_unit/gpu/renderer/renderer_base.hpp

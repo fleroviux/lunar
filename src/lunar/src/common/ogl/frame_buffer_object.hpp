@@ -16,7 +16,7 @@
 
 #include "texture_2d.hpp"
 
-namespace lunar::nds {
+namespace lunar {
 
 struct FrameBufferObject {
   static auto Create() -> FrameBufferObject* {
@@ -58,6 +58,6 @@ private:
   GLuint fbo;
 };
 
-} // namespace lunar::nds
+} // namespace lunar
 
 #pragma clang diagnostic pop
