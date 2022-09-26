@@ -7,7 +7,7 @@
 
 #include <platform/device/ogl_video_device.hpp>
 
-extern GLuint opengl_color_texture;
+extern GLuint opengl_final_texture;
 
 namespace lunar {
 
@@ -51,16 +51,16 @@ void OGLVideoDevice::Present() {
 //  if (buffer_top != nullptr) {
 //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
 //  }
-  glBindTexture(GL_TEXTURE_2D, opengl_color_texture);
+  glBindTexture(GL_TEXTURE_2D, opengl_final_texture);
 
   glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex2f(-1.0f,  1.0f);
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex2f( 1.0f,  1.0f);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex2f( 1.0f,  0.0f);
   glTexCoord2f(0.0f, 0.0f);
+  glVertex2f(-1.0f,  1.0f);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex2f( 1.0f,  1.0f);
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex2f( 1.0f,  0.0f);
+  glTexCoord2f(0.0f, 1.0f);
   glVertex2f(-1.0f,  0.0f);
   glEnd();
 

@@ -5,7 +5,12 @@
  * found in the LICENSE file.
  */
 
+#include "shader/merge_3d.glsl.hpp"
 #include "ppu.hpp"
+
+// @todo: remove this atrocious hack:
+GLuint opengl_final_texture;
+extern GLuint opengl_color_texture;
 
 namespace lunar::nds {
 
@@ -257,5 +262,62 @@ void PPU::Blend(u16  vcount,
 
   target1 = r1 | (g1 << 5) | (b1 << 10);
 }
+
+void PPU::Merge2DWithOpenGL3D() {
+  // @todo: get the real dimensions from the GPU or config:
+  const int output_width  = 512;
+  const int output_height = 384;
+
+  if (!gpu_output) {
+    return;
+  }
+
+  if (!ogl.initialized) {
+    ogl.fbo = FrameBufferObject::Create();
+    ogl.output_texture = Texture2D::Create(output_width, output_height, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    ogl.fbo->Attach(GL_COLOR_ATTACHMENT0, ogl.output_texture);
+
+    ogl.program = ProgramObject::Create(merge_3d_vert, merge_3d_frag);
+    ogl.program->SetUniformInt("u_color2d_map", 0);
+    ogl.program->SetUniformInt("u_color3d_map", 1);
+
+    // @todo: abstract fullscreen quad creation
+    {
+      static constexpr float k_quad_vertices[] {
+        // POSITION | UV
+        -1.0, -1.0,    0.0, 0.0,
+         1.0, -1.0,    1.0, 0.0,
+         1.0,  1.0,    1.0, 1.0,
+        -1.0,  1.0,    0.0, 1.0
+      };
+
+      ogl.vao = VertexArrayObject::Create();
+      ogl.vbo = BufferObject::CreateArrayBuffer(sizeof(k_quad_vertices), GL_STATIC_DRAW);
+      ogl.vao->SetAttribute(0, VertexArrayObject::Attribute{ogl.vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0});
+      ogl.vao->SetAttribute(1, VertexArrayObject::Attribute{ogl.vbo, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 2 * sizeof(float)});
+      ogl.vbo->Upload(k_quad_vertices, sizeof(k_quad_vertices) / sizeof(float));
+    }
+
+    ogl.input_color_texture = Texture2D::Create(256, 192, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+
+    opengl_final_texture = ogl.output_texture->Handle();
+    ogl.initialized = true;
+  }
+
+  ogl.input_color_texture->Upload(output[frame]);
+
+  glViewport(0, 0, output_width, output_height);
+  ogl.fbo->Bind();
+  ogl.program->Use();
+  ogl.input_color_texture->Bind(GL_TEXTURE0);
+  // @todo: fix this mess
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, opengl_color_texture);
+  ogl.vao->Bind();
+  glDrawArrays(GL_QUADS, 0, 4);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glUseProgram(0);
+};
 
 } // namespace lunar::nds

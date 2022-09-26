@@ -439,10 +439,10 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
       for (int k : {0, j, j + 1}) {
         auto vert = polygon->vertices[k];
 
-        float position_x = (float)vert->position.x().raw() / (float)(1 << 12);
-        float position_y = (float)vert->position.y().raw() / (float)(1 << 12);
-        float position_z = (float)vert->position.z().raw() / (float)(1 << 12);
-        float position_w = (float)vert->position.w().raw() / (float)(1 << 12);
+        float position_x =  (float)vert->position.x().raw() / (float)(1 << 12);
+        float position_y = -(float)vert->position.y().raw() / (float)(1 << 12);
+        float position_z =  (float)vert->position.z().raw() / (float)(1 << 12);
+        float position_w =  (float)vert->position.w().raw() / (float)(1 << 12);
 
         float color_a = (float)vert->color.a().raw() / (float)(1 << 6);
         float color_r = (float)vert->color.r().raw() / (float)(1 << 6);

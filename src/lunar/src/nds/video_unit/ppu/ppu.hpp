@@ -14,6 +14,11 @@
 #include <mutex>
 #include <thread>
 
+#include "common/ogl/buffer_object.hpp"
+#include "common/ogl/frame_buffer_object.hpp"
+#include "common/ogl/program_object.hpp"
+#include "common/ogl/texture_2d.hpp"
+#include "common/ogl/vertex_array_object.hpp"
 #include "common/punning.hpp"
 #include "nds/video_unit/gpu/color.hpp"
 #include "nds/video_unit/vram.hpp"
@@ -286,6 +291,8 @@ private:
     }
   }
 
+  void Merge2DWithOpenGL3D();
+
   int id;
   u32 output[2][256 * 192];
   u16 buffer_compose[256];
@@ -346,6 +353,28 @@ private:
   Color4 const* gpu_output;
 
   int frame = 0;
+
+  // For compositing with OpenGL rendered 3D
+  struct OpenGL {
+    bool enabled = true; // @todo: set based on GPU renderer configuration
+    bool initialized = false;
+    bool done = false;
+    FrameBufferObject* fbo = nullptr;
+    Texture2D* output_texture = nullptr;
+    ProgramObject* program = nullptr;
+    VertexArrayObject* vao = nullptr;
+    BufferObject* vbo = nullptr;
+    Texture2D* input_color_texture = nullptr;
+
+   ~OpenGL() {
+      delete fbo;
+      delete output_texture;
+      delete program;
+      delete vao;
+      delete vbo;
+      delete input_color_texture;
+    }
+  } ogl;
 
   static constexpr u16 s_color_transparent = 0x8000;
   static const int s_obj_size[4][4][2];

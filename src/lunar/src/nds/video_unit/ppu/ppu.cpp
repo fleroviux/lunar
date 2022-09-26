@@ -93,6 +93,10 @@ void PPU::Reset() {
 void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
   current_vcount = vcount;
 
+  if (vcount == 0) {
+    ogl.done = false;
+  }
+
   SubmitScanline(vcount, capture_bg_and_3d);
 }
 
@@ -150,6 +154,11 @@ void PPU::OnBlankScanlineBegin(u16 vcount) {
     bgy[0]._current = bgy[0].initial;
     bgx[1]._current = bgx[1].initial;
     bgy[1]._current = bgy[1].initial;
+  }
+
+  if (ogl.enabled && !ogl.done && render_worker.vcount >= 192) {
+    Merge2DWithOpenGL3D();
+    ogl.done = true;
   }
 
   SubmitScanline(vcount, false);
