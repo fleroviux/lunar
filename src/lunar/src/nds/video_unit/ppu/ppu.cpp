@@ -42,6 +42,7 @@ PPU::~PPU() {
 
 void PPU::Reset() {
   memset(output, 0, sizeof(output));
+  memset(attribute_buffer, 0, sizeof(attribute_buffer));
 
   mmio.dispcnt.Reset();
   

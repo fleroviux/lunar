@@ -170,7 +170,7 @@ void OpenGLRenderer::SetWBufferEnable(bool enable) {
 }
 
 void OpenGLRenderer::RenderRearPlane() {
-  const float clear_color_0[4] {0, 0, 0, 1};
+  const float clear_color_0[4] {0, 0, 0, 0};
   const float clear_color_1[4] {0, 0, 0, 0};
 
   // @todo: replace this stub with a real implementation

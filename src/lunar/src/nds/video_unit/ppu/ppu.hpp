@@ -181,7 +181,7 @@ private:
   void RenderLayerOAM(u16 vcount);
   void RenderWindow(uint id, u8 vcount);
 
-  template<bool window, bool blending>
+  template<bool window, bool blending, bool opengl>
   void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
   void ComposeScanline(u16 vcount, int bg_min, int bg_max);
   void Blend(u16 vcount, u16& target1, u16 target2, BlendControl::Effect sfx);
@@ -299,6 +299,7 @@ private:
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
+  u8 attribute_buffer[256 * 192]; // for OpenGL 3D-to-2D compositing
 
   struct ObjectPixel {
     u16 color;
@@ -365,6 +366,7 @@ private:
     VertexArrayObject* vao = nullptr;
     BufferObject* vbo = nullptr;
     Texture2D* input_color_texture = nullptr;
+    Texture2D* input_attribute_texture = nullptr;
 
    ~OpenGL() {
       delete fbo;
@@ -373,6 +375,7 @@ private:
       delete vao;
       delete vbo;
       delete input_color_texture;
+      delete input_attribute_texture;
     }
   } ogl;
 
