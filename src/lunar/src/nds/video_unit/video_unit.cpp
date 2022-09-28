@@ -59,12 +59,16 @@ void VideoUnit::SetVideoDevice(VideoDevice& device) {
   video_device = &device;
 }
 
-auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
+auto VideoUnit::GetOutput(Screen screen) -> std::pair<VideoDevice::ImageType, void const*> {
   switch (screen) {
     case Screen::Top:
-      return display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
+      return display_swap ?
+        std::make_pair(ppu_a.GetOutputImageType(), ppu_a.GetOutput()) :
+        std::make_pair(ppu_b.GetOutputImageType(), ppu_b.GetOutput());
     default:
-      return display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
+      return display_swap ?
+             std::make_pair(ppu_b.GetOutputImageType(), ppu_b.GetOutput()) :
+             std::make_pair(ppu_a.GetOutputImageType(), ppu_a.GetOutput());
   }
 }
 
@@ -83,7 +87,13 @@ void VideoUnit::OnHdrawBegin(int late) {
     ppu_b.WaitForRenderWorker();
 
     if (video_device != nullptr) {
-      video_device->Draw(GetOutput(Screen::Top), GetOutput(Screen::Bottom));
+      auto top = GetOutput(Screen::Top);
+      auto bottom = GetOutput(Screen::Bottom);
+
+      video_device->SetImageTypeTop(top.first);
+      video_device->SetImageTypeBottom(bottom.first);
+
+      video_device->Draw(top.second, bottom.second);
     }
     ppu_a.SwapBuffers();
     ppu_b.SwapBuffers();

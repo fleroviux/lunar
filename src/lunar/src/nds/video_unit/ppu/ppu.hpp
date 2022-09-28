@@ -10,6 +10,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <lunar/device/video_device.hpp>
 #include <lunar/integer.hpp>
 #include <mutex>
 #include <thread>
@@ -71,8 +72,15 @@ struct PPU {
 
   void Reset();
 
-  auto GetOutput() -> u32 const* {
+  auto GetOutput() -> void const* {
+    if(ogl.enabled) {
+      return (void const*)ogl.output_texture->Handle();
+    }
     return &output[frame][0];
+  }
+
+  auto GetOutputImageType() -> VideoDevice::ImageType {
+    return ogl.enabled ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
   }
 
   void SwapBuffers() {

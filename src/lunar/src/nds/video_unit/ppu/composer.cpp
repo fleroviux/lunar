@@ -250,7 +250,7 @@ void PPU::ComposeScanline(u16 vcount, int bg_min, int bg_max) {
     key |= 2;
   }
 
-  if (id == 0 && ogl.enabled) {
+  if (ogl.enabled) {
     key |= 4;
   }
 

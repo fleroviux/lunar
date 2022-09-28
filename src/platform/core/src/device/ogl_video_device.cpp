@@ -33,7 +33,15 @@ OGLVideoDevice::~OGLVideoDevice() {
   glDeleteTextures(2, &textures[0]);
 }
 
-void OGLVideoDevice::Draw(u32 const* top, u32 const* bottom) {
+void OGLVideoDevice::SetImageTypeTop(ImageType type) {
+  image_type_top = type;
+}
+
+void OGLVideoDevice::SetImageTypeBottom(ImageType type) {
+  image_type_bottom = type;
+}
+
+void OGLVideoDevice::Draw(void const* top, void const* bottom) {
   buffer_top = top;
   buffer_bottom = bottom;
 }
@@ -47,11 +55,15 @@ void OGLVideoDevice::Present() {
 
   glActiveTexture(GL_TEXTURE0);
 
-//  glBindTexture(GL_TEXTURE_2D, textures[0]);
-//  if (buffer_top != nullptr) {
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
-//  }
-  glBindTexture(GL_TEXTURE_2D, opengl_final_texture);
+  if(image_type_top == ImageType::Software) {
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+
+    if(buffer_top != nullptr) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
+    }
+  } else {
+    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)buffer_top);
+  }
 
   glBegin(GL_QUADS);
   glTexCoord2f(0.0f, 0.0f);
@@ -64,9 +76,14 @@ void OGLVideoDevice::Present() {
   glVertex2f(-1.0f,  0.0f);
   glEnd();
 
-  glBindTexture(GL_TEXTURE_2D, textures[1]);
-  if (buffer_bottom != nullptr) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_bottom);
+  if(image_type_bottom == ImageType::Software) {
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+    if(buffer_bottom != nullptr) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_bottom);
+    }
+  } else {
+    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)buffer_bottom);
   }
 
   glBegin(GL_QUADS);

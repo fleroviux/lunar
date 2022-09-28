@@ -14,16 +14,21 @@
 namespace lunar {
 
 struct OGLVideoDevice final : VideoDevice {
-  OGLVideoDevice(SDL_Window* window);
+  explicit OGLVideoDevice(SDL_Window* window);
+
  ~OGLVideoDevice() override;
 
-  void Draw(u32 const* top, u32 const* bottom) override;
+  void SetImageTypeTop(ImageType type) override;
+  void SetImageTypeBottom(ImageType type) override;
+  void Draw(void const* top, void const* bottom) override;
   void Present();
 
 private:
   SDL_Window* window;
-  u32 const* buffer_top = nullptr;
-  u32 const* buffer_bottom = nullptr;
+  void const* buffer_top = nullptr;
+  void const* buffer_bottom = nullptr;
+  ImageType image_type_top = ImageType::Software;
+  ImageType image_type_bottom = ImageType::Software;
   GLuint textures[2];
 };
 

@@ -96,6 +96,8 @@ void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
   current_vcount = vcount;
 
   if (vcount == 0) {
+    // @todo: check if the GPU emulation is in OpenGL mode.
+    ogl.enabled = id == 0;
     ogl.done = false;
   }
 
