@@ -112,11 +112,17 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
         if (priority <= prio[0]) {
           layer[1] = layer[0];
           layer[0] = LAYER_OBJ;
-          prio[0] = priority;
           is_alpha_obj = buffer_obj[x].alpha;
+
+          if constexpr(opengl) {
+            prio[0] = priority;
+          }
         } else if (priority <= prio[1]) {
           layer[1] = LAYER_OBJ;
-          prio[1] = priority;
+
+          if constexpr(opengl) {
+            prio[1] = priority;
+          }
         }
       }
 
@@ -193,8 +199,11 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
             u16 pixel_new = buffer_bg[bg][x];
             if (pixel_new != s_color_transparent) {
               pixel[0] = pixel_new;
-              prio[0] = bgcnt[bg].priority;
               layer[0] = bg;
+
+              if constexpr(opengl) {
+                prio[0] = bgcnt[bg].priority;
+              }
               break;
             }   
           }
@@ -241,35 +250,19 @@ void PPU::ComposeScanline(u16 vcount, int bg_min, int bg_max) {
     key |= 2;
   }
 
-  if (ogl.enabled) {
+  if (id == 0 && ogl.enabled) {
     key |= 4;
   }
 
   switch (key) {
-    case 0b000:
-      ComposeScanlineTmpl<false, false, false>(vcount, bg_min, bg_max);
-      break;
-    case 0b001:
-      ComposeScanlineTmpl<true, false, false>(vcount, bg_min, bg_max);
-      break;
-    case 0b010:
-      ComposeScanlineTmpl<false, true, false>(vcount, bg_min, bg_max);
-      break;
-    case 0b011:
-      ComposeScanlineTmpl<true, true, false>(vcount, bg_min, bg_max);
-      break;
-    case 0b100:
-      ComposeScanlineTmpl<false, false, true>(vcount, bg_min, bg_max);
-      break;
-    case 0b101:
-      ComposeScanlineTmpl<true, false, true>(vcount, bg_min, bg_max);
-      break;
-    case 0b110:
-      ComposeScanlineTmpl<false, true, true>(vcount, bg_min, bg_max);
-      break;
-    case 0b111:
-      ComposeScanlineTmpl<true, true, true>(vcount, bg_min, bg_max);
-      break;
+    case 0b000: ComposeScanlineTmpl<false, false, false>(vcount, bg_min, bg_max); break;
+    case 0b001: ComposeScanlineTmpl<true,  false, false>(vcount, bg_min, bg_max); break;
+    case 0b010: ComposeScanlineTmpl<false, true,  false>(vcount, bg_min, bg_max); break;
+    case 0b011: ComposeScanlineTmpl<true,  true,  false>(vcount, bg_min, bg_max); break;
+    case 0b100: ComposeScanlineTmpl<false, false, true >(vcount, bg_min, bg_max); break;
+    case 0b101: ComposeScanlineTmpl<true,  false, true >(vcount, bg_min, bg_max); break;
+    case 0b110: ComposeScanlineTmpl<false, true,  true >(vcount, bg_min, bg_max); break;
+    case 0b111: ComposeScanlineTmpl<true,  true,  true >(vcount, bg_min, bg_max); break;
   }
 }
 
