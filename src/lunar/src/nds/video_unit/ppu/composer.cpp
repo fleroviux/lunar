@@ -112,9 +112,11 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
         if (priority <= prio[0]) {
           layer[1] = layer[0];
           layer[0] = LAYER_OBJ;
+          prio[0] = priority;
           is_alpha_obj = buffer_obj[x].alpha;
         } else if (priority <= prio[1]) {
           layer[1] = LAYER_OBJ;
+          prio[1] = priority;
         }
       }
 
