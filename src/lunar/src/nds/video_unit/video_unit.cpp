@@ -59,19 +59,6 @@ void VideoUnit::SetVideoDevice(VideoDevice& device) {
   video_device = &device;
 }
 
-auto VideoUnit::GetOutput(Screen screen) -> std::pair<VideoDevice::ImageType, void const*> {
-  switch (screen) {
-    case Screen::Top:
-      return display_swap ?
-        std::make_pair(ppu_a.GetOutputImageType(), ppu_a.GetOutput()) :
-        std::make_pair(ppu_b.GetOutputImageType(), ppu_b.GetOutput());
-    default:
-      return display_swap ?
-             std::make_pair(ppu_b.GetOutputImageType(), ppu_b.GetOutput()) :
-             std::make_pair(ppu_a.GetOutputImageType(), ppu_a.GetOutput());
-  }
-}
-
 void VideoUnit::CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq) {
   auto flag_new = dispstat.vcount_setting == vcount.value;
 
@@ -87,13 +74,11 @@ void VideoUnit::OnHdrawBegin(int late) {
     ppu_b.WaitForRenderWorker();
 
     if (video_device != nullptr) {
-      auto top = GetOutput(Screen::Top);
-      auto bottom = GetOutput(Screen::Bottom);
-
-      video_device->SetImageTypeTop(top.first);
-      video_device->SetImageTypeBottom(bottom.first);
-
-      video_device->Draw(top.second, bottom.second);
+      if(display_swap) {
+        video_device->Draw(ppu_a.GetOutputImageType(), ppu_a.GetOutput(), ppu_b.GetOutputImageType(), ppu_b.GetOutput());
+      } else {
+        video_device->Draw(ppu_b.GetOutputImageType(), ppu_b.GetOutput(), ppu_a.GetOutputImageType(), ppu_a.GetOutput());
+      }
     }
     ppu_a.SwapBuffers();
     ppu_b.SwapBuffers();

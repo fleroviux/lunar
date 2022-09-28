@@ -18,17 +18,21 @@ struct OGLVideoDevice final : VideoDevice {
 
  ~OGLVideoDevice() override;
 
-  void SetImageTypeTop(ImageType type) override;
-  void SetImageTypeBottom(ImageType type) override;
-  void Draw(void const* top, void const* bottom) override;
+  void Draw(
+    ImageType top_image_type,
+    void const* top_image,
+    ImageType bottom_image_type,
+    void const* bottom_image
+  ) override;
+
   void Present();
 
 private:
   SDL_Window* window;
-  void const* buffer_top = nullptr;
-  void const* buffer_bottom = nullptr;
-  ImageType image_type_top = ImageType::Software;
-  ImageType image_type_bottom = ImageType::Software;
+  void const* top_image = nullptr;
+  void const* bottom_image = nullptr;
+  ImageType top_image_type = ImageType::Software;
+  ImageType bottom_image_type = ImageType::Software;
   GLuint textures[2];
 };
 

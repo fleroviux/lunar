@@ -19,10 +19,12 @@ struct VideoDevice {
 
   virtual ~VideoDevice() = default;
 
-  virtual void SetImageTypeTop(ImageType type) = 0;
-  virtual void SetImageTypeBottom(ImageType type) = 0;
-
-  virtual void Draw(void const* top, void const* bottom) = 0;
+  virtual void Draw(
+    ImageType top_image_type,
+    void const* top_image,
+    ImageType bottom_image_type,
+    void const* bottom_image
+  ) = 0;
 };
 
 } // namespace lunar::nds

@@ -120,8 +120,6 @@ struct VideoUnit {
   PPU ppu_b;
 
 private:
-  auto GetOutput(Screen screen) -> std::pair<VideoDevice::ImageType, void const*>;
-
   void CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq);
   void OnHdrawBegin(int late);
   void OnHblankBegin(int late);

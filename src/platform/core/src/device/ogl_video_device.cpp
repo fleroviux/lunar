@@ -33,17 +33,16 @@ OGLVideoDevice::~OGLVideoDevice() {
   glDeleteTextures(2, &textures[0]);
 }
 
-void OGLVideoDevice::SetImageTypeTop(ImageType type) {
-  image_type_top = type;
-}
-
-void OGLVideoDevice::SetImageTypeBottom(ImageType type) {
-  image_type_bottom = type;
-}
-
-void OGLVideoDevice::Draw(void const* top, void const* bottom) {
-  buffer_top = top;
-  buffer_bottom = bottom;
+void OGLVideoDevice::Draw(
+  ImageType top_image_type,
+  void const* top_image,
+  ImageType bottom_image_type,
+  void const* bottom_image
+) {
+  this->top_image_type = top_image_type;
+  this->bottom_image_type = bottom_image_type;
+  this->top_image = top_image;
+  this->bottom_image = bottom_image;
 }
 
 void OGLVideoDevice::Present() {
@@ -55,14 +54,14 @@ void OGLVideoDevice::Present() {
 
   glActiveTexture(GL_TEXTURE0);
 
-  if(image_type_top == ImageType::Software) {
+  if(top_image_type == ImageType::Software) {
     glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-    if(buffer_top != nullptr) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_top);
+    if(top_image != nullptr) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, top_image);
     }
   } else {
-    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)buffer_top);
+    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)top_image);
   }
 
   glBegin(GL_QUADS);
@@ -76,14 +75,14 @@ void OGLVideoDevice::Present() {
   glVertex2f(-1.0f,  0.0f);
   glEnd();
 
-  if(image_type_bottom == ImageType::Software) {
+  if(bottom_image_type == ImageType::Software) {
     glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-    if(buffer_bottom != nullptr) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer_bottom);
+    if(bottom_image != nullptr) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 192, 0, GL_BGRA, GL_UNSIGNED_BYTE, bottom_image);
     }
   } else {
-    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)buffer_bottom);
+    glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)bottom_image);
   }
 
   glBegin(GL_QUADS);
