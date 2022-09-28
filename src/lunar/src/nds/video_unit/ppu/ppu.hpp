@@ -72,15 +72,15 @@ struct PPU {
 
   void Reset();
 
-  auto GetOutput() -> void const* {
-    if(ogl.enabled) {
+  auto GetOutput() const -> void const* {
+    if(ogl.display) {
       return (void const*)ogl.output_texture->Handle();
     }
     return &output[frame][0];
   }
 
-  auto GetOutputImageType() -> VideoDevice::ImageType {
-    return ogl.enabled ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
+  auto GetOutputImageType() const -> VideoDevice::ImageType {
+    return ogl.display ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
   }
 
   void SwapBuffers() {
@@ -368,7 +368,8 @@ private:
 
   // For compositing with OpenGL rendered 3D
   struct OpenGL {
-    bool enabled = true; // @todo: set based on GPU renderer configuration
+    bool enabled = false;
+    bool display = false;
     bool initialized = false;
     bool done = false;
     FrameBufferObject* fbo = nullptr;
