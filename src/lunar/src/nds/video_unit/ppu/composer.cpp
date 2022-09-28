@@ -25,8 +25,17 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
   auto const& winin = mmio.winin;
   auto const& winout = mmio.winout;
 
+  bool bg0_is_3d = mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6;
+
   int bg_list[4];
   int bg_count = 0;
+
+  if constexpr(opengl) {
+    // 3D BG0 layer will be handled on the GPU
+    if (bg_min == 0 && bg0_is_3d) {
+      bg_min = 1;
+    }
+  }
 
   // Sort enabled backgrounds by their respective priority in ascending order.
   for (int prio = 3; prio >= 0; prio--) {
@@ -53,9 +62,7 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
   int layer[2];
   u16 pixel[2];
 
-  u8* attribute_line_buffer = &attribute_buffer[vcount * 256];
-
-  bool bg0_is_3d = mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6;
+  size_t buffer_index = 256 * vcount;
 
   for (int x = 0; x < 256; x++) {
     if constexpr (window) {
@@ -130,25 +137,28 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
         }
       }
 
-      auto blend_mode = mmio.bldcnt.sfx;
-      bool have_dst = mmio.bldcnt.targets[0][layer[0]];
-      bool have_src = mmio.bldcnt.targets[1][layer[1]];
       auto sfx_enable = !window || win_layer_enable[LAYER_SFX];
 
-      if (is_alpha_obj && have_src) {
-        // in OpenGL mode blending with the 3D layer will be done in OpenGL
-        if(!opengl || !bg0_is_3d || layer[1] != 0) {
+      if constexpr(opengl) {
+        buffer_ogl_color[0][buffer_index] = ConvertColor(pixel[0]);
+        buffer_ogl_color[1][buffer_index] = ConvertColor(pixel[1]);
+
+        buffer_ogl_attribute[buffer_index] = (sfx_enable   ? 0x8000 : 0) |
+                                             (is_alpha_obj ? 0x4000 : 0) |
+                                             (prio[1] << 8) |
+                                             (prio[0] << 6) |
+                                             (layer[1] << 3) |
+                                              layer[0];
+      } else {
+        auto blend_mode = mmio.bldcnt.sfx;
+        bool have_dst = mmio.bldcnt.targets[0][layer[0]];
+        bool have_src = mmio.bldcnt.targets[1][layer[1]];
+
+        if(is_alpha_obj && have_src) {
           Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
-        }
-      } if (blend_mode == BlendControl::Effect::SFX_BLEND) {
-        // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
-        if (layer[0] == 0 && bg0_is_3d && have_src) {
-          // in OpenGL mode blending with the 3D layer will be done in OpenGL
-          if constexpr(opengl) {
-            // We need to pass the 2D layer pixel colour so that the OpenGL compositor can use it.
-            // That colour however currently is in the bottom layer.
-            pixel[0] = pixel[1];
-          } else {
+        } if(blend_mode == BlendControl::Effect::SFX_BLEND) {
+          // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
+          if(layer[0] == 0 && bg0_is_3d && have_src) {
             auto real_bldalpha = mmio.bldalpha;
 
             // Someone should revoke my coding license for this.
@@ -158,24 +168,14 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
             Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
 
             mmio.bldalpha = real_bldalpha;
-          }
-        } else if (have_dst && have_src) {
-          // in OpenGL mode blending with the 3D layer will be done in OpenGL
-          if(!opengl || !bg0_is_3d || layer[1] != 0) {
+          } else if(have_dst && have_src && sfx_enable) {
             Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
           }
-        }
-      } else if (blend_mode != BlendControl::Effect::SFX_NONE) {
-        if (have_dst && sfx_enable) {
-          // in OpenGL mode brighten/darken on the 3D layer will be done in OpenGL
-          if (!opengl || !bg0_is_3d || layer[0] != 0) {
+        } else if(blend_mode != BlendControl::Effect::SFX_NONE) {
+          if (have_dst && sfx_enable) {
             Blend(vcount, pixel[0], pixel[1], blend_mode);
           }
         }
-      }
-
-      if constexpr(opengl) {
-        attribute_line_buffer[x] = (layer[1] << 3) | layer[0];
       }
     } else {
       pixel[0] = backdrop;
@@ -206,14 +206,20 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
           buffer_obj[x].priority <= prio[0]) {
         pixel[0] = buffer_obj[x].color;
         layer[0] = LAYER_OBJ;
+        prio[0] = buffer_obj[x].priority;
       }
 
       if constexpr(opengl) {
-        attribute_line_buffer[x] = (LAYER_BD << 3) | layer[0];
+        buffer_ogl_color[0][buffer_index] = ConvertColor(pixel[0]);
+        buffer_ogl_attribute[buffer_index] = (prio[0] << 6) | (LAYER_BD << 3) | layer[0];
       }
     }
 
-    buffer_compose[x] = pixel[0] | 0x8000;
+    if constexpr(!opengl) {
+      buffer_compose[x] = pixel[0] | 0x8000;
+    }
+
+    buffer_index++;
   }
 }
 
@@ -327,9 +333,10 @@ void PPU::Merge2DWithOpenGL3D() {
     ogl.fbo->Attach(GL_COLOR_ATTACHMENT0, ogl.output_texture);
 
     ogl.program = ProgramObject::Create(merge_3d_vert, merge_3d_frag);
-    ogl.program->SetUniformInt("u_color2d_map", 0);
-    ogl.program->SetUniformInt("u_color3d_map", 1);
-    ogl.program->SetUniformInt("u_attribute_map", 2);
+    ogl.program->SetUniformInt("u_color2d_1st_map", 0);
+    ogl.program->SetUniformInt("u_color2d_2nd_map", 1);
+    ogl.program->SetUniformInt("u_color3d_map", 2);
+    ogl.program->SetUniformInt("u_attribute_map", 3);
 
     // @todo: abstract fullscreen quad creation
     {
@@ -348,30 +355,36 @@ void PPU::Merge2DWithOpenGL3D() {
       ogl.vbo->Upload(k_quad_vertices, sizeof(k_quad_vertices) / sizeof(float));
     }
 
-    ogl.input_color_texture = Texture2D::Create(256, 192, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
-    ogl.input_attribute_texture = Texture2D::Create(256, 192, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+    for(int i = 0; i < 2; i++) {
+      ogl.input_color_texture[i] = Texture2D::Create(256, 192, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    }
+    ogl.input_attribute_texture = Texture2D::Create(256, 192, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
 
     opengl_final_texture = ogl.output_texture->Handle();
     ogl.initialized = true;
   }
 
-  // @todo: do not use the *final* output frame, but output of ComposeScanline() strictly.
-  ogl.input_color_texture->Upload(output[frame]);
-  ogl.input_attribute_texture->Upload(attribute_buffer);
+  for(int i = 0; i < 2; i++) {
+    ogl.input_color_texture[i]->Upload(buffer_ogl_color[i]);
+  }
+  ogl.input_attribute_texture->Upload(buffer_ogl_attribute);
 
   glViewport(0, 0, output_width, output_height);
   ogl.fbo->Bind();
   ogl.program->Use();
-  ogl.program->SetUniformBool("u_enable_bg0_3d", mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6);
+  ogl.program->SetUniformBool("u_enable_bg0_3d", mmio.dispcnt.enable[ENABLE_BG0] &&
+                                                (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6));
+  ogl.program->SetUniformUInt("u_bg0_priority", mmio.bgcnt[0].priority);
   ogl.program->SetUniformInt("u_blend_control", mmio.bldcnt.hword);
   ogl.program->SetUniformFloat("u_blend_eva", (float)std::min<int>(16, mmio.bldalpha.a) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evb", (float)std::min<int>(16, mmio.bldalpha.b) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evy", (float)std::min<int>(16, mmio.bldy.y) / 16.0f);
-  ogl.input_color_texture->Bind(GL_TEXTURE0);
+  ogl.input_color_texture[0]->Bind(GL_TEXTURE0);
+  ogl.input_color_texture[1]->Bind(GL_TEXTURE1);
   // @todo: fix this mess
-  glActiveTexture(GL_TEXTURE1);
+  glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, opengl_color_texture);
-  ogl.input_attribute_texture->Bind(GL_TEXTURE2);
+  ogl.input_attribute_texture->Bind(GL_TEXTURE3);
   ogl.vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
 

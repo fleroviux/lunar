@@ -69,6 +69,11 @@ struct ProgramObject {
     glUniform1i(GetUniformLocation(name), value);
   }
 
+  void SetUniformUInt(std::string_view name, int value) {
+    Use();
+    glUniform1ui(GetUniformLocation(name), value);
+  }
+
   void SetUniformFloat(std::string_view name, float value) {
     Use();
     glUniform1f(GetUniformLocation(name), value);

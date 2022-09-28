@@ -299,7 +299,10 @@ private:
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
-  u8 attribute_buffer[256 * 192]; // for OpenGL 3D-to-2D compositing
+
+  // buffers for OpenGL 3D-to-2D compositing
+  u32 buffer_ogl_color[2][256 * 192];
+  u16 buffer_ogl_attribute[256 * 192];
 
   struct ObjectPixel {
     u16 color;
@@ -365,7 +368,7 @@ private:
     ProgramObject* program = nullptr;
     VertexArrayObject* vao = nullptr;
     BufferObject* vbo = nullptr;
-    Texture2D* input_color_texture = nullptr;
+    Texture2D* input_color_texture[2] {nullptr};
     Texture2D* input_attribute_texture = nullptr;
 
    ~OpenGL() {
@@ -374,7 +377,8 @@ private:
       delete program;
       delete vao;
       delete vbo;
-      delete input_color_texture;
+      delete input_color_texture[0];
+      delete input_color_texture[1];
       delete input_attribute_texture;
     }
   } ogl;

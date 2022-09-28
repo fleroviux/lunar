@@ -30,71 +30,88 @@ constexpr auto merge_3d_frag = R"(
   #define SFX_BRIGHTEN 2
   #define SFX_DARKEN 3
 
+  #define LAYER_OBJ 4U
+  #define LAYER_BD 5U
+
   layout(location = 0) out vec4 frag_color;
 
   in vec2 v_uv;
 
-  uniform sampler2D u_color2d_map;
+  uniform sampler2D u_color2d_1st_map;
+  uniform sampler2D u_color2d_2nd_map;
   uniform sampler2D u_color3d_map;
   uniform usampler2D u_attribute_map;
 
   // MMIO:
   // @todo: upload this data per-scanline into a SSBO
   uniform bool u_enable_bg0_3d;
+  uniform uint u_bg0_priority;
   uniform int u_blend_control;
   uniform float u_blend_eva;
   uniform float u_blend_evb;
   uniform float u_blend_evy;
 
   void main() {
-    vec4 color_2d = texture2D(u_color2d_map, v_uv);
-    vec4 color_3d = texture2D(u_color3d_map, v_uv);
+    vec4 color_1st = texture(u_color2d_1st_map, v_uv);
+    vec4 color_2nd = texture(u_color2d_2nd_map, v_uv);
     uint attributes = texture(u_attribute_map, v_uv).r;
 
-    uint layer_top = attributes & 7U;
-    uint layer_bottom = (attributes >> 3) & 7U;
+    uint layer_1st = (attributes >> 0) & 7U;
+    uint layer_2nd = (attributes >> 3) & 7U;
+    bool is_alpha_obj = (attributes & 0x4000U) != 0U;
+    bool enable_sfx = (attributes & 0x8000U) != 0U;
+
+    if(u_enable_bg0_3d) {
+      vec4 color_3d = texture(u_color3d_map, v_uv);
+
+      if (color_3d.a != 0.0) { // @todo: confirm this logic
+        uint priority_1st = (attributes >> 6) & 3U;
+        uint priority_2nd = (attributes >> 8) & 3U;
+
+        if(layer_1st == LAYER_BD || u_bg0_priority < priority_1st || (u_bg0_priority == priority_1st && layer_1st != LAYER_OBJ)) {
+          layer_2nd = layer_1st;
+          color_2nd = color_1st;
+          layer_1st = 0U;
+          color_1st = color_3d;
+          is_alpha_obj = false;
+        } else if(layer_2nd == LAYER_BD || u_bg0_priority < priority_2nd || (u_bg0_priority == priority_2nd && layer_2nd != LAYER_OBJ)) {
+          layer_2nd = 0U;
+          color_2nd = color_3d;
+        }
+      }
+    }
+
+    bool have_1st_target = (u_blend_control & (  1 << layer_1st)) != 0;
+    bool have_2nd_target = (u_blend_control & (256 << layer_2nd)) != 0;
 
     int blend_effect = (u_blend_control >> 6) & 3;
 
-    bool have_1st_target = (u_blend_control & (  1 << layer_top   )) != 0;
-    bool have_2nd_target = (u_blend_control & (256 << layer_bottom)) != 0;
-
-    if(u_enable_bg0_3d) {
-      if(layer_top == 0U) {
-        frag_color = vec4(color_3d.rgb, 1.0);
-
-        switch(blend_effect) {
-          case SFX_BLEND: {
-            if(have_2nd_target) {
-              frag_color.rgb = mix(color_2d.rgb, color_3d.rgb, color_3d.a);
-            }
-            break;
-          }
-          case SFX_BRIGHTEN: {
-            if(have_1st_target) {
-              frag_color.rgb = mix(color_3d.rgb, vec3(1.0), u_blend_evy);
-            }
-            break;
-          }
-          case SFX_DARKEN: {
-            if(have_1st_target) {
-              frag_color.rgb = mix(color_3d.rgb, vec3(0.0), u_blend_evy);
-            }
-            break;
-          }
+    if(is_alpha_obj && have_2nd_target) {
+      color_1st.rgb = color_1st.rgb * u_blend_eva + color_2nd.rgb * u_blend_evb;
+    } else if(blend_effect == SFX_BLEND) {
+      if(have_2nd_target) {
+        if(layer_1st == 0U && u_enable_bg0_3d) {
+          // @todo: should sfx_enable be respected in this scenario?
+          color_1st.rgb = mix(color_2nd.rgb, color_1st.rgb, color_1st.a);
+        } else if(have_1st_target && enable_sfx) {
+          color_1st.rgb = color_1st.rgb * u_blend_eva + color_2nd.rgb * u_blend_evb;
         }
-      } else if(
-          layer_bottom == 0U &&
-          blend_effect == SFX_BLEND &&
-          have_1st_target &&
-          have_2nd_target
-      ) {
-        frag_color = vec4(color_2d.rgb * u_blend_eva + color_3d.rgb * u_blend_evb, 1.0);
-      } else {
-        frag_color = color_2d;
       }
-    } else {
-      frag_color = color_2d;
+    } else if(have_1st_target && enable_sfx){
+      // none, brighten, darken
+      switch(blend_effect) {
+        case SFX_BRIGHTEN: {
+          color_1st.rgb += (1.0 - color_1st.rgb) * u_blend_evy;
+          break;
+        }
+        case SFX_DARKEN: {
+          color_1st.rgb -= color_1st.rgb * u_blend_evy;
+          break;
+        }
+      }
     }
+
+    frag_color.rgb = color_1st.rgb;
+    frag_color.a = 1.0;
   }
 )";
