@@ -13,6 +13,7 @@
 #include "opengl_renderer.hpp"
 
 GLuint opengl_color_texture;
+GLuint opengl_color_fbo;
 
 namespace lunar::nds {
 
@@ -45,6 +46,7 @@ OpenGLRenderer::OpenGLRenderer(
     fbo->Attach(GL_COLOR_ATTACHMENT1, attribute_texture);
     fbo->Attach(GL_DEPTH_STENCIL_ATTACHMENT, depth_texture);
     fbo->DrawBuffers({GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1});
+    opengl_color_fbo = fbo->Handle();
   }
 
   program = ProgramObject::Create(geometry_vert, geometry_frag);

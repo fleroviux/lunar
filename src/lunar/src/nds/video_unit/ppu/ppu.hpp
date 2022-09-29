@@ -73,14 +73,14 @@ struct PPU {
   void Reset();
 
   auto GetOutput() const -> void const* {
-    if(ogl.display) {
+    if(ogl.enabled) {
       return (void const*)ogl.output_texture->Handle();
     }
     return &output[frame][0];
   }
 
   auto GetOutputImageType() const -> VideoDevice::ImageType {
-    return ogl.display ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
+    return ogl.enabled ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
   }
 
   void SwapBuffers() {
@@ -311,6 +311,7 @@ private:
   // buffers for OpenGL 3D-to-2D compositing
   u32 buffer_ogl_color[2][256 * 192];
   u16 buffer_ogl_attribute[256 * 192];
+  u32 buffer_ogl_captured_3d[512 * 384]; // @todo: handle different resolutions
 
   struct ObjectPixel {
     u16 color;
@@ -369,9 +370,8 @@ private:
   // For compositing with OpenGL rendered 3D
   struct OpenGL {
     bool enabled = false;
-    bool display = false;
     bool initialized = false;
-    bool done = false;
+    bool done = true;
     FrameBufferObject* fbo = nullptr;
     Texture2D* output_texture = nullptr;
     ProgramObject* program = nullptr;

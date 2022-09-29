@@ -29,6 +29,10 @@ struct FrameBufferObject {
     glDeleteFramebuffers(1, &fbo);
   }
 
+  auto Handle() -> GLuint {
+    return fbo;
+  }
+
   void Bind() {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   }

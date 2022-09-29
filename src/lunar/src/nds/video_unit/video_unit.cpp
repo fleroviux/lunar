@@ -11,6 +11,9 @@
 
 #include "video_unit.hpp"
 
+// @todo: remove this nasty hack.
+extern GLuint opengl_color_fbo;
+
 namespace lunar::nds {
 
 static constexpr int kDrawingLines = 192;

@@ -10,6 +10,8 @@
 
 #include "ppu.hpp"
 
+extern GLuint opengl_color_fbo;
+
 namespace lunar::nds {
 
 PPU::PPU(
@@ -97,8 +99,7 @@ void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
 
   if (vcount == 0) {
     // @todo: check if the GPU emulation is in OpenGL mode.
-    ogl.display = id == 0 && mmio.dispcnt.display_mode == 1;
-    ogl.enabled = ogl.display || capture_bg_and_3d;
+    ogl.enabled = id == 0 && mmio.dispcnt.display_mode == 1 && !capture_bg_and_3d;
     ogl.done = false;
   }
 
@@ -272,12 +273,26 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   if (mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      for (uint x = 0; x < 256; x++) {
-        auto& color = gpu_output[vcount * 256 + x];
-        if (color.a() != 0) {
-          buffer_bg[0][x] = color.to_rgb555();
-        } else {
-          buffer_bg[0][x] = s_color_transparent;
+      // @todo: check that the GPU is in OpenGL mode and that BG+3D is captured.
+      if(true) {
+        for(int x = 0; x < 256; x++) {
+          u32 argb8888 = buffer_ogl_captured_3d[(vcount * 512 + x) * 2];
+
+          uint a = (argb8888 >> 24) & 0xFF;
+          uint r = (argb8888 >> 16) & 0xFF;
+          uint g = (argb8888 >>  8) & 0xFF;
+          uint b = (argb8888 >>  0) & 0xFF;
+
+          buffer_bg[0][x] = a == 0 ? 0x8000 : (r >> 3 | g >> 3 << 5 | b >> 3 << 10);
+        }
+      } else {
+        for(uint x = 0; x < 256; x++) {
+          auto &color = gpu_output[vcount * 256 + x];
+          if(color.a() != 0) {
+            buffer_bg[0][x] = color.to_rgb555();
+          } else {
+            buffer_bg[0][x] = s_color_transparent;
+          }
         }
       }
     } else {
@@ -382,6 +397,18 @@ void PPU::SubmitScanline(u16 vcount, bool capture_bg_and_3d) {
   }
 
   if (vcount == 0) {
+    // When the PPU output is captured, we do software compositing, because we have to deal with
+    // capturing scanline-by-scanline when the OpenGL compositor works on a frame-by-frame basis.
+    // @todo: check that this condition is met
+    if(true) {
+      // @todo: handle different resolutions
+      // @todo: this does not handle fog properly
+      glBindFramebuffer(GL_FRAMEBUFFER, opengl_color_fbo);
+      glReadBuffer(GL_COLOR_ATTACHMENT0);
+      glReadPixels(0, 0, 512, 384, GL_BGRA, GL_UNSIGNED_BYTE, buffer_ogl_captured_3d);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
     CopyVRAM(vram_bg, render_vram_bg, vram_bg_dirty);
     CopyVRAM(vram_obj, render_vram_obj, vram_obj_dirty);
     CopyVRAM(extpal_bg, render_extpal_bg, extpal_bg_dirty);

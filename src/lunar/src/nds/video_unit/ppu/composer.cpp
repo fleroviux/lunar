@@ -316,8 +316,6 @@ void PPU::Merge2DWithOpenGL3D() {
   const int output_width  = 512;
   const int output_height = 384;
 
-  // @todo: handle other display modes (fallback to software framebuffer in that case?)
-
   if (!gpu_output) {
     return;
   }
