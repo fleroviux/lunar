@@ -41,10 +41,20 @@ struct OpenGLRenderer final : RendererBase {
 
  ~OpenGLRenderer() override;
 
+  auto GetOutput() -> void const* override {
+    return (void const*)(std::uintptr_t)final_output_texture->Handle();
+  }
+
+  auto GetOutputImageType() const -> VideoDevice::ImageType override {
+    return VideoDevice::ImageType::OpenGL;
+  }
+
   void Render(void const** polygons, int polygon_count) override;
   void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
   void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) override;
   void SetWBufferEnable(bool enable) override;
+
+  void Capture(u16* buffer, int vcount, int width, bool display_capture) override;
 
 private:
   /**
@@ -150,7 +160,12 @@ private:
   GPU::FogOffset const& fog_offset;
   std::array<u16, 8> const& edge_color_table;
 
+  Texture2D* final_output_texture;
+
   bool use_w_buffer = false;
+
+  bool captured_current_frame = false;
+  u32 capture[512 * 384];
 };
 
 } // namespace lunar::nds

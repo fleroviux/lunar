@@ -8,19 +8,25 @@
 #pragma once
 
 #include <array>
+#include <lunar/device/video_device.hpp>
 #include <lunar/integer.hpp>
 
 namespace lunar::nds {
 
-// TODO: come up with a way to nicely share definitions between the GPU and renderer.
+// @todo: come up with a way to nicely share definitions between the GPU and renderer.
 
 struct RendererBase {
   virtual ~RendererBase() = default;
+
+  virtual auto GetOutput() -> void const* = 0;
+  virtual auto GetOutputImageType() const -> VideoDevice::ImageType = 0;
 
   virtual void Render(void const** polygons, int polygon_count) = 0;
   virtual void UpdateToonTable(std::array<u16, 32> const& toon_table) = 0;
   virtual void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) = 0;
   virtual void SetWBufferEnable(bool enable) = 0;
+
+  virtual void Capture(u16* buffer, int vcount, int width, bool display_capture) = 0;
 };
 
 } // namespace lunar::nds

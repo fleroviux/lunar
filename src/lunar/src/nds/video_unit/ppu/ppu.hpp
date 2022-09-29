@@ -22,6 +22,7 @@
 #include "common/ogl/vertex_array_object.hpp"
 #include "common/punning.hpp"
 #include "nds/video_unit/gpu/color.hpp"
+#include "nds/video_unit/gpu/gpu.hpp"
 #include "nds/video_unit/vram.hpp"
 #include "registers.hpp"
 
@@ -36,7 +37,7 @@ struct PPU {
     VRAM const& vram,
     u8   const* pram,
     u8   const* oam,
-    Color4 const* gpu_output = nullptr
+    GPU* gpu = nullptr
   );
 
  ~PPU();
@@ -311,7 +312,6 @@ private:
   // buffers for OpenGL 3D-to-2D compositing
   u32 buffer_ogl_color[2][256 * 192];
   u16 buffer_ogl_attribute[256 * 192];
-  u32 buffer_ogl_captured_3d[512 * 384]; // @todo: handle different resolutions
 
   struct ObjectPixel {
     u16 color;
@@ -362,8 +362,7 @@ private:
 
   int current_vcount;
 
-  // Full-frame output of the 3D engine 
-  Color4 const* gpu_output;
+  GPU* gpu;
 
   int frame = 0;
 

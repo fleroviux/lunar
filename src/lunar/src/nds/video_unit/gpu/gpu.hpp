@@ -61,7 +61,18 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
+
+  auto GetOutput() -> void const* {
+    return renderer->GetOutput();
+  }
+
+  auto GetOutputImageType() const -> VideoDevice::ImageType {
+    return renderer->GetOutputImageType();
+  }
+
+  void Capture(u16* buffer, int vcount, int width, bool display_capture) {
+    renderer->Capture(buffer, vcount, width, display_capture);
+  }
 
   struct DISP3DCNT {
     enum class Shading {

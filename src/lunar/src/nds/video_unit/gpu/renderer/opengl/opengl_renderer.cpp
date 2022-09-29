@@ -12,9 +12,6 @@
 #include "shader/geometry.glsl.hpp"
 #include "opengl_renderer.hpp"
 
-GLuint opengl_color_texture;
-GLuint opengl_color_fbo;
-
 namespace lunar::nds {
 
 OpenGLRenderer::OpenGLRenderer(
@@ -39,14 +36,12 @@ OpenGLRenderer::OpenGLRenderer(
     color_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
     attribute_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
     depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
-    opengl_color_texture = color_texture->Handle(); // @hack: for reading in the frontend
 
     fbo = FrameBufferObject::Create();
     fbo->Attach(GL_COLOR_ATTACHMENT0, color_texture);
     fbo->Attach(GL_COLOR_ATTACHMENT1, attribute_texture);
     fbo->Attach(GL_DEPTH_STENCIL_ATTACHMENT, depth_texture);
     fbo->DrawBuffers({GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1});
-    opengl_color_fbo = fbo->Handle();
   }
 
   program = ProgramObject::Create(geometry_vert, geometry_frag);
@@ -90,6 +85,8 @@ OpenGLRenderer::OpenGLRenderer(
   fog_density_table_texture->SetWrapBehaviour(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
   toon_table_texture = Texture2D::Create(32, 1, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+
+  final_output_texture = color_texture;
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -132,12 +129,14 @@ void OpenGLRenderer::Render(void const** polygons_, int polygon_count) {
 
   if (disp3dcnt.enable_fog) {
     RenderFog();
-    opengl_color_texture = fog_output_texture->Handle();
+    final_output_texture = fog_output_texture;
   } else {
-    opengl_color_texture = color_texture->Handle();
+    final_output_texture = color_texture;
   }
 
   fbo->Unbind();
+
+  captured_current_frame = false;
 }
 
 void OpenGLRenderer::UpdateToonTable(std::array<u16, 32> const& toon_table) {
@@ -462,8 +461,40 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
   vbo->Upload(vertex_buffer.data(), vertex_buffer.size());
 }
 
+void OpenGLRenderer::Capture(u16* buffer, int vcount, int width, bool display_capture) {
+  // @todo: support different upscale factors.
+  if(!captured_current_frame) {
+    if(disp3dcnt.enable_fog) {
+      fbo_fog->Bind();
+    } else {
+      fbo->Bind();
+    }
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadPixels(0, 0, 512, 384, GL_BGRA, GL_UNSIGNED_BYTE, capture);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    captured_current_frame = true;
+  }
+
+  for(int x = 0; x < width; x++) {
+    u32 argb8888 = capture[(vcount * 512 + x) * 2];
+
+    uint a = (argb8888 >> 24) & 0xFF;
+    uint r = (argb8888 >> 16) & 0xFF;
+    uint g = (argb8888 >>  8) & 0xFF;
+    uint b = (argb8888 >>  0) & 0xFF;
+
+    u16 rgb555 = r >> 3 | g >> 3 << 5 | b >> 3 << 10;
+
+    if (display_capture) {
+      buffer[x] = rgb555 | (a != 0 ? 0x8000 : 0);
+    } else {
+      buffer[x] = a == 0 ? 0x8000 : rgb555;
+    }
+  }
+}
+
 bool OpenGLRenderer::RenderState::operator==(OpenGLRenderer::RenderState const& other) const {
-  // @todo: move this back into the header file, once the GPU definition thing is fixed.
   return ((GPU::TextureParams*)texture_params)->raw_value == ((GPU::TextureParams*)other.texture_params)->raw_value &&
          ((GPU::TextureParams*)texture_params)->palette_base == ((GPU::TextureParams*)other.texture_params)->palette_base &&
          alpha == other.alpha &&

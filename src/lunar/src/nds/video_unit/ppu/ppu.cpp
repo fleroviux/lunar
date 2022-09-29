@@ -10,8 +10,6 @@
 
 #include "ppu.hpp"
 
-extern GLuint opengl_color_fbo;
-
 namespace lunar::nds {
 
 PPU::PPU(
@@ -19,7 +17,7 @@ PPU::PPU(
   VRAM const& vram,
   u8   const* pram,
   u8   const* oam,
-  Color4 const* gpu_output
+  GPU* gpu
 )   : id(id)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
@@ -28,7 +26,7 @@ PPU::PPU(
     , vram_lcdc(vram.region_lcdc)
     , pram(pram)
     , oam(oam)
-    , gpu_output(gpu_output) {
+    , gpu(gpu) {
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
@@ -98,8 +96,9 @@ void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
   current_vcount = vcount;
 
   if (vcount == 0) {
-    // @todo: check if the GPU emulation is in OpenGL mode.
-    ogl.enabled = id == 0 && mmio.dispcnt.display_mode == 1 && !capture_bg_and_3d;
+    ogl.enabled = gpu && gpu->GetOutputImageType() == VideoDevice::ImageType::OpenGL &&
+                  mmio.dispcnt.display_mode == 1 &&
+                 !capture_bg_and_3d;
     ogl.done = false;
   }
 
@@ -258,54 +257,33 @@ void PPU::RenderMainMemoryDisplay(u16 vcount) {
 void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   auto const& mmio = mmio_copy[vcount];
 
-  if (mmio.dispcnt.forced_blank) {
-    for (uint x = 0; x < 256; x++) {
+  if(mmio.dispcnt.forced_blank) {
+    for(uint x = 0; x < 256; x++) {
       buffer_compose[x] = 0xFFFF;
     }
     return;
   }
 
   // TODO: on a real Nintendo DS all sprites are rendered one scanline ahead.
-  if (mmio.dispcnt.enable[ENABLE_OBJ]) {
+  if(mmio.dispcnt.enable[ENABLE_OBJ]) {
     RenderLayerOAM(vcount);
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG0]) {
+  if(mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
-    if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      // @todo: check that the GPU is in OpenGL mode and that BG+3D is captured.
-      if(true) {
-        for(int x = 0; x < 256; x++) {
-          u32 argb8888 = buffer_ogl_captured_3d[(vcount * 512 + x) * 2];
-
-          uint a = (argb8888 >> 24) & 0xFF;
-          uint r = (argb8888 >> 16) & 0xFF;
-          uint g = (argb8888 >>  8) & 0xFF;
-          uint b = (argb8888 >>  0) & 0xFF;
-
-          buffer_bg[0][x] = a == 0 ? 0x8000 : (r >> 3 | g >> 3 << 5 | b >> 3 << 10);
-        }
-      } else {
-        for(uint x = 0; x < 256; x++) {
-          auto &color = gpu_output[vcount * 256 + x];
-          if(color.a() != 0) {
-            buffer_bg[0][x] = color.to_rgb555();
-          } else {
-            buffer_bg[0][x] = s_color_transparent;
-          }
-        }
-      }
+    if(mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
+      gpu->Capture(buffer_bg[0], vcount, 256, false);
     } else {
       RenderLayerText(0, vcount);
     }
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG1] && mmio.dispcnt.bg_mode != 6) {
+  if(mmio.dispcnt.enable[ENABLE_BG1] && mmio.dispcnt.bg_mode != 6) {
     RenderLayerText(1, vcount);
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG2]) {
-    switch (mmio.dispcnt.bg_mode) {
+  if(mmio.dispcnt.enable[ENABLE_BG2]) {
+    switch(mmio.dispcnt.bg_mode) {
       case 0:
       case 1:
       case 3: RenderLayerText(2, vcount); break;
@@ -316,7 +294,7 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
     }
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG3]) {
+  if(mmio.dispcnt.enable[ENABLE_BG3]) {
     switch (mmio.dispcnt.bg_mode) {
       case 0: RenderLayerText(3, vcount); break;
       case 1:
@@ -397,16 +375,10 @@ void PPU::SubmitScanline(u16 vcount, bool capture_bg_and_3d) {
   }
 
   if (vcount == 0) {
-    // When the PPU output is captured, we do software compositing, because we have to deal with
-    // capturing scanline-by-scanline when the OpenGL compositor works on a frame-by-frame basis.
-    // @todo: check that this condition is met
-    if(true) {
-      // @todo: handle different resolutions
-      // @todo: this does not handle fog properly
-      glBindFramebuffer(GL_FRAMEBUFFER, opengl_color_fbo);
-      glReadBuffer(GL_COLOR_ATTACHMENT0);
-      glReadPixels(0, 0, 512, 384, GL_BGRA, GL_UNSIGNED_BYTE, buffer_ogl_captured_3d);
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // @hack: make sure that glReadPixels() is called on the main thread,
+    // by issuing a dummy call to Capture()
+    if(capture_bg_and_3d && gpu->GetOutputImageType() == VideoDevice::ImageType::OpenGL) {
+      gpu->Capture(nullptr, 0, 0, false);
     }
 
     CopyVRAM(vram_bg, render_vram_bg, vram_bg_dirty);

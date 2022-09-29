@@ -8,10 +8,6 @@
 #include "shader/merge_3d.glsl.hpp"
 #include "ppu.hpp"
 
-// @todo: remove this atrocious hack:
-GLuint opengl_final_texture;
-extern GLuint opengl_color_texture;
-
 namespace lunar::nds {
 
 template<bool window, bool blending, bool opengl>
@@ -169,8 +165,9 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
           if(layer[0] == 0 && bg0_is_3d && have_src) {
             auto real_bldalpha = mmio.bldalpha;
 
+            // @todo: fixme: this is broken
             // Someone should revoke my coding license for this.
-            mmio.bldalpha.a = gpu_output[vcount * 256 + x].a().raw() >> 2;
+            mmio.bldalpha.a = 8;//gpu_output[vcount * 256 + x].a().raw() >> 2;
             mmio.bldalpha.b = 16 - mmio.bldalpha.a;
 
             Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);
@@ -316,7 +313,7 @@ void PPU::Merge2DWithOpenGL3D() {
   const int output_width  = 512;
   const int output_height = 384;
 
-  if (!gpu_output) {
+  if (!gpu) {
     return;
   }
 
@@ -353,7 +350,6 @@ void PPU::Merge2DWithOpenGL3D() {
     }
     ogl.input_attribute_texture = Texture2D::Create(256, 192, GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT);
 
-    opengl_final_texture = ogl.output_texture->Handle();
     ogl.initialized = true;
   }
 
@@ -372,12 +368,13 @@ void PPU::Merge2DWithOpenGL3D() {
   ogl.program->SetUniformFloat("u_blend_eva", (float)std::min<int>(16, mmio.bldalpha.a) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evb", (float)std::min<int>(16, mmio.bldalpha.b) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evy", (float)std::min<int>(16, mmio.bldy.y) / 16.0f);
+
   ogl.input_color_texture[0]->Bind(GL_TEXTURE0);
   ogl.input_color_texture[1]->Bind(GL_TEXTURE1);
-  // @todo: fix this mess
   glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, opengl_color_texture);
+  glBindTexture(GL_TEXTURE_2D, (GLuint)(std::uintptr_t)gpu->GetOutput());
   ogl.input_attribute_texture->Bind(GL_TEXTURE3);
+
   ogl.vao->Bind();
   glDrawArrays(GL_QUADS, 0, 4);
 
