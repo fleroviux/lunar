@@ -2,7 +2,7 @@
 
 ![license](https://img.shields.io/github/license/fleroviux/lunar)
 
-A fast-ish Nintendo DS emulator with a [JIT recompiler](https://github.com/fleroviux/lunatic), OpenGL 3D renderer and multihreaded 2D renderer.
+A fast-ish Nintendo DS emulator with a [JIT recompiler](https://github.com/fleroviux/lunatic), OpenGL 3D renderer and threaded 2D renderer.
 
 **This is highly experimental software.** 
 I am developing this emulator for fun and learning only.
