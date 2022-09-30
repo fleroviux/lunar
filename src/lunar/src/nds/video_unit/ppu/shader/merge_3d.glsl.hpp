@@ -33,6 +33,9 @@ constexpr auto merge_3d_frag = R"(
   #define LAYER_OBJ 4U
   #define LAYER_BD 5U
 
+  #define MASTER_BRIGHT_UP 1U
+  #define MASTER_BRIGHT_DOWN 2U
+
   layout(location = 0) out vec4 frag_color;
 
   in vec2 v_uv;
@@ -50,6 +53,8 @@ constexpr auto merge_3d_frag = R"(
   uniform float u_blend_eva;
   uniform float u_blend_evb;
   uniform float u_blend_evy;
+  uniform uint u_master_bright_mode;
+  uniform float u_master_bright_factor;
 
   void main() {
     vec4 color_1st = texture(u_color2d_1st_map, v_uv);
@@ -108,6 +113,17 @@ constexpr auto merge_3d_frag = R"(
           color_1st.rgb -= color_1st.rgb * u_blend_evy;
           break;
         }
+      }
+    }
+
+    switch(u_master_bright_mode) {
+      case MASTER_BRIGHT_UP: {
+        color_1st.rgb += (1.0 - color_1st.rgb) * u_master_bright_factor;
+        break;
+      }
+      case MASTER_BRIGHT_DOWN: {
+        color_1st.rgb -= color_1st.rgb * u_master_bright_factor;
+        break;
       }
     }
 

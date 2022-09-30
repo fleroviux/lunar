@@ -9,6 +9,7 @@
 
 #include <GL/glew.h>
 #include <string_view>
+#include <lunar/integer.hpp>
 
 #include "shader_object.hpp"
 
@@ -69,7 +70,7 @@ struct ProgramObject {
     glUniform1i(GetUniformLocation(name), value);
   }
 
-  void SetUniformUInt(std::string_view name, int value) {
+  void SetUniformUInt(std::string_view name, uint value) {
     Use();
     glUniform1ui(GetUniformLocation(name), value);
   }

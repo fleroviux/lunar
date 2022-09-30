@@ -367,6 +367,8 @@ void PPU::Merge2DWithOpenGL3D() {
   ogl.program->SetUniformFloat("u_blend_eva", (float)std::min<int>(16, mmio.bldalpha.a) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evb", (float)std::min<int>(16, mmio.bldalpha.b) / 16.0f);
   ogl.program->SetUniformFloat("u_blend_evy", (float)std::min<int>(16, mmio.bldy.y) / 16.0f);
+  ogl.program->SetUniformUInt("u_master_bright_mode", (uint)mmio.master_bright.mode);
+  ogl.program->SetUniformFloat("u_master_bright_factor", (float)std::min<int>(16, mmio.master_bright.factor) / 16.0f);
 
   ogl.input_color_texture[0]->Bind(GL_TEXTURE0);
   ogl.input_color_texture[1]->Bind(GL_TEXTURE1);
