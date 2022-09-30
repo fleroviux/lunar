@@ -26,7 +26,8 @@ struct RendererBase {
   virtual void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) = 0;
   virtual void SetWBufferEnable(bool enable) = 0;
 
-  virtual void Capture(u16* buffer, int vcount, int width, bool display_capture) = 0;
+  virtual void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) = 0;
+  virtual void CaptureAlpha(int* buffer, int vcount) = 0;
 };
 
 } // namespace lunar::nds

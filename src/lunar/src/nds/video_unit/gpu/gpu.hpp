@@ -70,8 +70,12 @@ struct GPU {
     return renderer->GetOutputImageType();
   }
 
-  void Capture(u16* buffer, int vcount, int width, bool display_capture) {
-    renderer->Capture(buffer, vcount, width, display_capture);
+  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) {
+    renderer->CaptureColor(buffer, vcount, width, display_capture);
+  }
+
+  void CaptureAlpha(int* buffer, int vcount) {
+    renderer->CaptureAlpha(buffer, vcount);
   }
 
   struct DISP3DCNT {

@@ -165,9 +165,8 @@ void PPU::ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max) {
           if(layer[0] == 0 && bg0_is_3d && have_src) {
             auto real_bldalpha = mmio.bldalpha;
 
-            // @todo: fixme: this is broken
             // Someone should revoke my coding license for this.
-            mmio.bldalpha.a = 8;//gpu_output[vcount * 256 + x].a().raw() >> 2;
+            mmio.bldalpha.a = buffer_3d_alpha[x];
             mmio.bldalpha.b = 16 - mmio.bldalpha.a;
 
             Blend(vcount, pixel[0], pixel[1], BlendControl::Effect::SFX_BLEND);

@@ -272,7 +272,8 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   if(mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
     if(mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      gpu->Capture(buffer_bg[0], vcount, 256, false);
+      gpu->CaptureColor(buffer_bg[0], vcount, 256, false);
+      gpu->CaptureAlpha(buffer_3d_alpha, vcount);
     } else {
       RenderLayerText(0, vcount);
     }
@@ -376,9 +377,9 @@ void PPU::SubmitScanline(u16 vcount, bool capture_bg_and_3d) {
 
   if (vcount == 0) {
     // @hack: make sure that glReadPixels() is called on the main thread,
-    // by issuing a dummy call to Capture()
+    // by issuing a dummy call to CaptureColor()
     if(capture_bg_and_3d && gpu->GetOutputImageType() == VideoDevice::ImageType::OpenGL) {
-      gpu->Capture(nullptr, 0, 0, false);
+      gpu->CaptureColor(nullptr, 0, 0, false);
     }
 
     CopyVRAM(vram_bg, render_vram_bg, vram_bg_dirty);

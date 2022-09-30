@@ -54,7 +54,8 @@ struct OpenGLRenderer final : RendererBase {
   void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) override;
   void SetWBufferEnable(bool enable) override;
 
-  void Capture(u16* buffer, int vcount, int width, bool display_capture) override;
+  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) override;
+  void CaptureAlpha(int* buffer, int vcount) override;
 
 private:
   /**
@@ -122,6 +123,7 @@ private:
   void RenderEdgeMarking();
   void RenderFog();
   void SetupAndUploadVBO(void const** polygons, int polygon_count);
+  void DoCapture();
 
   // FBO
   FrameBufferObject* fbo;

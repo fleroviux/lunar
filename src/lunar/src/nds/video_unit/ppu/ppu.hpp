@@ -308,6 +308,7 @@ private:
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
+  int buffer_3d_alpha[256];
 
   // buffers for OpenGL 3D-to-2D compositing
   u32 buffer_ogl_color[2][256 * 192];

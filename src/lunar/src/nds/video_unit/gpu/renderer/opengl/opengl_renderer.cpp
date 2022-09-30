@@ -461,8 +461,7 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
   vbo->Upload(vertex_buffer.data(), vertex_buffer.size());
 }
 
-void OpenGLRenderer::Capture(u16* buffer, int vcount, int width, bool display_capture) {
-  // @todo: support different upscale factors.
+void OpenGLRenderer::DoCapture() {
   if(!captured_current_frame) {
     if(disp3dcnt.enable_fog) {
       fbo_fog->Bind();
@@ -475,7 +474,12 @@ void OpenGLRenderer::Capture(u16* buffer, int vcount, int width, bool display_ca
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     captured_current_frame = true;
   }
+}
 
+void OpenGLRenderer::CaptureColor(u16* buffer, int vcount, int width, bool display_capture) {
+  DoCapture();
+
+  // @todo: support different upscale factors.
   for(int x = 0; x < width; x++) {
     u32 argb8888 = capture[(vcount * 512 + x) * 2];
 
@@ -491,6 +495,15 @@ void OpenGLRenderer::Capture(u16* buffer, int vcount, int width, bool display_ca
     } else {
       buffer[x] = a == 0 ? 0x8000 : rgb555;
     }
+  }
+}
+
+void OpenGLRenderer::CaptureAlpha(int* buffer, int vcount) {
+  DoCapture();
+
+  // @todo: support different upscale factors.
+  for (int x = 0; x < 256; x++) {
+    buffer[x] = (int)(capture[(vcount * 512 + x) * 2] >> 28);
   }
 }
 

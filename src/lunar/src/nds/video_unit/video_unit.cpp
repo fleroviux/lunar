@@ -194,7 +194,7 @@ void VideoUnit::RunDisplayCapture() {
       if (dispcapcnt.source_a == CaptureControl::SourceA::GPUAndPPU) {
         std::memcpy(dst, ppu_a.GetComposerOutput(), sizeof(u16) * width);
       } else {
-        gpu.Capture(dst, vcount.value, width, true);
+        gpu.CaptureColor(dst, vcount.value, width, true);
       }
     };
 
