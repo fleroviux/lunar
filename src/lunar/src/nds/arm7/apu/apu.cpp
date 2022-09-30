@@ -125,7 +125,7 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
         if (channel.format == Channel::Format::PSG) {
           channel.noise_lfsr = 0x7FFF;
         } else {
-          ASSERT(channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
+//          ASSERT(channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
         }
 
         channel.timestamp_update = scheduler.GetTimestampNow();

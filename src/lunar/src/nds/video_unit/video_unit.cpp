@@ -11,6 +11,9 @@
 
 #include "video_unit.hpp"
 
+// @todo: remove this nasty hack.
+extern GLuint opengl_color_fbo;
+
 namespace lunar::nds {
 
 static constexpr int kDrawingLines = 192;
@@ -19,7 +22,7 @@ static constexpr int kTotalLines = kDrawingLines + kBlankingLines;
 
 VideoUnit::VideoUnit(Scheduler& scheduler, IRQ& irq7, IRQ& irq9, DMA7& dma7, DMA9& dma9)
     : gpu(scheduler, irq9, dma9, vram)
-    , ppu_a(0, vram, &pram[0x000], &oam[0x000], gpu.GetOutput())
+    , ppu_a(0, vram, &pram[0x000], &oam[0x000], &gpu)
     , ppu_b(1, vram, &pram[0x400], &oam[0x400])
     , scheduler(scheduler)
     , irq7(irq7)
@@ -59,15 +62,6 @@ void VideoUnit::SetVideoDevice(VideoDevice& device) {
   video_device = &device;
 }
 
-auto VideoUnit::GetOutput(Screen screen) -> u32 const* {
-  switch (screen) {
-    case Screen::Top:
-      return display_swap ? ppu_a.GetOutput() : ppu_b.GetOutput();
-    default:
-      return display_swap ? ppu_b.GetOutput() : ppu_a.GetOutput();
-  }
-}
-
 void VideoUnit::CheckVerticalCounterIRQ(DisplayStatus& dispstat, IRQ& irq) {
   auto flag_new = dispstat.vcount_setting == vcount.value;
 
@@ -83,7 +77,11 @@ void VideoUnit::OnHdrawBegin(int late) {
     ppu_b.WaitForRenderWorker();
 
     if (video_device != nullptr) {
-      video_device->Draw(GetOutput(Screen::Top), GetOutput(Screen::Bottom));
+      if(display_swap) {
+        video_device->Draw(ppu_a.GetOutputImageType(), ppu_a.GetOutput(), ppu_b.GetOutputImageType(), ppu_b.GetOutput());
+      } else {
+        video_device->Draw(ppu_b.GetOutputImageType(), ppu_b.GetOutput(), ppu_a.GetOutputImageType(), ppu_a.GetOutput());
+      }
     }
     ppu_a.SwapBuffers();
     ppu_b.SwapBuffers();
@@ -91,7 +89,7 @@ void VideoUnit::OnHdrawBegin(int late) {
     display_swap = powcnt1.display_swap;
     vcount.value = 0;
     capturing = dispcapcnt.busy;
-    gpu.WaitForRenderWorkers();
+    gpu.Sync();
   }
 
   CheckVerticalCounterIRQ(dispstat7, irq7);
@@ -196,15 +194,7 @@ void VideoUnit::RunDisplayCapture() {
       if (dispcapcnt.source_a == CaptureControl::SourceA::GPUAndPPU) {
         std::memcpy(dst, ppu_a.GetComposerOutput(), sizeof(u16) * width);
       } else {
-        auto src = gpu.GetOutput() + line_offset;
-
-        for (int x = 0; x < width; x++) {
-          auto& color = src[x];
-          dst[x] = color.to_rgb555();
-          if (color.a() != 0) {
-            dst[x] |= 0x8000;
-          }
-        }
+        gpu.CaptureColor(dst, vcount.value, width, true);
       }
     };
 

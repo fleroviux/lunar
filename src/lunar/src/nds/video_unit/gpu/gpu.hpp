@@ -25,6 +25,7 @@
 #include "nds/video_unit/vram.hpp"
 #include "color.hpp"
 #include "matrix_stack.hpp"
+#include "renderer/renderer_base.hpp"
 
 namespace lunar::nds {
 
@@ -36,16 +37,20 @@ struct GPU {
     DMA9& dma9,
     VRAM const& vram
   );
-
- ~GPU();
   
   void Reset();
+
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
   void WriteToonTable(uint offset, u8 value);
   void WriteEdgeColorTable(uint offset, u8 value);
+  void WriteFogDensityTable(uint offset, u8 value);
+
   void SwapBuffers();
-  void WaitForRenderWorkers();
+
+  void Sync() {
+    renderer->Sync();
+  }
 
   template<typename T>
   auto ReadClipMatrix(u32 offset) -> T {
@@ -59,15 +64,24 @@ struct GPU {
   }
 
   void Render();
-  auto GetOutput() -> Color4 const* { return &color_buffer[0]; }
+
+  auto GetOutput() -> void const* {
+    return renderer->GetOutput();
+  }
+
+  auto GetOutputImageType() const -> VideoDevice::ImageType {
+    return renderer->GetOutputImageType();
+  }
+
+  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) {
+    renderer->CaptureColor(buffer, vcount, width, display_capture);
+  }
+
+  void CaptureAlpha(int* buffer, int vcount) {
+    renderer->CaptureAlpha(buffer, vcount);
+  }
 
   struct DISP3DCNT {
-    auto ReadByte (uint offset) -> u8;
-    void WriteByte(uint offset, u8 value);
-    
-  private:
-    friend struct lunar::nds::GPU;
-    
     enum class Shading {
       Toon = 0,
       Highlight = 1
@@ -90,6 +104,9 @@ struct GPU {
     bool rdlines_underflow = false;
     bool polyvert_ram_overflow = false;
     bool enable_rear_bitmap = false;
+
+    auto ReadByte (uint offset) -> u8;
+    void WriteByte(uint offset, u8 value);
   } disp3dcnt;
 
   struct GXSTAT {
@@ -145,6 +162,21 @@ struct GPU {
     void WriteByte(uint offset, u8 value);
   } clrimage_offset;
 
+  struct FogColor {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    int a = 0;
+
+    void WriteByte(uint offset, u8 value);
+  } fog_color;
+
+  struct FogOffset {
+    u16 value = 0;
+
+    void WriteByte(uint offset, u8 byte);
+  } fog_offset;
+
 //private:
   enum class MatrixMode {
     Projection = 0,
@@ -185,6 +217,8 @@ struct GPU {
   };
 
   struct TextureParams {
+    u32 raw_value = 0;
+
     u32 address = 0;
     bool repeat[2] { false };
     bool flip[2] { false };
@@ -224,6 +258,8 @@ struct GPU {
     Vertex* vertices[10];
     PolygonParams params;
     TextureParams texture_params;
+    bool translucent;
+    u32 sorting_key;
   };
 
   void Enqueue(CmdArgPack pack);
@@ -284,18 +320,6 @@ struct GPU {
     StaticVec<Vertex, 10>& vertex_list_out
   );
 
-  auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
-
-  template<typename T>
-  auto ReadTextureVRAM(u32 address) {
-    return read<T>(vram_texture_copy, address & 0x7FFFF & ~(sizeof(T) - 1));
-  }
-
-  template<typename T>
-  auto ReadPaletteVRAM(u32 address) {
-    return read<T>(vram_palette_copy, address & 0x1FFFF & ~(sizeof(T) - 1));
-  }
-
   /// Matrix commands
   void CMD_SetMatrixMode();
   void CMD_PushMatrix();
@@ -337,12 +361,6 @@ struct GPU {
 
   void CMD_SwapBuffers();
 
-  void RenderRearPlane(int thread_min_y, int thread_max_y);
-  void RenderPolygons(bool translucent, int thread_min_y, int thread_max_y);
-  void RenderEdgeMarking();
-  void SetupRenderWorkers();
-  void JoinRenderWorkerThreads();
-
   bool in_vertex_list;
   bool is_quad;
   bool is_strip;
@@ -358,6 +376,8 @@ struct GPU {
     int count = 0;
     Polygon data[2048];
   } polygons[2];
+
+  StaticVec<Polygon*, 2048> polygons_sorted;
 
   /// ID of the buffer the geometry engine currently writes into (between 0 and 1).
   int buffer = 0;
@@ -398,31 +418,19 @@ struct GPU {
 
   std::array<u16, 32> toon_table;
   std::array<u16, 8> edge_color_table;
+  std::array<u8, 32> fog_density_table;
+  bool toon_table_dirty;
+  bool fog_density_table_dirty;
 
-  /// GPU texture and texture palette data
+  // GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
   Region<8> const& vram_palette { 7 };
-  u8 vram_texture_copy[524288];
-  u8 vram_palette_copy[131072];
 
   Scheduler& scheduler;
   IRQ& irq9;
   DMA9& dma9;
   FIFO<CmdArgPack, 256> gxfifo;
   FIFO<CmdArgPack, 4> gxpipe;
-  
-  Color4 color_buffer[256 * 192];
-  u32 depth_buffer[256 * 192];
-
-  enum AttributeFlags {
-    ATTRIBUTE_FLAG_SHADOW = 1,
-    ATTRIBUTE_FLAG_EDGE = 2
-  };
-
-  struct Attribute {
-    u16 flags;
-    u8  poly_id[2];
-  } attribute_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;
@@ -438,21 +446,12 @@ struct GPU {
 
   Scheduler::Event* cmd_event = nullptr;
 
-  bool use_w_buffer;
+  bool manual_translucent_y_sorting;
+  bool manual_translucent_y_sorting_pending;
   bool use_w_buffer_pending;
   bool swap_buffers_pending;
 
-  static constexpr int kRenderThreadCount = 4;
-
-  struct RenderWorker {
-    int min_y;
-    int max_y;
-    std::thread thread;
-    std::atomic_bool running;
-    std::atomic_bool rendering;
-    std::mutex rendering_mutex;
-    std::condition_variable rendering_cv;
-  } render_workers[kRenderThreadCount];
+  std::unique_ptr<RendererBase> renderer;
 };
 
 } // namespace lunar::nds

@@ -116,6 +116,7 @@ struct BlendControl {
   } sfx;
   
   bool targets[2][6];
+  u16 hword;
 
   void Reset();
   auto ReadByte(uint offset) -> u8;

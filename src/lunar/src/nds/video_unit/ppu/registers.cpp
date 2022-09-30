@@ -266,17 +266,24 @@ auto BlendControl::ReadByte(uint offset) -> u8 {
 
 void BlendControl::WriteByte(uint offset, u8 value) {
   switch (offset) {
-    case 0:
-      for (int i = 0; i < 6; i++)
+    case 0: {
+      for (int i = 0; i < 6; i++) {
         targets[0][i] = value & (1 << i);
+      }
       sfx = static_cast<Effect>(value >> 6);
+      hword = (hword & 0xFF00) | value;
       break;
-    case 1:
-      for (int i = 0; i < 6; i++)
+    }
+    case 1: {
+      for (int i = 0; i < 6; i++) {
         targets[1][i] = value & (1 << i);
+      }
+      hword = (hword & 0xFF) | (value << 8);
       break;
-    default:
+    }
+    default: {
       UNREACHABLE;
+    }
   }
 }
 

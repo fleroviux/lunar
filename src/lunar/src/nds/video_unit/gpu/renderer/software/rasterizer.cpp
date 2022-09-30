@@ -5,197 +5,13 @@
  * found in the LICENSE file.
  */
 
-#include "gpu.hpp"
+#include "edge.hpp"
+#include "interpolator.hpp"
+#include "software_renderer.hpp"
 
 namespace lunar::nds {
 
-// TODO: what format should normalized w-Coordinates be stored in?
-
-// TODO: move this into the appropriate class and remove the GPU:: prefix.
-struct Point {
-  s32 x;
-  s32 y;
-  u32 depth;
-  s32 w;
-  GPU::Vertex const* vertex;
-};
-
-struct Edge {
-  using fixed14x18 = s32;
-
-  Edge(Point const& p0, Point const& p1) : p0(&p0), p1(&p1) {
-    CalculateSlope();
-  }
-
-  fixed14x18 XSlope() { return x_slope; }
-
-  bool& IsXMajor() { return x_major; }
-
-  void Interpolate(s32 y, fixed14x18& x0, fixed14x18& x1) {
-    if (x_major) {
-      // TODO: make sure that the math is correct (especially negative slopes)
-      if (x_slope >= 0) {
-        x0 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
-
-        if (y != p1->y || flat_horizontal) {
-          x1 = (x0 & ~0x1FF) + x_slope - (1 << 18);
-        } else {
-          x1 = x0;
-        }
-      } else {
-        x1 = (p0->x << 18) + x_slope * (y - p0->y) + (1 << 17);
-
-        if (y != p1->y || flat_horizontal) {
-          x0 = (x1 & ~0x1FF) + x_slope;
-        } else {
-          x0 = x1;
-        }
-      }
-    } else {
-      x0 = (p0->x << 18) + x_slope * (y - p0->y);
-      x1 = x0;
-    }
-  }
-
-private:
-  void CalculateSlope() {
-    s32 x_diff = p1->x - p0->x;
-    s32 y_diff = p1->y - p0->y;
-
-    if (y_diff == 0) {
-      x_slope = x_diff << 18;
-      x_major = std::abs(x_diff) > 1;
-      flat_horizontal = true;
-    } else {
-      fixed14x18 y_reciprocal = (1 << 18) / y_diff;
-
-      x_slope = x_diff * y_reciprocal;
-      x_major = std::abs(x_diff) > std::abs(y_diff);
-      flat_horizontal = false;
-    }
-  }
-
-  Point const* p0;
-  Point const* p1;
-  fixed14x18 x_slope;
-  bool x_major;
-  bool flat_horizontal;
-};
-
-template<int precision>
-struct Interpolator {
-  void Setup(u16 w0, u16 w1, s32 x, s32 x_min, s32 x_max) {
-    CalculateLerpFactor(x, x_min, x_max);
-    CalculatePerpFactor(w0, w1, x, x_min, x_max);
-
-    // TODO: overwrite the perp factor instead of setting a flag?
-    if constexpr (precision == 9) {
-      force_lerp = w0 == w1 && (w0 & 0x7E) == 0 && (w1 & 0x7E) == 0;
-    } else {
-      force_lerp = w0 == w1 && (w0 & 0x7F) == 0 && (w1 & 0x7F) == 0;
-    }
-  }
-
-  // TODO: use correct formulas and clean this up.
-
-  template<typename T>
-  auto Interpolate(T a, T b) -> T {
-    auto factor = force_lerp ? factor_lerp : factor_perp;
-
-    return (a * ((1 << precision) - factor) + b * factor) >> precision;
-  }
-
-  template<typename T>
-  auto InterpolateLinear(T a, T b) -> T {
-    return (a * ((1 << precision) - factor_lerp) + b * factor_lerp) >> precision;
-  }
-
-  // TODO: generalize this for arbitrary vectors?
-
-  auto Interpolate(Color4 const& color_a, Color4 const& color_b, Color4& color_out) {
-    auto factor = force_lerp ? factor_lerp : factor_perp;
-
-    for (int i = 0; i < 3; i++) {
-      color_out[i] = (color_a[i].raw() * ((1 << precision) - factor) + color_b[i].raw() * factor) >> precision;
-
-      // // Formula from melonDS interpolation article.
-      // // is there actually a mathematical difference?
-      // // This certainly causes interpolation issues unless we expand the interpolated values to higher precision.
-      // auto a = color_a[i].raw();
-      // auto b = color_b[i].raw();
-      // if (a < b) {
-      //   color_outi] = (a + (b - a) * factor) >> precision;
-      // } else {
-      //   color_out[i] = (b + (a - b) * (((1 << precision) - 1) - factor)) >> precision;
-      // }
-    }
-  }
-
-  auto Interpolate(Vector2<Fixed12x4> const& uv_a, Vector2<Fixed12x4> const& uv_b, Vector2<Fixed12x4>& uv_out) {
-    auto factor = force_lerp ? factor_lerp : factor_perp;
-
-    for (int i = 0; i < 2; i++) {
-      uv_out[i] = (uv_a[i].raw() * ((1 << precision) - factor) + uv_b[i].raw() * factor) >> precision;
-    }
-  }
-
-private:
-  void CalculateLerpFactor(s32 x, s32 x_min, s32 x_max) {
-    // TODO: make sure that this uses the correct amount of precision.
-    u32 denominator = x_max - x_min;
-    u32 numerator = (x - x_min) << precision;
-
-    // TODO: how does the DS GPU deal with division-by-zero?
-    if (denominator != 0) {
-      factor_lerp = numerator / denominator;
-    } else {
-      factor_lerp = 0;
-    }
-  }
-
-  void CalculatePerpFactor(u16 w0, u16 w1, s32 x, s32 x_min, s32 x_max) {
-    u16 w0_num = w0;
-    u16 w0_denom = w0;
-    u16 w1_denom = w1;
-
-    if constexpr(precision == 9) {
-      w0_num   >>= 1;
-      w0_denom >>= 1;
-      w1_denom >>= 1;
-
-      if ((w0 & 1) && !(w1 & 1)) {
-        w0_denom++;
-      }
-    }
-
-    u32 t0 = x - x_min;
-    u32 t1 = x_max - x;
-    u32 denominator = t1 * w1_denom + t0 * w0_denom;
-    u32 numerator = (t0 << precision) * w0_num;
-
-    // TODO: how does the DS handle division-by-zero here?
-    if (denominator != 0) {
-      factor_perp = numerator / denominator;
-    } else {
-      factor_perp = 0;
-    }
-  }
-
-  u32 factor_lerp;
-  u32 factor_perp;
-  bool force_lerp;
-};
-
-struct Span {
-  s32 x0[2];
-  s32 x1[2];
-  s32 w[2];
-  u32 depth[2];
-  Vector2<Fixed12x4> uv[2];
-  Color4 color[2];
-};
-
-void GPU::RenderRearPlane(int thread_min_y, int thread_max_y) {
+void SoftwareRenderer::RenderRearPlane(int thread_min_y, int thread_max_y) {
   if (disp3dcnt.enable_rear_bitmap) {
     ASSERT(false, "GPU: unhandled rear bitmap");
   } else {
@@ -221,7 +37,7 @@ void GPU::RenderRearPlane(int thread_min_y, int thread_max_y) {
     }
 
     for (int i = min; i < max; i++) {
-      // TODO: check that translucent polygon ID is initialized correctly.
+      // @todo: check that translucent polygon ID is initialized correctly.
       attribute_buffer[i].flags = 0;
       attribute_buffer[i].poly_id[0] = poly_id;
       attribute_buffer[i].poly_id[1] = poly_id;
@@ -229,7 +45,7 @@ void GPU::RenderRearPlane(int thread_min_y, int thread_max_y) {
   }
 }
 
-void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
+void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
   Point points[10];
   Span span;
 
@@ -241,33 +57,28 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
   const int viewport_width = 256;
   const int viewport_height = 192;
 
-  auto buffer_id = buffer ^ 1;
-  auto& vert_ram = vertices[buffer_id];
-  auto& poly_ram = polygons[buffer_id];
-  auto poly_count = poly_ram.count;
-
-  for (int i = 0; i < poly_count; i++) {
-    Polygon const& poly = poly_ram.data[i];
+  for (int i = 0; i < polygon_count; i++) {
+    auto poly = polygons[i];
 
     int start;
     int end;
     s32 y_min = 256;
     s32 y_max = 0;
 
-    auto vert_count = poly.count;
+    auto vert_count = poly->count;
 
     for (int j = 0; j < vert_count; j++) {
       auto& point = points[j];
-      auto const& vert = *poly.vertices[j];
+      auto vertex = poly->vertices[j];
 
-      auto w = vert.position.w().raw();
+      auto w = vertex->position.w().raw();
       auto two_w = w << 1;
 
-      point.x = ((( (s64)vert.position.x().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
-      point.y = (((-(s64)vert.position.y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
-      point.depth = (u32)(((((s64)vert.position.z().raw() << 14) / w) + 0x3FFF) << 9);
+      point.x = ((( (s64)vertex->position.x().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
+      point.y = (((-(s64)vertex->position.y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
+      point.depth = (u32)(((((s64)vertex->position.z().raw() << 14) / w) + 0x3FFF) << 9);
       point.w = w;
-      point.vertex = &vert;
+      point.vertex = vertex;
 
       // Pick the first vertex with the lowest y-Coordinate as the start node.
       // Also update the minimum y-Coordinate.
@@ -317,7 +128,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
         }
       } else if (min_leading > 16) {
         w_shift = (min_leading - 16) & ~3 ;
-      
+
         for (int j = 0; j < vert_count; j++) {
           points[j].w <<= w_shift;
         }
@@ -345,8 +156,8 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
     auto edge_interpolator = Interpolator<9>{};
     auto span_interpolator = Interpolator<8>{};
 
-    auto alpha = (poly.params.alpha << 1) | (poly.params.alpha >> 4);
-    auto poly_id = poly.params.polygon_id;
+    auto alpha = (poly->params.alpha << 1) | (poly->params.alpha >> 4);
+    auto poly_id = poly->params.polygon_id;
     bool wireframe = alpha == 0;
     bool force_draw_edges_a = alpha != 63 || disp3dcnt.enable_antialias || disp3dcnt.enable_edge_marking;
 
@@ -354,16 +165,10 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
       alpha = 63;
     }
 
-    // Opaque and translucent polygons are rendered in separate passes.
-    // TODO: move this check to an earlier point.
-    if (translucent != (alpha != 63)) {
-      continue;
-    }
-
     int alpha_threshold = 0;
 
     if (disp3dcnt.enable_alpha_test) {
-      alpha_threshold = (alpha_test_ref.alpha << 1) | (alpha_test_ref.alpha >> 4);
+      alpha_threshold = (alpha_test.alpha << 1) | (alpha_test.alpha >> 4);
     }
 
     for (s32 y = y_min; y <= y_max; y++) {
@@ -467,14 +272,14 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
 
             bool depth_test_passed;
 
-            if (poly.params.depth_test == PolygonParams::DepthTest::Less) {
+            if (poly->params.depth_test == GPU::PolygonParams::DepthTest::Less) {
               depth_test_passed = depth_new < depth_old;
             } else {
               depth_test_passed = std::abs((s32)depth_new - (s32)depth_old) <= depth_test_threshold;
             }
 
             if (!depth_test_passed) {
-              if (poly.params.mode == PolygonParams::Mode::Shadow && poly_id == 0) {
+              if (poly->params.mode == GPU::PolygonParams::Mode::Shadow && poly_id == 0) {
                 attribute_buffer[index].flags |= ATTRIBUTE_FLAG_SHADOW;
               }
               continue;
@@ -485,15 +290,15 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
 
             color.a() = alpha;
 
-            if (disp3dcnt.enable_textures && poly.texture_params.format != TextureParams::Format::None) {
-              auto texel = SampleTexture(poly.texture_params, uv);
+            if (disp3dcnt.enable_textures && poly->texture_params.format != GPU::TextureParams::Format::None) {
+              auto texel = SampleTexture(poly->texture_params, uv);
 
               if (texel.a() <= alpha_threshold) {
                 continue;
               }
 
-              switch (poly.params.mode) {
-                case PolygonParams::Mode::Modulation: {
+              switch (poly->params.mode) {
+                case GPU::PolygonParams::Mode::Modulation: {
                   for (int k = 0; k < 4; k++) {
                     int a = texel[k].raw();
                     int b = color[k].raw();
@@ -502,8 +307,8 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
                   }
                   break;
                 }
-                case PolygonParams::Mode::Shadow:
-                case PolygonParams::Mode::Decal: {
+                case GPU::PolygonParams::Mode::Shadow:
+                case GPU::PolygonParams::Mode::Decal: {
                   int s = texel.a().raw();
                   int t = 63 - s;
 
@@ -512,11 +317,11 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
                   }
                   break;
                 }
-                case PolygonParams::Mode::Shaded: {
+                case GPU::PolygonParams::Mode::Shaded: {
                   // TODO: predecode the toon table on write.
                   auto toon_color = Color4::from_rgb555(toon_table[color.r().raw() >> 1]);
 
-                  if (disp3dcnt.shading_mode == DISP3DCNT::Shading::Toon) {
+                  if (disp3dcnt.shading_mode == GPU::DISP3DCNT::Shading::Toon) {
                     for (int k = 0; k < 3; k++) {
                       int a = texel[k].raw();
                       int b = toon_color[k].raw();
@@ -537,10 +342,10 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
                   break;
                 }
               }
-            } else if (poly.params.mode == PolygonParams::Mode::Shaded) {
+            } else if (poly->params.mode == GPU::PolygonParams::Mode::Shaded) {
               auto toon_color = Color4::from_rgb555(toon_table[color.r().raw() >> 1]);
 
-              if (disp3dcnt.shading_mode == DISP3DCNT::Shading::Toon) {
+              if (disp3dcnt.shading_mode == GPU::DISP3DCNT::Shading::Toon) {
                 color.r() = toon_color.r();
                 color.g() = toon_color.g();
                 color.b() = toon_color.b();
@@ -564,7 +369,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
             }
 
             // TODO: make sure that shadow polygon logic is correct.
-            if (poly.params.mode == PolygonParams::Mode::Shadow) {
+            if (poly->params.mode == GPU::PolygonParams::Mode::Shadow) {
               if (poly_id != 0 && (attributes.flags & ATTRIBUTE_FLAG_SHADOW) && (attributes.poly_id[1]) != poly_id) {
                 color_buffer[index] = color;
               }
@@ -584,7 +389,7 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
               depth_buffer[index] = depth_new;
               attributes.poly_id[0] = poly_id;
             } else {
-              if (poly.params.enable_translucent_depth_write) {
+              if (poly->params.enable_translucent_depth_write) {
                 depth_buffer[index] = depth_new;
               }
               attributes.poly_id[1] = poly_id;
@@ -601,11 +406,11 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
         if (force_draw_edges_b || edge[l].XSlope() < 0 || !edge[l].IsXMajor()) {
           render_span(span.x0[l], span.x1[l], true);
         }
-        
+
         if (!wireframe) {
           render_span(span.x1[l] + 1, span.x0[r] - 1, false);
         }
-        
+
         if (force_draw_edges_b || (edge[r].XSlope() > 0 && edge[r].IsXMajor()) || edge[r].XSlope() == 0) {
           render_span(span.x0[r], span.x1[r], true);
         }
@@ -632,124 +437,6 @@ void GPU::RenderPolygons(bool translucent, int thread_min_y, int thread_max_y) {
 
         //LOG_INFO("GPU: CCW edge advance @ y={} (next y-target: {})", y, points[e[1]].y);
       }
-    }
-  }
-}
-
-void GPU::RenderEdgeMarking() {
-  bool edge;
-
-  // TODO: the expanded clear depth is already calculated in "RenderRearPlane". Do not calculate it twice.
-  auto border_depth = (u32)((clear_depth.depth << 9) + ((clear_depth.depth + 1) >> 15) * 0x1FF);
-  auto border_poly_id = clear_color.polygon_id;
-
-  for (int y = 0; y < 192; y++) {
-    for (int x = 0; x < 256; x++) {
-      int c = y * 256 + x;
-
-      auto attributes = attribute_buffer[c];
-
-      if (attributes.flags & ATTRIBUTE_FLAG_EDGE) {
-        int l = c - 1;
-        int r = c + 1;
-        int u = c - 256;
-        int d = c + 256;
-
-        u32 depth = depth_buffer[c];
-        int poly_id = attributes.poly_id[0];
-        bool border_edge = border_poly_id != poly_id && depth < border_depth;
-
-        edge  = x == 0   ? border_edge : (attribute_buffer[l].poly_id[0] != poly_id && depth < depth_buffer[l]);
-        edge |= x == 255 ? border_edge : (attribute_buffer[r].poly_id[0] != poly_id && depth < depth_buffer[r]);
-        edge |= y == 0   ? border_edge : (attribute_buffer[u].poly_id[0] != poly_id && depth < depth_buffer[u]);
-        edge |= y == 191 ? border_edge : (attribute_buffer[d].poly_id[0] != poly_id && depth < depth_buffer[d]);
-
-        if (edge) {
-          // TODO: decode color on write to the edge color table.
-          color_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
-        }
-      }
-    }
-  }
-}
-
-void GPU::Render() {
-  for (u32 address = 0; address < 0x80000; address += 8) {
-    *(u64*)&vram_texture_copy[address] = vram_texture.Read<u64>(address);
-  }
-
-  for (u32 address = 0; address < 0x20000; address += 8) {
-    *(u64*)&vram_palette_copy[address] = vram_palette.Read<u64>(address);
-  }
-
-  for (auto& render_worker : render_workers) {
-    std::lock_guard lock{render_worker.rendering_mutex};
-    render_worker.rendering = true;
-    render_worker.rendering_cv.notify_one();
-  }
-}
-
-void GPU::SetupRenderWorkers() {
-  int min_y = 0;
-  int lines_per_thread = 192 / kRenderThreadCount;
-
-  JoinRenderWorkerThreads();
-
-  for (auto& render_worker : render_workers) {
-    render_worker.min_y = min_y;
-    render_worker.max_y = min_y + lines_per_thread - 1;
-    render_worker.running = true;
-    render_worker.rendering = false;
-    min_y += lines_per_thread;
-  }
-
-  // In case 192 is not evenly divisible by the number of threads,
-  // makes sure that all scanlines are covered.
-  render_workers[kRenderThreadCount - 1].max_y = 191;
-
-  for (auto& render_worker : render_workers) {
-    render_worker.thread = std::thread{[this, &render_worker]() {
-      while (render_worker.running) {
-        if (render_worker.rendering) {
-          const int thread_min_y = render_worker.min_y;
-          const int thread_max_y = render_worker.max_y;
-
-          RenderRearPlane(thread_min_y, thread_max_y);
-          RenderPolygons(false, thread_min_y, thread_max_y);
-          RenderPolygons(true, thread_min_y, thread_max_y);
-
-          std::unique_lock lock{render_worker.rendering_mutex};
-          render_worker.rendering = false;
-          render_worker.rendering_cv.wait(lock, [&](){return (bool)render_worker.rendering;});
-        }
-      }
-    }};
-  }
-}
-
-void GPU::WaitForRenderWorkers() {
-  for (auto& render_worker : render_workers) {
-    // TODO: this is inefficient - solve properly
-    while (render_worker.rendering) {}
-  }
-
-  if (disp3dcnt.enable_edge_marking) {
-    RenderEdgeMarking();
-  }
-}
-
-void GPU::JoinRenderWorkerThreads() {
-  for (auto& render_worker : render_workers) {
-    if (render_worker.running) {
-      // Wake the render worker up in case it is currently sleeping:
-      render_worker.rendering_mutex.lock();
-      render_worker.rendering = true;
-      render_worker.rendering_cv.notify_one();
-      render_worker.rendering_mutex.unlock();
-
-      // Stop the thread and join it:
-      render_worker.running = false;
-      render_worker.thread.join();
     }
   }
 }

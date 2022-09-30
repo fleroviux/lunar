@@ -661,6 +661,7 @@ void GPU::CMD_SetPolygonAttributes() {
 void GPU::CMD_SetTextureParameters() {
   auto arg = Dequeue().argument;
 
+  texture_params.raw_value = arg;
   texture_params.address = (arg & 0xFFFF) << 3;
   texture_params.repeat[0] = arg & (1 << 16);
   texture_params.repeat[1]= arg & (1 << 17);
@@ -744,6 +745,7 @@ void GPU::CMD_EndVertexList() {
 
 void GPU::CMD_SwapBuffers() {
   auto arg = Dequeue().argument;
+  manual_translucent_y_sorting_pending = arg & 1;
   use_w_buffer_pending = arg & 2;
   swap_buffers_pending = true;
 }

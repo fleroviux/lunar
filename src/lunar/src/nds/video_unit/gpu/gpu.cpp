@@ -7,6 +7,8 @@
 
 #include <lunar/log.hpp>
 
+#include "renderer/opengl/opengl_renderer.hpp"
+#include "renderer/software/software_renderer.hpp"
 #include "gpu.hpp"
 
 namespace lunar::nds {
@@ -18,10 +20,6 @@ GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
     , vram_texture(vram.region_gpu_texture)
     , vram_palette(vram.region_gpu_palette) {
   Reset();
-}
-
-GPU::~GPU() {
-  JoinRenderWorkerThreads();
 }
 
 void GPU::Reset() {
@@ -36,6 +34,8 @@ void GPU::Reset() {
   clear_color = {};
   clear_depth = {};
   clrimage_offset = {};
+  fog_color = {};
+  fog_offset = {};
   
   for (int  i = 0; i < 2; i++) {
     vertices[i] = {};
@@ -52,6 +52,9 @@ void GPU::Reset() {
   material = {};
   toon_table.fill(0x7FFF);
   edge_color_table.fill(0x7FFF);
+  fog_density_table.fill(0);
+  toon_table_dirty = true;
+  fog_density_table_dirty = true;
 
   matrix_mode = MatrixMode::Projection;
   projection.Reset();
@@ -59,14 +62,30 @@ void GPU::Reset() {
   direction.Reset();
   texture.Reset();
   clip_matrix.identity();
-  
-  for (auto& color : color_buffer) color = {};
 
-  use_w_buffer = false;
+  manual_translucent_y_sorting = false;
+  manual_translucent_y_sorting_pending = false;
   use_w_buffer_pending = false;
   swap_buffers_pending = false;
 
-  SetupRenderWorkers();
+  renderer = std::make_unique<OpenGLRenderer>(
+    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, fog_color, fog_offset, edge_color_table);
+//  renderer = std::make_unique<SoftwareRenderer>(
+//    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, toon_table, edge_color_table, clear_color, clear_depth);
+}
+
+void GPU::Render() {
+  if (toon_table_dirty) {
+    renderer->UpdateToonTable(toon_table);
+    toon_table_dirty = false;
+  }
+
+  if (fog_density_table_dirty) {
+    renderer->UpdateFogDensityTable(fog_density_table);
+    fog_density_table_dirty = false;
+  }
+
+  renderer->Render((void const**)polygons_sorted.begin(), (int)polygons_sorted.size());
 }
 
 void GPU::WriteToonTable(uint offset, u8 value) {
@@ -74,6 +93,7 @@ void GPU::WriteToonTable(uint offset, u8 value) {
   auto shift = (offset & 1) * 8;
 
   toon_table[index] = (toon_table[index] & ~(0xFF << shift)) | (value << shift);
+  toon_table_dirty = true;
 }
 
 void GPU::WriteEdgeColorTable(uint offset, u8 value) {
@@ -83,12 +103,28 @@ void GPU::WriteEdgeColorTable(uint offset, u8 value) {
   edge_color_table[index] = (edge_color_table[index] & ~(0xFF << shift)) | (value << shift);
 }
 
+void GPU::WriteFogDensityTable(uint offset, u8 value) {
+  fog_density_table[offset] = value & 0x7F;
+  fog_density_table_dirty = true;
+}
+
 void GPU::SwapBuffers() {
   if (swap_buffers_pending) {
+    polygons_sorted.clear();
+
+    for (int i = 0; i < polygons[buffer].count; i++) {
+      polygons_sorted.push_back(&polygons[buffer].data[i]);
+    }
+
+    std::stable_sort(polygons_sorted.begin(), polygons_sorted.end(), [](auto a, auto b) {
+      return a->sorting_key < b->sorting_key;
+    });
+
     buffer ^= 1;
     vertices[buffer].count = 0;
     polygons[buffer].count = 0;
-    use_w_buffer = use_w_buffer_pending;
+    manual_translucent_y_sorting = manual_translucent_y_sorting_pending;
+    renderer->SetWBufferEnable(use_w_buffer_pending);
     swap_buffers_pending = false;
     ProcessCommands();
   }

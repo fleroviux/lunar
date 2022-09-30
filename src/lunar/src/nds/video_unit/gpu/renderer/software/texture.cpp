@@ -5,12 +5,14 @@
  * found in the LICENSE file.
  */
 
-#include "gpu.hpp"
+#include <algorithm>
+
+#include "software_renderer.hpp"
 
 namespace lunar::nds {
 
-auto GPU::SampleTexture(
-  TextureParams const& params,
+auto SoftwareRenderer::SampleTexture(
+  GPU::TextureParams const& params,
   Vector2<Fixed12x4> const& uv
 ) -> Color4 {
   const int size[2] {
@@ -39,10 +41,10 @@ auto GPU::SampleTexture(
   auto palette_addr = params.palette_base << 4;
 
   switch (params.format) {
-    case TextureParams::Format::None: {
+    case GPU::TextureParams::Format::None: {
       return Color4{};
     }
-    case TextureParams::Format::A3I5: {
+    case GPU::TextureParams::Format::A3I5: {
       u8  value = ReadTextureVRAM<u8>(params.address + offset);
       int index = value & 0x1F;
       int alpha = value >> 5;
@@ -53,25 +55,25 @@ auto GPU::SampleTexture(
       rgb6666.a() = (alpha << 3) | alpha; // 3-bit alpha to 6-bit alpha
       return rgb6666;
     }
-    case TextureParams::Format::Palette2BPP: {
+    case GPU::TextureParams::Format::Palette2BPP: {
       auto index = (ReadTextureVRAM<u8>(params.address + (offset >> 2)) >> (2 * (offset & 3))) & 3;
 
       if (params.color0_transparent && index == 0) {
         return Color4{0, 0, 0, 0};
       }
-      
+
       return Color4::from_rgb555(ReadPaletteVRAM<u16>((palette_addr >> 1) + index * sizeof(u16)) & 0x7FFF);
     }
-    case TextureParams::Format::Palette4BPP: {
+    case GPU::TextureParams::Format::Palette4BPP: {
       auto index = (ReadTextureVRAM<u8>(params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
-      
+
       if (params.color0_transparent && index == 0) {
         return Color4{0, 0, 0, 0};
       }
-      
+
       return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
-    case TextureParams::Format::Palette8BPP: {
+    case GPU::TextureParams::Format::Palette8BPP: {
       auto index = ReadTextureVRAM<u8>(params.address + offset);
 
       if (params.color0_transparent && index == 0) {
@@ -80,7 +82,7 @@ auto GPU::SampleTexture(
 
       return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
-    case TextureParams::Format::Compressed4x4: {
+    case GPU::TextureParams::Format::Compressed4x4: {
       auto row_x = coord[0] >> 2;
       auto row_y = coord[1] >> 2;
       auto tile_x = coord[0] & 3;
@@ -93,7 +95,7 @@ auto GPU::SampleTexture(
       auto data_slot_offset = data_address & 0x1FFFF;
       auto info_address = 0x20000 + (data_slot_offset >> 1) + (data_slot_index * 0x10000);
 
-      auto data = ReadTextureVRAM<u8>(data_address); 
+      auto data = ReadTextureVRAM<u8>(data_address);
       auto info = ReadTextureVRAM<u16>(info_address);
 
       auto index = (data >> (tile_x * 2)) & 3;
@@ -146,7 +148,7 @@ auto GPU::SampleTexture(
         }
       }
     }
-    case TextureParams::Format::A5I3: {
+    case GPU::TextureParams::Format::A5I3: {
       u8  value = ReadTextureVRAM<u8>(params.address + offset);
       int index = value & 7;
       int alpha = value >> 3;
@@ -157,7 +159,7 @@ auto GPU::SampleTexture(
       rgb6666.a() = (alpha << 1) | (alpha >> 4); // 5-bit alpha to 6-bit alpha
       return rgb6666;
     }
-    case TextureParams::Format::Direct: {
+    case GPU::TextureParams::Format::Direct: {
       auto rgb1555 = ReadTextureVRAM<u16>(params.address + offset * sizeof(u16));
       auto rgb6666 = Color4::from_rgb555(rgb1555);
 

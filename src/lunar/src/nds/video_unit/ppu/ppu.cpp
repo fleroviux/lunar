@@ -17,7 +17,7 @@ PPU::PPU(
   VRAM const& vram,
   u8   const* pram,
   u8   const* oam,
-  Color4 const* gpu_output
+  GPU* gpu
 )   : id(id)
     , vram_bg(vram.region_ppu_bg[id])
     , vram_obj(vram.region_ppu_obj[id])
@@ -26,7 +26,7 @@ PPU::PPU(
     , vram_lcdc(vram.region_lcdc)
     , pram(pram)
     , oam(oam)
-    , gpu_output(gpu_output) {
+    , gpu(gpu) {
   if (id == 0) {
     mmio.dispcnt = {};
   } else {
@@ -42,6 +42,8 @@ PPU::~PPU() {
 
 void PPU::Reset() {
   memset(output, 0, sizeof(output));
+  memset(buffer_ogl_color, 0, sizeof(buffer_ogl_color));
+  memset(buffer_ogl_attribute, 0, sizeof(buffer_ogl_attribute));
 
   mmio.dispcnt.Reset();
   
@@ -92,6 +94,13 @@ void PPU::Reset() {
 
 void PPU::OnDrawScanlineBegin(u16 vcount, bool capture_bg_and_3d) {
   current_vcount = vcount;
+
+  if (vcount == 0) {
+    ogl.enabled = gpu && gpu->GetOutputImageType() == VideoDevice::ImageType::OpenGL &&
+                  mmio.dispcnt.display_mode == 1 &&
+                 !capture_bg_and_3d;
+    ogl.done = false;
+  }
 
   SubmitScanline(vcount, capture_bg_and_3d);
 }
@@ -150,6 +159,11 @@ void PPU::OnBlankScanlineBegin(u16 vcount) {
     bgy[0]._current = bgy[0].initial;
     bgx[1]._current = bgx[1].initial;
     bgy[1]._current = bgy[1].initial;
+  }
+
+  if (ogl.enabled && !ogl.done && render_worker.vcount >= 192) {
+    Merge2DWithOpenGL3D();
+    ogl.done = true;
   }
 
   SubmitScanline(vcount, false);
@@ -243,40 +257,34 @@ void PPU::RenderMainMemoryDisplay(u16 vcount) {
 void PPU::RenderBackgroundsAndComposite(u16 vcount) {
   auto const& mmio = mmio_copy[vcount];
 
-  if (mmio.dispcnt.forced_blank) {
-    for (uint x = 0; x < 256; x++) {
+  if(mmio.dispcnt.forced_blank) {
+    for(uint x = 0; x < 256; x++) {
       buffer_compose[x] = 0xFFFF;
     }
     return;
   }
 
   // TODO: on a real Nintendo DS all sprites are rendered one scanline ahead.
-  if (mmio.dispcnt.enable[ENABLE_OBJ]) {
+  if(mmio.dispcnt.enable[ENABLE_OBJ]) {
     RenderLayerOAM(vcount);
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG0]) {
+  if(mmio.dispcnt.enable[ENABLE_BG0]) {
     // TODO: what does HW do if "enable BG0 3D" is disabled in mode 6.
-    if (mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
-      for (uint x = 0; x < 256; x++) {
-        auto& color = gpu_output[vcount * 256 + x];
-        if (color.a() != 0) {
-          buffer_bg[0][x] = color.to_rgb555();
-        } else {
-          buffer_bg[0][x] = s_color_transparent;
-        }
-      }
+    if(mmio.dispcnt.enable_bg0_3d || mmio.dispcnt.bg_mode == 6) {
+      gpu->CaptureColor(buffer_bg[0], vcount, 256, false);
+      gpu->CaptureAlpha(buffer_3d_alpha, vcount);
     } else {
       RenderLayerText(0, vcount);
     }
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG1] && mmio.dispcnt.bg_mode != 6) {
+  if(mmio.dispcnt.enable[ENABLE_BG1] && mmio.dispcnt.bg_mode != 6) {
     RenderLayerText(1, vcount);
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG2]) {
-    switch (mmio.dispcnt.bg_mode) {
+  if(mmio.dispcnt.enable[ENABLE_BG2]) {
+    switch(mmio.dispcnt.bg_mode) {
       case 0:
       case 1:
       case 3: RenderLayerText(2, vcount); break;
@@ -287,7 +295,7 @@ void PPU::RenderBackgroundsAndComposite(u16 vcount) {
     }
   }
 
-  if (mmio.dispcnt.enable[ENABLE_BG3]) {
+  if(mmio.dispcnt.enable[ENABLE_BG3]) {
     switch (mmio.dispcnt.bg_mode) {
       case 0: RenderLayerText(3, vcount); break;
       case 1:
@@ -368,6 +376,12 @@ void PPU::SubmitScanline(u16 vcount, bool capture_bg_and_3d) {
   }
 
   if (vcount == 0) {
+    // @hack: make sure that glReadPixels() is called on the main thread,
+    // by issuing a dummy call to CaptureColor()
+    if(capture_bg_and_3d && gpu->GetOutputImageType() == VideoDevice::ImageType::OpenGL) {
+      gpu->CaptureColor(nullptr, 0, 0, false);
+    }
+
     CopyVRAM(vram_bg, render_vram_bg, vram_bg_dirty);
     CopyVRAM(vram_obj, render_vram_obj, vram_obj_dirty);
     CopyVRAM(extpal_bg, render_extpal_bg, extpal_bg_dirty);

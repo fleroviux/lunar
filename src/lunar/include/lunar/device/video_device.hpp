@@ -12,9 +12,19 @@
 namespace lunar {
 
 struct VideoDevice {
+  enum ImageType {
+    Software,
+    OpenGL
+  };
+
   virtual ~VideoDevice() = default;
 
-  virtual void Draw(u32 const* top, u32 const* bottom) = 0;
+  virtual void Draw(
+    ImageType top_image_type,
+    void const* top_image,
+    ImageType bottom_image_type,
+    void const* bottom_image
+  ) = 0;
 };
 
 } // namespace lunar::nds

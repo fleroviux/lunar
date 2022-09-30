@@ -10,12 +10,19 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <lunar/device/video_device.hpp>
 #include <lunar/integer.hpp>
 #include <mutex>
 #include <thread>
 
+#include "common/ogl/buffer_object.hpp"
+#include "common/ogl/frame_buffer_object.hpp"
+#include "common/ogl/program_object.hpp"
+#include "common/ogl/texture_2d.hpp"
+#include "common/ogl/vertex_array_object.hpp"
 #include "common/punning.hpp"
 #include "nds/video_unit/gpu/color.hpp"
+#include "nds/video_unit/gpu/gpu.hpp"
 #include "nds/video_unit/vram.hpp"
 #include "registers.hpp"
 
@@ -30,7 +37,7 @@ struct PPU {
     VRAM const& vram,
     u8   const* pram,
     u8   const* oam,
-    Color4 const* gpu_output = nullptr
+    GPU* gpu = nullptr
   );
 
  ~PPU();
@@ -66,8 +73,15 @@ struct PPU {
 
   void Reset();
 
-  auto GetOutput() -> u32 const* {
+  auto GetOutput() const -> void const* {
+    if(ogl.enabled) {
+      return (void const*)ogl.output_texture->Handle();
+    }
     return &output[frame][0];
+  }
+
+  auto GetOutputImageType() const -> VideoDevice::ImageType {
+    return ogl.enabled ? VideoDevice::ImageType::OpenGL : VideoDevice::ImageType::Software;
   }
 
   void SwapBuffers() {
@@ -176,7 +190,7 @@ private:
   void RenderLayerOAM(u16 vcount);
   void RenderWindow(uint id, u8 vcount);
 
-  template<bool window, bool blending>
+  template<bool window, bool blending, bool opengl>
   void ComposeScanlineTmpl(u16 vcount, int bg_min, int bg_max);
   void ComposeScanline(u16 vcount, int bg_min, int bg_max);
   void Blend(u16 vcount, u16& target1, u16 target2, BlendControl::Effect sfx);
@@ -286,12 +300,19 @@ private:
     }
   }
 
+  void Merge2DWithOpenGL3D();
+
   int id;
   u32 output[2][256 * 192];
   u16 buffer_compose[256];
   u16 buffer_bg[4][256];
   bool buffer_win[2][256];
   bool window_scanline_enable[2];
+  int buffer_3d_alpha[256];
+
+  // buffers for OpenGL 3D-to-2D compositing
+  u32 buffer_ogl_color[2][256 * 192];
+  u16 buffer_ogl_attribute[256 * 192];
 
   struct ObjectPixel {
     u16 color;
@@ -342,10 +363,34 @@ private:
 
   int current_vcount;
 
-  // Full-frame output of the 3D engine 
-  Color4 const* gpu_output;
+  GPU* gpu;
 
   int frame = 0;
+
+  // For compositing with OpenGL rendered 3D
+  struct OpenGL {
+    bool enabled = false;
+    bool initialized = false;
+    bool done = true;
+    FrameBufferObject* fbo = nullptr;
+    Texture2D* output_texture = nullptr;
+    ProgramObject* program = nullptr;
+    VertexArrayObject* vao = nullptr;
+    BufferObject* vbo = nullptr;
+    Texture2D* input_color_texture[2] {nullptr};
+    Texture2D* input_attribute_texture = nullptr;
+
+   ~OpenGL() {
+      delete fbo;
+      delete output_texture;
+      delete program;
+      delete vao;
+      delete vbo;
+      delete input_color_texture[0];
+      delete input_color_texture[1];
+      delete input_attribute_texture;
+    }
+  } ogl;
 
   static constexpr u16 s_color_transparent = 0x8000;
   static const int s_obj_size[4][4][2];

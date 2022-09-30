@@ -11,6 +11,7 @@
 #include <lunar/device/video_device.hpp>
 #include <lunar/integer.hpp>
 #include <lunar/log.hpp>
+#include <utility>
 
 #include "common/scheduler.hpp"
 #include "nds/arm7/dma/dma.hpp"
@@ -30,7 +31,6 @@ struct VideoUnit {
 
   void Reset();
   void SetVideoDevice(VideoDevice& device);
-  auto GetOutput(Screen screen) -> u32 const*;
 
   // Graphics status and IRQ control.
   struct DisplayStatus {

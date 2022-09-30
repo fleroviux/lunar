@@ -11,6 +11,8 @@
 #include <utility>
 #include <initializer_list>
 
+namespace lunar {
+
 template <typename T, std::size_t capacity>
 struct StaticVec {
   using value_type = T;
@@ -135,7 +137,17 @@ struct StaticVec {
     return m_size;
   }
 
+  constexpr auto data() -> T* {
+    return m_data;
+  }
+
+  constexpr auto data() const -> T const* {
+    return m_data;
+  }
+
 private:
   T m_data[capacity];
   size_t m_size = 0;
 };
+
+} // namespace lunar

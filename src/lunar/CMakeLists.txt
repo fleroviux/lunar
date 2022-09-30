@@ -31,12 +31,16 @@ set(SOURCES
   src/nds/irq/irq.cpp
   src/nds/keypad/keypad.cpp
   src/nds/timer/timer.cpp
+  src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.cpp
+  src/nds/video_unit/gpu/renderer/opengl/texture_cache.cpp
+  src/nds/video_unit/gpu/renderer/software/edge_marking.cpp
+  src/nds/video_unit/gpu/renderer/software/rasterizer.cpp
+  src/nds/video_unit/gpu/renderer/software/software_renderer.cpp
+  src/nds/video_unit/gpu/renderer/software/texture.cpp
   src/nds/video_unit/gpu/commands.cpp
   src/nds/video_unit/gpu/gpu.cpp
   src/nds/video_unit/gpu/io.cpp
   src/nds/video_unit/gpu/primitive_assembly.cpp
-  src/nds/video_unit/gpu/renderer.cpp
-  src/nds/video_unit/gpu/texture.cpp
   src/nds/video_unit/ppu/render/affine.cpp
   src/nds/video_unit/ppu/render/oam.cpp
   src/nds/video_unit/ppu/render/text.cpp
@@ -64,6 +68,12 @@ set(HEADERS
   src/common/math/matrix.hpp
   src/common/math/numeric_traits.hpp
   src/common/math/vector.hpp
+  src/common/ogl/buffer_object.hpp
+  src/common/ogl/frame_buffer_object.hpp
+  src/common/ogl/program_object.hpp
+  src/common/ogl/shader_object.hpp
+  src/common/ogl/texture_2d.hpp
+  src/common/ogl/vertex_array_object.hpp
   src/common/backup_file.hpp
   src/common/fifo.hpp
   src/common/likely.hpp
@@ -93,6 +103,11 @@ set(HEADERS
   src/nds/irq/irq.hpp
   src/nds/keypad/keypad.hpp
   src/nds/timer/timer.hpp
+  src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
+  src/nds/video_unit/gpu/renderer/opengl/texture_cache.hpp
+  src/nds/video_unit/gpu/renderer/software/edge.hpp
+  src/nds/video_unit/gpu/renderer/software/software_renderer.hpp
+  src/nds/video_unit/gpu/renderer/renderer_base.hpp
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp
   src/nds/video_unit/gpu/gpu.hpp
@@ -121,3 +136,8 @@ target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
 target_link_libraries(lunar PRIVATE lunatic)
 target_link_libraries(lunar PUBLIC fmt)
+
+# TODO: remove this before merging the OpenGL renderer
+find_package(SDL2 REQUIRED)
+target_include_directories(lunar PRIVATE ${SDL2_INCLUDE_DIR})
+target_link_libraries(lunar PRIVATE ${SDL2_LIBRARY})
