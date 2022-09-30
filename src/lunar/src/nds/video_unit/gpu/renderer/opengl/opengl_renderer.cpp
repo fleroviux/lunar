@@ -240,7 +240,6 @@ void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
   program->SetUniformInt("u_shading_mode", (int)disp3dcnt.shading_mode);
   program->SetUniformBool("u_use_w_buffer", use_w_buffer);
   vao->Bind();
-  toon_table_texture->Bind(GL_TEXTURE1);
 
   if (disp3dcnt.enable_alpha_blend) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
@@ -275,6 +274,8 @@ void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
       program->SetUniformBool("u_use_alpha_test", use_alpha_test);
       program->SetUniformFloat("u_alpha_test_threshold", (float)alpha_test.alpha / 31.0f);
     }
+
+    toon_table_texture->Bind(GL_TEXTURE1);
 
     program->SetUniformFloat("u_polygon_alpha", (float)alpha / 31.0f);
     program->SetUniformFloat("u_polygon_id", (float)polygon_id / 63.0f);
