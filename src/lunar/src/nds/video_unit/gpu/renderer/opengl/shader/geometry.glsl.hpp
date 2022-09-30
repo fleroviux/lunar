@@ -114,7 +114,7 @@ constexpr auto geometry_frag = R"(
       /* On the DS GPU the depth buffer has 24-bit precision and
        * the w-coordinate is a 32-bit fixed point number with a 12-bit fractional part.
        * This means the lower 12-bit of the *integer* part span the full 24-bit depth buffer range.
-       * To get a depth value in the -1 to +1 range we should therefore divide the w-coordinate by 2^12.
+       * To get a depth value in the 0 to 1 range we should therefore divide the w-coordinate by 2^12.
        */
       gl_FragDepth = v_w_coordinate * 0.000244140625;
     }

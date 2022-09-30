@@ -34,6 +34,8 @@ struct OpenGLRenderer final : RendererBase {
     Region<8> const& vram_palette,
     GPU::DISP3DCNT const& disp3dcnt,
     GPU::AlphaTest const& alpha_test,
+    GPU::ClearColor const& clear_color,
+    GPU::ClearDepth const& clear_depth,
     GPU::FogColor const& fog_color,
     GPU::FogOffset const& fog_offset,
     std::array<u16, 8> const& edge_color_table
@@ -158,6 +160,8 @@ private:
   // MMIO passed through from the GPU:
   GPU::DISP3DCNT const& disp3dcnt;
   GPU::AlphaTest const& alpha_test;
+  GPU::ClearColor const& clear_color;
+  GPU::ClearDepth const& clear_depth;
   GPU::FogColor const& fog_color;
   GPU::FogOffset const& fog_offset;
   std::array<u16, 8> const& edge_color_table;

@@ -69,7 +69,7 @@ void GPU::Reset() {
   swap_buffers_pending = false;
 
   renderer = std::make_unique<OpenGLRenderer>(
-    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, fog_color, fog_offset, edge_color_table);
+    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, clear_color, clear_depth, fog_color, fog_offset, edge_color_table);
 //  renderer = std::make_unique<SoftwareRenderer>(
 //    vram_texture, vram_palette, disp3dcnt, alpha_test_ref, toon_table, edge_color_table, clear_color, clear_depth);
 }

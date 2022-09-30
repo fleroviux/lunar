@@ -19,12 +19,16 @@ OpenGLRenderer::OpenGLRenderer(
   Region<8> const& vram_palette,
   GPU::DISP3DCNT const& disp3dcnt,
   GPU::AlphaTest const& alpha_test,
+  GPU::ClearColor const& clear_color,
+  GPU::ClearDepth const& clear_depth,
   GPU::FogColor const& fog_color,
   GPU::FogOffset const& fog_offset,
   std::array<u16, 8> const& edge_color_table
 )   : texture_cache{vram_texture, vram_palette}
     , disp3dcnt{disp3dcnt}
     , alpha_test{alpha_test}
+    , clear_color(clear_color)
+    , clear_depth(clear_depth)
     , fog_color{fog_color}
     , fog_offset{fog_offset}
     , edge_color_table{edge_color_table} {
@@ -171,15 +175,29 @@ void OpenGLRenderer::SetWBufferEnable(bool enable) {
 }
 
 void OpenGLRenderer::RenderRearPlane() {
-  const float clear_color_0[4] {0, 0, 0, 0};
-  const float clear_color_1[4] {0, 0, 0, 0};
+  const float clear_color_0[4] {
+    (float)clear_color.color_r / 31,
+    (float)clear_color.color_g / 31,
+    (float)clear_color.color_b / 31,
+    (float)clear_color.color_a / 31
+  };
 
-  // @todo: replace this stub with a real implementation
-  glDepthMask(GL_TRUE);
-  glStencilMask(0xFF); // should this be zero or 0xFF?
+  const float clear_color_1[4] {
+    (float)clear_color.polygon_id / 63,
+    clear_color.enable_fog ? 1.0f : 0.0f,
+    0,
+    0
+  };
+
   glClearBufferfv(GL_COLOR, 0, clear_color_0);
   glClearBufferfv(GL_COLOR, 1, clear_color_1);
+
+  glDepthMask(GL_TRUE);
+  glStencilMask(0xFF);
+  glClearDepth((float)clear_depth.depth / 0x7FFF);
   glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  glClearDepth(1.0);
 }
 
 void OpenGLRenderer::RenderPolygons(void const** polygons_, int polygon_count) {
