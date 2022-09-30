@@ -33,6 +33,9 @@ set(SOURCES
   src/nds/timer/timer.cpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.cpp
   src/nds/video_unit/gpu/renderer/opengl/texture_cache.cpp
+  src/nds/video_unit/gpu/renderer/software/rasterizer.cpp
+  src/nds/video_unit/gpu/renderer/software/software_renderer.cpp
+  src/nds/video_unit/gpu/renderer/software/texture.cpp
   src/nds/video_unit/gpu/commands.cpp
   src/nds/video_unit/gpu/gpu.cpp
   src/nds/video_unit/gpu/io.cpp
@@ -103,6 +106,8 @@ set(HEADERS
   src/nds/timer/timer.hpp
   src/nds/video_unit/gpu/renderer/opengl/opengl_renderer.hpp
   src/nds/video_unit/gpu/renderer/opengl/texture_cache.hpp
+  src/nds/video_unit/gpu/renderer/software/edge.hpp
+  src/nds/video_unit/gpu/renderer/software/software_renderer.hpp
   src/nds/video_unit/gpu/renderer/renderer_base.hpp
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp
