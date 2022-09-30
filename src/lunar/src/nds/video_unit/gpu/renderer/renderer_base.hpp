@@ -28,6 +28,8 @@ struct RendererBase {
 
   virtual void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) = 0;
   virtual void CaptureAlpha(int* buffer, int vcount) = 0;
+
+  virtual void Sync() {}
 };
 
 } // namespace lunar::nds

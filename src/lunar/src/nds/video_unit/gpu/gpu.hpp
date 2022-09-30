@@ -39,15 +39,17 @@ struct GPU {
   );
   
   void Reset();
+
   void WriteGXFIFO(u32 value);
   void WriteCommandPort(uint port, u32 value);
   void WriteToonTable(uint offset, u8 value);
   void WriteEdgeColorTable(uint offset, u8 value);
   void WriteFogDensityTable(uint offset, u8 value);
+
   void SwapBuffers();
 
-  void WaitForRenderWorkers() {
-    // @todo
+  void Sync() {
+    renderer->Sync();
   }
 
   template<typename T>

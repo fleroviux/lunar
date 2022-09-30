@@ -53,10 +53,11 @@ struct SoftwareRenderer final : RendererBase {
     use_w_buffer = enable;
   }
 
-  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) override {
-  }
+  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture);
+  void CaptureAlpha(int* buffer, int vcount) override;
 
-  void CaptureAlpha(int* buffer, int vcount) override {
+  void Sync() override {
+    WaitForRenderWorkers();
   }
 
 private:
@@ -94,6 +95,7 @@ private:
   void RenderEdgeMarking();
 
   void SetupRenderWorkers();
+  void WaitForRenderWorkers();
   void JoinRenderWorkers();
 
   auto SampleTexture(

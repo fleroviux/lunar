@@ -89,7 +89,7 @@ void VideoUnit::OnHdrawBegin(int late) {
     display_swap = powcnt1.display_swap;
     vcount.value = 0;
     capturing = dispcapcnt.busy;
-    gpu.WaitForRenderWorkers();
+    gpu.Sync();
   }
 
   CheckVerticalCounterIRQ(dispstat7, irq7);

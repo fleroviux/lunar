@@ -61,6 +61,24 @@ void SoftwareRenderer::Render(const void** polygons_, int polygon_count) {
   }
 }
 
+void SoftwareRenderer::CaptureColor(u16* buffer, int vcount, int width, bool display_capture) {
+  for(int x = 0; x < width; x++) {
+    auto& color = color_buffer[vcount * 256 + x];
+
+    if(display_capture) {
+      buffer[x] = color.to_rgb555() | (color.a() != 0 ? 0x8000 : 0);
+    } else {
+      buffer[x] = color.a() == 0 ? 0x8000 : color.to_rgb555();
+    }
+  }
+}
+
+void SoftwareRenderer::CaptureAlpha(int* buffer, int vcount) {
+  for(int x = 0; x < 256; x++) {
+    buffer[x] = color_buffer[vcount * 256 + x].a().raw() >> 2;
+  }
+}
+
 void SoftwareRenderer::SetupRenderWorkers() {
   int min_y = 0;
   int lines_per_thread = 192 / kRenderThreadCount;
@@ -98,16 +116,16 @@ void SoftwareRenderer::SetupRenderWorkers() {
   }
 }
 
-//void GPU::WaitForRenderWorkers() {
-//  for (auto& render_worker : render_workers) {
-//    // TODO: this is inefficient - solve properly
-//    while (render_worker.rendering) {}
-//  }
-//
-//  if (disp3dcnt.enable_edge_marking) {
-//    RenderEdgeMarking();
-//  }
-//}
+void SoftwareRenderer::WaitForRenderWorkers() {
+  for (auto& render_worker : render_workers) {
+    // TODO: this is inefficient - solve properly
+    while (render_worker.rendering) {}
+  }
+
+  if (disp3dcnt.enable_edge_marking) {
+    RenderEdgeMarking();
+  }
+}
 
 void SoftwareRenderer::JoinRenderWorkers() {
   for (auto& render_worker : render_workers) {
