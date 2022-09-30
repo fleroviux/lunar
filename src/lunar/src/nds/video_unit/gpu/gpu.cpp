@@ -21,10 +21,6 @@ GPU::GPU(Scheduler& scheduler, IRQ& irq9, DMA9& dma9, VRAM const& vram)
   Reset();
 }
 
-GPU::~GPU() {
-  JoinRenderWorkerThreads();
-}
-
 void GPU::Reset() {
   disp3dcnt = {};
   // TODO:
@@ -65,19 +61,28 @@ void GPU::Reset() {
   direction.Reset();
   texture.Reset();
   clip_matrix.identity();
-  
-  for (auto& color : color_buffer) color = {};
 
   manual_translucent_y_sorting = false;
   manual_translucent_y_sorting_pending = false;
-  use_w_buffer = false;
   use_w_buffer_pending = false;
   swap_buffers_pending = false;
 
-  SetupRenderWorkers();
-
   renderer = std::make_unique<OpenGLRenderer>(
     vram_texture, vram_palette, disp3dcnt, alpha_test_ref, fog_color, fog_offset, edge_color_table);
+}
+
+void GPU::Render() {
+  if (toon_table_dirty) {
+    renderer->UpdateToonTable(toon_table);
+    toon_table_dirty = false;
+  }
+
+  if (fog_density_table_dirty) {
+    renderer->UpdateFogDensityTable(fog_density_table);
+    fog_density_table_dirty = false;
+  }
+
+  renderer->Render((void const**)polygons_sorted.begin(), (int)polygons_sorted.size());
 }
 
 void GPU::WriteToonTable(uint offset, u8 value) {
@@ -116,11 +121,9 @@ void GPU::SwapBuffers() {
     vertices[buffer].count = 0;
     polygons[buffer].count = 0;
     manual_translucent_y_sorting = manual_translucent_y_sorting_pending;
-    use_w_buffer = use_w_buffer_pending;
+    renderer->SetWBufferEnable(use_w_buffer_pending);
     swap_buffers_pending = false;
     ProcessCommands();
-
-    renderer->SetWBufferEnable(use_w_buffer);
   }
 }
 

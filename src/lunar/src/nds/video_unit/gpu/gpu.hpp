@@ -37,8 +37,6 @@ struct GPU {
     DMA9& dma9,
     VRAM const& vram
   );
-
- ~GPU();
   
   void Reset();
   void WriteGXFIFO(u32 value);
@@ -47,7 +45,10 @@ struct GPU {
   void WriteEdgeColorTable(uint offset, u8 value);
   void WriteFogDensityTable(uint offset, u8 value);
   void SwapBuffers();
-  void WaitForRenderWorkers();
+
+  void WaitForRenderWorkers() {
+    // @todo
+  }
 
   template<typename T>
   auto ReadClipMatrix(u32 offset) -> T {
@@ -317,18 +318,6 @@ struct GPU {
     StaticVec<Vertex, 10>& vertex_list_out
   );
 
-  auto SampleTexture(TextureParams const& params, Vector2<Fixed12x4> const& uv) -> Color4;
-
-  template<typename T>
-  auto ReadTextureVRAM(u32 address) {
-    return read<T>(vram_texture_copy, address & 0x7FFFF & ~(sizeof(T) - 1));
-  }
-
-  template<typename T>
-  auto ReadPaletteVRAM(u32 address) {
-    return read<T>(vram_palette_copy, address & 0x1FFFF & ~(sizeof(T) - 1));
-  }
-
   /// Matrix commands
   void CMD_SetMatrixMode();
   void CMD_PushMatrix();
@@ -369,12 +358,6 @@ struct GPU {
   void CMD_EndVertexList();
 
   void CMD_SwapBuffers();
-
-  void RenderRearPlane(int thread_min_y, int thread_max_y);
-  void RenderPolygons(bool translucent, int thread_min_y, int thread_max_y);
-  void RenderEdgeMarking();
-  void SetupRenderWorkers();
-  void JoinRenderWorkerThreads();
 
   bool in_vertex_list;
   bool is_quad;
@@ -437,30 +420,15 @@ struct GPU {
   bool toon_table_dirty;
   bool fog_density_table_dirty;
 
-  /// GPU texture and texture palette data
+  // GPU texture and texture palette data
   Region<4, 131072> const& vram_texture { 3 };
   Region<8> const& vram_palette { 7 };
-  u8 vram_texture_copy[524288];
-  u8 vram_palette_copy[131072];
 
   Scheduler& scheduler;
   IRQ& irq9;
   DMA9& dma9;
   FIFO<CmdArgPack, 256> gxfifo;
   FIFO<CmdArgPack, 4> gxpipe;
-  
-  Color4 color_buffer[256 * 192];
-  u32 depth_buffer[256 * 192];
-
-  enum AttributeFlags {
-    ATTRIBUTE_FLAG_SHADOW = 1,
-    ATTRIBUTE_FLAG_EDGE = 2
-  };
-
-  struct Attribute {
-    u16 flags;
-    u8  poly_id[2];
-  } attribute_buffer[256 * 192];
 
   /// Packed command processing
   u32 packed_cmds;
@@ -478,21 +446,8 @@ struct GPU {
 
   bool manual_translucent_y_sorting;
   bool manual_translucent_y_sorting_pending;
-  bool use_w_buffer;
   bool use_w_buffer_pending;
   bool swap_buffers_pending;
-
-  static constexpr int kRenderThreadCount = 4;
-
-  struct RenderWorker {
-    int min_y;
-    int max_y;
-    std::thread thread;
-    std::atomic_bool running;
-    std::atomic_bool rendering;
-    std::mutex rendering_mutex;
-    std::condition_variable rendering_cv;
-  } render_workers[kRenderThreadCount];
 
   std::unique_ptr<RendererBase> renderer;
 };

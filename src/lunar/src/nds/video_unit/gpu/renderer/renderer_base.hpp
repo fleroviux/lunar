@@ -22,8 +22,8 @@ struct RendererBase {
   virtual auto GetOutputImageType() const -> VideoDevice::ImageType = 0;
 
   virtual void Render(void const** polygons, int polygon_count) = 0;
-  virtual void UpdateToonTable(std::array<u16, 32> const& toon_table) = 0;
-  virtual void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) = 0;
+  virtual void UpdateToonTable(std::array<u16, 32> const& toon_table) {}
+  virtual void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) {}
   virtual void SetWBufferEnable(bool enable) = 0;
 
   virtual void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) = 0;
