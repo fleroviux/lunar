@@ -92,6 +92,8 @@ template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
   static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
+  address &= ~(sizeof(T) - 1);
+
   if (itcm.config.enable_read &&
       bus != Bus::System &&
       address >= itcm.config.base &&
@@ -161,6 +163,8 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
   static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
+
+  address &= ~(sizeof(T) - 1);
 
   if (bus != Bus::System) {
     if (itcm.config.enable &&

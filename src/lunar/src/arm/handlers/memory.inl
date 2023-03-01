@@ -8,27 +8,27 @@
 using Bus = lunatic::Memory::Bus;
 
 auto ReadByte(u32 address) -> u32 {
-  return memory->FastRead<u8, Bus::Data>(address);
+  return memory->ReadByte(address, Bus::Data);
 }
 
 auto ReadHalf(u32 address) -> u32 {
-  return memory->FastRead<u16, Bus::Data>(address);
+  return memory->ReadHalf(address, Bus::Data);
 }
 
 auto ReadWord(u32 address) -> u32 {
-  return memory->FastRead<u32, Bus::Data>(address);
+  return memory->ReadWord(address, Bus::Data);
 }
 
 auto ReadHalfCode(u32 address) -> u32 {
-  return memory->FastRead<u16, Bus::Code>(address);
+  return memory->ReadHalf(address, Bus::Code);
 }
 
 auto ReadWordCode(u32 address) -> u32 {
-  return memory->FastRead<u32, Bus::Code>(address);
+  return memory->ReadWord(address, Bus::Code);
 }
 
 auto ReadByteSigned(u32 address) -> u32 {
-  u32 value = memory->FastRead<u8, Bus::Data>(address);
+  u32 value = memory->ReadByte(address, Bus::Data);
 
   if (value & 0x80) {
     value |= 0xFFFFFF00;
@@ -38,7 +38,7 @@ auto ReadByteSigned(u32 address) -> u32 {
 }
 
 auto ReadHalfMaybeRotate(u32 address) -> u32 {
-  u32 value = memory->FastRead<u16, Bus::Data>(address);
+  u32 value = memory->ReadHalf(address, Bus::Data);
   
   if ((address & 1) && arch == Architecture::ARMv4T) {
     value = (value >> 8) | (value << 24);
@@ -52,7 +52,7 @@ auto ReadHalfSigned(u32 address) -> u32 {
     return ReadByteSigned(address);
   }
 
-  u32 value = memory->FastRead<u16, Bus::Data>(address);
+  u32 value = memory->ReadHalf(address, Bus::Data);
   if (value & 0x8000) {
     return value | 0xFFFF0000;
   }
@@ -60,20 +60,20 @@ auto ReadHalfSigned(u32 address) -> u32 {
 }
 
 auto ReadWordRotate(u32 address) -> u32 {
-  auto value = memory->FastRead<u32, Bus::Data>(address);
+  auto value = memory->ReadWord(address, Bus::Data);
   auto shift = (address & 3) * 8;
   
   return (value >> shift) | (value << (32 - shift));
 }
 
 void WriteByte(u32 address, u8  value) {
-  memory->FastWrite<u8, Bus::Data>(address, value);
+  memory->WriteByte(address, value, Bus::Data);
 }
 
 void WriteHalf(u32 address, u16 value) {
-  memory->FastWrite<u16, Bus::Data>(address, value);
+  memory->WriteHalf(address, value, Bus::Data);
 }
 
 void WriteWord(u32 address, u32 value) {
-  memory->FastWrite<u32, Bus::Data>(address, value);
+  memory->WriteWord(address, value, Bus::Data);
 }
