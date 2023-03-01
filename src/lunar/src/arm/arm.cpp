@@ -80,19 +80,19 @@ auto ARM::Run(int cycles) -> int {
 }
 
 auto ARM::GetGPR(lunatic::GPR reg) const -> u32 {
-  return state.reg[int(reg)];
+  return state.reg[(int)reg];
 }
 
 auto ARM::GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 {
-  auto reg_id = int(reg);
-  auto limit = Mode(mode) == MODE_FIQ ? 8 : 13;
-  auto current_mode = state.cpsr.f.mode;
-
-  if (current_mode != Mode(mode) && reg_id >= limit && reg_id != 15) {
-    return state.bank[GetRegisterBankByMode(Mode(mode))][reg_id - 8];
+  if((int)reg < 8 || reg == lunatic::GPR::PC || Mode(mode) == state.cpsr.f.mode) {
+    return state.reg[(int)reg];
   }
 
-  return state.reg[reg_id];
+  if((int)reg < 13 && mode != lunatic::Mode::FIQ) {
+    return state.bank[BANK_NONE][(int)reg - 8];
+  }
+
+  return state.bank[GetRegisterBankByMode(Mode(mode))][(int)reg - 8];
 }
 
 auto ARM::GetCPSR() const -> lunatic::StatusRegister {
@@ -104,32 +104,24 @@ auto ARM::GetSPSR(lunatic::Mode mode) const -> lunatic::StatusRegister {
 }
 
 void ARM::SetGPR(lunatic::GPR reg, u32 value) {
+  state.reg[(int)reg] = value;
+
   if (reg == lunatic::GPR::PC) {
-    state.r15 = value;
     if (state.cpsr.f.thumb) {
       ReloadPipeline16();
     } else {
       ReloadPipeline32();
     }
-  } else {
-    state.reg[int(reg)] = value;
   }
 }
 
 void ARM::SetGPR(lunatic::GPR reg, lunatic::Mode mode, u32 value) {
-  if (reg == lunatic::GPR::PC) {
-    SetGPR(lunatic::GPR::PC, value);
+  if((int)reg < 8 || reg == lunatic::GPR::PC || Mode(mode) == state.cpsr.f.mode) {
+    SetGPR(reg, value);
+  } else if((int)reg < 13 && mode != lunatic::Mode::FIQ) {
+    state.bank[BANK_NONE][(int)reg - 8] = value;
   } else {
-    auto reg_id = int(reg);
-    auto limit = Mode(mode) == MODE_FIQ ? 8 : 13;
-    auto current_mode = state.cpsr.f.mode;
-
-    if (current_mode != Mode(mode) && reg_id >= limit) {
-      auto bank = GetRegisterBankByMode(Mode(mode));
-      state.bank[bank][reg_id - 8] = value;
-    } else {
-      state.reg[reg_id] = value;
-    }
+    state.bank[GetRegisterBankByMode(Mode(mode))][(int)reg - 8] = value;
   }
 }
 

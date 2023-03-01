@@ -8,6 +8,8 @@
 #pragma once
 
 #include <array>
+#include <aura/arm/cpu.hpp>
+#include <aura/arm/memory.hpp>
 #include <lunatic/cpu.hpp>
 #include <lunar/log.hpp>
 
@@ -16,15 +18,14 @@
 namespace lunar::arm {
 
 struct ARM final : lunatic::CPU {
-  // TODO: remove this and use lunatic enumeration.
+  // @todo: enumerate processors instead of architectures
   enum class Architecture {
     ARMv4T,
     ARMv5TE
   };
 
-  ARM(lunatic::CPU::Descriptor const& descriptor);
+  explicit ARM(lunatic::CPU::Descriptor const& descriptor);
 
-  // TODO: make Reset() a virtual member function of lunatic::CPU
   void Reset() override;
   auto IRQLine() -> bool& override;
   auto WaitForIRQ() -> bool& override;
