@@ -39,16 +39,6 @@ enum Condition {
   COND_NV = 15
 };
 
-enum BankedRegister {
-  BANK_R8  = 0,
-  BANK_R9  = 1,
-  BANK_R10 = 2,
-  BANK_R11 = 3,
-  BANK_R12 = 4,
-  BANK_R13 = 5,
-  BANK_R14 = 6
-};
-
 struct State {
   static constexpr int k_bank_count = 6;
 
@@ -82,9 +72,7 @@ struct State {
   aura::arm::CPU::PSR cpsr;
   aura::arm::CPU::PSR spsr[k_bank_count];
   
-  State() { Reset(); }
-  
-  void Reset() {
+  State() {
     for (int i = 0; i < 16; i++) {
       reg[i] = 0;
     }
@@ -93,7 +81,7 @@ struct State {
       for (int r = 0; r < 7; r++) {
         bank[b][r] = 0;
       }
-      spsr[b].word = 0;
+      spsr[b] = 0;
     }
 
     cpsr.word = (uint)aura::arm::CPU::Mode::Supervisor;

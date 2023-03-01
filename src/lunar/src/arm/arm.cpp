@@ -23,7 +23,7 @@ ARM::ARM(lunatic::CPU::Descriptor const& descriptor)
 void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
-  state.Reset();
+  state = {};
   SwitchMode((Mode)state.cpsr.mode);
   opcode[0] = nop;
   opcode[1] = nop;
