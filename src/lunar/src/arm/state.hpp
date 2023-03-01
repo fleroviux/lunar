@@ -52,22 +52,6 @@ enum BankedRegister {
 struct State {
   static constexpr int k_bank_count = 6;
 
-  union StatusRegister {
-    struct {
-      aura::arm::CPU::Mode mode : 5;
-      unsigned int thumb : 1;
-      unsigned int mask_fiq : 1;
-      unsigned int mask_irq : 1;
-      unsigned int reserved : 19;
-      unsigned int q : 1;
-      unsigned int v : 1;
-      unsigned int c : 1;
-      unsigned int z : 1;
-      unsigned int n : 1;
-    } f;
-    u32 v;
-  };
-  
   // General Purpose Registers
   union {
     struct {
@@ -95,8 +79,8 @@ struct State {
   u32 bank[k_bank_count][7];
 
   // Program Status Registers
-  StatusRegister cpsr;
-  StatusRegister spsr[k_bank_count];
+  aura::arm::CPU::PSR cpsr;
+  aura::arm::CPU::PSR spsr[k_bank_count];
   
   State() { Reset(); }
   
@@ -109,12 +93,12 @@ struct State {
       for (int r = 0; r < 7; r++) {
         bank[b][r] = 0;
       }
-      spsr[b].v = 0;
+      spsr[b].word = 0;
     }
 
-    cpsr.v = (uint)aura::arm::CPU::Mode::Supervisor;
-    cpsr.f.mask_irq = 1;
-    cpsr.f.mask_fiq = 1;
+    cpsr.word = (uint)aura::arm::CPU::Mode::Supervisor;
+    cpsr.mask_irq = 1;
+    cpsr.mask_fiq = 1;
   }
 };
 

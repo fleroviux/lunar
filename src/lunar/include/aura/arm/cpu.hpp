@@ -53,6 +53,7 @@ namespace aura::arm {
         atom::Bits<31,  1, u32> n;
 
         // @todo: can this be simplified using macros?
+        PSR() = default;
         PSR(u32 word) : word{word} {}
         PSR(PSR const& other) { word = other.word; }
         PSR& operator=(PSR const& other) {

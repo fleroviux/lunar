@@ -24,7 +24,7 @@ void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
   state.Reset();
-  SwitchMode(state.cpsr.f.mode);
+  SwitchMode((Mode)state.cpsr.mode);
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = exception_base;
@@ -41,7 +41,7 @@ void ARM::Run(int cycles) {
     if (IRQLine()) SignalIRQ();
 
     auto instruction = opcode[0];
-    if (state.cpsr.f.thumb) {
+    if (state.cpsr.thumb) {
       state.r15 &= ~1;
 
       opcode[0] = opcode[1];
@@ -74,20 +74,20 @@ void ARM::Run(int cycles) {
 void ARM::SignalIRQ() {
   wait_for_irq = false;
 
-  if (state.cpsr.f.mask_irq) {
+  if (state.cpsr.mask_irq) {
     return;
   }
 
   // Save current program status register.
-  state.spsr[BANK_IRQ].v = state.cpsr.v;
+  state.spsr[BANK_IRQ] = state.cpsr;
 
   // Enter IRQ mode and disable IRQs.
   SwitchMode(Mode::IRQ);
-  state.cpsr.f.mask_irq = 1;
+  state.cpsr.mask_irq = 1;
 
   // Save current program counter and disable Thumb.
-  if (state.cpsr.f.thumb) {
-    state.cpsr.f.thumb = 0;
+  if (state.cpsr.thumb) {
+    state.cpsr.thumb = 0;
     state.r14 = state.r15;
   } else {
     state.r14 = state.r15 - 4;
@@ -140,7 +140,7 @@ bool ARM::CheckCondition(Condition condition) {
   if (condition == COND_AL) {
     return true;
   }
-  return condition_table[condition][state.cpsr.v >> 28];
+  return condition_table[condition][state.cpsr.word >> 28];
 }
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
@@ -164,10 +164,10 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
 }
 
 void ARM::SwitchMode(Mode new_mode) {
-  auto old_bank = GetRegisterBankByMode(state.cpsr.f.mode);
+  auto old_bank = GetRegisterBankByMode((Mode)state.cpsr.mode);
   auto new_bank = GetRegisterBankByMode(new_mode);
 
-  state.cpsr.f.mode = new_mode;
+  state.cpsr.mode = new_mode;
   p_spsr = &state.spsr[new_bank];
 
   if (old_bank == new_bank) {

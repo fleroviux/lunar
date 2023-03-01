@@ -33,7 +33,7 @@ void ARM_DataProcessing(u32 instruction) {
   u32 op2 = 0;
   u32 op1 = state.reg[reg_op1];
 
-  int carry = state.cpsr.f.c;
+  int carry = state.cpsr.c;
 
   if constexpr (immediate) {
     int value = instruction & 0xFF;
@@ -73,14 +73,14 @@ void ARM_DataProcessing(u32 instruction) {
       result = op1 & op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
     case ARMDataOp::EOR:
       result = op1 ^ op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
     case ARMDataOp::SUB:
@@ -103,11 +103,11 @@ void ARM_DataProcessing(u32 instruction) {
       break;
     case ARMDataOp::TST:
       SetZeroAndSignFlag(op1 & op2);
-      cpsr.f.c = carry;
+      cpsr.c = carry;
       break;
     case ARMDataOp::TEQ:
       SetZeroAndSignFlag(op1 ^ op2);
-      cpsr.f.c = carry;
+      cpsr.c = carry;
       break;
     case ARMDataOp::CMP:
       SUB(op1, op2, true);
@@ -119,28 +119,28 @@ void ARM_DataProcessing(u32 instruction) {
       result = op1 | op2;
       if (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
     case ARMDataOp::MOV:
       result = op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
     case ARMDataOp::BIC:
       result = op1 & ~op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
     case ARMDataOp::MVN:
       result = ~op2;
       if constexpr (set_flags) {
         SetZeroAndSignFlag(result);
-        cpsr.f.c = carry;
+        cpsr.c = carry;
       }
       break;
   }
@@ -149,15 +149,15 @@ void ARM_DataProcessing(u32 instruction) {
     if constexpr (set_flags) {
       auto spsr = *p_spsr;
 
-      SwitchMode(spsr.f.mode);
-      state.cpsr.v = spsr.v;
+      SwitchMode((Mode)spsr.mode);
+      state.cpsr = spsr;
     }
 
     if constexpr (opcode != ARMDataOp::TST &&
                   opcode != ARMDataOp::TEQ &&
                   opcode != ARMDataOp::CMP &&
                   opcode != ARMDataOp::CMN) {
-      if (state.cpsr.f.thumb) {
+      if (state.cpsr.thumb) {
         ReloadPipeline16();
       } else {
         ReloadPipeline32();
@@ -196,17 +196,17 @@ void ARM_StatusTransfer(u32 instruction) {
       if (mask & 0xFF) {
         SwitchMode(static_cast<Mode>(value & 0x1F));
       }
-      state.cpsr.v = (state.cpsr.v & ~mask) | value;
+      state.cpsr.word = (state.cpsr.word & ~mask) | value;
     } else {
-      p_spsr->v = (p_spsr->v & ~mask) | value;
+      p_spsr->word = (p_spsr->word & ~mask) | value;
     }
   } else {
     int dst = (instruction >> 12) & 0xF;
 
     if constexpr (use_spsr) {
-      state.reg[dst] = p_spsr->v;
+      state.reg[dst] = p_spsr->word;
     } else {
-      state.reg[dst] = state.cpsr.v;
+      state.reg[dst] = state.cpsr.word;
     }
   }
 
@@ -278,8 +278,8 @@ void ARM_MultiplyLong(u32 instruction) {
   state.reg[dst_hi] = result_hi;
 
   if constexpr (set_flags) {
-    state.cpsr.f.n = result_hi >> 31;
-    state.cpsr.f.z = result == 0;
+    state.cpsr.n = result_hi >> 31;
+    state.cpsr.z = result == 0;
   }
 
   state.r15 += 4;
@@ -434,7 +434,7 @@ void ARM_BranchAndExchangeMaybeLink(u32 instruction) {
 
   if (address & 1) {
     state.r15 = address & ~1;
-    state.cpsr.f.thumb = 1;
+    state.cpsr.thumb = 1;
     ReloadPipeline16();
   } else {
     state.r15 = address & ~3;
@@ -558,7 +558,7 @@ void ARM_BranchLinkExchangeImm(u32 instruction) {
 
   state.r14  = state.r15 - 4;
   state.r15 += offset;
-  state.cpsr.f.thumb = 1;
+  state.cpsr.thumb = 1;
   ReloadPipeline16();
 }
 
@@ -578,7 +578,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
   if constexpr (immediate) {
     offset = instruction & 0xFFF;
   } else {
-    int carry  = state.cpsr.f.c;
+    int carry  = state.cpsr.c;
     int opcode = (instruction >> 5) & 3;
     int amount = (instruction >> 7) & 0x1F;
 
@@ -619,7 +619,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
     if (dst == 15) {
       if ((state.r15 & 1) && arch != Architecture::ARMv4T) {
         ASSERT(!byte && !translation, "ARM: unpredictable LDRB or LDRT with destination = r15.");
-        state.cpsr.f.thumb = 1;
+        state.cpsr.thumb = 1;
         state.r15 &= ~1;
         ReloadPipeline16();
       } else {
@@ -692,7 +692,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   if constexpr (user_mode) {
     if (!load || !transfer_pc) {
-      mode = state.cpsr.f.mode;
+      mode = (Mode)state.cpsr.mode;
       SwitchMode(Mode::User);
     }
   }
@@ -728,8 +728,8 @@ void ARM_BlockDataTransfer(u32 instruction) {
     if (load && transfer_pc) {
       auto& spsr = *p_spsr;
 
-      SwitchMode(spsr.f.mode);
-      state.cpsr.v = spsr.v;
+      SwitchMode((Mode)spsr.mode);
+      state.cpsr = spsr;
     } else {
       SwitchMode(mode);
     }
@@ -757,11 +757,11 @@ void ARM_BlockDataTransfer(u32 instruction) {
   if constexpr (load) {
     if (transfer_pc) {
       if ((state.r15 & 1) && !user_mode && arch != Architecture::ARMv4T) {
-        state.cpsr.f.thumb = 1;
+        state.cpsr.thumb = 1;
         state.r15 &= ~1;
       }
 
-      if (state.cpsr.f.thumb) {
+      if (state.cpsr.thumb) {
         ReloadPipeline16();
       } else {
         ReloadPipeline32();
@@ -774,11 +774,11 @@ void ARM_Undefined(u32 instruction) {
   LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 
   // Save current program status register.
-  state.spsr[BANK_UND].v = state.cpsr.v;
+  state.spsr[BANK_UND] = state.cpsr;
 
   // Enter UND mode and disable IRQs.
   SwitchMode(Mode::Undefined);
-  state.cpsr.f.mask_irq = 1;
+  state.cpsr.mask_irq = 1;
 
   // Save current program counter and jump to UND exception vector.
   state.r14 = state.r15 - 4;
@@ -788,11 +788,11 @@ void ARM_Undefined(u32 instruction) {
 
 void ARM_SWI(u32 instruction) {
   // Save current program status register.
-  state.spsr[BANK_SVC].v = state.cpsr.v;
+  state.spsr[BANK_SVC] = state.cpsr;
 
   // Enter SVC mode and disable IRQs.
   SwitchMode(Mode::Supervisor);
-  state.cpsr.f.mask_irq = 1;
+  state.cpsr.mask_irq = 1;
 
   // Save current program counter and jump to SVC exception vector.
   state.r14 = state.r15 - 4;
@@ -867,7 +867,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
     u32 result = op2 + op2;
 
     if ((op2 ^ result) >> 31) {
-      state.cpsr.f.q = 1;
+      state.cpsr.q = 1;
       result = 0x80000000 - (result >> 31);
     }
 

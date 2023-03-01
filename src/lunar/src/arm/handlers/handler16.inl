@@ -35,15 +35,15 @@ template <int op, int imm>
 void Thumb_MoveShiftedRegister(u16 instruction) {
   int dst   = (instruction >> 0) & 7;
   int src   = (instruction >> 3) & 7;
-  int carry = state.cpsr.f.c;
+  int carry = state.cpsr.c;
 
   u32 result = state.reg[src];
 
   DoShift(op, result, imm, carry, true);
 
-  state.cpsr.f.c = carry;
-  state.cpsr.f.z = (result == 0);
-  state.cpsr.f.n = result >> 31;
+  state.cpsr.c = carry;
+  state.cpsr.z = (result == 0);
+  state.cpsr.n = result >> 31;
   
   state.reg[dst] = result;
   state.r15 += 2;
@@ -72,8 +72,8 @@ void Thumb_MoveCompareAddSubImm(u16 instruction) {
     case 0b00:
       // MOV
       state.reg[dst] = imm;
-      state.cpsr.f.n = 0;
-      state.cpsr.f.z = imm == 0;
+      state.cpsr.n = 0;
+      state.cpsr.z = imm == 0;
       break;
     case 0b01:
       // CMP
@@ -109,24 +109,24 @@ void Thumb_ALU(u16 instruction) {
       break;
     }
     case ThumbDataOp::LSL: {
-      int carry = state.cpsr.f.c;
+      int carry = state.cpsr.c;
       LSL(state.reg[dst], state.reg[src], carry);
       SetZeroAndSignFlag(state.reg[dst]);
-      state.cpsr.f.c = carry;
+      state.cpsr.c = carry;
       break;
     }
     case ThumbDataOp::LSR: {
-      int carry = state.cpsr.f.c;
+      int carry = state.cpsr.c;
       LSR(state.reg[dst], state.reg[src], carry, false);
       SetZeroAndSignFlag(state.reg[dst]);
-      state.cpsr.f.c = carry;
+      state.cpsr.c = carry;
       break;
     }
     case ThumbDataOp::ASR: {
-      int carry = state.cpsr.f.c;
+      int carry = state.cpsr.c;
       ASR(state.reg[dst], state.reg[src], carry, false);
       SetZeroAndSignFlag(state.reg[dst]);
-      state.cpsr.f.c = carry;
+      state.cpsr.c = carry;
       break;
     }
     case ThumbDataOp::ADC: {
@@ -138,10 +138,10 @@ void Thumb_ALU(u16 instruction) {
       break;
     }
     case ThumbDataOp::ROR: {
-      int carry = state.cpsr.f.c;
+      int carry = state.cpsr.c;
       ROR(state.reg[dst], state.reg[src], carry, false);
       SetZeroAndSignFlag(state.reg[dst]);
-      state.cpsr.f.c = carry;
+      state.cpsr.c = carry;
       break;
     }
     case ThumbDataOp::TST: {
@@ -169,7 +169,7 @@ void Thumb_ALU(u16 instruction) {
     case ThumbDataOp::MUL: {
       state.reg[dst] *= state.reg[src];
       SetZeroAndSignFlag(state.reg[dst]);
-      state.cpsr.f.c = 0;
+      state.cpsr.c = 0;
       break;
     }
     case ThumbDataOp::BIC: {
@@ -236,7 +236,7 @@ void Thumb_HighRegisterOps_BX(u16 instruction) {
         state.r15 = operand & ~1;
         ReloadPipeline16();
       } else {
-        state.cpsr.f.thumb = 0;
+        state.cpsr.thumb = 0;
         state.r15 = operand & ~3;
         ReloadPipeline32();
       }
@@ -410,7 +410,7 @@ void Thumb_PushPop(u16 instruction) {
         state.r15 &= ~1;
         ReloadPipeline16();
       } else {
-        state.cpsr.f.thumb = 0;
+        state.cpsr.thumb = 0;
         ReloadPipeline32();
       }
       return;
@@ -493,12 +493,12 @@ void Thumb_ConditionalBranch(u16 instruction) {
 
 void Thumb_SWI(u16 instruction) {
   // Save current program status register.
-  state.spsr[BANK_SVC].v = state.cpsr.v;
+  state.spsr[BANK_SVC] = state.cpsr;
 
   // Enter SVC mode and disable IRQs.
   SwitchMode(Mode::Supervisor);
-  state.cpsr.f.thumb = 0;
-  state.cpsr.f.mask_irq = 1;
+  state.cpsr.thumb = 0;
+  state.cpsr.mask_irq = 1;
 
   // Save current program counter and jump to SVC exception vector.
   state.r14 = state.r15 - 2;
@@ -537,7 +537,7 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
     // Not a valid opcode in ARMv4T, but we don't know what it would do.
     ASSERT(arch != Architecture::ARMv4T, "blx cannot be used on ARMv4T CPUs");
     state.r15 &= ~3;
-    state.cpsr.f.thumb = 0;
+    state.cpsr.thumb = 0;
     ReloadPipeline32();
   } else {
     ReloadPipeline16();

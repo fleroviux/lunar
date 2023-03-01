@@ -60,7 +60,7 @@ class ARM final : public aura::arm::CPU {
     }
 
     u32 GetGPR(GPR reg, Mode mode) const override {
-      if((int)reg < 8 || reg == GPR::PC || mode == state.cpsr.f.mode) {
+      if((int)reg < 8 || reg == GPR::PC || mode == (Mode)state.cpsr.mode) {
         return state.reg[(int)reg];
       }
 
@@ -72,18 +72,18 @@ class ARM final : public aura::arm::CPU {
     }
 
     PSR GetCPSR() const override {
-      return state.cpsr.v;
+      return state.cpsr;
     }
 
     PSR GetSPSR(Mode mode) const override {
-      return state.spsr[GetRegisterBankByMode(mode)].v;
+      return state.spsr[GetRegisterBankByMode(mode)];
     }
 
     void SetGPR(GPR reg, u32 value) override {
       state.reg[(int)reg] = value;
 
       if (reg == GPR::PC) {
-        if (state.cpsr.f.thumb) {
+        if (state.cpsr.thumb) {
           ReloadPipeline16();
         } else {
           ReloadPipeline32();
@@ -92,7 +92,7 @@ class ARM final : public aura::arm::CPU {
     }
 
     void SetGPR(GPR reg, Mode mode, u32 value) override {
-      if((int)reg < 8 || reg == GPR::PC || mode == state.cpsr.f.mode) {
+      if((int)reg < 8 || reg == GPR::PC || mode == (Mode)state.cpsr.mode) {
         SetGPR(reg, value);
       } else if((int)reg < 13 && mode != Mode::FIQ) {
         state.bank[BANK_NONE][(int)reg - 8] = value;
@@ -102,11 +102,11 @@ class ARM final : public aura::arm::CPU {
     }
 
     void SetCPSR(PSR value) override {
-      state.cpsr.v = value.word;
+      state.cpsr = value;
     }
 
     void SetSPSR(Mode mode, PSR value) override {
-      state.spsr[GetRegisterBankByMode(mode)].v = value.word;
+      state.spsr[GetRegisterBankByMode(mode)] = value;
     }
 
     // TODO: remove these!! they only exist for compatibility!
@@ -115,6 +115,7 @@ class ARM final : public aura::arm::CPU {
 
     typedef void (ARM::*Handler16)(u16);
     typedef void (ARM::*Handler32)(u32);
+
   private:
     friend struct TableGen;
 
@@ -139,7 +140,7 @@ class ARM final : public aura::arm::CPU {
     std::array<lunatic::Coprocessor*, 16> coprocessors;
 
     State state;
-    State::StatusRegister* p_spsr;
+    PSR* p_spsr;
     bool irq_line;
 
     u32 opcode[2];
