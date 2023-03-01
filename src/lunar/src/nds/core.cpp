@@ -12,6 +12,9 @@
 #include "interconnect.hpp"
 #include "buildconfig.hpp"
 
+#include <aura/arm/cpu.hpp>
+#include <aura/arm/memory.hpp>
+
 namespace lunar::nds {
 
 struct Header {

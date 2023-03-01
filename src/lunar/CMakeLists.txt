@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 project(lunar-core CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
@@ -129,6 +129,8 @@ set(HEADERS_PUBLIC
   include/lunar/core.hpp
   include/lunar/integer.hpp
   include/lunar/log.hpp
+  include/aura/arm/cpu.hpp
+  include/aura/arm/memory.hpp
 )
 
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
