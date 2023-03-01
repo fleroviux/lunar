@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-using Bus = lunatic::Memory::Bus;
+using Bus = aura::arm::Memory::Bus;
 
 auto ReadByte(u32 address) -> u32 {
   return memory->ReadByte(address, Bus::Data);

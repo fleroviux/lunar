@@ -11,11 +11,13 @@
 
 namespace lunar::arm {
 
-ARM::ARM(lunatic::CPU::Descriptor const& descriptor)
-    : arch(Architecture(descriptor.model))
-    , exception_base(descriptor.exception_base)
-    , memory(&descriptor.memory)
-    , coprocessors(descriptor.coprocessors) {
+ARM::ARM(
+  aura::arm::Memory* memory,
+  Architecture arch,
+  std::array<lunatic::Coprocessor*, 16> coprocessors
+)   : memory{memory}
+    , arch{arch}
+    , coprocessors{coprocessors} {
   BuildConditionTable();
   Reset();
 }

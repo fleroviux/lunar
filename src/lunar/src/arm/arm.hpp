@@ -23,7 +23,11 @@ class ARM final : public aura::arm::CPU {
       ARMv5TE
     };
 
-    explicit ARM(lunatic::CPU::Descriptor const& descriptor);
+    ARM(
+      aura::arm::Memory* memory,
+      Architecture arch,
+      std::array<lunatic::Coprocessor*, 16> coprocessors = {}
+    );
 
     void Reset() override;
 
@@ -155,11 +159,13 @@ class ARM final : public aura::arm::CPU {
     #include "handlers/handler32.inl"
     #include "handlers/memory.inl"
 
+    aura::arm::Memory* memory;
     Architecture arch;
-    u32 exception_base = 0;
-    bool wait_for_irq = false;
-    lunatic::Memory* memory;
     std::array<lunatic::Coprocessor*, 16> coprocessors;
+
+    bool irq_line;
+    bool wait_for_irq = false;
+    u32 exception_base = 0;
 
     struct State {
       static constexpr int k_bank_count = 6;
@@ -213,7 +219,6 @@ class ARM final : public aura::arm::CPU {
     } state;
 
     PSR* p_spsr;
-    bool irq_line;
 
     u32 opcode[2];
 

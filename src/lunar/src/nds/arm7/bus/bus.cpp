@@ -42,7 +42,7 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
   soundbias = 0x200;
 
   if constexpr (gEnableFastMemory) {
-    pagetable = std::make_unique<std::array<u8*, 1048576>>();
+//    pagetable = std::make_unique<std::array<u8*, 1048576>>();
     UpdateMemoryMap(0, 0x100000000ULL);
     swram.AddCallback([this]() {
       UpdateMemoryMap(0x03000000, 0x04000000);
@@ -54,7 +54,7 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
 }
 
 void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
-  auto& table = *pagetable;
+  /*auto& table = *pagetable;
 
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
     auto index = address >> kPageShift;
@@ -85,7 +85,7 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
         break;
       }
     }
-  }
+  }*/
 }
 
 template<typename T>

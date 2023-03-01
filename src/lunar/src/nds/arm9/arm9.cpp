@@ -15,18 +15,26 @@ ARM9::ARM9(Interconnect& interconnect)
     : bus(&interconnect)
     , cp15(&bus)
     , irq(interconnect.irq9) {
-  auto cpu_descriptor = lunatic::CPU::Descriptor{
-    .memory = bus,
-    .coprocessors = {
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, &cp15
-    },
-    .exception_base = 0xFFFF'0000
+//  auto cpu_descriptor = lunatic::CPU::Descriptor{
+//    .memory = bus,
+//    .coprocessors = {
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, nullptr, &cp15
+//    },
+//    .exception_base = 0xFFFF'0000
+//  };
+
+  std::array<lunatic::Coprocessor*, 16> coprocessors{
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, &cp15
   };
 
-  core = std::make_unique<arm::ARM>(cpu_descriptor);
+  core = std::make_unique<arm::ARM>(&bus, lunar::arm::ARM::Architecture::ARMv5TE, coprocessors);
+  core->SetExceptionBase(0xFFFF'0000);
 
   cp15.SetCore(core.get());
   irq.SetCore(core.get());

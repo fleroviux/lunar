@@ -9,6 +9,7 @@
 
 #include <lunatic/memory.hpp>
 #include <lunar/integer.hpp>
+#include <aura/arm/memory.hpp>
 
 #include "nds/irq/irq.hpp"
 
@@ -22,7 +23,7 @@ struct DMA7 {
     Special = 3
   };
 
-  using Bus = lunatic::Memory::Bus;
+  using Bus = aura::arm::Memory::Bus;
 
   DMA7(IRQ& irq) : irq(irq) {
     Reset();
@@ -35,7 +36,7 @@ struct DMA7 {
 
   // TODO: get rid of this ugly hack that only exists
   // because we can't pass "memory" to the constructor at the moment.
-  void SetMemory(lunatic::Memory* memory) { this->memory = memory; }
+  void SetMemory(aura::arm::Memory* memory) { this->memory = memory; }
 
 private:
   enum Registers {
@@ -80,7 +81,7 @@ private:
 
   void RunChannel(Channel& channel);
 
-  lunatic::Memory* memory;
+  aura::arm::Memory* memory;
   IRQ& irq;
 };
 

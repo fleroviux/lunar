@@ -14,18 +14,25 @@ namespace lunar::nds {
 ARM7::ARM7(Interconnect& interconnect)
     : bus(&interconnect)
     , irq(interconnect.irq7) {
-  auto cpu_descriptor = lunatic::CPU::Descriptor{
-    .memory = bus,
-    .coprocessors = {
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, &cp14,   nullptr 
-    },
-    .exception_base = 0x0000'0000
+//  auto cpu_descriptor = lunatic::CPU::Descriptor{
+//    .memory = bus,
+//    .coprocessors = {
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, nullptr, nullptr,
+//      nullptr, nullptr, &cp14,   nullptr
+//    },
+//    .exception_base = 0x0000'0000
+//  };
+
+  const std::array<lunatic::Coprocessor*, 16> coprocessors{
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, &cp14,   nullptr
   };
 
-  core = std::make_unique<arm::ARM>(cpu_descriptor);
+  core = std::make_unique<arm::ARM>(&bus, lunar::arm::ARM::Architecture::ARMv4T, coprocessors);
 
   irq.SetCore(core.get());
   interconnect.dma7.SetMemory(&bus);

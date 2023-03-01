@@ -101,7 +101,7 @@ struct Core final : CoreBase {
 private:
 
   void DirectBoot(std::string const& rom_path) {
-    using Bus = lunatic::Memory::Bus;
+    using Bus = aura::arm::Memory::Bus;
 
     std::ifstream rom { rom_path, std::ios::in | std::ios::binary };
     if (!rom.good()) {

@@ -10,13 +10,26 @@
 #include <cstddef>
 #include <lunatic/cpu.hpp>
 #include <lunar/integer.hpp>
+#include <aura/arm/memory.hpp>
 
 #include "nds/interconnect.hpp"
 
 namespace lunar::nds {
 
-struct ARM9MemoryBus final : lunatic::Memory {
+struct ARM9MemoryBus final : aura::arm::Memory {
   ARM9MemoryBus(Interconnect* interconnect);
+
+  struct TCM {
+    u8* data = nullptr;
+    u32 mask = 0;
+
+    struct Config {
+      bool enable = false;
+      bool enable_read = false;
+      u32 base = 0;
+      u32 limit = 0;
+    } config;
+  } itcm, dtcm;
 
   void SetDTCM(TCM::Config const& config) { dtcm.config = config; }
   void SetITCM(TCM::Config const& config) { itcm.config = config; }

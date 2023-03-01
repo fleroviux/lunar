@@ -39,7 +39,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
   dtcm.mask = 0x3FFF;
 
   if constexpr (gEnableFastMemory) {
-    pagetable = std::make_unique<std::array<u8*, 1048576>>();
+//    pagetable = std::make_unique<std::array<u8*, 1048576>>();
 
     UpdateMemoryMap(0, 0x100000000ULL);
 
@@ -52,7 +52,7 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
 }
 
 void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
-  auto& table = *pagetable;
+  /*auto& table = *pagetable;
 
   for (u64 address = address_lo; address < address_hi; address += kPageMask + 1) {
     auto index = address >> kPageShift;
@@ -85,7 +85,7 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
         break;
       }
     }
-  }
+  }*/
 }
 
 template <typename T>

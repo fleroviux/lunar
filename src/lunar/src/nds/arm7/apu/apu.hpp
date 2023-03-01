@@ -11,6 +11,7 @@
 #include <lunar/device/audio_device.hpp>
 #include <lunar/integer.hpp>
 #include <mutex>
+#include <aura/arm/memory.hpp>
 
 #include "common/scheduler.hpp"
 
@@ -23,7 +24,7 @@ struct APU {
  ~APU();
 
   void Reset();
-  void SetMemory(lunatic::Memory* memory) { this->memory = memory; }
+  void SetMemory(aura::arm::Memory* memory) { this->memory = memory; }
   void SetAudioDevice(AudioDevice& device);
   auto Read (uint chan_id, uint offset) -> u8;
   void Write(uint chan_id, uint offset, u8 value);
@@ -93,7 +94,7 @@ private:
   int buffer_count;
   std::mutex buffer_lock;
   Scheduler& scheduler;
-  lunatic::Memory* memory = nullptr;
+  aura::arm::Memory* memory = nullptr;
   AudioDevice* audio_device = nullptr;
 };
 

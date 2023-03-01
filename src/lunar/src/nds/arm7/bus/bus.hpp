@@ -9,12 +9,13 @@
 
 #include <lunatic/cpu.hpp>
 #include <lunar/integer.hpp>
+#include <aura/arm/memory.hpp>
 
 #include "nds/interconnect.hpp"
 
 namespace lunar::nds {
 
-struct ARM7MemoryBus final : lunatic::Memory {
+struct ARM7MemoryBus final : aura::arm::Memory {
   ARM7MemoryBus(Interconnect* interconnect);
 
   bool& IsHalted() { return halted; }
