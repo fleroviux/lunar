@@ -8,6 +8,7 @@
 #pragma once
 
 #include <lunatic/cpu.hpp>
+#include <aura/arm/cpu.hpp>
 
 #include "nds/interconnect.hpp"
 #include "bus/bus.hpp"
@@ -43,7 +44,7 @@ private:
   } cp14;
 
   ARM7MemoryBus bus;
-  std::unique_ptr<lunatic::CPU> core;
+  std::unique_ptr<aura::arm::CPU> core;
   IRQ& irq;
 };
 

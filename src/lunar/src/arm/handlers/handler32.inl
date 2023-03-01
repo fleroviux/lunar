@@ -149,7 +149,8 @@ void ARM_DataProcessing(u32 instruction) {
     if constexpr (set_flags) {
       auto spsr = *p_spsr;
 
-      SwitchMode(spsr.f.mode);
+      // @todo: do not cast spsr.f.mode
+      SwitchMode((Mode)spsr.f.mode);
       state.cpsr.v = spsr.v;
     }
 
@@ -692,8 +693,9 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   if constexpr (user_mode) {
     if (!load || !transfer_pc) {
-      mode = state.cpsr.f.mode;
-      SwitchMode(MODE_USR);
+      // @todo: do not cast state.cpsr.f.mode
+      mode = (Mode)state.cpsr.f.mode;
+      SwitchMode(Mode::User);
     }
   }
 
@@ -728,7 +730,8 @@ void ARM_BlockDataTransfer(u32 instruction) {
     if (load && transfer_pc) {
       auto& spsr = *p_spsr;
 
-      SwitchMode(spsr.f.mode);
+      // @todo: do not cast spsr.f.mode
+      SwitchMode((Mode)spsr.f.mode);
       state.cpsr.v = spsr.v;
     } else {
       SwitchMode(mode);
@@ -777,7 +780,7 @@ void ARM_Undefined(u32 instruction) {
   state.spsr[BANK_UND].v = state.cpsr.v;
 
   // Enter UND mode and disable IRQs.
-  SwitchMode(MODE_UND);
+  SwitchMode(Mode::Undefined);
   state.cpsr.f.mask_irq = 1;
 
   // Save current program counter and jump to UND exception vector.
@@ -791,7 +794,7 @@ void ARM_SWI(u32 instruction) {
   state.spsr[BANK_SVC].v = state.cpsr.v;
 
   // Enter SVC mode and disable IRQs.
-  SwitchMode(MODE_SVC);
+  SwitchMode(Mode::Supervisor);
   state.cpsr.f.mask_irq = 1;
 
   // Save current program counter and jump to SVC exception vector.

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <lunatic/cpu.hpp>
+#include <aura/arm/cpu.hpp>
 #include <lunar/integer.hpp>
 
 namespace lunar::nds {
@@ -39,7 +40,7 @@ struct IRQ {
 
   void Reset();
   
-  void SetCore(lunatic::CPU* core) {
+  void SetCore(aura::arm::CPU* core) {
     this->core = core;
     UpdateIRQLine();
   }
@@ -87,7 +88,7 @@ struct IRQ {
 private:
   void UpdateIRQLine();
 
-  lunatic::CPU* core = nullptr;
+  aura::arm::CPU* core = nullptr;
 };
 
 } // namespace lunar::nds

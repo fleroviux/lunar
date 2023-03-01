@@ -41,7 +41,7 @@ bool IRQ::HasPendingIRQ() {
 
 void IRQ::UpdateIRQLine() {
   if (core != nullptr) {
-    core->IRQLine() = IsEnabled() && HasPendingIRQ();
+    core->SetIRQFlag(IsEnabled() && HasPendingIRQ());
   }
 }
 

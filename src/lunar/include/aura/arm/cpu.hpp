@@ -52,6 +52,14 @@ namespace aura::arm {
         atom::Bits<30,  1, u32> z;
         atom::Bits<31,  1, u32> n;
 
+        // @todo: can this be simplified using macros?
+        PSR(u32 word) : word{word} {}
+        PSR(PSR const& other) { word = other.word; }
+        PSR& operator=(PSR const& other) {
+          word = other.word;
+          return *this;
+        }
+
         u32 word = static_cast<u32>(Mode::System);
       };
 

@@ -123,18 +123,18 @@ void CP15::WriteControlRegister(int cn, int cm, int opcode, u32 value) {
 }
 
 void CP15::WriteWaitForIRQ(int cn, int cm, int opcode, u32 value) {
-  core->WaitForIRQ() = true;
+  core->SetWaitingForIRQ(true);
 }
 
 void CP15::WriteInvalidateICache(int cn, int cm, int opcode, u32 value) {
-  core->ClearICache();
+//  core->ClearICache();
 }
 
 void CP15::WriteInvalidateICacheLine(int cn, int cm, int opcode, u32 value) {
   auto address_lo = value & ~0x1F;
   auto address_hi = address_lo + 0x1F;
 
-  core->ClearICacheRange(address_lo, address_hi);
+//  core->ClearICacheRange(address_lo, address_hi);
 }
 
 auto CP15::ReadDTCMConfig(int cn, int cm, int opcode) -> u32 {

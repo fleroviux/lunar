@@ -496,7 +496,7 @@ void Thumb_SWI(u16 instruction) {
   state.spsr[BANK_SVC].v = state.cpsr.v;
 
   // Enter SVC mode and disable IRQs.
-  SwitchMode(MODE_SVC);
+  SwitchMode(Mode::Supervisor);
   state.cpsr.f.thumb = 0;
   state.cpsr.f.mask_irq = 1;
 

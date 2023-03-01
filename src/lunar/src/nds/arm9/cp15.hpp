@@ -8,6 +8,7 @@
 #pragma once
 
 #include <lunatic/cpu.hpp>
+#include <aura/arm/cpu.hpp>
 
 #include <lunar/integer.hpp>
 #include <lunar/log.hpp>
@@ -26,7 +27,7 @@ struct CP15 : lunatic::Coprocessor {
   CP15(ARM9MemoryBus* bus);
 
   void Reset() override;
-  void SetCore(lunatic::CPU* core) { this->core = core; }
+  void SetCore(aura::arm::CPU* core) { this->core = core; }
 
   bool ShouldWriteBreakBasicBlock(int opcode1, int cn, int cm, int opcode2) override;
   auto Read (int opcode1, int cn, int cm, int opcode2) -> u32 override;
@@ -65,7 +66,7 @@ private:
   u32 reg_dtcm;
   u32 reg_itcm;
 
-  lunatic::CPU* core;
+  aura::arm::CPU* core;
   ARM9MemoryBus* bus;
   ARM9MemoryBus::TCM::Config dtcm_config;
   ARM9MemoryBus::TCM::Config itcm_config;

@@ -17,7 +17,7 @@
 
 namespace lunar::arm {
 
-class ARM final : public lunatic::CPU {
+class ARM final : public aura::arm::CPU {
   public:
     // @todo: enumerate processors instead of architectures
     enum class Architecture {
@@ -28,24 +28,92 @@ class ARM final : public lunatic::CPU {
     explicit ARM(lunatic::CPU::Descriptor const& descriptor);
 
     void Reset() override;
-    auto IRQLine() -> bool& override;
-    auto WaitForIRQ() -> bool& override;
-    void ClearICache() override {}
-    void ClearICacheRange(u32 address_lo, u32 address_hi) override {}
 
-    void SetExceptionBase(u32 exception_base) override {
+    u32 GetExceptionBase() const override {
+      return exception_base;
     }
 
-    auto Run(int cycles) -> int override;
+    void SetExceptionBase(u32 address) override {
+      exception_base = address;
+    }
 
-    auto GetGPR(lunatic::GPR reg) const -> u32 override;
-    auto GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 override;
-    auto GetCPSR() const -> lunatic::StatusRegister override;
-    auto GetSPSR(lunatic::Mode mode) const -> lunatic::StatusRegister override;
-    void SetGPR(lunatic::GPR reg, u32 value) override;
-    void SetGPR(lunatic::GPR reg, lunatic::Mode mode, u32 value) override;
-    void SetCPSR(lunatic::StatusRegister psr) override;
-    void SetSPSR(lunatic::Mode mode, lunatic::StatusRegister psr) override;
+    bool GetWaitingForIRQ() const override {
+      return wait_for_irq;
+    }
+
+    void SetWaitingForIRQ(bool value) override {
+      wait_for_irq = value;
+    }
+
+    bool GetIRQFlag() const override {
+      return irq_line;
+    }
+
+    void SetIRQFlag(bool value) override {
+      irq_line = value;
+    }
+
+    void Run(int cycles) override;
+
+    u32 GetGPR(GPR reg) const override {
+      return state.reg[(int)reg];
+    }
+
+    u32 GetGPR(GPR reg, Mode mode) const override {
+      // @todo: do not cast mode
+      if((int)reg < 8 || reg == GPR::PC || (uint)mode == state.cpsr.f.mode) {
+        return state.reg[(int)reg];
+      }
+
+      if((int)reg < 13 && mode != Mode::FIQ) {
+        return state.bank[BANK_NONE][(int)reg - 8];
+      }
+
+      return state.bank[GetRegisterBankByMode(mode)][(int)reg - 8];
+    }
+
+    PSR GetCPSR() const override {
+      return state.cpsr.v;
+    }
+
+    PSR GetSPSR(Mode mode) const override {
+      return state.spsr[GetRegisterBankByMode(mode)].v;
+    }
+
+    void SetGPR(GPR reg, u32 value) override {
+      state.reg[(int)reg] = value;
+
+      if (reg == GPR::PC) {
+        if (state.cpsr.f.thumb) {
+          ReloadPipeline16();
+        } else {
+          ReloadPipeline32();
+        }
+      }
+    }
+
+    void SetGPR(GPR reg, Mode mode, u32 value) override {
+      // @todo: do not cast mode
+      if((int)reg < 8 || reg == GPR::PC || (uint)mode == state.cpsr.f.mode) {
+        SetGPR(reg, value);
+      } else if((int)reg < 13 && mode != Mode::FIQ) {
+        state.bank[BANK_NONE][(int)reg - 8] = value;
+      } else {
+        state.bank[GetRegisterBankByMode(mode)][(int)reg - 8] = value;
+      }
+    }
+
+    void SetCPSR(PSR value) override {
+      state.cpsr.v = value.word;
+    }
+
+    void SetSPSR(Mode mode, PSR value) override {
+      state.spsr[GetRegisterBankByMode(mode)].v = value.word;
+    }
+
+    // TODO: remove these!! they only exist for compatibility!
+    bool& IRQLine() { return irq_line; }
+    bool& WaitForIRQ() { return wait_for_irq; }
 
     typedef void (ARM::*Handler16)(u16);
     typedef void (ARM::*Handler32)(u32);

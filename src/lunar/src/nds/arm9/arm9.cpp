@@ -41,12 +41,12 @@ void ARM9::Reset(u32 entrypoint) {
   cp15.Reset();
 
   auto cpsr = core->GetCPSR();
-  cpsr.f.mode = lunatic::Mode::System;
+  cpsr.mode = aura::arm::CPU::Mode::System;
   core->SetCPSR(cpsr);
-  core->SetGPR(lunatic::GPR::SP, 0x03002F7C);
-  core->SetGPR(lunatic::GPR::SP, lunatic::Mode::IRQ, 0x03003F80);
-  core->SetGPR(lunatic::GPR::SP, lunatic::Mode::Supervisor, 0x03003FC0);
-  core->SetGPR(lunatic::GPR::PC, entrypoint);
+  core->SetGPR(aura::arm::CPU::GPR::SP, 0x03002F7C);
+  core->SetGPR(aura::arm::CPU::GPR::SP, aura::arm::CPU::Mode::IRQ, 0x03003F80);
+  core->SetGPR(aura::arm::CPU::GPR::SP, aura::arm::CPU::Mode::Supervisor, 0x03003FC0);
+  core->SetGPR(aura::arm::CPU::GPR::PC, entrypoint);
 }
 
 void ARM9::Run(uint cycles) {

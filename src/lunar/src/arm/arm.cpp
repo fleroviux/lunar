@@ -24,7 +24,8 @@ void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
   state.Reset();
-  SwitchMode(state.cpsr.f.mode);
+  // @todo: do not cast state.cpsr.f.mode
+  SwitchMode((Mode)state.cpsr.f.mode);
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = exception_base;
@@ -32,17 +33,9 @@ void ARM::Reset() {
   IRQLine() = false;
 }
 
-auto ARM::IRQLine() -> bool& {
-  return irq_line;
-}
-
-auto ARM::WaitForIRQ() -> bool& {
-  return wait_for_irq;
-}
-
-auto ARM::Run(int cycles) -> int {
+void ARM::Run(int cycles) {
   if (WaitForIRQ() && !IRQLine()) {
-    return 0;
+    return;
   }
 
   while (cycles-- > 0) {
@@ -69,68 +62,14 @@ auto ARM::Run(int cycles) -> int {
         }
         (this->*s_opcode_lut_32[hash])(instruction);
 
-        if (WaitForIRQ()) return 0;
+        if (WaitForIRQ()) return;
       } else {
         state.r15 += 4;
       }
     }
   }
 
-  return 0;
-}
-
-auto ARM::GetGPR(lunatic::GPR reg) const -> u32 {
-  return state.reg[(int)reg];
-}
-
-auto ARM::GetGPR(lunatic::GPR reg, lunatic::Mode mode) const -> u32 {
-  if((int)reg < 8 || reg == lunatic::GPR::PC || Mode(mode) == state.cpsr.f.mode) {
-    return state.reg[(int)reg];
-  }
-
-  if((int)reg < 13 && mode != lunatic::Mode::FIQ) {
-    return state.bank[BANK_NONE][(int)reg - 8];
-  }
-
-  return state.bank[GetRegisterBankByMode(Mode(mode))][(int)reg - 8];
-}
-
-auto ARM::GetCPSR() const -> lunatic::StatusRegister {
-  return {.v = state.cpsr.v};
-}
-
-auto ARM::GetSPSR(lunatic::Mode mode) const -> lunatic::StatusRegister {
-  return {.v = state.spsr[GetRegisterBankByMode(Mode(mode))].v};
-}
-
-void ARM::SetGPR(lunatic::GPR reg, u32 value) {
-  state.reg[(int)reg] = value;
-
-  if (reg == lunatic::GPR::PC) {
-    if (state.cpsr.f.thumb) {
-      ReloadPipeline16();
-    } else {
-      ReloadPipeline32();
-    }
-  }
-}
-
-void ARM::SetGPR(lunatic::GPR reg, lunatic::Mode mode, u32 value) {
-  if((int)reg < 8 || reg == lunatic::GPR::PC || Mode(mode) == state.cpsr.f.mode) {
-    SetGPR(reg, value);
-  } else if((int)reg < 13 && mode != lunatic::Mode::FIQ) {
-    state.bank[BANK_NONE][(int)reg - 8] = value;
-  } else {
-    state.bank[GetRegisterBankByMode(Mode(mode))][(int)reg - 8] = value;
-  }
-}
-
-void ARM::SetCPSR(lunatic::StatusRegister psr) {
-  state.cpsr.v = psr.v;
-}
-
-void ARM::SetSPSR(lunatic::Mode mode, lunatic::StatusRegister psr) {
-  state.spsr[GetRegisterBankByMode(Mode(mode))].v = psr.v;
+  return;
 }
 
 void ARM::SignalIRQ() {
@@ -144,7 +83,7 @@ void ARM::SignalIRQ() {
   state.spsr[BANK_IRQ].v = state.cpsr.v;
 
   // Enter IRQ mode and disable IRQs.
-  SwitchMode(MODE_IRQ);
+  SwitchMode(Mode::IRQ);
   state.cpsr.f.mask_irq = 1;
 
   // Save current program counter and disable Thumb.
@@ -207,18 +146,18 @@ bool ARM::CheckCondition(Condition condition) {
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
   switch (mode) {
-    case MODE_USR:
-    case MODE_SYS:
+    case Mode::User:
+    case Mode::System:
       return BANK_NONE;
-    case MODE_FIQ:
+    case Mode::FIQ:
       return BANK_FIQ;
-    case MODE_IRQ:
+    case Mode::IRQ:
       return BANK_IRQ;
-    case MODE_SVC:
+    case Mode::Supervisor:
       return BANK_SVC;
-    case MODE_ABT:
+    case Mode::Abort:
       return BANK_ABT;
-    case MODE_UND:
+    case Mode::Undefined:
       return BANK_UND;
   }
 
@@ -226,10 +165,12 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
 }
 
 void ARM::SwitchMode(Mode new_mode) {
-  auto old_bank = GetRegisterBankByMode(state.cpsr.f.mode);
+  // @todo: do not cast state.cpsr.f.mode
+  auto old_bank = GetRegisterBankByMode((Mode)state.cpsr.f.mode);
   auto new_bank = GetRegisterBankByMode(new_mode);
 
-  state.cpsr.f.mode = new_mode;
+  // @todo: do not cast new_mode
+  state.cpsr.f.mode = (lunar::arm::Mode)new_mode;
   p_spsr = &state.spsr[new_bank];
 
   if (old_bank == new_bank) {

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <lunatic/cpu.hpp>
+#include <aura/arm/cpu.hpp>
 
 #include "nds/interconnect.hpp"
 #include "bus/bus.hpp"
@@ -20,13 +21,13 @@ struct ARM9 {
 
   void Reset(u32 entrypoint);
   auto Bus() -> ARM9MemoryBus& { return bus; }
-  bool IsHalted() { return core->WaitForIRQ(); }
+  bool IsHalted() { return core->GetWaitingForIRQ(); }
   void Run(uint cycles);
 
 private:
   ARM9MemoryBus bus;
   CP15 cp15;
-  std::unique_ptr<lunatic::CPU> core;
+  std::unique_ptr<aura::arm::CPU> core;
   IRQ& irq;
 };
 
