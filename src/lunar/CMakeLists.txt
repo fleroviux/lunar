@@ -134,7 +134,7 @@ set(HEADERS_PUBLIC
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
-target_link_libraries(lunar PRIVATE lunatic)
+target_link_libraries(lunar PRIVATE lunatic atom-common)
 target_link_libraries(lunar PUBLIC fmt)
 
 # TODO: remove this before merging the OpenGL renderer
