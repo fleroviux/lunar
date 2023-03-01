@@ -26,11 +26,7 @@ ARM9::ARM9(Interconnect& interconnect)
     .exception_base = 0xFFFF'0000
   };
 
-  if (gEnableJITRecompiler) {
-    core = lunatic::CreateCPU(cpu_descriptor);
-  } else {
-    core = std::make_unique<arm::ARM>(cpu_descriptor);
-  }
+  core = std::make_unique<arm::ARM>(cpu_descriptor);
 
   cp15.SetCore(core.get());
   irq.SetCore(core.get());

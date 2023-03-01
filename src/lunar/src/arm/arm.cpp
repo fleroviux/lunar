@@ -244,21 +244,29 @@ void ARM::SwitchMode(Mode new_mode) {
     return;
   }
 
-  if (old_bank == BANK_FIQ || new_bank == BANK_FIQ) {
-    for (int i = 0; i < 7; i++){
-      state.bank[old_bank][i] = state.reg[8 + i];
+  if (old_bank == BANK_FIQ) {
+    for (int i = 0; i < 5; i++){
+      state.bank[BANK_FIQ][i] = state.reg[8 + i];
     }
 
-    for (int i = 0; i < 7; i++) {
-      state.reg[8 + i] = state.bank[new_bank][i];
+    for (int i = 0; i < 5; i++) {
+      state.reg[8 + i] = state.bank[BANK_NONE][i];
     }
-  } else {
-    state.bank[old_bank][5] = state.r13;
-    state.bank[old_bank][6] = state.r14;
+  } else if(new_bank == BANK_FIQ) {
+    for (int i = 0; i < 5; i++) {
+      state.bank[BANK_NONE][i] = state.reg[8 + i];
+    }
 
-    state.r13 = state.bank[new_bank][5];
-    state.r14 = state.bank[new_bank][6];
+    for (int i = 0; i < 5; i++) {
+      state.reg[8 + i] = state.bank[BANK_FIQ][i];
+    }
   }
+
+  state.bank[old_bank][5] = state.r13;
+  state.bank[old_bank][6] = state.r14;
+
+  state.r13 = state.bank[new_bank][5];
+  state.r14 = state.bank[new_bank][6];
 }
 
 } // namespace lunar::arm

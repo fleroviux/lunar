@@ -25,11 +25,7 @@ ARM7::ARM7(Interconnect& interconnect)
     .exception_base = 0x0000'0000
   };
 
-  if (gEnableJITRecompiler) {
-    core = lunatic::CreateCPU(cpu_descriptor);
-  } else {
-    core = std::make_unique<arm::ARM>(cpu_descriptor);
-  }
+  core = std::make_unique<arm::ARM>(cpu_descriptor);
 
   irq.SetCore(core.get());
   interconnect.dma7.SetMemory(&bus);
