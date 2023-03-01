@@ -29,16 +29,16 @@ void ARM::Reset() {
   opcode[1] = nop;
   state.r15 = exception_base;
   wait_for_irq = false;
-  IRQLine() = false;
+  SetIRQFlag(false);
 }
 
 void ARM::Run(int cycles) {
-  if (WaitForIRQ() && !IRQLine()) {
+  if (GetWaitingForIRQ() && !GetIRQFlag()) {
     return;
   }
 
   while (cycles-- > 0) {
-    if (IRQLine()) SignalIRQ();
+    if (GetIRQFlag()) SignalIRQ();
 
     auto instruction = opcode[0];
     if (state.cpsr.thumb) {
@@ -61,14 +61,12 @@ void ARM::Run(int cycles) {
         }
         (this->*s_opcode_lut_32[hash])(instruction);
 
-        if (WaitForIRQ()) return;
+        if (GetWaitingForIRQ()) return;
       } else {
         state.r15 += 4;
       }
     }
   }
-
-  return;
 }
 
 void ARM::SignalIRQ() {

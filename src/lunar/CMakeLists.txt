@@ -64,7 +64,6 @@ set(HEADERS
   src/arm/tablegen/gen_arm.hpp
   src/arm/tablegen/gen_thumb.hpp
   src/arm/arm.hpp
-  src/arm/state.hpp
   src/common/math/matrix.hpp
   src/common/math/numeric_traits.hpp
   src/common/math/vector.hpp
