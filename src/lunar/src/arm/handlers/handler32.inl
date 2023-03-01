@@ -149,8 +149,7 @@ void ARM_DataProcessing(u32 instruction) {
     if constexpr (set_flags) {
       auto spsr = *p_spsr;
 
-      // @todo: do not cast spsr.f.mode
-      SwitchMode((Mode)spsr.f.mode);
+      SwitchMode(spsr.f.mode);
       state.cpsr.v = spsr.v;
     }
 
@@ -693,8 +692,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   if constexpr (user_mode) {
     if (!load || !transfer_pc) {
-      // @todo: do not cast state.cpsr.f.mode
-      mode = (Mode)state.cpsr.f.mode;
+      mode = state.cpsr.f.mode;
       SwitchMode(Mode::User);
     }
   }
@@ -730,8 +728,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
     if (load && transfer_pc) {
       auto& spsr = *p_spsr;
 
-      // @todo: do not cast spsr.f.mode
-      SwitchMode((Mode)spsr.f.mode);
+      SwitchMode(spsr.f.mode);
       state.cpsr.v = spsr.v;
     } else {
       SwitchMode(mode);

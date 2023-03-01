@@ -24,8 +24,7 @@ void ARM::Reset() {
   constexpr u32 nop = 0xE320F000;
 
   state.Reset();
-  // @todo: do not cast state.cpsr.f.mode
-  SwitchMode((Mode)state.cpsr.f.mode);
+  SwitchMode(state.cpsr.f.mode);
   opcode[0] = nop;
   opcode[1] = nop;
   state.r15 = exception_base;
@@ -165,12 +164,10 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
 }
 
 void ARM::SwitchMode(Mode new_mode) {
-  // @todo: do not cast state.cpsr.f.mode
-  auto old_bank = GetRegisterBankByMode((Mode)state.cpsr.f.mode);
+  auto old_bank = GetRegisterBankByMode(state.cpsr.f.mode);
   auto new_bank = GetRegisterBankByMode(new_mode);
 
-  // @todo: do not cast new_mode
-  state.cpsr.f.mode = (lunar::arm::Mode)new_mode;
+  state.cpsr.f.mode = new_mode;
   p_spsr = &state.spsr[new_bank];
 
   if (old_bank == new_bank) {

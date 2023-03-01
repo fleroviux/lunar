@@ -11,16 +11,6 @@
 
 namespace lunar::arm {
 
-enum Mode : unsigned int {
-  MODE_USR = 0x10,
-  MODE_FIQ = 0x11,
-  MODE_IRQ = 0x12,
-  MODE_SVC = 0x13,
-  MODE_ABT = 0x17,
-  MODE_UND = 0x1B,
-  MODE_SYS = 0x1F
-};
-  
 enum Bank {
   BANK_NONE = 0,
   BANK_FIQ  = 1,
@@ -60,11 +50,11 @@ enum BankedRegister {
 };
 
 struct State {
-  static constexpr int kBankCount = 6;
+  static constexpr int k_bank_count = 6;
 
   union StatusRegister {
     struct {
-      Mode mode : 5;
+      aura::arm::CPU::Mode mode : 5;
       unsigned int thumb : 1;
       unsigned int mask_fiq : 1;
       unsigned int mask_irq : 1;
@@ -102,11 +92,11 @@ struct State {
   };
   
   // Banked Registers
-  u32 bank[kBankCount][7];
+  u32 bank[k_bank_count][7];
 
   // Program Status Registers
   StatusRegister cpsr;
-  StatusRegister spsr[kBankCount];
+  StatusRegister spsr[k_bank_count];
   
   State() { Reset(); }
   
@@ -115,14 +105,14 @@ struct State {
       reg[i] = 0;
     }
 
-    for (int b = 0; b < kBankCount; b++) {
+    for (int b = 0; b < k_bank_count; b++) {
       for (int r = 0; r < 7; r++) {
         bank[b][r] = 0;
       }
       spsr[b].v = 0;
     }
 
-    cpsr.v = MODE_SVC;
+    cpsr.v = (uint)aura::arm::CPU::Mode::Supervisor;
     cpsr.f.mask_irq = 1;
     cpsr.f.mask_fiq = 1;
   }

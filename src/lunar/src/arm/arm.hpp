@@ -60,8 +60,7 @@ class ARM final : public aura::arm::CPU {
     }
 
     u32 GetGPR(GPR reg, Mode mode) const override {
-      // @todo: do not cast mode
-      if((int)reg < 8 || reg == GPR::PC || (uint)mode == state.cpsr.f.mode) {
+      if((int)reg < 8 || reg == GPR::PC || mode == state.cpsr.f.mode) {
         return state.reg[(int)reg];
       }
 
@@ -93,8 +92,7 @@ class ARM final : public aura::arm::CPU {
     }
 
     void SetGPR(GPR reg, Mode mode, u32 value) override {
-      // @todo: do not cast mode
-      if((int)reg < 8 || reg == GPR::PC || (uint)mode == state.cpsr.f.mode) {
+      if((int)reg < 8 || reg == GPR::PC || mode == state.cpsr.f.mode) {
         SetGPR(reg, value);
       } else if((int)reg < 13 && mode != Mode::FIQ) {
         state.bank[BANK_NONE][(int)reg - 8] = value;
