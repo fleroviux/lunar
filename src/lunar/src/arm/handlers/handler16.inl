@@ -227,7 +227,7 @@ void Thumb_HighRegisterOps_BX(u16 instruction) {
     }
     case ThumbHighRegOp::BLX: {
       // NOTE: "high1" is reused as link bit for branch exchange instructions.
-      if (high1 && arch != Architecture::ARMv4T) {
+      if (high1 && model != Model::ARM7) {
         state.r14 = (state.r15 - 2) | 1;
       }
 
@@ -535,7 +535,7 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   state.r14 = temp | 1;
   if (exchange) {
     // Not a valid opcode in ARMv4T, but we don't know what it would do.
-    ASSERT(arch != Architecture::ARMv4T, "blx cannot be used on ARMv4T CPUs");
+    ASSERT(model != Model::ARM7, "blx cannot be used on ARMv4T CPUs");
     state.r15 &= ~3;
     state.cpsr.thumb = 0;
     ReloadPipeline32();

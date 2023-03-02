@@ -13,10 +13,10 @@ namespace aura::arm {
 
 ARM::ARM(
   Memory* memory,
-  Architecture arch,
+  Model model,
   std::array<Coprocessor*, 16> coprocessors
 )   : memory{memory}
-    , arch{arch}
+    , model{model}
     , coprocessors{coprocessors} {
   BuildConditionTable();
   Reset();

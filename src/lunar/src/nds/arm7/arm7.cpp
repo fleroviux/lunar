@@ -32,7 +32,7 @@ ARM7::ARM7(Interconnect& interconnect)
     nullptr, nullptr, &cp14,   nullptr
   };
 
-  core = std::make_unique<aura::arm::ARM>(&bus, aura::arm::ARM::Architecture::ARMv4T, coprocessors);
+  core = std::make_unique<aura::arm::ARM>(&bus, aura::arm::CPU::Model::ARM7, coprocessors);
 
   irq.SetCore(core.get());
   interconnect.dma7.SetMemory(&bus);

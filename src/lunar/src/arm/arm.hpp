@@ -17,15 +17,9 @@ namespace aura::arm {
 
 class ARM final : public CPU {
   public:
-    // @todo: enumerate processors instead of architectures
-    enum class Architecture {
-      ARMv4T,
-      ARMv5TE
-    };
-
     ARM(
       Memory* memory,
-      Architecture arch,
+      Model model,
       std::array<Coprocessor*, 16> coprocessors = {}
     );
 
@@ -160,7 +154,7 @@ class ARM final : public CPU {
     #include "handlers/memory.inl"
 
     Memory* memory;
-    Architecture arch;
+    Model model;
     std::array<Coprocessor*, 16> coprocessors;
 
     bool irq_line;

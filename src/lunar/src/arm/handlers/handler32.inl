@@ -287,8 +287,7 @@ void ARM_MultiplyLong(u32 instruction) {
 
 template <bool accumulate, bool x, bool y>
 void ARM_SignedHalfwordMultiply(u32 instruction) {
-  if (arch == Architecture::ARMv4T) {
-    // TODO: unclear how this instruction behaves on the ARM7.
+  if (model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
@@ -317,7 +316,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
   if constexpr (accumulate) {
     // Update sticky-flag without saturating the result.
-    // TODO: make helper method to detect overflow instead.
+    // @todo: create a helper to detect overflow and use it instead of QADD?
     state.reg[dst] = QADD(result, state.reg[op3], false);
   } else {
     state.reg[dst] = result;
@@ -328,8 +327,8 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
 template <bool accumulate, bool y>
 void ARM_SignedWordHalfwordMultiply(u32 instruction) {
-  if (arch == Architecture::ARMv4T) {
-    // TODO: unclear how this instruction behaves on the ARM7.
+  if (model == Model::ARM7) {
+    // @todo: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
   }
@@ -352,7 +351,7 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
   if constexpr (accumulate) {
     // Update sticky-flag without saturating the result.
-    // TODO: make helper method to detect overflow instead.
+    // @todo: create a helper to detect overflow and use it instead of QADD?
     state.reg[dst] = QADD(result, state.reg[op3], false);
   } else {
     state.reg[dst] = result;
@@ -363,8 +362,8 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
 template <bool x, bool y>
 void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
-  if (arch == Architecture::ARMv4T) {
-    // TODO: unclear how this instruction behaves on the ARM7.
+  if (model == Model::ARM7) {
+    // @todo: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
   }
@@ -425,7 +424,7 @@ void ARM_BranchAndExchangeMaybeLink(u32 instruction) {
   u32 address = state.reg[instruction & 0xF];
 
   if constexpr (link) {
-    if (arch == Architecture::ARMv4T) {
+    if (model == Model::ARM7) {
       ARM_Undefined(instruction);
       return;
     }
@@ -475,7 +474,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
     case 2: {
       if constexpr (load) {
         state.reg[dst] = ReadByteSigned(address);
-      } else if (arch == Architecture::ARMv5TE) {
+      } else if (model != Model::ARM7) {
         // LDRD: using an odd numbered destination register is undefined.
         if ((dst & 1) == 1) {
           state.r15 -= 4;
@@ -501,7 +500,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
     case 3: {
       if constexpr (load) {
         state.reg[dst] = ReadHalfSigned(address);
-      } else if (arch == Architecture::ARMv5TE) {
+      } else if (model != Model::ARM7) {
         // STRD: using an odd numbered destination register is undefined.
         if ((dst & 1) == 1) {
           state.r15 -= 4;
@@ -617,7 +616,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
 
   if constexpr (load) {
     if (dst == 15) {
-      if ((state.r15 & 1) && arch != Architecture::ARMv4T) {
+      if ((state.r15 & 1) && model != Model::ARM7) {
         ASSERT(!byte && !translation, "ARM: unpredictable LDRB or LDRT with destination = r15.");
         state.cpsr.thumb = 1;
         state.r15 &= ~1;
@@ -667,7 +666,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
     #endif
   } else {
     bytes = 16 * sizeof(u32);
-    if (arch == Architecture::ARMv4T) {
+    if (model == Model::ARM7) {
       list = 1 << 15;
       transfer_pc = true;
     }
@@ -685,7 +684,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
   // STM ARMv4: store new base if base is not the first register and old base otherwise.
   // STM ARMv5: always store old base.
   if constexpr (writeback && !load) {
-    if (arch == Architecture::ARMv4T && !base_is_first) {
+    if (model == Model::ARM7 && !base_is_first) {
       state.reg[base] = base_new;
     }
   }
@@ -737,13 +736,14 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   if constexpr (writeback) {
     if constexpr (load) {
-      switch (arch) {
-        case Architecture::ARMv5TE:
+      switch (model) {
+        case Model::ARM9:
+        case Model::ARM11: // @todo: research ARM11MPCore behaviour
           // LDM ARMv5: writeback if base is the only register or not the last register.
           if (!base_is_last || list == (1 << base))
             state.reg[base] = base_new;
           break;
-        case Architecture::ARMv4T:
+        case Model::ARM7:
           // LDM ARMv4: writeback if base in not in the register list.
           if (!(list & (1 << base)))
             state.reg[base] = base_new;
@@ -756,7 +756,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   if constexpr (load) {
     if (transfer_pc) {
-      if ((state.r15 & 1) && !user_mode && arch != Architecture::ARMv4T) {
+      if ((state.r15 & 1) && !user_mode && model != Model::ARM7) {
         state.cpsr.thumb = 1;
         state.r15 &= ~1;
       }
@@ -801,7 +801,7 @@ void ARM_SWI(u32 instruction) {
 }
 
 void ARM_CountLeadingZeros(u32 instruction) {
-  if (arch == Architecture::ARMv4T) {
+  if (model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
@@ -845,7 +845,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
 
 template <int opcode>
 void ARM_SaturatingAddSubtract(u32 instruction) {
-  if (arch == Architecture::ARMv4T) {
+  if (model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
