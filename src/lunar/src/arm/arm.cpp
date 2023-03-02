@@ -1,6 +1,4 @@
 
-#include <stdexcept>
-
 #include "arm.hpp"
 
 namespace aura::arm {
@@ -48,11 +46,13 @@ void ARM::Run(int cycles) {
 
       opcode[0] = opcode[1];
       opcode[1] = ReadWordCode(state.r15);
+
       auto condition = static_cast<Condition>(instruction >> 28);
+
       if (CheckCondition(condition)) {
         int hash = ((instruction >> 16) & 0xFF0) |
                    ((instruction >>  4) & 0x00F);
-        if (condition == COND_NV) {
+        if (condition == Condition::NV) {
           hash |= 4096;
         }
         (this->*s_opcode_lut_32[hash])(instruction);
@@ -73,7 +73,7 @@ void ARM::SignalIRQ() {
   }
 
   // Save current program status register.
-  state.spsr[BANK_IRQ] = state.cpsr;
+  state.spsr[(int)Bank::IRQ] = state.cpsr;
 
   // Enter IRQ mode and disable IRQs.
   SwitchMode(Mode::IRQ);
@@ -111,47 +111,53 @@ void ARM::BuildConditionTable() {
     bool c = flags & 2;
     bool v = flags & 1;
 
-    condition_table[COND_EQ][flags] = z;
-    condition_table[COND_NE][flags] = !z;
-    condition_table[COND_CS][flags] =  c;
-    condition_table[COND_CC][flags] = !c;
-    condition_table[COND_MI][flags] =  n;
-    condition_table[COND_PL][flags] = !n;
-    condition_table[COND_VS][flags] =  v;
-    condition_table[COND_VC][flags] = !v;
-    condition_table[COND_HI][flags] =  c && !z;
-    condition_table[COND_LS][flags] = !c ||  z;
-    condition_table[COND_GE][flags] = n == v;
-    condition_table[COND_LT][flags] = n != v;
-    condition_table[COND_GT][flags] = !(z || (n != v));
-    condition_table[COND_LE][flags] =  (z || (n != v));
-    condition_table[COND_AL][flags] = true;
-    condition_table[COND_NV][flags] = true;
+    condition_table[(int)Condition::EQ][flags] = z;
+    condition_table[(int)Condition::NE][flags] = !z;
+    condition_table[(int)Condition::CS][flags] =  c;
+    condition_table[(int)Condition::CC][flags] = !c;
+    condition_table[(int)Condition::MI][flags] =  n;
+    condition_table[(int)Condition::PL][flags] = !n;
+    condition_table[(int)Condition::VS][flags] =  v;
+    condition_table[(int)Condition::VC][flags] = !v;
+    condition_table[(int)Condition::HI][flags] =  c && !z;
+    condition_table[(int)Condition::LS][flags] = !c ||  z;
+    condition_table[(int)Condition::GE][flags] = n == v;
+    condition_table[(int)Condition::LT][flags] = n != v;
+    condition_table[(int)Condition::GT][flags] = !(z || (n != v));
+    condition_table[(int)Condition::LE][flags] =  (z || (n != v));
+    condition_table[(int)Condition::AL][flags] = true;
+    condition_table[(int)Condition::NV][flags] = true;
   }
 }
 
 bool ARM::CheckCondition(Condition condition) {
-  if (condition == COND_AL) {
+  if (condition == Condition::AL) {
     return true;
   }
-  return condition_table[condition][state.cpsr.word >> 28];
+  return condition_table[(int)condition][state.cpsr.word >> 28];
 }
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
   switch (mode) {
     case Mode::User:
-    case Mode::System:
-      return BANK_NONE;
-    case Mode::FIQ:
-      return BANK_FIQ;
-    case Mode::IRQ:
-      return BANK_IRQ;
-    case Mode::Supervisor:
-      return BANK_SVC;
-    case Mode::Abort:
-      return BANK_ABT;
-    case Mode::Undefined:
-      return BANK_UND;
+    case Mode::System: {
+      return Bank::None;
+    }
+    case Mode::FIQ: {
+      return Bank::FIQ;
+    }
+    case Mode::IRQ: {
+      return Bank::IRQ;
+    }
+    case Mode::Supervisor: {
+      return Bank::Supervisor;
+    }
+    case Mode::Abort: {
+      return Bank::Abort;
+    }
+    case Mode::Undefined: {
+      return Bank::Undefined;
+    }
   }
 
   ATOM_PANIC("invalid ARM CPU mode: 0x{:02X}", (uint)mode);
@@ -162,35 +168,35 @@ void ARM::SwitchMode(Mode new_mode) {
   auto new_bank = GetRegisterBankByMode(new_mode);
 
   state.cpsr.mode = new_mode;
-  p_spsr = &state.spsr[new_bank];
+  p_spsr = &state.spsr[(int)new_bank];
 
   if (old_bank == new_bank) {
     return;
   }
 
-  if (old_bank == BANK_FIQ) {
+  if (old_bank == Bank::FIQ) {
     for (int i = 0; i < 5; i++){
-      state.bank[BANK_FIQ][i] = state.reg[8 + i];
+      state.bank[(int)Bank::FIQ][i] = state.reg[8 + i];
     }
 
     for (int i = 0; i < 5; i++) {
-      state.reg[8 + i] = state.bank[BANK_NONE][i];
+      state.reg[8 + i] = state.bank[(int)Bank::None][i];
     }
-  } else if(new_bank == BANK_FIQ) {
+  } else if(new_bank == Bank::FIQ) {
     for (int i = 0; i < 5; i++) {
-      state.bank[BANK_NONE][i] = state.reg[8 + i];
+      state.bank[(int)Bank::None][i] = state.reg[8 + i];
     }
 
     for (int i = 0; i < 5; i++) {
-      state.reg[8 + i] = state.bank[BANK_FIQ][i];
+      state.reg[8 + i] = state.bank[(int)Bank::FIQ][i];
     }
   }
 
-  state.bank[old_bank][5] = state.r13;
-  state.bank[old_bank][6] = state.r14;
+  state.bank[(int)old_bank][5] = state.r13;
+  state.bank[(int)old_bank][6] = state.r14;
 
-  state.r13 = state.bank[new_bank][5];
-  state.r14 = state.bank[new_bank][6];
+  state.r13 = state.bank[(int)new_bank][5];
+  state.r14 = state.bank[(int)new_bank][6];
 }
 
 } // namespace aura::arm

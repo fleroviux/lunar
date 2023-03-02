@@ -773,7 +773,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
 void ARM_SWI(u32 instruction) {
   // Save current program status register.
-  state.spsr[BANK_SVC] = state.cpsr;
+  state.spsr[(int)Bank::Supervisor] = state.cpsr;
 
   // Enter SVC mode and disable IRQs.
   SwitchMode(Mode::Supervisor);
@@ -894,7 +894,7 @@ void ARM_Undefined(u32 instruction) {
   ATOM_PANIC("undefined ARM instruction: 0x{0:08X} (PC = 0x{:08X})", instruction, state.r15);
 
   /*// Save current program status register.
-  state.spsr[BANK_UND] = state.cpsr;
+  state.spsr[(int)Bank::Undefined] = state.cpsr;
 
   // Enter UND mode and disable IRQs.
   SwitchMode(Mode::Undefined);

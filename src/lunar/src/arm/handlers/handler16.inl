@@ -487,7 +487,7 @@ void Thumb_ConditionalBranch(u16 instruction) {
 
 void Thumb_SWI(u16 instruction) {
   // Save current program status register.
-  state.spsr[BANK_SVC] = state.cpsr;
+  state.spsr[(int)Bank::Supervisor] = state.cpsr;
 
   // Enter SVC mode and disable IRQs.
   SwitchMode(Mode::Supervisor);

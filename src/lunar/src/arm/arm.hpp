@@ -53,10 +53,10 @@ class ARM final : public CPU {
       }
 
       if((int)reg < 13 && mode != Mode::FIQ) {
-        return state.bank[BANK_NONE][(int)reg - 8];
+        return state.bank[(int)Bank::None][(int)reg - 8];
       }
 
-      return state.bank[GetRegisterBankByMode(mode)][(int)reg - 8];
+      return state.bank[(int)GetRegisterBankByMode(mode)][(int)reg - 8];
     }
 
     PSR GetCPSR() const override {
@@ -64,7 +64,7 @@ class ARM final : public CPU {
     }
 
     PSR GetSPSR(Mode mode) const override {
-      return state.spsr[GetRegisterBankByMode(mode)];
+      return state.spsr[(int)GetRegisterBankByMode(mode)];
     }
 
     void SetGPR(GPR reg, u32 value) override {
@@ -83,9 +83,9 @@ class ARM final : public CPU {
       if((int)reg < 8 || reg == GPR::PC || mode == (Mode)state.cpsr.mode) {
         SetGPR(reg, value);
       } else if((int)reg < 13 && mode != Mode::FIQ) {
-        state.bank[BANK_NONE][(int)reg - 8] = value;
+        state.bank[(int)Bank::None][(int)reg - 8] = value;
       } else {
-        state.bank[GetRegisterBankByMode(mode)][(int)reg - 8] = value;
+        state.bank[(int)GetRegisterBankByMode(mode)][(int)reg - 8] = value;
       }
     }
 
@@ -94,7 +94,7 @@ class ARM final : public CPU {
     }
 
     void SetSPSR(Mode mode, PSR value) override {
-      state.spsr[GetRegisterBankByMode(mode)] = value;
+      state.spsr[(int)GetRegisterBankByMode(mode)] = value;
     }
 
     void Run(int cycles) override;
@@ -103,32 +103,32 @@ class ARM final : public CPU {
     typedef void (ARM::*Handler32)(u32);
 
   private:
-    enum Condition {
-      COND_EQ = 0,
-      COND_NE = 1,
-      COND_CS = 2,
-      COND_CC = 3,
-      COND_MI = 4,
-      COND_PL = 5,
-      COND_VS = 6,
-      COND_VC = 7,
-      COND_HI = 8,
-      COND_LS = 9,
-      COND_GE = 10,
-      COND_LT = 11,
-      COND_GT = 12,
-      COND_LE = 13,
-      COND_AL = 14,
-      COND_NV = 15
+    enum class Condition {
+      EQ = 0,
+      NE = 1,
+      CS = 2,
+      CC = 3,
+      MI = 4,
+      PL = 5,
+      VS = 6,
+      VC = 7,
+      HI = 8,
+      LS = 9,
+      GE = 10,
+      LT = 11,
+      GT = 12,
+      LE = 13,
+      AL = 14,
+      NV = 15
     };
 
-    enum Bank {
-      BANK_NONE = 0,
-      BANK_FIQ  = 1,
-      BANK_SVC  = 2,
-      BANK_ABT  = 3,
-      BANK_IRQ  = 4,
-      BANK_UND  = 5
+    enum class Bank {
+      None = 0,
+      FIQ  = 1,
+      Supervisor  = 2,
+      Abort  = 3,
+      IRQ  = 4,
+      Undefined  = 5
     };
 
     friend struct TableGen;
