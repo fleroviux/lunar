@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2022 fleroviux.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
 
 enum class ARMDataOp {
   AND = 0,
@@ -513,8 +507,9 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       }
       break;
     }
-    default:
-      UNREACHABLE;
+    default: {
+      ATOM_PANIC("this code should have not been reached");
+    }
   }
 
   if (allow_writeback) {
@@ -571,7 +566,11 @@ void ARM_SingleDataTransfer(u32 instruction) {
 
   constexpr bool translation = !pre && writeback;
 
-  ASSERT(!translation, "ARM: unhandled LDRT or STRT instruction");
+  // We do not support LDRT/STRT at the moment.
+  if(translation) {
+    ARM_Unimplemented(instruction);
+    return;
+  }
 
   // Calculate offset relative to base register.
   if constexpr (immediate) {
@@ -617,7 +616,9 @@ void ARM_SingleDataTransfer(u32 instruction) {
   if constexpr (load) {
     if (dst == 15) {
       if ((state.r15 & 1) && model != Model::ARM7) {
-        ASSERT(!byte && !translation, "ARM: unpredictable LDRB or LDRT with destination = r15.");
+        if(byte || translation) {
+          ATOM_PANIC("unpredictable LDRB or LDRT to PC (PC=0x{:08X})", state.r15);
+        }
         state.cpsr.thumb = 1;
         state.r15 &= ~1;
         ReloadPipeline16();
@@ -770,22 +771,6 @@ void ARM_BlockDataTransfer(u32 instruction) {
   }
 }
 
-void ARM_Undefined(u32 instruction) {
-  LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
-
-  // Save current program status register.
-  state.spsr[BANK_UND] = state.cpsr;
-
-  // Enter UND mode and disable IRQs.
-  SwitchMode(Mode::Undefined);
-  state.cpsr.mask_irq = 1;
-
-  // Save current program counter and jump to UND exception vector.
-  state.r14 = state.r15 - 4;
-  state.r15 = exception_base + 0x04;
-  ReloadPipeline32();
-}
-
 void ARM_SWI(u32 instruction) {
   // Save current program status register.
   state.spsr[BANK_SVC] = state.cpsr;
@@ -905,6 +890,22 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   state.r15 += 4;
 }
 
+void ARM_Undefined(u32 instruction) {
+  ATOM_PANIC("undefined ARM instruction: 0x{0:08X} (PC = 0x{:08X})", instruction, state.r15);
+
+  /*// Save current program status register.
+  state.spsr[BANK_UND] = state.cpsr;
+
+  // Enter UND mode and disable IRQs.
+  SwitchMode(Mode::Undefined);
+  state.cpsr.mask_irq = 1;
+
+  // Save current program counter and jump to UND exception vector.
+  state.r14 = state.r15 - 4;
+  state.r15 = exception_base + 0x04;
+  ReloadPipeline32();*/
+}
+
 void ARM_Unimplemented(u32 instruction) {
-  ASSERT(false, "unimplemented instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
+  ATOM_PANIC("unimplemented ARM instruction: 0x{0:08X} (PC = 0x{:08X})", instruction, state.r15);
 }

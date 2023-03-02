@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2022 fleroviux.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
 
 enum class ThumbDataOp {
   AND = 0,
@@ -531,11 +525,15 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   u32 imm  = instruction & 0x7FF;
   u32 temp = state.r15 - 2;
 
+  // BLX does not exist in ARMv4T
+  if(exchange && model == Model::ARM7) {
+    Thumb_Undefined(instruction);
+    return;
+  }
+
   state.r15 = (state.r14 & ~1) + imm * 2;
   state.r14 = temp | 1;
   if (exchange) {
-    // Not a valid opcode in ARMv4T, but we don't know what it would do.
-    ASSERT(model != Model::ARM7, "blx cannot be used on ARMv4T CPUs");
     state.r15 &= ~3;
     state.cpsr.thumb = 0;
     ReloadPipeline32();
@@ -544,6 +542,10 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   }
 }
 
+void Thumb_Undefined(u16 instruction) {
+  ATOM_PANIC("undefined Thumb instruction: 0x{:04X} (PC=0x{:08X})", instruction, state.r15);
+}
+
 void Thumb_Unimplemented(u16 instruction) {
-  ASSERT(false, "unimplemented instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
+  ATOM_PANIC("unimplemented Thumb instruction: 0x{:04X} (PC=0x{:08X})", instruction, state.r15);
 }

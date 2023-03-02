@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2022 fleroviux.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
 
 #include <stdexcept>
 
@@ -160,7 +154,7 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
       return BANK_UND;
   }
 
-  UNREACHABLE;
+  ATOM_PANIC("invalid ARM CPU mode: 0x{:02X}", (uint)mode);
 }
 
 void ARM::SwitchMode(Mode new_mode) {

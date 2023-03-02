@@ -1,17 +1,11 @@
-/*
- * Copyright (C) 2022 fleroviux.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
 
 #pragma once
 
 #include <array>
+#include <atom/panic.hpp>
 #include <aura/arm/coprocessor.hpp>
 #include <aura/arm/cpu.hpp>
 #include <aura/arm/memory.hpp>
-#include <lunar/log.hpp>
 
 namespace aura::arm {
 
