@@ -13,9 +13,9 @@
 #include <aura/arm/memory.hpp>
 #include <lunar/log.hpp>
 
-namespace lunar::arm {
+namespace aura::arm {
 
-class ARM final : public aura::arm::CPU {
+class ARM final : public CPU {
   public:
     // @todo: enumerate processors instead of architectures
     enum class Architecture {
@@ -24,9 +24,9 @@ class ARM final : public aura::arm::CPU {
     };
 
     ARM(
-      aura::arm::Memory* memory,
+      Memory* memory,
       Architecture arch,
-      std::array<aura::arm::Coprocessor*, 16> coprocessors = {}
+      std::array<Coprocessor*, 16> coprocessors = {}
     );
 
     void Reset() override;
@@ -159,9 +159,9 @@ class ARM final : public aura::arm::CPU {
     #include "handlers/handler32.inl"
     #include "handlers/memory.inl"
 
-    aura::arm::Memory* memory;
+    Memory* memory;
     Architecture arch;
-    std::array<aura::arm::Coprocessor*, 16> coprocessors;
+    std::array<Coprocessor*, 16> coprocessors;
 
     bool irq_line;
     bool wait_for_irq = false;
@@ -197,8 +197,8 @@ class ARM final : public aura::arm::CPU {
       u32 bank[k_bank_count][7];
 
       // Program Status Registers
-      aura::arm::CPU::PSR cpsr;
-      aura::arm::CPU::PSR spsr[k_bank_count];
+      PSR cpsr;
+      PSR spsr[k_bank_count];
 
       State() {
         for (int i = 0; i < 16; i++) {
@@ -212,7 +212,7 @@ class ARM final : public aura::arm::CPU {
           spsr[b] = 0;
         }
 
-        cpsr.word = (uint)aura::arm::CPU::Mode::Supervisor;
+        cpsr.word = (uint)Mode::Supervisor;
         cpsr.mask_irq = 1;
         cpsr.mask_fiq = 1;
       }
@@ -228,4 +228,4 @@ class ARM final : public aura::arm::CPU {
     static std::array<Handler32, 8192> s_opcode_lut_32;
 };
 
-} // namespace lunar::arm
+} // namespace aura::arm

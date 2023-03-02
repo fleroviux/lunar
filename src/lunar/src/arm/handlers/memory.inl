@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-using Bus = aura::arm::Memory::Bus;
+using Bus = Memory::Bus;
 
 auto ReadByte(u32 address) -> u32 {
   return memory->ReadByte(address, Bus::Data);

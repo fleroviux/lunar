@@ -61,12 +61,12 @@ inline void Assert(bool condition, Args... args) {
 
 // For compatibility with Duality logging code:
 // TODO: remove this once we're done migrating the code.
-#define LOG_TRACE lunar::Log<Trace>
-#define LOG_DEBUG lunar::Log<Debug>
-#define LOG_INFO lunar::Log<Info>
-#define LOG_WARN lunar::Log<Warn>
-#define LOG_ERROR lunar::Log<Error>
-#define LOG_FATAL lunar::Log<Fatal>
+#define LOG_TRACE lunar::Log<lunar::Trace>
+#define LOG_DEBUG lunar::Log<lunar::Debug>
+#define LOG_INFO lunar::Log<lunar::Info>
+#define LOG_WARN lunar::Log<lunar::Warn>
+#define LOG_ERROR lunar::Log<lunar::Error>
+#define LOG_FATAL lunar::Log<lunar::Fatal>
 #define ASSERT lunar::Assert
 #define UNREACHABLE ASSERT(false, "reached supposedly unreachable code.");
 

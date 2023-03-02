@@ -9,7 +9,7 @@
 
 #include <lunar/integer.hpp>
 
-namespace lunar::arm {
+namespace aura::arm {
 
 // NOTE: we currently can discern all ARM and Thumb instruction types up to ARMv6K,
 // except for ARMv6K Hint instructions and most unconditional instructions.
@@ -260,4 +260,4 @@ constexpr auto GetThumbInstructionType(u16 instruction) -> ThumbInstrType {
   return ThumbInstrType::Undefined;
 }
 
-} // namespace lunar::arm
+} // namespace aura::arm
