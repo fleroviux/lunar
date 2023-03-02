@@ -25,7 +25,7 @@ ARM7::ARM7(Interconnect& interconnect)
 //    .exception_base = 0x0000'0000
 //  };
 
-  const std::array<lunatic::Coprocessor*, 16> coprocessors{
+  const std::array<aura::arm::Coprocessor*, 16> coprocessors{
     nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr,

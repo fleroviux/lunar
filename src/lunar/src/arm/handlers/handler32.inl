@@ -897,9 +897,9 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   }
 
   if (instruction & (1 << 20)) {
-    state.reg[dst] = coprocessors[cp_num]->Read(opcode1, cp_rn, cp_rm, opcode2);
+    state.reg[dst] = coprocessors[cp_num]->MRC(opcode1, cp_rn, cp_rm, opcode2);
   } else {
-    coprocessors[cp_num]->Write(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
+    coprocessors[cp_num]->MCR(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
   }
 
   state.r15 += 4;

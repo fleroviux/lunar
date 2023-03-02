@@ -38,11 +38,11 @@ void CP15::Reset() {
   // TODO: use different initialization values for firmware boot.
 
   // Reset control register (enable DTCM and ITCM, exception base = 0xFFFF0000)
-  Write(0, 1, 0, 0, 0x0005707D);
+  MCR(0, 1, 0, 0, 0x0005707D);
 
   // Reset DTCM and ITCM configuration
-  Write(0, 9, 1, 0, 0x0300000A);
-  Write(0, 9, 1, 1, 0x00000020);
+  MCR(0, 9, 1, 0, 0x0300000A);
+  MCR(0, 9, 1, 1, 0x00000020);
 }
 
 void CP15::RegisterHandler(int cn, int cm, int opcode, ReadHandler handler) {
@@ -53,20 +53,7 @@ void CP15::RegisterHandler(int cn, int cm, int opcode, WriteHandler handler) {
   handler_wr[Index(cn, cm, opcode)] = handler;
 }
 
-bool CP15::ShouldWriteBreakBasicBlock(int opcode1, int cn, int cm, int opcode2) {
-  if (opcode1 == 0 && cn == 7) {
-    // Wait for IRQ
-    if (cm == 0 && opcode2 == 4) return true;
-    if (cm == 8 && opcode2 == 2) return true;
-
-    // Invalidate ICache
-    if (cm == 5 && opcode2 == 0) return true;
-    if (cm == 5 && opcode2 == 1) return true;
-  }
-  return false;
-}
-
-auto CP15::Read(int opcode1, int cn, int cm, int opcode2) -> u32 {
+auto CP15::MRC(int opcode1, int cn, int cm, int opcode2) -> u32 {
   if (opcode1 == 0) {
     return std::invoke(handler_rd[Index(cn, cm, opcode2)], this, cn, cm, opcode2);
   }
@@ -74,7 +61,7 @@ auto CP15::Read(int opcode1, int cn, int cm, int opcode2) -> u32 {
   return 0;
 }
 
-void CP15::Write(int opcode1, int cn, int cm, int opcode2, u32 value) {
+void CP15::MCR(int opcode1, int cn, int cm, int opcode2, u32 value) {
   if (opcode1 == 0) {
     std::invoke(handler_wr[Index(cn, cm, opcode2)], this, cn, cm, opcode2, value);
   }

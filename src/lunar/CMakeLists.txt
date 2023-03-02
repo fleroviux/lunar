@@ -130,6 +130,7 @@ set(HEADERS_PUBLIC
   include/lunar/log.hpp
   include/aura/arm/cpu.hpp
   include/aura/arm/memory.hpp
+  include/aura/arm/coprocessor.hpp
 )
 
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})

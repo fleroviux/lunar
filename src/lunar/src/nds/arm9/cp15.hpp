@@ -23,15 +23,14 @@ namespace lunar::nds {
   * of the MPU, TCM and cache, alignment and endianness modes,
   * and various other things.
   */
-struct CP15 : lunatic::Coprocessor {
+struct CP15 : aura::arm::Coprocessor {
   CP15(ARM9MemoryBus* bus);
 
   void Reset() override;
   void SetCore(aura::arm::CPU* core) { this->core = core; }
 
-  bool ShouldWriteBreakBasicBlock(int opcode1, int cn, int cm, int opcode2) override;
-  auto Read (int opcode1, int cn, int cm, int opcode2) -> u32 override;
-  void Write(int opcode1, int cn, int cm, int opcode2, u32 value) override;
+  auto MRC(int opcode1, int cn, int cm, int opcode2) -> u32 override;
+  void MCR(int opcode1, int cn, int cm, int opcode2, u32 value) override;
 
 private:
   // Unfortunately we cannot invoke "Index" from here.

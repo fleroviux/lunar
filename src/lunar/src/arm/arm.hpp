@@ -8,9 +8,9 @@
 #pragma once
 
 #include <array>
+#include <aura/arm/coprocessor.hpp>
 #include <aura/arm/cpu.hpp>
 #include <aura/arm/memory.hpp>
-#include <lunatic/cpu.hpp>
 #include <lunar/log.hpp>
 
 namespace lunar::arm {
@@ -26,7 +26,7 @@ class ARM final : public aura::arm::CPU {
     ARM(
       aura::arm::Memory* memory,
       Architecture arch,
-      std::array<lunatic::Coprocessor*, 16> coprocessors = {}
+      std::array<aura::arm::Coprocessor*, 16> coprocessors = {}
     );
 
     void Reset() override;
@@ -54,8 +54,6 @@ class ARM final : public aura::arm::CPU {
     void SetIRQFlag(bool value) override {
       irq_line = value;
     }
-
-    void Run(int cycles) override;
 
     u32 GetGPR(GPR reg) const override {
       return state.reg[(int)reg];
@@ -111,6 +109,8 @@ class ARM final : public aura::arm::CPU {
       state.spsr[GetRegisterBankByMode(mode)] = value;
     }
 
+    void Run(int cycles) override;
+
     typedef void (ARM::*Handler16)(u16);
     typedef void (ARM::*Handler32)(u32);
 
@@ -161,7 +161,7 @@ class ARM final : public aura::arm::CPU {
 
     aura::arm::Memory* memory;
     Architecture arch;
-    std::array<lunatic::Coprocessor*, 16> coprocessors;
+    std::array<aura::arm::Coprocessor*, 16> coprocessors;
 
     bool irq_line;
     bool wait_for_irq = false;

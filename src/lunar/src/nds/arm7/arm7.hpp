@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunatic/cpu.hpp>
+#include <aura/arm/coprocessor.hpp>
 #include <aura/arm/cpu.hpp>
 
 #include "nds/interconnect.hpp"
@@ -24,17 +24,15 @@ struct ARM7 {
   void Run(uint cycles);
 
 private:
-  struct CP14 : lunatic::Coprocessor {
-    void Reset() override {}
-
-    auto Read(
+  struct CP14 : aura::arm::Coprocessor {
+    auto MRC(
       int opcode1,
       int cn,
       int cm,
       int opcode2
     ) -> u32 override { return 0; }
     
-    void Write(
+    void MCR(
       int opcode1,
       int cn,
       int cm,

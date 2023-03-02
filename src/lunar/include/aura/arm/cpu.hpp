@@ -77,8 +77,6 @@ namespace aura::arm {
       virtual bool GetIRQFlag() const = 0;
       virtual void SetIRQFlag(bool value) = 0;
 
-      virtual void Run(int cycles) = 0;
-
       virtual u32 GetGPR(GPR reg) const = 0;
       virtual u32 GetGPR(GPR reg, Mode mode) const = 0;
       virtual PSR GetCPSR() const = 0;
@@ -88,6 +86,8 @@ namespace aura::arm {
       virtual void SetGPR(GPR reg, Mode mode, u32 value) = 0;
       virtual void SetCPSR(PSR value) = 0;
       virtual void SetSPSR(Mode mode, PSR value) = 0;
+
+      virtual void Run(int cycles) = 0;
   };
 
 } // namespace aura::arm

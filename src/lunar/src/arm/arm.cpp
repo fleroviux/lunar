@@ -14,7 +14,7 @@ namespace lunar::arm {
 ARM::ARM(
   aura::arm::Memory* memory,
   Architecture arch,
-  std::array<lunatic::Coprocessor*, 16> coprocessors
+  std::array<aura::arm::Coprocessor*, 16> coprocessors
 )   : memory{memory}
     , arch{arch}
     , coprocessors{coprocessors} {
@@ -32,6 +32,8 @@ void ARM::Reset() {
   state.r15 = exception_base;
   wait_for_irq = false;
   SetIRQFlag(false);
+
+  // @todo: reset coprocessors?
 }
 
 void ARM::Run(int cycles) {
