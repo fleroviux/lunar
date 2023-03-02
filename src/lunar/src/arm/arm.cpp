@@ -139,25 +139,13 @@ bool ARM::CheckCondition(Condition condition) {
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
   switch (mode) {
-    case Mode::User:
-    case Mode::System: {
-      return Bank::None;
-    }
-    case Mode::FIQ: {
-      return Bank::FIQ;
-    }
-    case Mode::IRQ: {
-      return Bank::IRQ;
-    }
-    case Mode::Supervisor: {
-      return Bank::Supervisor;
-    }
-    case Mode::Abort: {
-      return Bank::Abort;
-    }
-    case Mode::Undefined: {
-      return Bank::Undefined;
-    }
+    case Mode::User:       return Bank::None;
+    case Mode::System:     return Bank::None;
+    case Mode::FIQ:        return Bank::FIQ;
+    case Mode::IRQ:        return Bank::IRQ;
+    case Mode::Supervisor: return Bank::Supervisor;
+    case Mode::Abort:      return Bank::Abort;
+    case Mode::Undefined:  return Bank::Undefined;
   }
 
   ATOM_PANIC("invalid ARM CPU mode: 0x{:02X}", (uint)mode);
