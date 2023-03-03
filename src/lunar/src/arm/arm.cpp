@@ -34,12 +34,14 @@ void ARM::Run(int cycles) {
   while (cycles-- > 0) {
     if (GetIRQFlag()) SignalIRQ();
 
-    auto instruction = opcode[0];
+    const u32 instruction = opcode[0];
+
     if (state.cpsr.thumb) {
       state.r15 &= ~1;
 
       opcode[0] = opcode[1];
       opcode[1] = ReadHalfCode(state.r15);
+
       (this->*s_opcode_lut_16[instruction >> 5])(instruction);
     } else {
       state.r15 &= ~3;
@@ -47,14 +49,16 @@ void ARM::Run(int cycles) {
       opcode[0] = opcode[1];
       opcode[1] = ReadWordCode(state.r15);
 
-      auto condition = static_cast<Condition>(instruction >> 28);
+      const auto condition = static_cast<Condition>(instruction >> 28);
 
-      if (CheckCondition(condition)) {
+      if (EvaluateCondition(condition)) {
         int hash = ((instruction >> 16) & 0xFF0) |
                    ((instruction >>  4) & 0x00F);
+
         if (condition == Condition::NV) {
           hash |= 4096;
         }
+
         (this->*s_opcode_lut_32[hash])(instruction);
 
         if (GetWaitingForIRQ()) return;
@@ -128,13 +132,6 @@ void ARM::BuildConditionTable() {
     condition_table[(int)Condition::AL][flags] = true;
     condition_table[(int)Condition::NV][flags] = true;
   }
-}
-
-bool ARM::CheckCondition(Condition condition) {
-  if (condition == Condition::AL) {
-    return true;
-  }
-  return condition_table[(int)condition][state.cpsr.word >> 28];
 }
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {

@@ -472,7 +472,7 @@ void Thumb_LoadStoreMultiple(u16 instruction) {
 
 template <int cond>
 void Thumb_ConditionalBranch(u16 instruction) {
-  if (CheckCondition(static_cast<Condition>(cond))) {
+  if (EvaluateCondition(static_cast<Condition>(cond))) {
     u32 imm = instruction & 0xFF;
     if (imm & 0x80) {
       imm |= 0xFFFFFF00;

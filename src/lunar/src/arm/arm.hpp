@@ -139,8 +139,14 @@ class ARM final : public CPU {
     void ReloadPipeline16();
     void ReloadPipeline32();
     void BuildConditionTable();
-    bool CheckCondition(Condition condition);
     void SwitchMode(Mode new_mode);
+
+    bool EvaluateCondition(Condition condition) {
+      if (condition == Condition::AL) {
+        return true;
+      }
+      return condition_table[(int)condition][state.cpsr.word >> 28];
+    }
 
     #include "handlers/arithmetic.inl"
     #include "handlers/handler16.inl"
