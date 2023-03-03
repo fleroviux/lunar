@@ -33,7 +33,7 @@ ARM9::ARM9(Interconnect& interconnect)
     nullptr, nullptr, nullptr, &cp15
   };
 
-  core = std::make_unique<aura::arm::ARM>(&bus, aura::arm::CPU::Model::ARM11, coprocessors);
+  core = std::make_unique<aura::arm::ARM>(&bus, aura::arm::CPU::Model::ARM9, coprocessors);
   core->SetExceptionBase(0xFFFF'0000);
 
   cp15.SetCore(core.get());

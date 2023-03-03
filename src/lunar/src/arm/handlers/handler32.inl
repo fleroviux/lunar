@@ -643,6 +643,17 @@ void ARM_BlockDataTransfer(u32 instruction) {
   bool base_is_first = false;
   bool base_is_last = false;
 
+  // Fail if we detect any unknown ARM11 edge-cases
+  if(model == Model::ARM11) {
+    if(list == 0) {
+      ATOM_PANIC("unknown ARM11 LDM/STM with empty register set: 0x{:08X}", instruction);
+    }
+
+    if(writeback && (list & (1 << base)) != 0) {
+      ATOM_PANIC("unknown ARM11 LDM/STM with writeback and to/from base register: 0x{:08X}", instruction);
+    }
+  }
+
   if (list != 0) {
     #if defined(__has_builtin) && __has_builtin(__builtin_popcount)
       bytes = __builtin_popcount(list) * sizeof(u32);
