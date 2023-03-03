@@ -70,8 +70,8 @@ class ARM final : public CPU {
     void SetGPR(GPR reg, u32 value) override {
       state.reg[(int)reg] = value;
 
-      if (reg == GPR::PC) {
-        if (state.cpsr.thumb) {
+      if(reg == GPR::PC) {
+        if(state.cpsr.thumb) {
           ReloadPipeline16();
         } else {
           ReloadPipeline32();
@@ -142,7 +142,7 @@ class ARM final : public CPU {
     void SwitchMode(Mode new_mode);
 
     bool EvaluateCondition(Condition condition) {
-      if (condition == Condition::AL) {
+      if(condition == Condition::AL) {
         return true;
       }
       return condition_table[(int)condition][state.cpsr.word >> 28];
@@ -195,12 +195,12 @@ class ARM final : public CPU {
       PSR spsr[k_bank_count];
 
       State() {
-        for (int i = 0; i < 16; i++) {
+        for(int i = 0; i < 16; i++) {
           reg[i] = 0;
         }
 
-        for (int b = 0; b < k_bank_count; b++) {
-          for (int r = 0; r < 7; r++) {
+        for(int b = 0; b < k_bank_count; b++) {
+          for(int r = 0; r < 7; r++) {
             bank[b][r] = 0;
           }
           spsr[b] = 0;

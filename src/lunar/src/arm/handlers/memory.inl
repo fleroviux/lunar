@@ -24,7 +24,7 @@ auto ReadWordCode(u32 address) -> u32 {
 auto ReadByteSigned(u32 address) -> u32 {
   u32 value = memory->ReadByte(address, Bus::Data);
 
-  if (value & 0x80) {
+  if(value & 0x80) {
     value |= 0xFFFFFF00;
   }
 
@@ -34,7 +34,7 @@ auto ReadByteSigned(u32 address) -> u32 {
 auto ReadHalfMaybeRotate(u32 address) -> u32 {
   u32 value = memory->ReadHalf(address, Bus::Data);
   
-  if ((address & 1) && model == Model::ARM7) {
+  if((address & 1) && model == Model::ARM7) {
     value = (value >> 8) | (value << 24);
   }
   
@@ -42,12 +42,12 @@ auto ReadHalfMaybeRotate(u32 address) -> u32 {
 }
 
 auto ReadHalfSigned(u32 address) -> u32 {
-  if ((address & 1) && model == Model::ARM7) {
+  if((address & 1) && model == Model::ARM7) {
     return ReadByteSigned(address);
   }
 
   u32 value = memory->ReadHalf(address, Bus::Data);
-  if (value & 0x8000) {
+  if(value & 0x8000) {
     return value | 0xFFFF0000;
   }
   return value;

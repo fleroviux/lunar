@@ -1,7 +1,7 @@
 
 template <u16 instruction>
 static constexpr auto GenerateHandlerThumb() -> Handler16 {
-  switch (GetThumbInstructionType(instruction)) {
+  switch(GetThumbInstructionType(instruction)) {
     case ThumbInstrType::MoveShiftedRegister: {
       const auto opcode  = (instruction >> 11) & 3;
       const auto offset5 = (instruction >>  6) & 0x1F;

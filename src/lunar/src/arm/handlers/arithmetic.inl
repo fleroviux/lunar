@@ -5,7 +5,7 @@ void SetZeroAndSignFlag(u32 value) {
 }
 
 u32 ADD(u32 op1, u32 op2, bool set_flags) {
-  if (set_flags) {
+  if(set_flags) {
     u64 result64 = (u64)op1 + (u64)op2;
     u32 result32 = (u32)result64;
 
@@ -19,7 +19,7 @@ u32 ADD(u32 op1, u32 op2, bool set_flags) {
 }
 
 u32 ADC(u32 op1, u32 op2, bool set_flags) {
-  if (set_flags) {
+  if(set_flags) {
     u64 result64 = (u64)op1 + (u64)op2 + (u64)state.cpsr.c;
     u32 result32 = (u32)result64;
 
@@ -35,7 +35,7 @@ u32 ADC(u32 op1, u32 op2, bool set_flags) {
 u32 SUB(u32 op1, u32 op2, bool set_flags) {
   u32 result = op1 - op2;
 
-  if (set_flags) {
+  if(set_flags) {
     SetZeroAndSignFlag(result);
     state.cpsr.c = op1 >= op2;
     state.cpsr.v = ((op1 ^ op2) & (op1 ^ result)) >> 31;
@@ -48,7 +48,7 @@ u32 SBC(u32 op1, u32 op2, bool set_flags) {
   u32 op3 = (state.cpsr.c) ^ 1;
   u32 result = op1 - op2 - op3;
 
-  if (set_flags) {
+  if(set_flags) {
     SetZeroAndSignFlag(result);
     state.cpsr.c = (u64)op1 >= (u64)op2 + (u64)op3;
     state.cpsr.v = ((op1 ^ op2) & (op1 ^ result)) >> 31;
@@ -60,9 +60,9 @@ u32 SBC(u32 op1, u32 op2, bool set_flags) {
 u32 QADD(u32 op1, u32 op2, bool saturate = true) {
   u32 result = op1 + op2;
 
-  if ((~(op1 ^ op2) & (op2 ^ result)) >> 31) {
+  if((~(op1 ^ op2) & (op2 ^ result)) >> 31) {
     state.cpsr.q = 1;
-    if (saturate) {
+    if(saturate) {
       return 0x80000000 - (result >> 31);
     }
   }
@@ -73,7 +73,7 @@ u32 QADD(u32 op1, u32 op2, bool saturate = true) {
 u32 QSUB(u32 op1, u32 op2) {
   u32 result = op1 - op2;
 
-  if (((op1 ^ op2) & (op1 ^ result)) >> 31) {
+  if(((op1 ^ op2) & (op1 ^ result)) >> 31) {
     state.cpsr.q = 1;
     return 0x80000000 - (result >> 31);
   }
@@ -82,7 +82,7 @@ u32 QSUB(u32 op1, u32 op2) {
 }
 
 void DoShift(int opcode, u32& operand, u8 amount, int& carry, bool immediate) {
-  switch (opcode) {
+  switch(opcode) {
     case 0: LSL(operand, amount, carry); break;
     case 1: LSR(operand, amount, carry, immediate); break;
     case 2: ASR(operand, amount, carry, immediate); break;
@@ -91,10 +91,10 @@ void DoShift(int opcode, u32& operand, u8 amount, int& carry, bool immediate) {
 }
 
 void LSL(u32& operand, u8 amount, int& carry) {
-  if (amount == 0) return;
+  if(amount == 0) return;
 
-  if (amount >= 32) {
-    if (amount > 32) {
+  if(amount >= 32) {
+    if(amount > 32) {
       carry = 0;
     } else {
       carry = operand & 1;
@@ -108,17 +108,17 @@ void LSL(u32& operand, u8 amount, int& carry) {
 }
 
 void LSR(u32& operand, u8 amount, int& carry, bool immediate) {
-  if (amount == 0) {
+  if(amount == 0) {
     // LSR #0 equals to LSR #32
-    if (immediate) {
+    if(immediate) {
       amount = 32;
     } else {
       return;
     }
   }
 
-  if (amount >= 32) {
-    if (amount > 32) {
+  if(amount >= 32) {
+    if(amount > 32) {
       carry = 0;
     } else {
       carry = operand >> 31;
@@ -132,9 +132,9 @@ void LSR(u32& operand, u8 amount, int& carry, bool immediate) {
 }
 
 void ASR(u32& operand, u8 amount, int& carry, bool immediate) {
-  if (amount == 0) {
+  if(amount == 0) {
     // ASR #0 equals to ASR #32
-    if (immediate) {
+    if(immediate) {
       amount = 32;
     } else {
       return;
@@ -143,7 +143,7 @@ void ASR(u32& operand, u8 amount, int& carry, bool immediate) {
 
   int msb = operand >> 31;
 
-  if (amount >= 32) {
+  if(amount >= 32) {
     carry = msb;
     operand = 0xFFFFFFFF * msb;
     return;
@@ -155,8 +155,8 @@ void ASR(u32& operand, u8 amount, int& carry, bool immediate) {
 
 void ROR(u32& operand, u8 amount, int& carry, bool immediate) {
   // ROR #0 equals to RRX #1
-  if (amount != 0 || !immediate) {
-    if (amount == 0) return;
+  if(amount != 0 || !immediate) {
+    if(amount == 0) return;
 
     amount %= 32;
     operand = (operand >> amount) | (operand << (32 - amount));

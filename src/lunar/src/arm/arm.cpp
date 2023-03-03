@@ -27,16 +27,16 @@ void ARM::Reset() {
 }
 
 void ARM::Run(int cycles) {
-  if (GetWaitingForIRQ() && !GetIRQFlag()) {
+  if(GetWaitingForIRQ() && !GetIRQFlag()) {
     return;
   }
 
-  while (cycles-- > 0) {
-    if (GetIRQFlag()) SignalIRQ();
+  while(cycles-- > 0) {
+    if(GetIRQFlag()) SignalIRQ();
 
     const u32 instruction = opcode[0];
 
-    if (state.cpsr.thumb) {
+    if(state.cpsr.thumb) {
       state.r15 &= ~1;
 
       opcode[0] = opcode[1];
@@ -51,17 +51,17 @@ void ARM::Run(int cycles) {
 
       const auto condition = static_cast<Condition>(instruction >> 28);
 
-      if (EvaluateCondition(condition)) {
+      if(EvaluateCondition(condition)) {
         int hash = ((instruction >> 16) & 0xFF0) |
                    ((instruction >>  4) & 0x00F);
 
-        if (condition == Condition::NV) {
+        if(condition == Condition::NV) {
           hash |= 4096;
         }
 
         (this->*s_opcode_lut_32[hash])(instruction);
 
-        if (GetWaitingForIRQ()) return;
+        if(GetWaitingForIRQ()) return;
       } else {
         state.r15 += 4;
       }
@@ -72,7 +72,7 @@ void ARM::Run(int cycles) {
 void ARM::SignalIRQ() {
   wait_for_irq = false;
 
-  if (state.cpsr.mask_irq) {
+  if(state.cpsr.mask_irq) {
     return;
   }
 
@@ -84,7 +84,7 @@ void ARM::SignalIRQ() {
   state.cpsr.mask_irq = 1;
 
   // Save current program counter and disable Thumb.
-  if (state.cpsr.thumb) {
+  if(state.cpsr.thumb) {
     state.cpsr.thumb = 0;
     state.r14 = state.r15;
   } else {
@@ -109,7 +109,7 @@ void ARM::ReloadPipeline16() {
 }
 
 void ARM::BuildConditionTable() {
-  for (int flags = 0; flags < 16; flags++) {
+  for(int flags = 0; flags < 16; flags++) {
     bool n = flags & 8;
     bool z = flags & 4;
     bool c = flags & 2;
@@ -135,7 +135,7 @@ void ARM::BuildConditionTable() {
 }
 
 auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
-  switch (mode) {
+  switch(mode) {
     case Mode::User:       return Bank::None;
     case Mode::System:     return Bank::None;
     case Mode::FIQ:        return Bank::FIQ;
@@ -155,24 +155,24 @@ void ARM::SwitchMode(Mode new_mode) {
   state.cpsr.mode = new_mode;
   p_spsr = &state.spsr[(int)new_bank];
 
-  if (old_bank == new_bank) {
+  if(old_bank == new_bank) {
     return;
   }
 
-  if (old_bank == Bank::FIQ) {
-    for (int i = 0; i < 5; i++){
+  if(old_bank == Bank::FIQ) {
+    for(int i = 0; i < 5; i++){
       state.bank[(int)Bank::FIQ][i] = state.reg[8 + i];
     }
 
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
       state.reg[8 + i] = state.bank[(int)Bank::None][i];
     }
   } else if(new_bank == Bank::FIQ) {
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
       state.bank[(int)Bank::None][i] = state.reg[8 + i];
     }
 
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
       state.reg[8 + i] = state.bank[(int)Bank::FIQ][i];
     }
   }

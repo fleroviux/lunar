@@ -29,11 +29,11 @@ void ARM_DataProcessing(u32 instruction) {
 
   int carry = state.cpsr.c;
 
-  if constexpr (immediate) {
+  if constexpr(immediate) {
     int value = instruction & 0xFF;
     int shift = ((instruction >> 8) & 0xF) * 2;
 
-    if (shift != 0) {
+    if(shift != 0) {
       carry = (value >> (shift - 1)) & 1;
       op2   = (value >> shift) | (value << (32 - shift));
     } else {
@@ -47,13 +47,13 @@ void ARM_DataProcessing(u32 instruction) {
 
     op2 = state.reg[reg_op2];
 
-    if constexpr (shift_imm) {
+    if constexpr(shift_imm) {
       shift = (instruction >> 7) & 0x1F;
     } else {
       shift = state.reg[(instruction >> 8) & 0xF];
 
-      if (reg_op1 == 15) op1 += 4;
-      if (reg_op2 == 15) op2 += 4;
+      if(reg_op1 == 15) op1 += 4;
+      if(reg_op2 == 15) op2 += 4;
     }
 
     DoShift(shift_type, op2, shift, carry, shift_imm);
@@ -62,17 +62,17 @@ void ARM_DataProcessing(u32 instruction) {
   auto& cpsr = state.cpsr;
   auto& result = state.reg[reg_dst];
 
-  switch (opcode) {
+  switch(opcode) {
     case ARMDataOp::AND:
       result = op1 & op2;
-      if constexpr (set_flags) {
+      if constexpr(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
       break;
     case ARMDataOp::EOR:
       result = op1 ^ op2;
-      if constexpr (set_flags) {
+      if constexpr(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
@@ -111,47 +111,47 @@ void ARM_DataProcessing(u32 instruction) {
       break;
     case ARMDataOp::ORR:
       result = op1 | op2;
-      if (set_flags) {
+      if(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
       break;
     case ARMDataOp::MOV:
       result = op2;
-      if constexpr (set_flags) {
+      if constexpr(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
       break;
     case ARMDataOp::BIC:
       result = op1 & ~op2;
-      if constexpr (set_flags) {
+      if constexpr(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
       break;
     case ARMDataOp::MVN:
       result = ~op2;
-      if constexpr (set_flags) {
+      if constexpr(set_flags) {
         SetZeroAndSignFlag(result);
         cpsr.c = carry;
       }
       break;
   }
 
-  if (reg_dst == 15) {
-    if constexpr (set_flags) {
+  if(reg_dst == 15) {
+    if constexpr(set_flags) {
       auto spsr = *p_spsr;
 
       SwitchMode((Mode)spsr.mode);
       state.cpsr = spsr;
     }
 
-    if constexpr (opcode != ARMDataOp::TST &&
+    if constexpr(opcode != ARMDataOp::TST &&
                   opcode != ARMDataOp::TEQ &&
                   opcode != ARMDataOp::CMP &&
                   opcode != ARMDataOp::CMN) {
-      if (state.cpsr.thumb) {
+      if(state.cpsr.thumb) {
         ReloadPipeline16();
       } else {
         ReloadPipeline32();
@@ -165,17 +165,17 @@ void ARM_DataProcessing(u32 instruction) {
 template <bool immediate, bool use_spsr, bool to_status>
 void ARM_StatusTransfer(u32 instruction) {
   // TODO: handle changing the CPSR.T thumb bit.
-  if constexpr (to_status) {
+  if constexpr(to_status) {
     u32 op;
     u32 mask = 0;
     u8  fsxc = (instruction >> 16) & 0xF;
 
-    if (fsxc & 1) mask |= 0x000000FF;
-    if (fsxc & 2) mask |= 0x0000FF00;
-    if (fsxc & 4) mask |= 0x00FF0000;
-    if (fsxc & 8) mask |= 0xFF000000;
+    if(fsxc & 1) mask |= 0x000000FF;
+    if(fsxc & 2) mask |= 0x0000FF00;
+    if(fsxc & 4) mask |= 0x00FF0000;
+    if(fsxc & 8) mask |= 0xFF000000;
 
-    if constexpr (immediate) {
+    if constexpr(immediate) {
       int value = instruction & 0xFF;
       int shift = ((instruction >> 8) & 0xF) * 2;
 
@@ -186,8 +186,8 @@ void ARM_StatusTransfer(u32 instruction) {
 
     u32 value = op & mask;
 
-    if constexpr (!use_spsr) {
-      if (mask & 0xFF) {
+    if constexpr(!use_spsr) {
+      if(mask & 0xFF) {
         SwitchMode(static_cast<Mode>(value & 0x1F));
       }
       state.cpsr.word = (state.cpsr.word & ~mask) | value;
@@ -197,7 +197,7 @@ void ARM_StatusTransfer(u32 instruction) {
   } else {
     int dst = (instruction >> 12) & 0xF;
 
-    if constexpr (use_spsr) {
+    if constexpr(use_spsr) {
       state.reg[dst] = p_spsr->word;
     } else {
       state.reg[dst] = state.cpsr.word;
@@ -218,11 +218,11 @@ void ARM_Multiply(u32 instruction) {
 
   result = state.reg[op1] * state.reg[op2];
 
-  if constexpr (accumulate) {
+  if constexpr(accumulate) {
     result += state.reg[op3];
   }
 
-  if constexpr (set_flags) {
+  if constexpr(set_flags) {
     SetZeroAndSignFlag(result);
   }
 
@@ -240,13 +240,13 @@ void ARM_MultiplyLong(u32 instruction) {
 
   s64 result;
 
-  if constexpr (sign_extend) {
+  if constexpr(sign_extend) {
     s64 a = state.reg[op1];
     s64 b = state.reg[op2];
 
     // Sign-extend operands
-    if (a & 0x80000000) a |= 0xFFFFFFFF00000000;
-    if (b & 0x80000000) b |= 0xFFFFFFFF00000000;
+    if(a & 0x80000000) a |= 0xFFFFFFFF00000000;
+    if(b & 0x80000000) b |= 0xFFFFFFFF00000000;
 
     result = a * b;
   } else {
@@ -255,7 +255,7 @@ void ARM_MultiplyLong(u32 instruction) {
     result = (s64)uresult;
   }
 
-  if constexpr (accumulate) {
+  if constexpr(accumulate) {
     s64 value = state.reg[dst_hi];
 
     // TODO: in theory we should be able to shift by 32 because value in 64-bit.
@@ -271,7 +271,7 @@ void ARM_MultiplyLong(u32 instruction) {
   state.reg[dst_lo] = result & 0xFFFFFFFF;
   state.reg[dst_hi] = result_hi;
 
-  if constexpr (set_flags) {
+  if constexpr(set_flags) {
     state.cpsr.n = result_hi >> 31;
     state.cpsr.z = result == 0;
   }
@@ -281,7 +281,7 @@ void ARM_MultiplyLong(u32 instruction) {
 
 template <bool accumulate, bool x, bool y>
 void ARM_SignedHalfwordMultiply(u32 instruction) {
-  if (model == Model::ARM7) {
+  if(model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
@@ -294,13 +294,13 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
   s16 value1;
   s16 value2;
 
-  if constexpr (x) {
+  if constexpr(x) {
     value1 = s16(state.reg[op1] >> 16);
   } else {
     value1 = s16(state.reg[op1] & 0xFFFF);
   }
 
-  if constexpr (y) {
+  if constexpr(y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
@@ -308,7 +308,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
   u32 result = u32(value1 * value2);
 
-  if constexpr (accumulate) {
+  if constexpr(accumulate) {
     // Update sticky-flag without saturating the result.
     // @todo: create a helper to detect overflow and use it instead of QADD?
     state.reg[dst] = QADD(result, state.reg[op3], false);
@@ -321,7 +321,7 @@ void ARM_SignedHalfwordMultiply(u32 instruction) {
 
 template <bool accumulate, bool y>
 void ARM_SignedWordHalfwordMultiply(u32 instruction) {
-  if (model == Model::ARM7) {
+  if(model == Model::ARM7) {
     // @todo: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
@@ -335,7 +335,7 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
   s32 value1 = s32(state.reg[op1]);
   s16 value2;
 
-  if constexpr (y) {
+  if constexpr(y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
@@ -343,7 +343,7 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
   u32 result = u32((value1 * value2) >> 16);
 
-  if constexpr (accumulate) {
+  if constexpr(accumulate) {
     // Update sticky-flag without saturating the result.
     // @todo: create a helper to detect overflow and use it instead of QADD?
     state.reg[dst] = QADD(result, state.reg[op3], false);
@@ -356,7 +356,7 @@ void ARM_SignedWordHalfwordMultiply(u32 instruction) {
 
 template <bool x, bool y>
 void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
-  if (model == Model::ARM7) {
+  if(model == Model::ARM7) {
     // @todo: unclear how this instruction behaves on the ARM7.
     ARM_Undefined(instruction);
     return;
@@ -370,13 +370,13 @@ void ARM_SignedHalfwordMultiplyLongAccumulate(u32 instruction) {
   s16 value1;
   s16 value2;
 
-  if constexpr (x) {
+  if constexpr(x) {
     value1 = s16(state.reg[op1] >> 16);
   } else {
     value1 = s16(state.reg[op1] & 0xFFFF);
   }
 
-  if constexpr (y) {
+  if constexpr(y) {
     value2 = s16(state.reg[op2] >> 16);
   } else {
     value2 = s16(state.reg[op2] & 0xFFFF);
@@ -401,7 +401,7 @@ void ARM_SingleDataSwap(u32 instruction) {
 
   u32 tmp;
 
-  if constexpr (byte) {
+  if constexpr(byte) {
     tmp = ReadByte(state.reg[base]);
     WriteByte(state.reg[base], (u8)state.reg[src]);
   } else {
@@ -417,15 +417,15 @@ template <bool link>
 void ARM_BranchAndExchangeMaybeLink(u32 instruction) {
   u32 address = state.reg[instruction & 0xF];
 
-  if constexpr (link) {
-    if (model == Model::ARM7) {
+  if constexpr(link) {
+    if(model == Model::ARM7) {
       ARM_Undefined(instruction);
       return;
     }
     state.r14 = state.r15 - 4;
   }
 
-  if (address & 1) {
+  if(address & 1) {
     state.r15 = address & ~1;
     state.cpsr.thumb = 1;
     ReloadPipeline16();
@@ -444,7 +444,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
   u32 address = state.reg[base];
   bool allow_writeback = !load || base != dst;
 
-  if constexpr (immediate) {
+  if constexpr(immediate) {
     offset = (instruction & 0xF) | ((instruction >> 4) & 0xF0);
   } else {
     offset = state.reg[instruction & 0xF];
@@ -452,13 +452,13 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
 
   state.r15 += 4;
 
-  if constexpr (pre) {
+  if constexpr(pre) {
     address += add ? offset : -offset;
   }
 
-  switch (opcode) {
+  switch(opcode) {
     case 1: {
-      if constexpr (load) {
+      if constexpr(load) {
         state.reg[dst] = ReadHalfMaybeRotate(address);
       } else {
         WriteHalf(address, state.reg[dst]);
@@ -466,11 +466,11 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       break;
     }
     case 2: {
-      if constexpr (load) {
+      if constexpr(load) {
         state.reg[dst] = ReadByteSigned(address);
-      } else if (model != Model::ARM7) {
+      } else if(model != Model::ARM7) {
         // LDRD: using an odd numbered destination register is undefined.
-        if ((dst & 1) == 1) {
+        if((dst & 1) == 1) {
           state.r15 -= 4;
           ARM_Undefined(instruction);
           return;
@@ -485,18 +485,18 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
         state.reg[dst + 0] = ReadWord(address + 0);
         state.reg[dst + 1] = ReadWord(address + 4);
 
-        if (dst == 14) {
+        if(dst == 14) {
           ReloadPipeline32();
         }
       }
       break;
     }
     case 3: {
-      if constexpr (load) {
+      if constexpr(load) {
         state.reg[dst] = ReadHalfSigned(address);
-      } else if (model != Model::ARM7) {
+      } else if(model != Model::ARM7) {
         // STRD: using an odd numbered destination register is undefined.
-        if ((dst & 1) == 1) {
+        if((dst & 1) == 1) {
           state.r15 -= 4;
           ARM_Undefined(instruction);
           return;
@@ -512,15 +512,15 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
     }
   }
 
-  if (allow_writeback) {
-    if constexpr (!pre) {
+  if(allow_writeback) {
+    if constexpr(!pre) {
       state.reg[base] += add ? offset : -offset;
-    } else if (writeback) {
+    } else if(writeback) {
       state.reg[base] = address;
     }
   }
 
-  if (load && dst == 15) {
+  if(load && dst == 15) {
     ReloadPipeline32();
   }
 }
@@ -529,11 +529,11 @@ template <bool link>
 void ARM_BranchAndLink(u32 instruction) {
   u32 offset = instruction & 0xFFFFFF;
 
-  if (offset & 0x800000) {
+  if(offset & 0x800000) {
     offset |= 0xFF000000;
   }
 
-  if constexpr (link) {
+  if constexpr(link) {
     state.r14 = state.r15 - 4;
   }
 
@@ -544,7 +544,7 @@ void ARM_BranchAndLink(u32 instruction) {
 void ARM_BranchLinkExchangeImm(u32 instruction) {
   u32 offset = instruction & 0xFFFFFF;
 
-  if (offset & 0x800000) {
+  if(offset & 0x800000) {
     offset |= 0xFF000000;
   }
 
@@ -573,7 +573,7 @@ void ARM_SingleDataTransfer(u32 instruction) {
   }
 
   // Calculate offset relative to base register.
-  if constexpr (immediate) {
+  if constexpr(immediate) {
     offset = instruction & 0xFFF;
   } else {
     int carry  = state.cpsr.c;
@@ -586,18 +586,18 @@ void ARM_SingleDataTransfer(u32 instruction) {
 
   state.r15 += 4;
 
-  if constexpr (pre) {
+  if constexpr(pre) {
     address += add ? offset : -offset;
   }
 
-  if constexpr (load) {
-    if constexpr (byte) {
+  if constexpr(load) {
+    if constexpr(byte) {
       state.reg[dst] = ReadByte(address);
     } else {
       state.reg[dst] = ReadWordRotate(address);
     }
   } else {
-    if constexpr (byte) {
+    if constexpr(byte) {
       WriteByte(address, (u8)state.reg[dst]);
     } else {
       WriteWord(address, state.reg[dst]);
@@ -605,17 +605,17 @@ void ARM_SingleDataTransfer(u32 instruction) {
   }
 
   // Writeback final address to the base register.
-  if (!load || base != dst) {
-    if constexpr (!pre) {
+  if(!load || base != dst) {
+    if constexpr(!pre) {
       state.reg[base] += add ? offset : -offset;
-    } else if (writeback) {
+    } else if(writeback) {
       state.reg[base] = address;
     }
   }
 
-  if constexpr (load) {
-    if (dst == 15) {
-      if ((state.r15 & 1) && model != Model::ARM7) {
+  if constexpr(load) {
+    if(dst == 15) {
+      if((state.r15 & 1) && model != Model::ARM7) {
         if(byte || translation) {
           ATOM_PANIC("unpredictable LDRB or LDRT to PC (PC=0x{:08X})", state.r15);
         }
@@ -654,13 +654,13 @@ void ARM_BlockDataTransfer(u32 instruction) {
     }
   }
 
-  if (list != 0) {
+  if(list != 0) {
     #if defined(__has_builtin) && __has_builtin(__builtin_popcount)
       bytes = __builtin_popcount(list) * sizeof(u32);
     #else
       bytes = 0;
-      for (int i = 0; i <= 15; i++) {
-        if (list & (1 << i))
+      for(int i = 0; i <= 15; i++) {
+        if(list & (1 << i))
           bytes += sizeof(u32);
       }
     #endif
@@ -678,13 +678,13 @@ void ARM_BlockDataTransfer(u32 instruction) {
     #endif
   } else {
     bytes = 16 * sizeof(u32);
-    if (model == Model::ARM7) {
+    if(model == Model::ARM7) {
       list = 1 << 15;
       transfer_pc = true;
     }
   }
 
-  if constexpr (!add) {
+  if constexpr(!add) {
     address -= bytes;
     base_new = address;
   } else {
@@ -695,14 +695,14 @@ void ARM_BlockDataTransfer(u32 instruction) {
 
   // STM ARMv4: store new base if base is not the first register and old base otherwise.
   // STM ARMv5: always store old base.
-  if constexpr (writeback && !load) {
-    if (model == Model::ARM7 && !base_is_first) {
+  if constexpr(writeback && !load) {
+    if(model == Model::ARM7 && !base_is_first) {
       state.reg[base] = base_new;
     }
   }
 
-  if constexpr (user_mode) {
-    if (!load || !transfer_pc) {
+  if constexpr(user_mode) {
+    if(!load || !transfer_pc) {
       mode = (Mode)state.cpsr.mode;
       SwitchMode(Mode::User);
     }
@@ -711,32 +711,32 @@ void ARM_BlockDataTransfer(u32 instruction) {
   int i = 0;
   u32 remaining = list;
 
-  while (remaining != 0) {
+  while(remaining != 0) {
     #if defined(__has_builtin) && __has_builtin(__builtin_ctz)
       i = __builtin_ctz(remaining);
     #else
-      while ((remaining & (1 << i)) == 0) i++;
+      while((remaining & (1 << i)) == 0) i++;
     #endif
 
-    if constexpr (pre == add) {
+    if constexpr(pre == add) {
       address += 4;
     }
 
-    if constexpr (load) {
+    if constexpr(load) {
       state.reg[i] = ReadWord(address);
     } else {
       WriteWord(address, state.reg[i]);
     }
 
-    if constexpr (pre != add) {
+    if constexpr(pre != add) {
       address += 4;
     }
 
     remaining &= ~(1 << i);
   }
 
-  if constexpr (user_mode) {
-    if (load && transfer_pc) {
+  if constexpr(user_mode) {
+    if(load && transfer_pc) {
       auto& spsr = *p_spsr;
 
       SwitchMode((Mode)spsr.mode);
@@ -746,18 +746,18 @@ void ARM_BlockDataTransfer(u32 instruction) {
     }
   }
 
-  if constexpr (writeback) {
-    if constexpr (load) {
-      switch (model) {
+  if constexpr(writeback) {
+    if constexpr(load) {
+      switch(model) {
         case Model::ARM9:
         case Model::ARM11: // @todo: research ARM11MPCore behaviour
           // LDM ARMv5: writeback if base is the only register or not the last register.
-          if (!base_is_last || list == (1 << base))
+          if(!base_is_last || list == (1 << base))
             state.reg[base] = base_new;
           break;
         case Model::ARM7:
           // LDM ARMv4: writeback if base in not in the register list.
-          if (!(list & (1 << base)))
+          if(!(list & (1 << base)))
             state.reg[base] = base_new;
           break;
       }
@@ -766,14 +766,14 @@ void ARM_BlockDataTransfer(u32 instruction) {
     }
   }
 
-  if constexpr (load) {
-    if (transfer_pc) {
-      if ((state.r15 & 1) && !user_mode && model != Model::ARM7) {
+  if constexpr(load) {
+    if(transfer_pc) {
+      if((state.r15 & 1) && !user_mode && model != Model::ARM7) {
         state.cpsr.thumb = 1;
         state.r15 &= ~1;
       }
 
-      if (state.cpsr.thumb) {
+      if(state.cpsr.thumb) {
         ReloadPipeline16();
       } else {
         ReloadPipeline32();
@@ -797,7 +797,7 @@ void ARM_SWI(u32 instruction) {
 }
 
 void ARM_CountLeadingZeros(u32 instruction) {
-  if (model == Model::ARM7) {
+  if(model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
@@ -807,7 +807,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
 
   u32 value = state.reg[src];
 
-  if (value == 0) {
+  if(value == 0) {
     state.reg[dst] = 32;
     state.r15 += 4;
     return;
@@ -826,8 +826,8 @@ void ARM_CountLeadingZeros(u32 instruction) {
       0x80000000 };
     const int shift[] = { 16, 8, 4, 2, 1 };
 
-    for (int i = 0; i < 5; i++) {
-      if ((value & mask[i]) == 0) {
+    for(int i = 0; i < 5; i++) {
+      if((value & mask[i]) == 0) {
         result |= shift[i];
         value <<= shift[i];
       }
@@ -841,7 +841,7 @@ void ARM_CountLeadingZeros(u32 instruction) {
 
 template <int opcode>
 void ARM_SaturatingAddSubtract(u32 instruction) {
-  if (model == Model::ARM7) {
+  if(model == Model::ARM7) {
     ARM_Undefined(instruction);
     return;
   }
@@ -851,7 +851,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
   int dst  = (instruction >> 12) & 0xF;
   u32 op2  = state.reg[src2];
 
-  if constexpr ((opcode & 0b1001) != 0) {
+  if constexpr((opcode & 0b1001) != 0) {
     ARM_Undefined(instruction);
     return;
   }
@@ -859,10 +859,10 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
   bool subtract = opcode & 2;
   bool double_op2 = opcode & 4;
 
-  if (double_op2) {
+  if(double_op2) {
     u32 result = op2 + op2;
 
-    if ((op2 ^ result) >> 31) {
+    if((op2 ^ result) >> 31) {
       state.cpsr.q = 1;
       result = 0x80000000 - (result >> 31);
     }
@@ -870,7 +870,7 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
     op2 = result;
   }
 
-  if (subtract) {
+  if(subtract) {
     state.reg[dst] = QSUB(state.reg[src1], op2);
   } else {
     state.reg[dst] = QADD(state.reg[src1], op2);
@@ -887,12 +887,12 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
   auto opcode2 = (instruction >>  5) & 7;
   auto cp_num  = (instruction >>  8) & 0xF;
 
-  if (coprocessors[cp_num] == nullptr) {
+  if(coprocessors[cp_num] == nullptr) {
     ARM_Undefined(instruction);
     return;
   }
 
-  if (instruction & (1 << 20)) {
+  if(instruction & (1 << 20)) {
     state.reg[dst] = coprocessors[cp_num]->MRC(opcode1, cp_rn, cp_rm, opcode2);
   } else {
     coprocessors[cp_num]->MCR(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);

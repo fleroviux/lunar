@@ -22,7 +22,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
   const bool wb   = instruction & (1 << 21);
   const bool load = instruction & (1 << 20);
   
-  switch (GetARMInstructionType(instruction)) {
+  switch(GetARMInstructionType(instruction)) {
     case ARMInstrType::HalfwordSignedTransfer: {
       const bool immediate = instruction & (1 << 22);
       const auto opcode = (instruction >> 5) & 3;
@@ -32,7 +32,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
     case ARMInstrType::Multiply: {
       const bool set_flags = instruction & (1 << 20);
 
-      switch (static_cast<MultiplyOpcode>((instruction >> 21) & 0xF)) {
+      switch(static_cast<MultiplyOpcode>((instruction >> 21) & 0xF)) {
         case MultiplyOpcode::MUL:   return &ARM::ARM_Multiply<false, set_flags>;
         case MultiplyOpcode::MLA:   return &ARM::ARM_Multiply<true, set_flags>;
         case MultiplyOpcode::UMULL: return &ARM::ARM_MultiplyLong<false, false, set_flags>;
@@ -67,7 +67,7 @@ static constexpr auto GenerateHandlerARM() -> Handler32 {
       const bool x = instruction & (1 << 5);
       const bool y = instruction & (1 << 6);
   
-      switch (static_cast<SignedMultiplyOpcode>((instruction >> 21) & 0xF)) {
+      switch(static_cast<SignedMultiplyOpcode>((instruction >> 21) & 0xF)) {
         case SignedMultiplyOpcode::SMLAxy:  return &ARM::ARM_SignedHalfwordMultiply<true, x, y>;
         case SignedMultiplyOpcode::SM__Wy:  return &ARM::ARM_SignedWordHalfwordMultiply<!x, y>;
         case SignedMultiplyOpcode::SMLALxy: return &ARM::ARM_SignedHalfwordMultiplyLongAccumulate<x, y>;
