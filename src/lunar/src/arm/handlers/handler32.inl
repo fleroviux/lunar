@@ -164,18 +164,17 @@ void ARM_DataProcessing(u32 instruction) {
 
 template <bool immediate, bool use_spsr, bool to_status>
 void ARM_StatusTransfer(u32 instruction) {
-  // TODO: handle changing the CPSR.T thumb bit.
   if constexpr(to_status) {
     u32 op;
     u32 mask = 0;
     u8  fsxc = (instruction >> 16) & 0xF;
 
-    if(fsxc & 1) mask |= 0x000000FF;
-    if(fsxc & 2) mask |= 0x0000FF00;
-    if(fsxc & 4) mask |= 0x00FF0000;
-    if(fsxc & 8) mask |= 0xFF000000;
-
     if constexpr(immediate) {
+      if(fsxc == 0) {
+        // Hint instructions (such as WFI) are encoded as immediate MSR with fsxc==0.
+        return ARM_Hint(instruction);
+      }
+
       int value = instruction & 0xFF;
       int shift = ((instruction >> 8) & 0xF) * 2;
 
@@ -183,6 +182,11 @@ void ARM_StatusTransfer(u32 instruction) {
     } else {
       op = state.reg[instruction & 0xF];
     }
+
+    if(fsxc & 1) mask |= 0x000000FF;
+    if(fsxc & 2) mask |= 0x0000FF00;
+    if(fsxc & 4) mask |= 0x00FF0000;
+    if(fsxc & 8) mask |= 0xFF000000;
 
     u32 value = op & mask;
 
@@ -880,29 +884,35 @@ void ARM_SaturatingAddSubtract(u32 instruction) {
 }
 
 void ARM_CoprocessorRegisterTransfer(u32 instruction) {
-  auto dst = (instruction >> 12) & 0xF;
-  auto cp_rm = instruction & 0xF;
-  auto cp_rn = (instruction >> 16) & 0xF;
-  auto opcode1 = (instruction >> 21) & 7;
-  auto opcode2 = (instruction >>  5) & 7;
-  auto cp_num  = (instruction >>  8) & 0xF;
+  int dst = (instruction >> 12) & 0xF;
+  int cp_rm = instruction & 0xF;
+  int cp_rn = (instruction >> 16) & 0xF;
+  int opcode1 = (instruction >> 21) & 7;
+  int opcode2 = (instruction >>  5) & 7;
+  int cp_num  = (instruction >>  8) & 0xF;
 
-  if(coprocessors[cp_num] == nullptr) {
+  auto coprocessor = coprocessors[cp_num];
+
+  if(coprocessor == nullptr) {
     ARM_Undefined(instruction);
     return;
   }
 
   if(instruction & (1 << 20)) {
-    state.reg[dst] = coprocessors[cp_num]->MRC(opcode1, cp_rn, cp_rm, opcode2);
+    state.reg[dst] = coprocessor->MRC(opcode1, cp_rn, cp_rm, opcode2);
   } else {
-    coprocessors[cp_num]->MCR(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
+    coprocessor->MCR(opcode1, cp_rn, cp_rm, opcode2, state.reg[dst]);
   }
 
   state.r15 += 4;
 }
 
+void ARM_Hint(u32 instruction) {
+  ATOM_PANIC("unhandled ARM11 hint instruction: 0x{:08X} (PC = 0x{:08X})", instruction, state.r15);
+}
+
 void ARM_Undefined(u32 instruction) {
-  ATOM_PANIC("undefined ARM instruction: 0x{0:08X} (PC = 0x{:08X})", instruction, state.r15);
+  ATOM_PANIC("undefined ARM instruction: 0x{:08X} (PC = 0x{:08X})", instruction, state.r15);
 
   /*// Save current program status register.
   state.spsr[(int)Bank::Undefined] = state.cpsr;
@@ -918,5 +928,5 @@ void ARM_Undefined(u32 instruction) {
 }
 
 void ARM_Unimplemented(u32 instruction) {
-  ATOM_PANIC("unimplemented ARM instruction: 0x{0:08X} (PC = 0x{:08X})", instruction, state.r15);
+  ATOM_PANIC("unimplemented ARM instruction: 0x{:08X} (PC = 0x{:08X})", instruction, state.r15);
 }
