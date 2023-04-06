@@ -211,7 +211,7 @@ void RTC::ReadRegister() {
     }
 
     default: {
-      ASSERT(false, "RTC: unhandled register read: {}", reg);
+      ASSERT(false, "RTC: unhandled register read: {}", (int)reg);
     }
   }
 }
@@ -254,7 +254,7 @@ void RTC::WriteRegister() {
     }
 
     default: {
-      ASSERT(false, "RTC: unhandled register write: {}", reg);
+      ASSERT(false, "RTC: unhandled register write: {}", (int)reg);
     }
   }
 }

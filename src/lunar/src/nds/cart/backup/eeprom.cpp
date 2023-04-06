@@ -197,7 +197,7 @@ void EEPROM::ParseCommand(Command cmd) {
       break;
     }
     default: {
-      ASSERT(false, "EEPROM: unhandled command 0x{0:02X}", cmd);
+      ASSERT(false, "EEPROM: unhandled command 0x{0:02X}", (int)cmd);
     }
   }
 }

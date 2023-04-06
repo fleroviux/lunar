@@ -127,13 +127,13 @@ void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted write FIFO but FIFOs are disabled.", client);
+    LOG_ERROR("IPC[{0}]: attempted write FIFO but FIFOs are disabled.", (int)client);
     return;
   }
   
   if (fifo_tx.send.IsFull()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to write to already full FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted to write to already full FIFO.", (int)client);
     return;
   }
 
@@ -165,14 +165,14 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", client);
+    LOG_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", (int)client);
     // TODO: figure out if this read should update the latch.
     return fifo_rx.send.Peek();
   }
 
   if (fifo_rx.send.IsEmpty()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", client);
+    LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", (int)client);
     return fifo_tx.latch;
   }
 
