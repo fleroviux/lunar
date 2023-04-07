@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "common/math/matrix.hpp"
+#include "matrix.hpp"
 #include "fixed_point.hpp"
 
 namespace lunar::nds {

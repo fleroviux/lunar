@@ -9,7 +9,7 @@
 
 #include <atom/math/vector.hpp>
 
-namespace lunar {
+namespace lunar::nds {
 
   template<typename T>
   class Vector2 final : public atom::detail::Vector2<Vector2<T>, T> {
@@ -29,4 +29,4 @@ namespace lunar {
       using atom::detail::Vector4<Vector4<T>, Vector3<T>, T>::Vector4;
   };
 
-} // namespace lunar
+} // namespace lunar::nds

@@ -65,8 +65,6 @@ set(HEADERS
   src/arm/tablegen/gen_thumb.hpp
   src/arm/arm.hpp
   src/arm/state.hpp
-  src/common/math/matrix.hpp
-  src/common/math/vector.hpp
   src/common/ogl/buffer_object.hpp
   src/common/ogl/frame_buffer_object.hpp
   src/common/ogl/program_object.hpp
@@ -108,7 +106,9 @@ set(HEADERS
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp
   src/nds/video_unit/gpu/gpu.hpp
+  src/nds/video_unit/gpu/matrix.hpp
   src/nds/video_unit/gpu/matrix_stack.hpp
+  src/nds/video_unit/gpu/vector.hpp
   src/nds/video_unit/ppu/ppu.hpp
   src/nds/video_unit/ppu/registers.hpp
   src/nds/video_unit/video_unit.hpp

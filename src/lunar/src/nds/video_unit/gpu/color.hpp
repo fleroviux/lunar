@@ -12,7 +12,6 @@
 #include <atom/math/vector.hpp>
 #include <lunar/integer.hpp>
 
-#include "common/math/vector.hpp"
 #include "fixed_point.hpp"
 
 namespace lunar::nds {
@@ -31,18 +30,18 @@ inline auto operator*(Fixed6 lhs, Fixed20x12 rhs) -> Fixed6 {
 
 namespace atom {
 
-  template<>
-  struct NumericConstants<lunar::nds::Fixed6> {
-    static constexpr auto Zero() -> lunar::nds::Fixed6 {
-      return lunar::nds::Fixed6{};
-    }
+template<>
+struct NumericConstants<lunar::nds::Fixed6> {
+  static constexpr auto Zero() -> lunar::nds::Fixed6 {
+    return lunar::nds::Fixed6{};
+  }
 
-    static constexpr auto One() -> lunar::nds::Fixed6 {
-      return lunar::nds::Fixed6{63};
-    }
-  };
+  static constexpr auto One() -> lunar::nds::Fixed6 {
+    return lunar::nds::Fixed6{63};
+  }
+};
 
-}
+} // namespace atom
 
 namespace lunar::nds {
 
