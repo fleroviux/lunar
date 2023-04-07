@@ -9,7 +9,7 @@
 
 #include <array>
 #include <lunar/device/video_device.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 namespace lunar::nds {
 

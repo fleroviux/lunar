@@ -10,7 +10,7 @@
 #include <lunar/device/audio_device.hpp>
 #include <lunar/device/input_device.hpp>
 #include <lunar/device/video_device.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <memory>
 #include <string>
 

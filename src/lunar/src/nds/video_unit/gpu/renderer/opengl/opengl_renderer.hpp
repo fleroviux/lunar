@@ -8,7 +8,7 @@
 #pragma once
 
 #include <array>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <GL/glew.h>
 #include <utility>
 

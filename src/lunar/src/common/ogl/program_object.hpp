@@ -9,7 +9,7 @@
 
 #include <GL/glew.h>
 #include <string_view>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "shader_object.hpp"
 

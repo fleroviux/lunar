@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <atom/math/traits.hpp>
 #include <atom/math/vector.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "fixed_point.hpp"
 

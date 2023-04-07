@@ -9,7 +9,7 @@
 
 #include <functional>
 #include <lunar/device/video_device.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <lunar/log.hpp>
 #include <utility>
 

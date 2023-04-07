@@ -8,7 +8,7 @@
 #pragma once
 
 #include <lunatic/memory.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "nds/irq/irq.hpp"
 

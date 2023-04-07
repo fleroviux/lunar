@@ -9,7 +9,7 @@
 
 #include <lunatic/memory.hpp>
 #include <lunar/device/audio_device.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <mutex>
 
 #include "common/scheduler.hpp"

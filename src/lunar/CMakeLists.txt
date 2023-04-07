@@ -124,15 +124,14 @@ set(HEADERS_PUBLIC
   include/lunar/device/input_device.hpp
   include/lunar/device/video_device.hpp
   include/lunar/core.hpp
-  include/lunar/integer.hpp
   include/lunar/log.hpp
 )
 
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
-target_link_libraries(lunar PRIVATE lunatic atom-common atom-logger atom-math)
-target_link_libraries(lunar PUBLIC fmt)
+target_link_libraries(lunar PRIVATE lunatic atom-math)
+target_link_libraries(lunar PUBLIC atom-common atom-logger)
 
 # TODO: remove this before merging the OpenGL renderer
 find_package(SDL2 REQUIRED)

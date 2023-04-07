@@ -11,7 +11,7 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <memory>
 #include <mutex>
 #include <thread>

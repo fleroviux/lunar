@@ -16,7 +16,7 @@
 #include <memory>
 #include <vector>
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 namespace lunar {
 

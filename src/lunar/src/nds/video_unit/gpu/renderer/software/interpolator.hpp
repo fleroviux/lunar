@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "nds/video_unit/gpu/color.hpp"
 

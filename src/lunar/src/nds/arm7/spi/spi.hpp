@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "tsc/tsc.hpp"
 #include "nds/cart/backup/flash.hpp"

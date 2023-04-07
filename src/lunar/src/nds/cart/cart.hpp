@@ -8,7 +8,7 @@
 #pragma once
 
 #include <algorithm>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <fstream>
 #include <memory>
 #include <string>

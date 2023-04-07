@@ -12,7 +12,7 @@
 #include <condition_variable>
 #include <functional>
 #include <lunar/device/video_device.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <mutex>
 #include <thread>
 

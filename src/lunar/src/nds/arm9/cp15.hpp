@@ -9,7 +9,7 @@
 
 #include <lunatic/cpu.hpp>
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <lunar/log.hpp>
 
 #include "arm/arm.hpp"

@@ -10,7 +10,7 @@
 #include <atom/meta.hpp>
 #include <algorithm>
 #include <array>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <lunar/log.hpp>
 #include <functional>
 #include <stddef.h>

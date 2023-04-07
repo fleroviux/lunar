@@ -9,7 +9,7 @@
 
 #include <atom/math/traits.hpp>
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 namespace lunar {
 

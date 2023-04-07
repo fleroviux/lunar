@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "common/likely.hpp"
 #include "vram_region.hpp"

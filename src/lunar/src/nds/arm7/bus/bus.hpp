@@ -8,7 +8,7 @@
 #pragma once
 
 #include <lunatic/cpu.hpp>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "nds/interconnect.hpp"
 
