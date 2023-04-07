@@ -13,10 +13,10 @@
 
 namespace lunar::nds {
 
-  template<typename T>
-  class Matrix4 final : public atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T> {
-    public:
-      using atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T>::Matrix4;
-  };
+template<typename T>
+class Matrix4 final : public atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T> {
+  public:
+    using atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T>::Matrix4;
+};
 
 } // namespace lunar::nds
