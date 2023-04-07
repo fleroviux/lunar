@@ -18,48 +18,49 @@
 
 namespace lunar {
 
-struct FrameBufferObject {
-  static auto Create() -> FrameBufferObject* {
+class FrameBufferObject {
+  public:
+    static auto Create() -> FrameBufferObject* {
+      GLuint fbo;
+      glGenFramebuffers(1, &fbo);
+      return new FrameBufferObject{fbo};
+    }
+
+   ~FrameBufferObject() {
+      glDeleteFramebuffers(1, &fbo);
+    }
+
+    auto Handle() -> GLuint {
+      return fbo;
+    }
+
+    void Bind() {
+      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    }
+
+    void Unbind() {
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void Attach(GLenum attachment, Texture2D* texture) {
+      Bind();
+      glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->Handle(), 0);
+    }
+
+    void Detach(GLenum attachment) {
+      Bind();
+      glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0);
+    }
+
+    void DrawBuffers(std::initializer_list<GLenum> attachments) {
+      Bind();
+      glDrawBuffers((GLsizei)attachments.size(), attachments.begin());
+    }
+
+  private:
+    explicit FrameBufferObject(GLuint fbo) : fbo{fbo} {}
+
     GLuint fbo;
-    glGenFramebuffers(1, &fbo);
-    return new FrameBufferObject{fbo};
-  }
-
- ~FrameBufferObject() {
-    glDeleteFramebuffers(1, &fbo);
-  }
-
-  auto Handle() -> GLuint {
-    return fbo;
-  }
-
-  void Bind() {
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-  }
-
-  void Unbind() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  }
-
-  void Attach(GLenum attachment, Texture2D* texture) {
-    Bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->Handle(), 0);
-  }
-
-  void Detach(GLenum attachment) {
-    Bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0);
-  }
-
-  void DrawBuffers(std::initializer_list<GLenum> attachments) {
-    Bind();
-    glDrawBuffers((GLsizei)attachments.size(), attachments.begin());
-  }
-
-private:
-  explicit FrameBufferObject(GLuint fbo) : fbo{fbo} {}
-
-  GLuint fbo;
 };
 
 } // namespace lunar

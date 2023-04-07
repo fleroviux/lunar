@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 
 #include "ipc.hpp"
 
@@ -40,7 +41,7 @@ auto IPC::IPCSYNC::ReadByte(Client client, uint offset) -> u8 {
              (sync_tx.enable_remote_irq ? 64 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void IPC::IPCSYNC::WriteByte(Client client, uint offset, u8 value) {
@@ -58,7 +59,7 @@ void IPC::IPCSYNC::WriteByte(Client client, uint offset, u8 value) {
       }
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -79,7 +80,7 @@ auto IPC::IPCFIFOCNT::ReadByte(Client client, uint offset) -> u8 {
              (fifo_tx.enable ? 128 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void IPC::IPCFIFOCNT::WriteByte(Client client, uint offset, u8 value) {
@@ -110,7 +111,7 @@ void IPC::IPCFIFOCNT::WriteByte(Client client, uint offset, u8 value) {
       fifo_tx.enable = value & 128;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -127,13 +128,13 @@ void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted write FIFO but FIFOs are disabled.", client);
+    ATOM_ERROR("IPC[{0}]: attempted write FIFO but FIFOs are disabled.", (int)client);
     return;
   }
   
   if (fifo_tx.send.IsFull()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to write to already full FIFO.", client);
+    ATOM_ERROR("IPC[{0}]: attempted to write to already full FIFO.", (int)client);
     return;
   }
 
@@ -146,7 +147,7 @@ void IPC::IPCFIFOSEND::WriteWord(Client client, u32 value) {
 
 auto IPC::IPCFIFORECV::ReadByte(Client client, uint offset) -> u8 {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return ReadWord(client) >> (offset * 8);
@@ -154,7 +155,7 @@ auto IPC::IPCFIFORECV::ReadByte(Client client, uint offset) -> u8 {
 
 auto IPC::IPCFIFORECV::ReadHalf(Client client, uint offset) -> u16 {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return ReadWord(client) >> (offset * 8);
@@ -165,14 +166,14 @@ auto IPC::IPCFIFORECV::ReadWord(Client client) -> u32 {
   auto& fifo_rx = ipc.fifo[static_cast<uint>(GetRemote(client))];
 
   if (!fifo_tx.enable) {
-    LOG_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", client);
+    ATOM_ERROR("IPC[{0}]: attempted to read FIFO but FIFOs are disabled.", (int)client);
     // TODO: figure out if this read should update the latch.
     return fifo_rx.send.Peek();
   }
 
   if (fifo_rx.send.IsEmpty()) {
     fifo_tx.error = true;
-    LOG_ERROR("IPC[{0}]: attempted to read empty FIFO.", client);
+    ATOM_ERROR("IPC[{0}]: attempted to read empty FIFO.", (int)client);
     return fifo_tx.latch;
   }
 

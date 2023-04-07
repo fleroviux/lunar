@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 project(lunar-core CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
@@ -65,9 +65,6 @@ set(HEADERS
   src/arm/tablegen/gen_thumb.hpp
   src/arm/arm.hpp
   src/arm/state.hpp
-  src/common/math/matrix.hpp
-  src/common/math/numeric_traits.hpp
-  src/common/math/vector.hpp
   src/common/ogl/buffer_object.hpp
   src/common/ogl/frame_buffer_object.hpp
   src/common/ogl/program_object.hpp
@@ -77,8 +74,6 @@ set(HEADERS
   src/common/backup_file.hpp
   src/common/fifo.hpp
   src/common/likely.hpp
-  src/common/meta.hpp
-  src/common/punning.hpp
   src/common/scheduler.hpp
   src/common/static_vec.hpp
   src/nds/arm7/apu/apu.hpp
@@ -111,7 +106,9 @@ set(HEADERS
   src/nds/video_unit/gpu/color.hpp
   src/nds/video_unit/gpu/fixed_point.hpp
   src/nds/video_unit/gpu/gpu.hpp
+  src/nds/video_unit/gpu/matrix.hpp
   src/nds/video_unit/gpu/matrix_stack.hpp
+  src/nds/video_unit/gpu/vector.hpp
   src/nds/video_unit/ppu/ppu.hpp
   src/nds/video_unit/ppu/registers.hpp
   src/nds/video_unit/video_unit.hpp
@@ -127,15 +124,13 @@ set(HEADERS_PUBLIC
   include/lunar/device/input_device.hpp
   include/lunar/device/video_device.hpp
   include/lunar/core.hpp
-  include/lunar/integer.hpp
-  include/lunar/log.hpp
 )
 
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
-target_link_libraries(lunar PRIVATE lunatic)
-target_link_libraries(lunar PUBLIC fmt)
+target_link_libraries(lunar PRIVATE lunatic atom-math)
+target_link_libraries(lunar PUBLIC atom-common atom-logger)
 
 # TODO: remove this before merging the OpenGL renderer
 find_package(SDL2 REQUIRED)

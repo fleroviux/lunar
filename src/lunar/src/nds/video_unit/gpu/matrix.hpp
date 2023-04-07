@@ -7,18 +7,16 @@
 
 #pragma once
 
-#include <atom/integer.hpp>
+#include <atom/math/matrix4.hpp>
+
+#include "vector.hpp"
 
 namespace lunar::nds {
 
-class SPIDevice {
+template<typename T>
+class Matrix4 final : public atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T> {
   public:
-    virtual ~SPIDevice() = default;
-
-    virtual void Reset() = 0;
-    virtual void Select() = 0;
-    virtual void Deselect() = 0;
-    virtual auto Transfer(u8 data) -> u8 = 0;
+    using atom::detail::Matrix4<Matrix4<T>, Vector4<T>, T>::Matrix4;
 };
 
 } // namespace lunar::nds

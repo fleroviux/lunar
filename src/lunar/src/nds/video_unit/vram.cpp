@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
+
 #include "vram.hpp"
 
 namespace lunar::nds {
@@ -238,7 +240,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_gpu_texture.Map(vramcnt_a.offset * 0x20000, bank_a);
           break;
         default:
-          LOG_ERROR("VRAM bank A: unsupported configuration: mst={0} offset={1}", vramcnt_a.mst, vramcnt_a.offset);
+          ATOM_ERROR("VRAM bank A: unsupported configuration: mst={0} offset={1}", vramcnt_a.mst, vramcnt_a.offset);
       }
       break;
     case Bank::B:
@@ -256,7 +258,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_gpu_texture.Map(vramcnt_b.offset * 0x20000, bank_b);
           break;
         default:
-          LOG_ERROR("VRAM bank B: unsupported configuration: mst={0} offset={1}", vramcnt_b.mst, vramcnt_b.offset);
+          ATOM_ERROR("VRAM bank B: unsupported configuration: mst={0} offset={1}", vramcnt_b.mst, vramcnt_b.offset);
       }
       break;
     case Bank::C:
@@ -277,7 +279,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_bg[1].Map(0x00000, bank_c);
           break;
         default:
-          LOG_ERROR("VRAM bank C: unsupported configuration: mst={0} offset={1}", vramcnt_c.mst, vramcnt_c.offset);
+          ATOM_ERROR("VRAM bank C: unsupported configuration: mst={0} offset={1}", vramcnt_c.mst, vramcnt_c.offset);
       }
       break;
     case Bank::D:
@@ -298,7 +300,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_obj[1].Map(0x00000, bank_d);
           break;
         default:
-          LOG_ERROR("VRAM bank D: unsupported configuration: mst={0} offset={1}", vramcnt_d.mst, vramcnt_d.offset);
+          ATOM_ERROR("VRAM bank D: unsupported configuration: mst={0} offset={1}", vramcnt_d.mst, vramcnt_d.offset);
       }
       break;
     case Bank::E:
@@ -319,7 +321,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_bg_extpal[0].Map(0, bank_e, 0x8000);
           break;
         default:
-          LOG_ERROR("VRAM bank E: unsupported configuration: mst={0} offset={1}", vramcnt_e.mst, vramcnt_e.offset);
+          ATOM_ERROR("VRAM bank E: unsupported configuration: mst={0} offset={1}", vramcnt_e.mst, vramcnt_e.offset);
       }
       break;
     case Bank::F:
@@ -343,7 +345,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_obj_extpal[0].Map(0, bank_f, 0x2000);
           break;
         default:
-          LOG_ERROR("VRAM bank F: unsupported configuration: mst={0} offset={1}", vramcnt_f.mst, vramcnt_f.offset);
+          ATOM_ERROR("VRAM bank F: unsupported configuration: mst={0} offset={1}", vramcnt_f.mst, vramcnt_f.offset);
       }
       break;
     case Bank::G:
@@ -367,7 +369,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_obj_extpal[0].Map(0, bank_g, 0x2000);
           break;
         default:
-          LOG_ERROR("VRAM bank G: unsupported configuration: mst={0} offset={1}", vramcnt_g.mst, vramcnt_g.offset);
+          ATOM_ERROR("VRAM bank G: unsupported configuration: mst={0} offset={1}", vramcnt_g.mst, vramcnt_g.offset);
       }
       break;
     case Bank::H:
@@ -382,7 +384,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_bg_extpal[1].Map(0, bank_h);
           break;
         default:
-          LOG_ERROR("VRAM bank H: unsupported configuration: mst={0} offset={1}", vramcnt_h.mst, vramcnt_h.offset);
+          ATOM_ERROR("VRAM bank H: unsupported configuration: mst={0} offset={1}", vramcnt_h.mst, vramcnt_h.offset);
       }
       break;
     case Bank::I:
@@ -400,7 +402,7 @@ void VRAM::MapToCurrent(Bank bank) {
           region_ppu_obj_extpal[1].Map(0, bank_i, 0x2000);
           break;
         default:
-          LOG_ERROR("VRAM bank I: unsupported configuration: mst={0} offset={1}", vramcnt_i.mst, vramcnt_i.offset);
+          ATOM_ERROR("VRAM bank I: unsupported configuration: mst={0} offset={1}", vramcnt_i.mst, vramcnt_i.offset);
       }
       break;
   }

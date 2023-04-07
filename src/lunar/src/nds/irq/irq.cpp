@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "irq.hpp"
 
@@ -55,7 +55,7 @@ auto IRQ::IME::ReadByte(uint offset) -> u8 {
       return 0;
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void IRQ::IME::WriteByte(uint offset, u8 value) {
@@ -71,13 +71,13 @@ void IRQ::IME::WriteByte(uint offset, u8 value) {
     case 3:
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
 auto IRQ::IE::ReadByte(uint offset) -> u8 {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return (value >> (offset * 8)) & 0xFF;
@@ -85,7 +85,7 @@ auto IRQ::IE::ReadByte(uint offset) -> u8 {
 
 void IRQ::IE::WriteByte(uint offset, u8 value) {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   this->value &= ~(0xFF << (offset * 8));
@@ -97,7 +97,7 @@ void IRQ::IE::WriteByte(uint offset, u8 value) {
 
 auto IRQ::IF::ReadByte(uint offset) -> u8 {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return (value >> (offset * 8)) & 0xFF;
@@ -105,7 +105,7 @@ auto IRQ::IF::ReadByte(uint offset) -> u8 {
 
 void IRQ::IF::WriteByte(uint offset, u8 value) {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   this->value &= ~(value << (offset * 8));

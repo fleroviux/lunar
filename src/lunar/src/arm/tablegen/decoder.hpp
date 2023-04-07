@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 namespace lunar::arm {
 

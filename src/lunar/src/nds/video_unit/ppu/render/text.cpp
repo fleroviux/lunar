@@ -5,7 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include "common/punning.hpp"
 #include "nds/video_unit/ppu/ppu.hpp"
 
 namespace lunar::nds {
@@ -69,7 +68,7 @@ void PPU::RenderLayerText(uint id, u16 vcount) {
   
   do {
     do {      
-      encoder = read<u16>(render_vram_bg, base + grid_x++ * 2);
+      encoder = atom::read<u16>(render_vram_bg, base + grid_x++ * 2);
 
       // TODO: speed tile decoding itself up.
       if (encoder != last_encoder) {

@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 
 #include "bus.hpp"
 
@@ -306,7 +307,7 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_CARDDATA|1:
     case REG_CARDDATA|2:
     case REG_CARDDATA|3:
-      ASSERT(false, "ARM7: unhandled byte read from REG_CARDDATA");
+      ATOM_PANIC("ARM7: unhandled byte read from REG_CARDDATA");
       return 0;
 
     // SPI
@@ -369,7 +370,7 @@ auto ARM7MemoryBus::ReadByteIO(u32 address) -> u8 {
       return wifi.ReadByteIO(address);
 
     default:
-      LOG_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
+      ATOM_WARN("ARM7: MMIO: unhandled read from 0x{0:08X}", address);
   }
 
   return 0;
@@ -745,7 +746,7 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       if (mode == 2) {
         IsHalted() = true;
       } else if (mode != 0) {
-        LOG_ERROR("ARM7: MMIO: unhandled HALTCNT mode #{0}", mode);
+        ATOM_ERROR("ARM7: MMIO: unhandled HALTCNT mode #{0}", mode);
       }
       break;
     }
@@ -770,7 +771,7 @@ void ARM7MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     default:
-      LOG_WARN("ARM7: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+      ATOM_WARN("ARM7: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
   }
 }
 

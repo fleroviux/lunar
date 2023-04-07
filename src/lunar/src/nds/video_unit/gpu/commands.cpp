@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <algorithm>
 
 #include "gpu.hpp"
@@ -56,7 +58,7 @@ void GPU::WriteGXFIFO(u32 value) {
 
 void GPU::WriteCommandPort(uint port, u32 value) {
   if (port <= 0x3F || port >= 0x1CC) {
-    LOG_ERROR("GPU: unknown command port 0x{0:03X}", port);
+    ATOM_ERROR("GPU: unknown command port 0x{0:03X}", port);
     return;
   }
 
@@ -88,7 +90,9 @@ void GPU::Enqueue(CmdArgPack pack) {
 }
 
 auto GPU::Dequeue() -> CmdArgPack {
-  ASSERT(gxpipe.Count() != 0, "GPU: attempted to dequeue entry from empty GXPIPE");
+  if(gxpipe.Count() == 0) {
+    ATOM_PANIC("GPU: attempted to dequeue entry from empty GXPIPE");
+  }
 
   auto entry = gxpipe.Read();
   if (gxpipe.Count() <= 2 && !gxfifo.IsEmpty()) {
@@ -151,7 +155,7 @@ void GPU::ProcessCommands() {
       case 0x41: CMD_EndVertexList(); break;
       case 0x50: CMD_SwapBuffers(); break;
       default: {
-        LOG_ERROR("GPU: unimplemented command 0x{0:02X}", command);
+        ATOM_ERROR("GPU: unimplemented command 0x{0:02X}", command);
         Dequeue();
         for (int i = 1; i < arg_count; i++)
           Dequeue();
@@ -272,23 +276,23 @@ void GPU::CMD_LoadIdentity() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection: {
-      projection.current.identity();
+      projection.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Modelview: {
-      modelview.current.identity();
+      modelview.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Simultaneous: {
-      modelview.current.identity();
-      direction.current.identity();
+      modelview.current = Matrix4<Fixed20x12>::Identity();
+      direction.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Texture: {
-      texture.current.identity();
+      texture.current = Matrix4<Fixed20x12>::Identity();
       break;
     }
   }
@@ -459,7 +463,7 @@ void GPU::CMD_MatrixScale() {
 void GPU::CMD_MatrixTranslate() {
   Matrix4<Fixed20x12> mat;
 
-  mat.identity();
+  mat = Matrix4<Fixed20x12>::Identity();
   for (int i = 0; i < 3; i++) {
     mat[3][i] = Dequeue().argument;
   }
@@ -484,7 +488,7 @@ void GPU::CMD_MatrixTranslate() {
 }
 
 void GPU::CMD_SetColor() {
-  vertex_color = Color4::from_rgb555(u16(Dequeue().argument));
+  vertex_color = Color4::FromRGB555(u16(Dequeue().argument));
 }
 
 void GPU::CMD_SetNormal() {
@@ -497,16 +501,16 @@ void GPU::CMD_SetNormal() {
   if (texture_params.transform == TextureParams::Transform::Normal) {
     auto const& matrix = texture.current;
 
-    auto t_x = Fixed20x12{vertex_uv_source.x().raw() << 12};
-    auto t_y = Fixed20x12{vertex_uv_source.y().raw() << 12};
+    auto t_x = Fixed20x12{vertex_uv_source.X().raw() << 12};
+    auto t_y = Fixed20x12{vertex_uv_source.Y().raw() << 12};
 
     vertex_uv = Vector2<Fixed12x4>{
-      s16((x * matrix[0].x() + y * matrix[1].x() + z * matrix[2].x() + t_x).raw() >> 12),
-      s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
+      s16((x * matrix[0].X() + y * matrix[1].X() + z * matrix[2].X() + t_x).raw() >> 12),
+      s16((x * matrix[0].Y() + y * matrix[1].Y() + z * matrix[2].Y() + t_y).raw() >> 12)
     };
   }
 
-  auto normal = (direction.current * Vector4<Fixed20x12>{ x, y, z, NumericConstants<Fixed20x12>::zero() }).xyz();
+  auto normal = (direction.current * Vector4<Fixed20x12>{ x, y, z, atom::NumericConstants<Fixed20x12>::Zero() }).XYZ();
 
   vertex_color = material.emissive;
 
@@ -518,12 +522,12 @@ void GPU::CMD_SetNormal() {
 
     auto const& light = lights[i];
 
-    auto cos_theta = -light.direction.dot(normal);
-    auto shinyness = -light.halfway.dot(normal);
+    auto cos_theta = -light.direction.Dot(normal);
+    auto shinyness = -light.halfway.Dot(normal);
 
     // TODO: support min/max/clamp for the fixed point types.
-    if (cos_theta.raw() < 0) cos_theta = NumericConstants<Fixed20x12>::zero();
-    if (shinyness.raw() < 0) shinyness = NumericConstants<Fixed20x12>::zero();
+    if (cos_theta.raw() < 0) cos_theta = atom::NumericConstants<Fixed20x12>::Zero();
+    if (shinyness.raw() < 0) shinyness = atom::NumericConstants<Fixed20x12>::Zero();
 
     shinyness *= shinyness;
 
@@ -531,21 +535,21 @@ void GPU::CMD_SetNormal() {
       // TODO!
     }
 
-    auto diffuse_r = (material.diffuse.r().raw() * cos_theta.raw() * light.color.r().raw()) >> 18;
-    auto diffuse_g = (material.diffuse.g().raw() * cos_theta.raw() * light.color.g().raw()) >> 18;
-    auto diffuse_b = (material.diffuse.b().raw() * cos_theta.raw() * light.color.b().raw()) >> 18;
+    auto diffuse_r = (material.diffuse.R().raw() * cos_theta.raw() * light.color.R().raw()) >> 18;
+    auto diffuse_g = (material.diffuse.G().raw() * cos_theta.raw() * light.color.G().raw()) >> 18;
+    auto diffuse_b = (material.diffuse.B().raw() * cos_theta.raw() * light.color.B().raw()) >> 18;
 
-    auto specular_r = (material.specular.r().raw() * shinyness.raw() * light.color.r().raw()) >> 18;
-    auto specular_g = (material.specular.g().raw() * shinyness.raw() * light.color.g().raw()) >> 18;
-    auto specular_b = (material.specular.b().raw() * shinyness.raw() * light.color.b().raw()) >> 18;
+    auto specular_r = (material.specular.R().raw() * shinyness.raw() * light.color.R().raw()) >> 18;
+    auto specular_g = (material.specular.G().raw() * shinyness.raw() * light.color.G().raw()) >> 18;
+    auto specular_b = (material.specular.B().raw() * shinyness.raw() * light.color.B().raw()) >> 18;
 
-    auto ambient_r = (material.ambient.r().raw() * light.color.r().raw()) >> 6;
-    auto ambient_g = (material.ambient.g().raw() * light.color.g().raw()) >> 6;
-    auto ambient_b = (material.ambient.b().raw() * light.color.b().raw()) >> 6;
+    auto ambient_r = (material.ambient.R().raw() * light.color.R().raw()) >> 6;
+    auto ambient_g = (material.ambient.G().raw() * light.color.G().raw()) >> 6;
+    auto ambient_b = (material.ambient.B().raw() * light.color.B().raw()) >> 6;
 
-    vertex_color.r() = std::clamp(vertex_color.r().raw() + diffuse_r + specular_r + ambient_r, 0, 63);
-    vertex_color.g() = std::clamp(vertex_color.g().raw() + diffuse_g + specular_g + ambient_g, 0, 63);
-    vertex_color.b() = std::clamp(vertex_color.b().raw() + diffuse_b + specular_b + ambient_b, 0, 63);
+    vertex_color.R() = std::clamp(vertex_color.R().raw() + diffuse_r + specular_r + ambient_r, 0, 63);
+    vertex_color.G() = std::clamp(vertex_color.G().raw() + diffuse_g + specular_g + ambient_g, 0, 63);
+    vertex_color.B() = std::clamp(vertex_color.B().raw() + diffuse_b + specular_b + ambient_b, 0, 63);
   }
 }
 
@@ -563,12 +567,12 @@ void GPU::CMD_SetUV() {
     auto x = Fixed20x12{u << 8};
     auto y = Fixed20x12{v << 8};
 
-    auto t_x = (matrix[2].x() + matrix[3].x()) * Fixed20x12{256};
-    auto t_y = (matrix[2].y() + matrix[3].y()) * Fixed20x12{256};
+    auto t_x = (matrix[2].X() + matrix[3].X()) * Fixed20x12{256};
+    auto t_y = (matrix[2].Y() + matrix[3].Y()) * Fixed20x12{256};
 
     vertex_uv = Vector2<Fixed12x4>{
-      s16((x * matrix[0].x() + y * matrix[1].x() + t_x).raw() >> 8),
-      s16((x * matrix[0].y() + y * matrix[1].y() + t_y).raw() >> 8),
+      s16((x * matrix[0].X() + y * matrix[1].X() + t_x).raw() >> 8),
+      s16((x * matrix[0].Y() + y * matrix[1].Y() + t_y).raw() >> 8),
     };
   } else {
     vertex_uv = vertex_uv_source;
@@ -681,8 +685,8 @@ void GPU::CMD_SetPaletteBase() {
 void GPU::CMD_SetMaterialColor0() {
   auto arg = Dequeue().argument;
 
-  material.diffuse = Color4::from_rgb555(arg & 0x7FFF);
-  material.ambient = Color4::from_rgb555(arg >> 16);
+  material.diffuse = Color4::FromRGB555(arg & 0x7FFF);
+  material.ambient = Color4::FromRGB555(arg >> 16);
 
   if (arg & 0x8000) {
     vertex_color = material.diffuse;
@@ -692,8 +696,8 @@ void GPU::CMD_SetMaterialColor0() {
 void GPU::CMD_SetMaterialColor1() {
   auto arg = Dequeue().argument;
 
-  material.specular = Color4::from_rgb555(arg & 0x7FFF);
-  material.emissive = Color4::from_rgb555(arg >> 16);
+  material.specular = Color4::FromRGB555(arg & 0x7FFF);
+  material.emissive = Color4::FromRGB555(arg >> 16);
 
   material.enable_shinyness_table = arg & 0x8000;
 }
@@ -707,23 +711,23 @@ void GPU::CMD_SetLightVector() {
     s16(((arg >>  0) & 0x3FF) << 6) >> 3,
     s16(((arg >> 10) & 0x3FF) << 6) >> 3,
     s16(((arg >> 20) & 0x3FF) << 6) >> 3,
-    NumericConstants<Fixed20x12>::zero()
+    atom::NumericConstants<Fixed20x12>::Zero()
   };
 
-  light.direction = (this->direction.current * direction).xyz();
+  light.direction = (this->direction.current * direction).XYZ();
   
   // halfway = (direction + (0, 0, -1)) * 0.5
   light.halfway = Vector3<Fixed20x12>{
-    light.direction.x().raw() >> 1,
-    light.direction.y().raw() >> 1,
-   (light.direction.z() - NumericConstants<Fixed20x12>::one()).raw() >> 1
+    light.direction.X().raw() >> 1,
+    light.direction.Y().raw() >> 1,
+   (light.direction.Z() - atom::NumericConstants<Fixed20x12>::One()).raw() >> 1
   };
 }
 
 void GPU::CMD_SetLightColor() {
   auto arg = Dequeue().argument;
 
-  lights[arg >> 30].color = Color4::from_rgb555(arg & 0x7FFF);
+  lights[arg >> 30].color = Color4::FromRGB555(arg & 0x7FFF);
 }
 
 void GPU::CMD_BeginVertexList() {

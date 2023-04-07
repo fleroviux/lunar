@@ -535,7 +535,10 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
   state.r14 = temp | 1;
   if (exchange) {
     // Not a valid opcode in ARMv4T, but we don't know what it would do.
-    ASSERT(arch != Architecture::ARMv4T, "blx cannot be used on ARMv4T CPUs");
+    if(arch == Architecture::ARMv4T) {
+      ATOM_PANIC("ARM: blx cannot be used on ARMv4T CPUs");
+    }
+
     state.r15 &= ~3;
     state.cpsr.f.thumb = 0;
     ReloadPipeline32();
@@ -545,5 +548,5 @@ void Thumb_LongBranchLinkSuffix(u16 instruction) {
 }
 
 void Thumb_Unimplemented(u16 instruction) {
-  ASSERT(false, "unimplemented instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
+  ATOM_PANIC("ARM: unimplemented instruction: 0x{0:04X} @ r15 = 0x{1:08X}", instruction, state.r15);
 }

@@ -66,16 +66,16 @@ void SoftwareRenderer::CaptureColor(u16* buffer, int vcount, int width, bool dis
     auto& color = color_buffer[vcount * 256 + x];
 
     if(display_capture) {
-      buffer[x] = color.to_rgb555() | (color.a() != 0 ? 0x8000 : 0);
+      buffer[x] = color.ToRGB555() | (color.A() != 0 ? 0x8000 : 0);
     } else {
-      buffer[x] = color.a() == 0 ? 0x8000 : color.to_rgb555();
+      buffer[x] = color.A() == 0 ? 0x8000 : color.ToRGB555();
     }
   }
 }
 
 void SoftwareRenderer::CaptureAlpha(int* buffer, int vcount) {
   for(int x = 0; x < 256; x++) {
-    buffer[x] = color_buffer[vcount * 256 + x].a().raw() >> 2;
+    buffer[x] = color_buffer[vcount * 256 + x].A().raw() >> 2;
   }
 }
 

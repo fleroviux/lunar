@@ -15,19 +15,20 @@
 
 namespace lunar::nds {
 
-struct ARM9 {
-  ARM9(Interconnect& interconnect);
+class ARM9 {
+  public:
+    explicit ARM9(Interconnect& interconnect);
 
-  void Reset(u32 entrypoint);
-  auto Bus() -> ARM9MemoryBus& { return bus; }
-  bool IsHalted() { return core->WaitForIRQ(); }
-  void Run(uint cycles);
+    void Reset(u32 entrypoint);
+    auto Bus() -> ARM9MemoryBus& { return bus; }
+    bool IsHalted() { return core->WaitForIRQ(); }
+    void Run(uint cycles);
 
-private:
-  ARM9MemoryBus bus;
-  CP15 cp15;
-  std::unique_ptr<lunatic::CPU> core;
-  IRQ& irq;
+  private:
+    ARM9MemoryBus bus;
+    CP15 cp15;
+    std::unique_ptr<lunatic::CPU> core;
+    IRQ& irq;
 };
 
 } // namespace lunar::nds

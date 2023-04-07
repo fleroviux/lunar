@@ -5,10 +5,11 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
-#include <lunar/log.hpp>
 
 #include "backup/eeprom.hpp"
 #include "backup/eeprom512b.hpp"
@@ -40,7 +41,9 @@ void Cartridge::Load(std::string const& path, bool direct_boot) {
   loaded = false;
 
   file.open(path, std::ios::in | std::ios::binary);
-  ASSERT(file.good(), "Cart: failed to load ROM: {0}", path);
+  if(!file.good()) {
+    ATOM_PANIC("Cart: failed to load ROM: {0}", path);
+  }
   loaded = true;
   file.seekg(0, std::ios::end);
   file_size = file.tellg();
@@ -132,7 +135,7 @@ void Cartridge::OnCommandStart() {
     switch (command[0] & 0xF0) {
       case 0x40: {
         // Activate KEY2 Encryption Mode
-        LOG_WARN("Cart: unhandled 'Activate KEY2 encryption' command");
+        ATOM_WARN("Cart: unhandled 'Activate KEY2 encryption' command");
         break;
       }
       case 0x10: {
@@ -187,11 +190,16 @@ void Cartridge::OnCommandStart() {
 
         if (address <= 0x7FFF) {
           address = 0x8000 + (address & 0x1FF);
-          LOG_WARN("Cart: attempted to read protected region.");
+          ATOM_WARN("Cart: attempted to read protected region.");
         }
 
-        ASSERT(transfer.count <= 0x80, "Cart: command 0xB7: size greater than 0x200 is untested.");
-        ASSERT((address & 0x1FF) == 0, "Cart: command 0xB7: address unaligned to 0x200 is untested.");
+        if(transfer.count > 0x80) {
+          ATOM_PANIC("Cart: command 0xB7: size greater than 0x200 is untested.");
+        }
+
+        if((address & 0x1FF) > 0) {
+          ATOM_PANIC("Cart: command 0xB7: address unaligned to 0x200 is untested.");
+        }
 
         transfer.data_count = std::min(0x80, transfer.count);
 
@@ -226,7 +234,7 @@ void Cartridge::OnCommandStart() {
   }
 
   if (unknown_command) {
-    ASSERT(false, "Cart: unhandled command (mode={}): {:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
+    ATOM_PANIC("Cart: unhandled command (mode={}): {:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
       (int)data_mode, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7]);
   }
 
@@ -401,7 +409,7 @@ auto Cartridge::AUXSPICNT::ReadByte(uint offset) -> u8 {
              (enable_slot ? 128 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void Cartridge::AUXSPICNT::WriteByte(uint offset, u8 value) {
@@ -416,7 +424,7 @@ void Cartridge::AUXSPICNT::WriteByte(uint offset, u8 value) {
       enable_slot = value & 128;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -431,7 +439,7 @@ auto Cartridge::ROMCTRL::ReadByte(uint offset) -> u8 {
       return data_block_size | (transfer_clock_rate << 3) | (busy ? 0x80 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void Cartridge::ROMCTRL::WriteByte(uint offset, u8 value) {
@@ -451,19 +459,19 @@ void Cartridge::ROMCTRL::WriteByte(uint offset, u8 value) {
       }
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
 auto Cartridge::CARDCMD::ReadByte(uint offset) -> u8 {
   if (offset >= 8)
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   return buffer[offset];
 }
 
 void Cartridge::CARDCMD::WriteByte(uint offset, u8 value) {
   if (offset >= 8)
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   buffer[offset] = value;
 }
 

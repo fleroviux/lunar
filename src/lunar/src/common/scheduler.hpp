@@ -7,72 +7,73 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 #include <functional>
 #include <limits>
 
 namespace lunar {
 
-struct Scheduler {
-  Scheduler();
- ~Scheduler();
+class Scheduler {
+  public:
+    Scheduler();
+   ~Scheduler();
 
-  template<class T>
-  using EventMethod = void (T::*)(int);
+    template<class T>
+    using EventMethod = void (T::*)(int);
 
-  struct Event {
-    std::function<void(int)> callback;
-  private:
-    friend class Scheduler;
-    int handle;
-    u64 timestamp;
-  };
+    struct Event {
+      std::function<void(int)> callback;
+    private:
+      friend class Scheduler;
+      int handle;
+      u64 timestamp;
+    };
 
-  auto GetTimestampNow() const -> u64 {
-    return timestamp_now;
-  }
-
-  auto GetTimestampTarget() const -> u64 {
-    if (heap_size == 0) {
-      return std::numeric_limits<u64>::max();
+    auto GetTimestampNow() const -> u64 {
+      return timestamp_now;
     }
-    return heap[0]->timestamp;
-  }
 
-  auto GetRemainingCycleCount() const -> int {
-    return int(GetTimestampTarget() - GetTimestampNow());
-  }
+    auto GetTimestampTarget() const -> u64 {
+      if (heap_size == 0) {
+        return std::numeric_limits<u64>::max();
+      }
+      return heap[0]->timestamp;
+    }
 
-  void AddCycles(int cycles) {
-    timestamp_now += cycles;
-  }
+    auto GetRemainingCycleCount() const -> int {
+      return int(GetTimestampTarget() - GetTimestampNow());
+    }
 
-  void Reset();
-  void Step();
-  auto Add(u64 delay, std::function<void(int)> callback) -> Event*;
-  void Cancel(Event* event) { Remove(event->handle); }
+    void AddCycles(int cycles) {
+      timestamp_now += cycles;
+    }
 
-  template<class T>
-  auto Add(std::uint64_t delay, T* object, EventMethod<T> method) -> Event* {
-    return Add(delay, [object, method](int cycles_late) {
-      (object->*method)(cycles_late);
-    });
-  }
+    void Reset();
+    void Step();
+    auto Add(u64 delay, std::function<void(int)> callback) -> Event*;
+    void Cancel(Event* event) { Remove(event->handle); }
 
-private:
-  static constexpr int kMaxEvents = 64;
+    template<class T>
+    auto Add(std::uint64_t delay, T* object, EventMethod<T> method) -> Event* {
+      return Add(delay, [object, method](int cycles_late) {
+        (object->*method)(cycles_late);
+      });
+    }
 
-  constexpr int Parent(int n) { return (n - 1) / 2; }
-  constexpr int LeftChild(int n) { return n * 2 + 1; }
-  constexpr int RightChild(int n) { return n * 2 + 2; }
+  private:
+    static constexpr int kMaxEvents = 64;
 
-  void Remove(int n);
-  void Swap(int i, int j);
-  void Heapify(int n);
+    constexpr int Parent(int n) { return (n - 1) / 2; }
+    constexpr int LeftChild(int n) { return n * 2 + 1; }
+    constexpr int RightChild(int n) { return n * 2 + 2; }
 
-  int heap_size;
-  Event* heap[kMaxEvents];
-  u64 timestamp_now;
+    void Remove(int n);
+    void Swap(int i, int j);
+    void Heapify(int n);
+
+    int heap_size;
+    Event* heap[kMaxEvents];
+    u64 timestamp_now;
 };
 
 } // namespace lunar

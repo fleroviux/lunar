@@ -14,37 +14,38 @@
 
 namespace lunar::nds {
 
-struct ARM7 {
-  ARM7(Interconnect& interconnect);
+class ARM7 {
+  public:
+    explicit ARM7(Interconnect& interconnect);
 
-  void Reset(u32 entrypoint);
-  auto Bus() -> ARM7MemoryBus& { return bus; }
-  bool IsHalted() { return bus.IsHalted(); }
-  void Run(uint cycles);
+    void Reset(u32 entrypoint);
+    auto Bus() -> ARM7MemoryBus& { return bus; }
+    bool IsHalted() { return bus.IsHalted(); }
+    void Run(uint cycles);
 
-private:
-  struct CP14 : lunatic::Coprocessor {
-    void Reset() override {}
+  private:
+    struct CP14 : lunatic::Coprocessor {
+      void Reset() override {}
 
-    auto Read(
-      int opcode1,
-      int cn,
-      int cm,
-      int opcode2
-    ) -> u32 override { return 0; }
-    
-    void Write(
-      int opcode1,
-      int cn,
-      int cm,
-      int opcode2,
-      u32 value
-    ) override {}
-  } cp14;
+      auto Read(
+        int opcode1,
+        int cn,
+        int cm,
+        int opcode2
+      ) -> u32 override { return 0; }
 
-  ARM7MemoryBus bus;
-  std::unique_ptr<lunatic::CPU> core;
-  IRQ& irq;
+      void Write(
+        int opcode1,
+        int cn,
+        int cm,
+        int opcode2,
+        u32 value
+      ) override {}
+    } cp14;
+
+    ARM7MemoryBus bus;
+    std::unique_ptr<lunatic::CPU> core;
+    IRQ& irq;
 };
 
 } // namespace lunar::nds

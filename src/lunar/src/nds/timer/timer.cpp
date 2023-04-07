@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "timer.hpp"
 
@@ -58,7 +58,7 @@ auto Timer::Read(uint chan_id, uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void Timer::Write(uint chan_id, uint offset, u8 value) {
@@ -109,7 +109,7 @@ void Timer::Write(uint chan_id, uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }

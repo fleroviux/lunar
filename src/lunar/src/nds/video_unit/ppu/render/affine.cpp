@@ -5,7 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include "common/punning.hpp"
 #include "nds/video_unit/ppu/ppu.hpp"
 
 namespace lunar::nds {
@@ -77,7 +76,7 @@ void PPU::RenderLayerAffine(uint id, u16 vcount) {
   u32 tile_base = mmio.dispcnt.tile_block * 65536 + bg.tile_block * 16384;
   
   AffineRenderLoop(vcount, id, size, size, [&](int line_x, int x, int y) {
-    auto tile_number = read<u8>(render_vram_bg, map_base + (y >> 3) * block_width + (x >> 3));
+    auto tile_number = atom::read<u8>(render_vram_bg, map_base + (y >> 3) * block_width + (x >> 3));
     buffer[line_x] = DecodeTilePixel8BPP_BG(
       tile_base + tile_number * 64,
       false,
@@ -109,7 +108,7 @@ void PPU::RenderLayerExtended(uint id, u16 vcount) {
     if (bg.tile_block & 1) {
       // Rotate/Scale direct color bitmap
       AffineRenderLoop(vcount, id, width, height, [&](int line_x, int x, int y) {
-        u16 color = read<u16>(render_vram_bg, bg.map_block * 16384 + (y * width + x) * 2);
+        u16 color = atom::read<u16>(render_vram_bg, bg.map_block * 16384 + (y * width + x) * 2);
         if (color & 0x8000) {
           buffer[line_x] = color & 0x7FFF;
         } else {
@@ -119,7 +118,7 @@ void PPU::RenderLayerExtended(uint id, u16 vcount) {
     } else {
       // Rotate/Scale 256-color bitmap
       AffineRenderLoop(vcount, id, width, height, [&](int line_x, int x, int y) {
-        u8 index = read<u8>(render_vram_bg, bg.map_block * 16384 + y * width + x);
+        u8 index = atom::read<u8>(render_vram_bg, bg.map_block * 16384 + y * width + x);
         if (index == 0) {
           buffer[line_x] = s_color_transparent;
         } else {
@@ -136,7 +135,7 @@ void PPU::RenderLayerExtended(uint id, u16 vcount) {
     u32 tile_base = mmio.dispcnt.tile_block * 65536 + bg.tile_block * 16384;
       
     AffineRenderLoop(vcount, id, size, size, [&](int line_x, int x, int y) {
-      u16 encoder = read<u16>(render_vram_bg, map_base + ((y >> 3) * block_width + (x >> 3)) * 2);
+      u16 encoder = atom::read<u16>(render_vram_bg, map_base + ((y >> 3) * block_width + (x >> 3)) * 2);
       int number  = encoder & 0x3FF;
       int palette = encoder >> 12;
       int tile_x = x & 7;
@@ -158,7 +157,7 @@ void PPU::RenderLayerLarge(u16 vcount) {
   int height = 1024 >> (bg.size & 1);
 
   AffineRenderLoop(vcount, 0, width, height, [&](int line_x, int x, int y) {
-    u8 index = read<u8>(render_vram_bg, y * width + x);
+    u8 index = atom::read<u8>(render_vram_bg, y * width + x);
     if (index == 0) {
       buffer_bg[2][line_x] = s_color_transparent;
     } else {

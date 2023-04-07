@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "flash.hpp"
 
@@ -134,7 +134,7 @@ auto FLASH::Transfer(u8 data) -> u8 {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 
@@ -193,7 +193,7 @@ void FLASH::ParseCommand(Command cmd) {
       break;
     }
     default: {
-      // ASSERT(false, "FLASH: unhandled command 0x{0:02X}", cmd);
+      // ATOM_PANIC("FLASH: unhandled command 0x{0:02X}", cmd);
     }
   }
 }

@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <string.h>
 
 #include "dma.hpp"
@@ -51,7 +52,7 @@ auto DMA9::Read(uint chan_id, uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void DMA9::Write(uint chan_id, uint offset, u8 value) {
@@ -124,7 +125,7 @@ void DMA9::Write(uint chan_id, uint offset, u8 value) {
           case Time::GxFIFO:
             break;
           default:
-            ASSERT(false, "DMA9: unhandled start time: {0}", channel.time);
+            ATOM_PANIC("DMA9: unhandled start time: {0}", channel.time);
             break;
         }
       }
@@ -135,13 +136,13 @@ void DMA9::Write(uint chan_id, uint offset, u8 value) {
 
 auto DMA9::ReadFill(uint offset) -> u8 {
   if (offset >= 16)
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   return filldata[offset];
 }
 
 void DMA9::WriteFill(uint offset, u8 value) {
   if (offset >= 16)
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   filldata[offset] = value;
 }
 
@@ -162,7 +163,7 @@ void DMA9::RunChannel(Channel& channel) {
   int dst_offset = dma_modify[channel.size][channel.dst_mode];
   int src_offset = dma_modify[channel.size][channel.src_mode];
 
-  LOG_INFO("DMA9: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3} time={4}",
+  ATOM_INFO("DMA9: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3} time={4}",
     channel.latch.src, channel.latch.dst, channel.latch.length, channel.size, channel.time);
 
   // TODO: this an absolutely atrocious hack.

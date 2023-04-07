@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/panic.hpp>
+
 #include "edge.hpp"
 #include "interpolator.hpp"
 #include "software_renderer.hpp"
@@ -13,7 +15,7 @@ namespace lunar::nds {
 
 void SoftwareRenderer::RenderRearPlane(int thread_min_y, int thread_max_y) {
   if (disp3dcnt.enable_rear_bitmap) {
-    ASSERT(false, "GPU: unhandled rear bitmap");
+    ATOM_PANIC("GPU: unhandled rear bitmap");
   } else {
     auto color = Color4{
       (s8)((clear_color.color_r << 1) | (clear_color.color_r >> 4)),
@@ -71,12 +73,12 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
       auto& point = points[j];
       auto vertex = poly->vertices[j];
 
-      auto w = vertex->position.w().raw();
+      auto w = vertex->position.W().raw();
       auto two_w = w << 1;
 
-      point.x = ((( (s64)vertex->position.x().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
-      point.y = (((-(s64)vertex->position.y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
-      point.depth = (u32)(((((s64)vertex->position.z().raw() << 14) / w) + 0x3FFF) << 9);
+      point.x = ((( (s64)vertex->position.X().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
+      point.y = (((-(s64)vertex->position.Y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
+      point.depth = (u32)(((((s64)vertex->position.Z().raw() << 14) / w) + 0x3FFF) << 9);
       point.w = w;
       point.vertex = vertex;
 
@@ -288,12 +290,12 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
             span_interpolator.Interpolate(span.uv[l], span.uv[r], uv);
             span_interpolator.Interpolate(span.color[l], span.color[r], color);
 
-            color.a() = alpha;
+            color.A() = alpha;
 
             if (disp3dcnt.enable_textures && poly->texture_params.format != GPU::TextureParams::Format::None) {
               auto texel = SampleTexture(poly->texture_params, uv);
 
-              if (texel.a() <= alpha_threshold) {
+              if (texel.A() <= alpha_threshold) {
                 continue;
               }
 
@@ -309,7 +311,7 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
                 }
                 case GPU::PolygonParams::Mode::Shadow:
                 case GPU::PolygonParams::Mode::Decal: {
-                  int s = texel.a().raw();
+                  int s = texel.A().raw();
                   int t = 63 - s;
 
                   for (int k = 0; k < 3; k++) {
@@ -319,7 +321,7 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
                 }
                 case GPU::PolygonParams::Mode::Shaded: {
                   // TODO: predecode the toon table on write.
-                  auto toon_color = Color4::from_rgb555(toon_table[color.r().raw() >> 1]);
+                  auto toon_color = Color4::FromRGB555(toon_table[color.R().raw() >> 1]);
 
                   if (disp3dcnt.shading_mode == GPU::DISP3DCNT::Shading::Toon) {
                     for (int k = 0; k < 3; k++) {
@@ -338,34 +340,34 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
                     }
                   }
 
-                  color.a() = ((texel.a().raw() + 1) * (color.a().raw() + 1) - 1) >> 6;
+                  color.A() = ((texel.A().raw() + 1) * (color.A().raw() + 1) - 1) >> 6;
                   break;
                 }
               }
             } else if (poly->params.mode == GPU::PolygonParams::Mode::Shaded) {
-              auto toon_color = Color4::from_rgb555(toon_table[color.r().raw() >> 1]);
+              auto toon_color = Color4::FromRGB555(toon_table[color.R().raw() >> 1]);
 
               if (disp3dcnt.shading_mode == GPU::DISP3DCNT::Shading::Toon) {
-                color.r() = toon_color.r();
-                color.g() = toon_color.g();
-                color.b() = toon_color.b();
+                color.R() = toon_color.R();
+                color.G() = toon_color.G();
+                color.B() = toon_color.B();
               } else {
-                color.r() = std::min(64, color.r().raw() + toon_color.r().raw());
-                color.g() = std::min(64, color.g().raw() + toon_color.g().raw());
-                color.b() = std::min(64, color.b().raw() + toon_color.b().raw());
+                color.R() = std::min(64, color.R().raw() + toon_color.R().raw());
+                color.G() = std::min(64, color.G().raw() + toon_color.G().raw());
+                color.B() = std::min(64, color.B().raw() + toon_color.B().raw());
               }
             }
 
-            bool is_opaque_pixel = color.a() == 63;
+            bool is_opaque_pixel = color.A() == 63;
 
             // TODO: reject translucent pixel if the polygon ID is equal and the destination (old?) pixel isn't opaque.
 
-            if (!is_opaque_pixel && disp3dcnt.enable_alpha_blend && color_buffer[index].a() != 0) {
-              auto a0 = color.a();
+            if (!is_opaque_pixel && disp3dcnt.enable_alpha_blend && color_buffer[index].A() != 0) {
+              auto a0 = color.A();
               auto a1 = Fixed6{63} - a0;
               for (uint j = 0; j < 3; j++)
                 color[j] = color[j] * a0 + color_buffer[index][j] * a1;
-              color.a() = std::max(color.a(), color_buffer[index].a());
+              color.A() = std::max(color.A(), color_buffer[index].A());
             }
 
             // TODO: make sure that shadow polygon logic is correct.

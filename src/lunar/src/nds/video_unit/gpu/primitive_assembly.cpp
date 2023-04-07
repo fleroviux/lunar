@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
 
 #include "gpu.hpp"
 
@@ -13,23 +13,23 @@ namespace lunar::nds {
 
 void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
   if (!in_vertex_list) {
-    LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
+    ATOM_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
     return;
   }
 
   if (texture_params.transform == TextureParams::Transform::Position) {
     auto const& matrix = texture.current;
 
-    auto x = position.x();
-    auto y = position.y();
-    auto z = position.z();
+    auto x = position.X();
+    auto y = position.Y();
+    auto z = position.Z();
 
-    auto t_x = Fixed20x12{vertex_uv_source.x().raw() << 12};
-    auto t_y = Fixed20x12{vertex_uv_source.y().raw() << 12};
+    auto t_x = Fixed20x12{vertex_uv_source.X().raw() << 12};
+    auto t_y = Fixed20x12{vertex_uv_source.Y().raw() << 12};
 
     vertex_uv = Vector2<Fixed12x4>{
-      s16((x * matrix[0].x() + y * matrix[1].x() + z * matrix[2].x() + t_x).raw() >> 12),
-      s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
+      s16((x * matrix[0].X() + y * matrix[1].X() + z * matrix[2].X() + t_x).raw() >> 12),
+      s16((x * matrix[0].Y() + y * matrix[1].Y() + z * matrix[2].Y() + t_y).raw() >> 12)
     };
   }
 
@@ -128,7 +128,7 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
           for (int i = std::max(0, size - 2); i < size; i++) {
             // TODO: can we do this more efficiently?
             if (vert_ram.count == 6144) {
-              LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+              ATOM_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
               break;
             }
 
@@ -157,7 +157,7 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
     for (auto const& v : current_vertex_list) {
       // TODO: can we do this more efficiently?
       if (vert_ram.count == 6144) {
-        LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+        ATOM_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
         break;
       }
 
@@ -213,7 +213,7 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
       for (int i = 0; i < poly.count; i++) {
         auto const& vert_position = poly.vertices[i]->position;
 
-        Fixed20x12 y = vert_position.y() / vert_position.w();
+        Fixed20x12 y = vert_position.Y() / vert_position.W();
 
         if (y < min_y) min_y = y;
         if (y > max_y) max_y = y;
@@ -237,15 +237,15 @@ bool GPU::IsFrontFacing(
   bool invert
 ) {
   float a[3] {
-    (float)(v1.x() - v0.x()).raw() / (float)(1 << 12),
-    (float)(v1.y() - v0.y()).raw() / (float)(1 << 12),
-    (float)(v1.w() - v0.w()).raw() / (float)(1 << 12)
+    (float)(v1.X() - v0.X()).raw() / (float)(1 << 12),
+    (float)(v1.Y() - v0.Y()).raw() / (float)(1 << 12),
+    (float)(v1.W() - v0.W()).raw() / (float)(1 << 12)
   };
 
   float b[3] {
-    (float)(v2.x() - v0.x()).raw() / (float)(1 << 12),
-    (float)(v2.y() - v0.y()).raw() / (float)(1 << 12),
-    (float)(v2.w() - v0.w()).raw() / (float)(1 << 12)
+    (float)(v2.X() - v0.X()).raw() / (float)(1 << 12),
+    (float)(v2.Y() - v0.Y()).raw() / (float)(1 << 12),
+    (float)(v2.W() - v0.W()).raw() / (float)(1 << 12)
   };
 
   float normal[3] {
@@ -254,9 +254,9 @@ bool GPU::IsFrontFacing(
     a[0] * b[1] - a[1] * b[0]
   };
 
-  float dot = (v0.x().raw() / (float)(1 << 12)) * normal[0] +
-              (v0.y().raw() / (float)(1 << 12)) * normal[1] +
-              (v0.w().raw() / (float)(1 << 12)) * normal[2];
+  float dot = (v0.X().raw() / (float)(1 << 12)) * normal[0] +
+              (v0.Y().raw() / (float)(1 << 12)) * normal[1] +
+              (v0.W().raw() / (float)(1 << 12)) * normal[2];
 
   if (invert) {
     return dot >= 0;
@@ -318,7 +318,7 @@ bool GPU::ClipPolygonAgainstPlane(
   for (int i = 0; i < size; i++) {
     auto& v0 = vertex_list_in[i];
 
-    if (Comparator{}(v0.position[axis], v0.position.w())) {
+    if (Comparator{}(v0.position[axis], v0.position.W())) {
       int a = i - 1;
       int b = i + 1;
       if (a == -1) a = size - 1;
@@ -327,10 +327,10 @@ bool GPU::ClipPolygonAgainstPlane(
       for (int j : { a, b }) {
         auto& v1 = vertex_list_in[j];
 
-        if (!Comparator{}(v1.position[axis], v1.position.w())) {
-          auto sign  = v0.position[axis] < -v0.position.w() ? 1 : -1;
+        if (!Comparator{}(v1.position[axis], v1.position.W())) {
+          auto sign  = v0.position[axis] < -v0.position.W() ? 1 : -1;
           auto numer = v1.position[axis].raw() + sign * v1.position[3].raw();
-          auto denom = (v0.position.w() - v1.position.w()).raw() + (v0.position[axis] - v1.position[axis]).raw() * sign;
+          auto denom = (v0.position.W() - v1.position.W()).raw() + (v0.position[axis] - v1.position[axis]).raw() * sign;
           auto scale =  -sign * ((s64)numer << precision) / denom;
           auto scale_inv = (1 << precision) - scale;
 

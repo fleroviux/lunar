@@ -5,8 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
-
 #include "renderer/opengl/opengl_renderer.hpp"
 #include "renderer/software/software_renderer.hpp"
 #include "gpu.hpp"
@@ -61,7 +59,7 @@ void GPU::Reset() {
   modelview.Reset();
   direction.Reset();
   texture.Reset();
-  clip_matrix.identity();
+  clip_matrix = Matrix4<Fixed20x12>::Identity();
 
   manual_translucent_y_sorting = false;
   manual_translucent_y_sorting_pending = false;

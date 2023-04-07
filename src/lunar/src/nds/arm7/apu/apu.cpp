@@ -5,8 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/panic.hpp>
 #include <algorithm>
-#include <lunar/log.hpp>
 #include <string.h>
 
 #include "apu.hpp"
@@ -124,8 +124,8 @@ void APU::Write(uint chan_id, uint offset, u8 value) {
 
         if (channel.format == Channel::Format::PSG) {
           channel.noise_lfsr = 0x7FFF;
-        } else {
-//          ASSERT(channel.repeat_mode != Channel::RepeatMode::Manual, "APU: unimplemented manual repeat mode.");
+        } else if(channel.repeat_mode == Channel::RepeatMode::Manual) {
+          // ATOM_PANIC("APU: unimplemented manual repeat mode.");
         }
 
         channel.timestamp_update = scheduler.GetTimestampNow();
@@ -235,8 +235,10 @@ void APU::StepChannel(uint chan_id, int cycles_late) {
   channel.samples[1] = channel.samples[0];
 
   if (channel.format == Channel::Format::PSG) {
-    ASSERT(chan_id >= 8, "APU: channel #{0} cannot run in PSG mode", chan_id);
-  
+    if(chan_id < 8) {
+      ATOM_PANIC("APU: channel #{0} cannot run in PSG mode", chan_id);
+    }
+
     if (chan_id <= 13) {
       if (channel.t < (7 - channel.psg_wave_duty)) {
         channel.samples[0] = -1.0;

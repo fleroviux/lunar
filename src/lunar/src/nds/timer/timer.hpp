@@ -7,56 +7,57 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 #include "common/scheduler.hpp"
 #include "nds/irq/irq.hpp"
 
 namespace lunar::nds {
 
-struct Timer {
-  Timer(Scheduler& scheduler, IRQ& irq)
-      : scheduler(scheduler), irq(irq) {
-    Reset();
-  }
+class Timer {
+  public:
+    Timer(Scheduler& scheduler, IRQ& irq)
+        : scheduler(scheduler), irq(irq) {
+      Reset();
+    }
 
-  void Reset();
-  auto Read (uint chan_id, uint offset) -> u8;
-  void Write(uint chan_id, uint offset, u8 value);
+    void Reset();
+    auto Read (uint chan_id, uint offset) -> u8;
+    void Write(uint chan_id, uint offset, u8 value);
 
-private:
-  enum Registers {
-    REG_TMXCNT_L = 0,
-    REG_TMXCNT_H = 2
-  };
+  private:
+    enum Registers {
+      REG_TMXCNT_L = 0,
+      REG_TMXCNT_H = 2
+    };
 
-  struct Channel {
-    uint id;
-    u16 reload = 0;
-    u32 counter = 0;
+    struct Channel {
+      uint id;
+      u16 reload = 0;
+      u32 counter = 0;
 
-    struct Control {
-      int frequency = 0;
-      bool cascade = false;
-      bool interrupt = false;
-      bool enable = false;
-    } control = {};
+      struct Control {
+        int frequency = 0;
+        bool cascade = false;
+        bool interrupt = false;
+        bool enable = false;
+      } control = {};
 
-    bool running = false;
-    int shift;
-    int mask;
-    u64 timestamp_started;
-    Scheduler::Event* event = nullptr;
-    std::function<void(int)> event_cb;
-  } channels[4];
+      bool running = false;
+      int shift;
+      int mask;
+      u64 timestamp_started;
+      Scheduler::Event* event = nullptr;
+      std::function<void(int)> event_cb;
+    } channels[4];
 
-  Scheduler& scheduler;
-  IRQ& irq;
+    Scheduler& scheduler;
+    IRQ& irq;
 
-  auto GetCounterDeltaSinceLastUpdate(Channel const& channel) -> u32;
-  void StartChannel(Channel& channel, int cycles_late);
-  void StopChannel(Channel& channel);
-  void OnOverflow(Channel& channel);
+    auto GetCounterDeltaSinceLastUpdate(Channel const& channel) -> u32;
+    void StartChannel(Channel& channel, int cycles_late);
+    void StopChannel(Channel& channel);
+    void OnOverflow(Channel& channel);
 };
 
 } // namespace lunar::nds

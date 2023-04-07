@@ -459,18 +459,18 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
       for (int k : {0, j, j + 1}) {
         auto vert = polygon->vertices[k];
 
-        float position_x =  (float)vert->position.x().raw() / (float)(1 << 12);
-        float position_y = -(float)vert->position.y().raw() / (float)(1 << 12);
-        float position_z =  (float)vert->position.z().raw() / (float)(1 << 12);
-        float position_w =  (float)vert->position.w().raw() / (float)(1 << 12);
+        float position_x =  (float)vert->position.X().raw() / (float)(1 << 12);
+        float position_y = -(float)vert->position.Y().raw() / (float)(1 << 12);
+        float position_z =  (float)vert->position.Z().raw() / (float)(1 << 12);
+        float position_w =  (float)vert->position.W().raw() / (float)(1 << 12);
 
-        float color_a = (float)vert->color.a().raw() / (float)(1 << 6);
-        float color_r = (float)vert->color.r().raw() / (float)(1 << 6);
-        float color_g = (float)vert->color.g().raw() / (float)(1 << 6);
-        float color_b = (float)vert->color.b().raw() / (float)(1 << 6);
+        float color_a = (float)vert->color.A().raw() / (float)(1 << 6);
+        float color_r = (float)vert->color.R().raw() / (float)(1 << 6);
+        float color_g = (float)vert->color.G().raw() / (float)(1 << 6);
+        float color_b = (float)vert->color.B().raw() / (float)(1 << 6);
 
-        float texcoord_s = (float)vert->uv.x().raw() / (float)(1 << 4);
-        float texcoord_t = (float)vert->uv.y().raw() / (float)(1 << 4);
+        float texcoord_s = (float)vert->uv.X().raw() / (float)(1 << 4);
+        float texcoord_t = (float)vert->uv.Y().raw() / (float)(1 << 4);
 
         vertex_buffer.push_back({position_x, position_y, position_z, position_w, color_r, color_g, color_b, color_a, texcoord_s, texcoord_t});
       }

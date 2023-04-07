@@ -7,10 +7,9 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <array>
 #include <lunar/device/input_device.hpp>
-#include <lunar/integer.hpp>
-#include <lunar/log.hpp>
 #include <functional>
 #include <string.h>
 #include <vector>

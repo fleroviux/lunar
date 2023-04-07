@@ -230,7 +230,7 @@ auto ARM::GetRegisterBankByMode(Mode mode) -> Bank {
       return BANK_UND;
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void ARM::SwitchMode(Mode new_mode) {

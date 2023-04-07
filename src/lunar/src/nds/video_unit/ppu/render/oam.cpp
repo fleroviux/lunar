@@ -175,12 +175,12 @@ void PPU::RenderLayerOAM(u16 vcount) {
       if (mode == OBJ_BITMAP) {
         // TODO: Attr 2, Bit 12-15 is used as Alpha-OAM value (instead of as palette setting).
         if (mmio.dispcnt.bitmap_obj.mapping == DisplayControl::Mapping::OneDimensional) {
-          pixel = read<u16>(render_vram_obj, (number * (64 << mmio.dispcnt.bitmap_obj.boundary) + tex_y * width + tex_x) * 2);
+          pixel = atom::read<u16>(render_vram_obj, (number * (64 << mmio.dispcnt.bitmap_obj.boundary) + tex_y * width + tex_x) * 2);
         } else {
           auto dimension = mmio.dispcnt.bitmap_obj.dimension;
           auto mask = (16 << dimension) - 1;
 
-          pixel = read<u16>(render_vram_obj, ((number & ~mask) * 64 + (number & mask) * 8 + tex_y * (128 << dimension) + tex_x) * 2);
+          pixel = atom::read<u16>(render_vram_obj, ((number & ~mask) * 64 + (number & mask) * 8 + tex_y * (128 << dimension) + tex_x) * 2);
         }
 
         if ((pixel & 0x8000) == 0) {

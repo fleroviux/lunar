@@ -5,11 +5,13 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
+#include <atom/punning.hpp>
+#include <atom/meta.hpp>
 #include <fstream>
 #include <string.h>
 
-#include "common/punning.hpp"
 #include "bus.hpp"
 #include "buildconfig.hpp"
 
@@ -32,9 +34,16 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , keypad(interconnect->keypad)
     , rtc(interconnect->rtc) {
   std::ifstream file { "bios7.bin", std::ios::in | std::ios::binary };
-  ASSERT(file.good(), "ARM7: failed to open bios7.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM7: failed to open bios7.bin");
+  }
+
   file.read(reinterpret_cast<char*>(bios), 16384);
-  ASSERT(file.good(), "ARM7: failed to read 16384 bytes from bios7.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM7: failed to read 16384 bytes from bios7.bin");
+  }
 
   memset(iwram, 0, sizeof(iwram));
   halted = false;
@@ -90,21 +99,21 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
 
 template<typename T>
 auto ARM7MemoryBus::Read(u32 address) -> T {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   switch (address >> 24) {
     case 0x00: {
       // TODO: figure out how out-of-bounds reads are supposed to work.
-      return read<T>(bios, address & 0x3FFF);
+      return atom::read<T>(bios, address & 0x3FFF);
     }
     case 0x02: {
-      return read<T>(&ewram[0], address & 0x3FFFFF);
+      return atom::read<T>(&ewram[0], address & 0x3FFFFF);
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.arm7.data == nullptr) {
-        return read<T>(iwram, address & 0xFFFF);
+        return atom::read<T>(iwram, address & 0xFFFF);
       }
-      return read<T>(swram.arm7.data, address & swram.arm7.mask);
+      return atom::read<T>(swram.arm7.data, address & swram.arm7.mask);
     }
     case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
@@ -126,7 +135,7 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
       return vram.region_arm7_wram.Read<T>(address);
     }
     default: {
-      LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
+      ATOM_WARN("ARM7: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
     }
   }
 
@@ -135,19 +144,19 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
 
 template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value) {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   switch (address >> 24) {
     case 0x02: {
-      write<T>(&ewram[0], address & 0x3FFFFF, value);
+      atom::write<T>(&ewram[0], address & 0x3FFFFF, value);
       break;
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.arm7.data == nullptr) {
-        write<T>(iwram, address & 0xFFFF, value);
+        atom::write<T>(iwram, address & 0xFFFF, value);
         break;
       }
-      write<T>(swram.arm7.data, address & swram.arm7.mask, value);
+      atom::write<T>(swram.arm7.data, address & swram.arm7.mask, value);
       break;
     }
     case 0x04: {
@@ -171,7 +180,7 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       break;
     }
     default: {
-      LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", sizeof(T) * 8, address, value);
+      ATOM_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", sizeof(T) * 8, address, value);
     }
   }
 }

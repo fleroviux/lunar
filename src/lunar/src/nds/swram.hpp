@@ -9,7 +9,7 @@
 
 #include <array>
 #include <functional>
-#include <lunar/integer.hpp>
+#include <atom/integer.hpp>
 
 namespace lunar::nds {
 

@@ -7,7 +7,9 @@
 
 #pragma once
 
-#include <lunar/integer.hpp>
+#include <atom/math/traits.hpp>
+
+#include <atom/integer.hpp>
 
 namespace lunar {
 
@@ -16,84 +18,85 @@ namespace nds {
 namespace detail {
 
 template<typename T, typename U, uint shift>
-struct FixedBase {
-  constexpr FixedBase() {}
-  constexpr FixedBase(T value) : value(value) {}
+class FixedBase {
+  public:
+    constexpr FixedBase() = default;
+    constexpr FixedBase(T value) : value(value) {}
 
-  static auto from_int(int value) -> FixedBase {
-    return { T(value) << shift };
-  }
+    static auto from_int(int value) -> FixedBase {
+      return { T(value) << shift };
+    }
 
-  auto integer() const -> T { return value >> shift; }
-  auto raw() const -> T { return value; }
-  auto absolute() const -> FixedBase { return value < 0 ? -value : value; }
+    auto integer() const -> T { return value >> shift; }
+    auto raw() const -> T { return value; }
+    auto absolute() const -> FixedBase { return value < 0 ? -value : value; }
 
-  auto operator+(FixedBase other) const -> FixedBase {
-    return value + other.value;
-  }
+    auto operator+(FixedBase other) const -> FixedBase {
+      return value + other.value;
+    }
 
-  auto operator-(FixedBase other) const -> FixedBase {
-    return value - other.value;
-  }
+    auto operator-(FixedBase other) const -> FixedBase {
+      return value - other.value;
+    }
 
-  auto operator*(FixedBase<T, U, shift> other) const -> FixedBase {
-    return T((U(value) * U(other.value)) >> shift);
-  }
+    auto operator*(FixedBase<T, U, shift> other) const -> FixedBase {
+      return T((U(value) * U(other.value)) >> shift);
+    }
 
-  auto operator/(FixedBase other) const -> FixedBase {
-    return T((U(value) << shift) / U(other.value));
-  }
+    auto operator/(FixedBase other) const -> FixedBase {
+      return T((U(value) << shift) / U(other.value));
+    }
 
-  auto operator+=(FixedBase other) -> FixedBase& {
-    value += other.value;
-    return *this;
-  }
+    auto operator+=(FixedBase other) -> FixedBase& {
+      value += other.value;
+      return *this;
+    }
 
-  auto operator-=(FixedBase other) -> FixedBase& {
-    value -= other.value;
-    return *this;
-  }
+    auto operator-=(FixedBase other) -> FixedBase& {
+      value -= other.value;
+      return *this;
+    }
 
-  auto operator*=(FixedBase other) -> FixedBase& {
-    value = T((U(value) * U(other.value)) >> shift);
-    return *this;
-  }
+    auto operator*=(FixedBase other) -> FixedBase& {
+      value = T((U(value) * U(other.value)) >> shift);
+      return *this;
+    }
 
-  auto operator/=(FixedBase other) -> FixedBase {
-    value = T((U(value) << shift) / U(other.value));
-    return *this;
-  }
+    auto operator/=(FixedBase other) -> FixedBase {
+      value = T((U(value) << shift) / U(other.value));
+      return *this;
+    }
 
-  auto operator-() const -> FixedBase {
-    return -value;
-  }
+    auto operator-() const -> FixedBase {
+      return -value;
+    }
 
-  bool operator==(FixedBase other) const {
-    return value == other.value;
-  }
+    bool operator==(FixedBase other) const {
+      return value == other.value;
+    }
 
-  bool operator!=(FixedBase other) const {
-    return value != other.value;
-  }
+    bool operator!=(FixedBase other) const {
+      return value != other.value;
+    }
 
-  bool operator<=(FixedBase other) const {
-    return value <= other.value;
-  }
+    bool operator<=(FixedBase other) const {
+      return value <= other.value;
+    }
 
-  bool operator>=(FixedBase other) const {
-    return value >= other.value;
-  }
+    bool operator>=(FixedBase other) const {
+      return value >= other.value;
+    }
 
-  bool operator<(FixedBase other) const {
-    return value < other.value;
-  }
+    bool operator<(FixedBase other) const {
+      return value < other.value;
+    }
 
-  bool operator>(FixedBase other) const {
-    return value > other.value;
-  }
+    bool operator>(FixedBase other) const {
+      return value > other.value;
+    }
 
-private:
-  T value {};
+  private:
+    T value {};
 };
 
 } // namespace lunar::nds::detail
@@ -109,26 +112,30 @@ inline auto operator*(Fixed12x4 lhs, Fixed20x12 rhs) -> Fixed12x4 {
 
 } // namespace lunar::nds
 
+} // namespace lunar
+
+namespace atom {
+
 template<>
 struct NumericConstants<lunar::nds::Fixed20x12> {
-  static constexpr auto zero() -> lunar::nds::Fixed20x12 {
+  static constexpr auto Zero() -> lunar::nds::Fixed20x12 {
     return lunar::nds::Fixed20x12{};
   }
-  
-  static constexpr auto one() -> lunar::nds::Fixed20x12 {
+
+  static constexpr auto One() -> lunar::nds::Fixed20x12 {
     return lunar::nds::Fixed20x12{1 << 12};
   }
 };
 
 template<>
 struct NumericConstants<lunar::nds::Fixed12x4> {
-  static constexpr auto zero() -> lunar::nds::Fixed12x4 {
+  static constexpr auto Zero() -> lunar::nds::Fixed12x4 {
     return lunar::nds::Fixed12x4{};
   }
-  
-  static constexpr auto one() -> lunar::nds::Fixed12x4 {
+
+  static constexpr auto One() -> lunar::nds::Fixed12x4 {
     return lunar::nds::Fixed12x4{1 << 4};
   }
 };
 
-} // namespace lunar
+} // namespace atom
