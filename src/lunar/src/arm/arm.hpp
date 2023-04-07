@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <array>
 #include <lunatic/cpu.hpp>
-#include <lunar/log.hpp>
 
 #include "state.hpp"
 

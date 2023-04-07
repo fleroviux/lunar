@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "nds/keypad/keypad.hpp"
 
@@ -83,7 +83,7 @@ auto KeyPad::KeyInput::ReadByte(uint offset) -> u8 {
       return u8(value >> 8);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 auto KeyPad::ExtKeyInput::ReadByte() -> u8 {
@@ -102,7 +102,7 @@ auto KeyPad::KeyControl::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void KeyPad::KeyControl::WriteByte(uint offset, u8 value) {
@@ -120,7 +120,7 @@ void KeyPad::KeyControl::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 

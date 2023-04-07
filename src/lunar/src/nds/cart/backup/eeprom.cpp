@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "eeprom.hpp"
 
@@ -141,7 +141,7 @@ auto EEPROM::Transfer(u8 data) -> u8 {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 
@@ -197,7 +197,7 @@ void EEPROM::ParseCommand(Command cmd) {
       break;
     }
     default: {
-      ASSERT(false, "EEPROM: unhandled command 0x{0:02X}", (int)cmd);
+      ATOM_PANIC("EEPROM: unhandled command 0x{0:02X}", (int)cmd);
     }
   }
 }

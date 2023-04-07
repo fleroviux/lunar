@@ -7,10 +7,9 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <functional>
 #include <lunar/device/video_device.hpp>
-#include <atom/integer.hpp>
-#include <lunar/log.hpp>
 #include <utility>
 
 #include "common/scheduler.hpp"

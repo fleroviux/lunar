@@ -7,10 +7,8 @@
 
 #pragma once
 
-#include <lunatic/cpu.hpp>
-
 #include <atom/integer.hpp>
-#include <lunar/log.hpp>
+#include <lunatic/cpu.hpp>
 
 #include "arm/arm.hpp"
 #include "bus/bus.hpp"

@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 #include <string.h>
 
 #include "wifi.hpp"
@@ -25,7 +25,7 @@ auto WIFI::ReadByteIO(u32 address) -> u8 {
 
   auto offset = address - 0x0480'4000;
   if (offset >= sizeof(mmio)) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
   return mmio[offset];
 }
@@ -53,7 +53,7 @@ void WIFI::WriteByteIO(u32 address, u8 value) {
 
   auto offset = address - 0x0480'4000;
   if (offset >= sizeof(mmio)) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
   mmio[offset] = value;
 }

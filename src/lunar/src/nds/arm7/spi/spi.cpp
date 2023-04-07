@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 
 #include "spi.hpp"
 
@@ -38,7 +39,7 @@ auto SPI::SPICNT::ReadByte(uint offset) -> u8 {
             (enable            ? 128 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void SPI::SPICNT::WriteByte(uint offset, u8 value) {
@@ -66,7 +67,7 @@ void SPI::SPICNT::WriteByte(uint offset, u8 value) {
       }
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -75,10 +76,12 @@ auto SPI::SPIDATA::ReadByte() -> u8 {
 }
 
 void SPI::SPIDATA::WriteByte(u8 value) {
-  ASSERT(!spi.spicnt.enable || !spi.spicnt.bugged_hword_mode, "SPI: bugged 16-bit mode is currently unimplemented.");
+  if(spi.spicnt.enable && spi.spicnt.bugged_hword_mode) {
+    ATOM_PANIC("SPI: bugged 16-bit mode is currently unimplemented.");
+  }
 
   if (!spi.spicnt.enable) {
-    LOG_ERROR("SPI: attempted to write SPIDATA while SPI bus is disabled.");
+    ATOM_ERROR("SPI: attempted to write SPIDATA while SPI bus is disabled.");
     return;
   }
 
@@ -89,7 +92,7 @@ void SPI::SPIDATA::WriteByte(u8 value) {
   auto device = spi.devices[spi.spicnt.device];
 
   if (device == nullptr) {
-    LOG_WARN("SPI: attempted to access unimplemented or reserved device.");
+    ATOM_WARN("SPI: attempted to access unimplemented or reserved device.");
     return;
   }
 

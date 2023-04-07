@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "scheduler.hpp"
 
@@ -44,7 +44,9 @@ auto Scheduler::Add(u64 delay, std::function<void(int)> callback) -> Event* {
   int n = heap_size++;
   int p = Parent(n);
 
-  Assert(heap_size <= kMaxEvents, "exceeded maximum number of scheduler events.");
+  if(heap_size > kMaxEvents) {
+    ATOM_PANIC("exceeded maximum number of scheduler events.");
+  }
 
   auto event = heap[n];
   event->timestamp = GetTimestampNow() + delay;

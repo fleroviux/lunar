@@ -7,11 +7,10 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <atom/meta.hpp>
 #include <algorithm>
 #include <array>
-#include <atom/integer.hpp>
-#include <lunar/log.hpp>
 #include <functional>
 #include <stddef.h>
 #include <vector>

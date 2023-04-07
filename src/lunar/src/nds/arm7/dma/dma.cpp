@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 
 #include "dma.hpp"
 
@@ -57,7 +58,7 @@ auto DMA7::Read(uint chan_id, uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void DMA7::Write(uint chan_id, uint offset, u8 value) {
@@ -125,7 +126,7 @@ void DMA7::Write(uint chan_id, uint offset, u8 value) {
           case Time::Slot1:
             break;
           default:
-            ASSERT(false, "DMA7: unhandled start time: {0}", channel.time);
+            ATOM_PANIC("DMA7: unhandled start time: {0}", channel.time);
             break;
         }
       }
@@ -151,7 +152,7 @@ void DMA7::RunChannel(Channel& channel) {
   int dst_offset = dma_modify[channel.size][channel.dst_mode];
   int src_offset = dma_modify[channel.size][channel.src_mode];
 
-  LOG_INFO("DMA7: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
+  ATOM_INFO("DMA7: transfer src=0x{0:08X} dst=0x{1:08X} length=0x{2:08X} size={3}",
     channel.latch.src, channel.latch.dst, channel.latch.length, channel.size);
 
   // TODO: read and write full 64-bit words at once as long as possible?

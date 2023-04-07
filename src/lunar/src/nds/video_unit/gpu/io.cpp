@@ -5,8 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
-
 #include "gpu.hpp"
 
 namespace lunar::nds {
@@ -31,7 +29,7 @@ auto GPU::DISP3DCNT::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void GPU::DISP3DCNT::WriteByte(uint offset, u8 value) {
@@ -53,7 +51,7 @@ void GPU::DISP3DCNT::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }
@@ -79,7 +77,7 @@ auto GPU::GXSTAT::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
@@ -98,7 +96,7 @@ void GPU::GXSTAT::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }
@@ -129,7 +127,7 @@ void GPU::ClearColor::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }
@@ -145,7 +143,7 @@ void GPU::ClearDepth::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }
@@ -161,7 +159,7 @@ void GPU::ClearImageOffset::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }

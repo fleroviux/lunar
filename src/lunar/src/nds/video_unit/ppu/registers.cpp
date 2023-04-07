@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 
 #include "registers.hpp"
 
@@ -49,7 +49,7 @@ auto DisplayControl::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void DisplayControl::WriteByte(uint offset, u8 value) {
@@ -82,7 +82,7 @@ void DisplayControl::WriteByte(uint offset, u8 value) {
       enable_extpal_obj = value & 128; 
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -105,7 +105,7 @@ auto BackgroundControl::ReadByte(uint offset) -> u8 {
              (size << 6);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void BackgroundControl::WriteByte(uint offset, u8 value) {
@@ -126,7 +126,7 @@ void BackgroundControl::WriteByte(uint offset, u8 value) {
       size = value >> 6;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -144,7 +144,7 @@ void BackgroundOffset::WriteByte(uint offset, u8 value) {
       this->value = (this->value &  0xFF) | ((value & 1) << 8);
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -168,7 +168,7 @@ void ReferencePoint::WriteByte(uint offset, u8 value) {
       initial = (initial & 0x00FFFFFF) | (value << 24);
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
   
   if (initial & (1 << 27)) {
@@ -191,7 +191,7 @@ void RotateScaleParameter::WriteByte(uint offset, u8 value) {
       this->value = (this->value & 0x00FF) | (value << 8);
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -214,7 +214,7 @@ void WindowRange::WriteByte(uint offset, u8 value) {
       min = value;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -261,7 +261,7 @@ auto BlendControl::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void BlendControl::WriteByte(uint offset, u8 value) {
@@ -282,7 +282,7 @@ void BlendControl::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }
@@ -299,7 +299,7 @@ auto BlendAlpha::ReadByte(uint offset) -> u8 {
     case 1:
       return b;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 
   return 0;
@@ -314,7 +314,7 @@ void BlendAlpha::WriteByte(uint offset, u8 value) {
       b = value & 31;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -332,7 +332,7 @@ void BlendBrightness::WriteByte(uint offset, u8 value) {
     case 3:
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -359,7 +359,7 @@ void Mosaic::WriteByte(uint offset, u8 value) {
       obj._counter_y = 0;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -378,7 +378,7 @@ auto MasterBrightness::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void MasterBrightness::WriteByte(uint offset, u8 value) {
@@ -392,7 +392,7 @@ void MasterBrightness::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }

@@ -5,9 +5,10 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
 #include <atom/meta.hpp>
+#include <atom/panic.hpp>
 #include <atom/punning.hpp>
-#include <lunar/log.hpp>
 #include <fstream>
 
 #include "bus.hpp"
@@ -29,9 +30,16 @@ ARM9MemoryBus::ARM9MemoryBus(Interconnect* interconnect)
     , exmemcnt(interconnect->exmemcnt)
     , keypad(interconnect->keypad) {
   std::ifstream file { "bios9.bin", std::ios::in | std::ios::binary };
-  ASSERT(file.good(), "ARM9: failed to open bios9.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM9: failed to open bios9.bin");
+  }
+
   file.read(reinterpret_cast<char*>(bios), 4096);
-  ASSERT(file.good(), "ARM9: failed to read 4096 bytes from bios9.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM9: failed to read 4096 bytes from bios9.bin");
+  }
 
   itcm.data = &itcm_data[0];
   dtcm.data = &dtcm_data[0];
@@ -112,7 +120,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     }
     case 0x03: {
       if (swram.arm9.data == nullptr) {
-        LOG_ERROR("ARM9: attempted to read SWRAM but it isn't mapped.");
+        ATOM_ERROR("ARM9: attempted to read SWRAM but it isn't mapped.");
         return 0;
       }
       return atom::read<T>(swram.arm9.data, address & swram.arm9.mask);
@@ -151,7 +159,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
         return atom::read<T>(bios, address & 0x7FFF);
     }
     default: {
-      LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
+      ATOM_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
     }
   }
 
@@ -185,7 +193,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
     }
     case 0x03: {
       if (swram.arm9.data == nullptr) {
-        LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
+        ATOM_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
         return;
       }
       atom::write<T>(swram.arm9.data, address & swram.arm9.mask, value);
@@ -255,7 +263,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
       break;
     }
     default: {
-      LOG_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", sizeof(T) * 8, address, value);
+      ATOM_ERROR("ARM9: unhandled write{0} 0x{1:08X} = 0x{2:08X}", sizeof(T) * 8, address, value);
     }
   }
 }

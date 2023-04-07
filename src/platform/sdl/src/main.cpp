@@ -6,9 +6,9 @@
  */
 
 #include <fstream>
+#include <fmt/format.h>
 #include <stdio.h>
 #include <lunar/core.hpp>
-#include <lunar/log.hpp>
 #include <platform/device/sdl_audio_device.hpp>
 #include <platform/device/ogl_video_device.hpp>
 

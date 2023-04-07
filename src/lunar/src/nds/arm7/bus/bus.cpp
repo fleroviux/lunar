@@ -5,9 +5,10 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <atom/punning.hpp>
 #include <atom/meta.hpp>
-#include <lunar/log.hpp>
 #include <fstream>
 #include <string.h>
 
@@ -33,9 +34,16 @@ ARM7MemoryBus::ARM7MemoryBus(Interconnect* interconnect)
     , keypad(interconnect->keypad)
     , rtc(interconnect->rtc) {
   std::ifstream file { "bios7.bin", std::ios::in | std::ios::binary };
-  ASSERT(file.good(), "ARM7: failed to open bios7.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM7: failed to open bios7.bin");
+  }
+
   file.read(reinterpret_cast<char*>(bios), 16384);
-  ASSERT(file.good(), "ARM7: failed to read 16384 bytes from bios7.bin");
+
+  if(!file.good()) {
+    ATOM_PANIC("ARM7: failed to read 16384 bytes from bios7.bin");
+  }
 
   memset(iwram, 0, sizeof(iwram));
   halted = false;
@@ -127,7 +135,7 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
       return vram.region_arm7_wram.Read<T>(address);
     }
     default: {
-      LOG_WARN("ARM7: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
+      ATOM_WARN("ARM7: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
     }
   }
 
@@ -172,7 +180,7 @@ void ARM7MemoryBus::Write(u32 address, T value) {
       break;
     }
     default: {
-      LOG_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", sizeof(T) * 8, address, value);
+      ATOM_WARN("ARM7: unhandled write{0} 0x{1:08X} = 0x{2:02X}", sizeof(T) * 8, address, value);
     }
   }
 }

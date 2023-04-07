@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/panic.hpp>
+
 #include "edge.hpp"
 #include "interpolator.hpp"
 #include "software_renderer.hpp"
@@ -13,7 +15,7 @@ namespace lunar::nds {
 
 void SoftwareRenderer::RenderRearPlane(int thread_min_y, int thread_max_y) {
   if (disp3dcnt.enable_rear_bitmap) {
-    ASSERT(false, "GPU: unhandled rear bitmap");
+    ATOM_PANIC("GPU: unhandled rear bitmap");
   } else {
     auto color = Color4{
       (s8)((clear_color.color_r << 1) | (clear_color.color_r >> 4)),

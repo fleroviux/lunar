@@ -5,8 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
-
 #include "renderer/opengl/opengl_renderer.hpp"
 #include "renderer/software/software_renderer.hpp"
 #include "gpu.hpp"

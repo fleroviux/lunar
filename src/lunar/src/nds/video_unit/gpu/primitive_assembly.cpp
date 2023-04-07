@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
 
 #include "gpu.hpp"
 
@@ -13,7 +13,7 @@ namespace lunar::nds {
 
 void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
   if (!in_vertex_list) {
-    LOG_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
+    ATOM_ERROR("GPU: cannot submit vertex data outside of VTX_BEGIN / VTX_END");
     return;
   }
 
@@ -128,7 +128,7 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
           for (int i = std::max(0, size - 2); i < size; i++) {
             // TODO: can we do this more efficiently?
             if (vert_ram.count == 6144) {
-              LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+              ATOM_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
               break;
             }
 
@@ -157,7 +157,7 @@ void GPU::SubmitVertex(Vector4<Fixed20x12> const& position) {
     for (auto const& v : current_vertex_list) {
       // TODO: can we do this more efficiently?
       if (vert_ram.count == 6144) {
-        LOG_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
+        ATOM_ERROR("GPU: submitted more vertices than fit into Vertex RAM.");
         break;
       }
 

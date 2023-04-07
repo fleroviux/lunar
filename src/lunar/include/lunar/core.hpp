@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <lunar/device/audio_device.hpp>
 #include <lunar/device/input_device.hpp>
 #include <lunar/device/video_device.hpp>
-#include <atom/integer.hpp>
 #include <memory>
 #include <string>
 

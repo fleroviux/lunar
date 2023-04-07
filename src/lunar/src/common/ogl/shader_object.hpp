@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 #include <GL/glew.h>
 
 namespace lunar {
@@ -49,10 +49,10 @@ private:
 
       auto error_log = new GLchar[max_length];
       glGetShaderInfoLog(shader, max_length, &max_length, error_log);
-      Assert(false, "Failed to compile shader:\n{0}", error_log);
+      ATOM_PANIC("failed to compile shader:\n{0}", error_log);
 
-      delete[] error_log;
-      return nullptr;
+      // delete[] error_log;
+      // return nullptr;
     }
 
     return new ShaderObject{shader};

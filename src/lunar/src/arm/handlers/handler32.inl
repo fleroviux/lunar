@@ -515,7 +515,7 @@ void ARM_HalfDoubleAndSignedTransfer(u32 instruction) {
       break;
     }
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 
   if (allow_writeback) {
@@ -572,7 +572,9 @@ void ARM_SingleDataTransfer(u32 instruction) {
 
   constexpr bool translation = !pre && writeback;
 
-  ASSERT(!translation, "ARM: unhandled LDRT or STRT instruction");
+  if(translation) {
+    ATOM_PANIC("ARM: unhandled LDRT or STRT instruction");
+  }
 
   // Calculate offset relative to base register.
   if constexpr (immediate) {
@@ -618,7 +620,10 @@ void ARM_SingleDataTransfer(u32 instruction) {
   if constexpr (load) {
     if (dst == 15) {
       if ((state.r15 & 1) && arch != Architecture::ARMv4T) {
-        ASSERT(!byte && !translation, "ARM: unpredictable LDRB or LDRT with destination = r15.");
+        if(byte || translation) {
+          ATOM_PANIC("ARM: unpredictable LDRB or LDRT with destination = r15.");
+        }
+
         state.cpsr.f.thumb = 1;
         state.r15 &= ~1;
         ReloadPipeline16();
@@ -771,7 +776,7 @@ void ARM_BlockDataTransfer(u32 instruction) {
 }
 
 void ARM_Undefined(u32 instruction) {
-  LOG_ERROR("undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
+  ATOM_ERROR("ARM: undefined instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 
   // Save current program status register.
   state.spsr[BANK_UND].v = state.cpsr.v;
@@ -906,5 +911,5 @@ void ARM_CoprocessorRegisterTransfer(u32 instruction) {
 }
 
 void ARM_Unimplemented(u32 instruction) {
-  ASSERT(false, "unimplemented instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
+  ATOM_PANIC("ARM: unimplemented instruction: 0x{0:08X} @ r15 = 0x{1:08X}", instruction, state.r15);
 }

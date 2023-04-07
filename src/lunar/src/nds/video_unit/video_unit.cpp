@@ -7,6 +7,7 @@
  * found in the LICENSE file.
  */
 
+#include <atom/panic.hpp>
 #include <string.h>
 
 #include "video_unit.hpp"
@@ -211,7 +212,7 @@ void VideoUnit::RunDisplayCapture() {
           std::memset(dst, 0, sizeof(u16) * width);
         }
       } else {
-        ASSERT(false, "VideoUnit: unhandled main memory display FIFO capture");
+        ATOM_PANIC("VideoUnit: unhandled main memory display FIFO capture");
       }
     };
 
@@ -287,7 +288,7 @@ auto VideoUnit::DisplayStatus::ReadByte(uint offset) -> u8 {
       return vcount_setting & 0xFF;
   }
  
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void VideoUnit::DisplayStatus::WriteByte(uint offset, u8 value) {
@@ -302,7 +303,7 @@ void VideoUnit::DisplayStatus::WriteByte(uint offset, u8 value) {
       vcount_setting = (vcount_setting & 0x100) | value;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 
   write_cb();
@@ -316,7 +317,7 @@ auto VideoUnit::VCOUNT::ReadByte(uint offset) -> u8 {
       return (value >> 8) & 1;
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 auto VideoUnit::PowerControl::ReadByte(uint offset) -> u8 {
@@ -331,7 +332,7 @@ auto VideoUnit::PowerControl::ReadByte(uint offset) -> u8 {
              (display_swap ? 128 : 0);
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void VideoUnit::PowerControl::WriteByte(uint offset, u8 value) {
@@ -347,7 +348,7 @@ void VideoUnit::PowerControl::WriteByte(uint offset, u8 value) {
       display_swap = value & 128;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 }
 
@@ -373,7 +374,7 @@ auto VideoUnit::CaptureControl::ReadByte(uint offset) -> u8 {
     }
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void VideoUnit::CaptureControl::WriteByte(uint offset, u8 value) {
@@ -401,7 +402,7 @@ void VideoUnit::CaptureControl::WriteByte(uint offset, u8 value) {
       break;
     }
     default: {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
   }
 }

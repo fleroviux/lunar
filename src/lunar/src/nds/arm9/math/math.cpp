@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/panic.hpp>
 #include <limits>
 #include <cmath>
 
@@ -26,7 +26,7 @@ auto Math::DIVCNT::ReadByte(uint offset) -> u8 {
       return error_divide_by_zero ? 64 : 0;
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void Math::DIVCNT::WriteByte(uint offset, u8 value) {
@@ -39,7 +39,7 @@ void Math::DIVCNT::WriteByte(uint offset, u8 value) {
       //error_divide_by_zero &= value & 64;
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 
   math.UpdateDivision();
@@ -47,7 +47,7 @@ void Math::DIVCNT::WriteByte(uint offset, u8 value) {
 
 auto Math::DIV::ReadByte(uint offset) -> u8 {
   if (offset >= 8) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return value >> (offset * 8);
@@ -55,7 +55,7 @@ auto Math::DIV::ReadByte(uint offset) -> u8 {
 
 void Math::DIV::WriteByte(uint offset, u8 value) {
   if (offset >= 8) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   this->value &= ~(0xFFULL << (offset * 8));
@@ -72,7 +72,7 @@ auto Math::SQRTCNT::ReadByte(uint offset) -> u8 {
       return 0;
   }
 
-  UNREACHABLE;
+  ATOM_UNREACHABLE();
 }
 
 void Math::SQRTCNT::WriteByte(uint offset, u8 value) {
@@ -83,7 +83,7 @@ void Math::SQRTCNT::WriteByte(uint offset, u8 value) {
     case 1:
       break;
     default:
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
   }
 
   math.UpdateSquareRoot();
@@ -91,7 +91,7 @@ void Math::SQRTCNT::WriteByte(uint offset, u8 value) {
 
 auto Math::SQRT_RESULT::ReadByte(uint offset) -> u8 {
   if (offset >= 4) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return value >> (offset * 8);
@@ -99,7 +99,7 @@ auto Math::SQRT_RESULT::ReadByte(uint offset) -> u8 {
 
 auto Math::SQRT_PARAM::ReadByte(uint offset) -> u8 {
   if (offset >= 8) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   return value >> (offset * 8);
@@ -107,7 +107,7 @@ auto Math::SQRT_PARAM::ReadByte(uint offset) -> u8 {
 
 void Math::SQRT_PARAM::WriteByte(uint offset, u8 value) {
   if (offset >= 8) {
-    UNREACHABLE;
+    ATOM_UNREACHABLE();
   }
 
   this->value &= ~(0xFFULL << (offset * 8));

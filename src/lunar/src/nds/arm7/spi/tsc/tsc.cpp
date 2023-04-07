@@ -5,8 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
-
 #include "tsc.hpp"
 
 namespace lunar::nds {

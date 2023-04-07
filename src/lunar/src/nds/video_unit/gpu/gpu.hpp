@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <atom/meta.hpp>
+#include <atom/panic.hpp>
 #include <array>
 #include <atomic>
 #include <condition_variable>
-#include <atom/integer.hpp>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -55,7 +56,7 @@ struct GPU {
   auto ReadClipMatrix(u32 offset) -> T {
     static_assert(atom::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
     if (offset >= 64) {
-      UNREACHABLE;
+      ATOM_UNREACHABLE();
     }
     auto row = (offset >> 2) & 3;
     auto col =  offset >> 4;

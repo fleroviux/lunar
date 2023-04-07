@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
+#include <atom/panic.hpp>
 #include <GL/glew.h>
 #include <string_view>
-#include <atom/integer.hpp>
 
 #include "shader_object.hpp"
 
@@ -97,7 +98,7 @@ private:
     GLint location = glGetUniformLocation(program, name.data());
 
     if (location == -1) {
-      Assert(false, "ShaderProgram: cannot find uniform: {}", name);
+      ATOM_PANIC("cannot find uniform: {}", name);
     }
     return location;
   }

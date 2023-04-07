@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 
 #include "bus.hpp"
 
@@ -537,7 +538,7 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_CARDDATA|1:
     case REG_CARDDATA|2:
     case REG_CARDDATA|3:
-      ASSERT(false, "ARM9: unhandled byte read from REG_CARDDATA");
+      ATOM_PANIC("ARM9: unhandled byte read from REG_CARDDATA");
       return 0;
 
     // IRQ
@@ -695,7 +696,7 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return postflag;
 
     default:
-      LOG_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
+      ATOM_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
   }
 
   return 0;
@@ -1827,7 +1828,7 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     default:
-      LOG_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+      ATOM_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
   }
 }
 

@@ -5,7 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <lunar/log.hpp>
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <ctime>
 
 #include "rtc.hpp"
@@ -97,13 +98,11 @@ void RTC::ReceiveCommandSIO() {
 
   // Check whether the command should be interpreted MSB-first or LSB-first.
   if ((data >> 4) == 6) {
-    // Fast bit-reversal
     data = (data << 4) | (data >> 4);
     data = ((data & 0x33) << 2) | ((data & 0xCC) >> 2);
     data = ((data & 0x55) << 1) | ((data & 0xAA) >> 1);
-    LOG_TRACE("RTC: received command in REV format, data=0x{0:X}", data);
   } else if ((data & 15) != 6) {
-    LOG_ERROR("RTC: received command in unknown format, data=0x{0:X}", data);
+    ATOM_ERROR("RTC: received command in unknown format, data=0x{0:X}", data);
     return;
   }
 
@@ -159,8 +158,6 @@ void RTC::TransmitBufferSIO() {
 }
 
 void RTC::ReadRegister() {
-  LOG_TRACE("RTC: read register {}", reg);
-
   switch (reg) {
     case Register::Stat1: {
       buffer[0] = stat1;
@@ -211,14 +208,12 @@ void RTC::ReadRegister() {
     }
 
     default: {
-      ASSERT(false, "RTC: unhandled register read: {}", (int)reg);
+      ATOM_PANIC("RTC: unhandled register read: {}", (int)reg);
     }
   }
 }
 
 void RTC::WriteRegister() {
-  LOG_TRACE("RTC: write register {}", reg);
-
   switch (reg) {
     case Register::Stat1: {
       stat1 &= stat1 & ~0b1110;
@@ -237,7 +232,7 @@ void RTC::WriteRegister() {
     case Register::DateTime:
     case Register::Time: {
       // TODO
-      LOG_WARN("RTC: write to the (date)time register is unsupported.");
+      ATOM_WARN("RTC: write to the (date)time register is unsupported.");
       break;
     }
     case Register::INT1_01: {
@@ -254,7 +249,7 @@ void RTC::WriteRegister() {
     }
 
     default: {
-      ASSERT(false, "RTC: unhandled register write: {}", (int)reg);
+      ATOM_PANIC("RTC: unhandled register write: {}", (int)reg);
     }
   }
 }

@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <atom/logger/logger.hpp>
+#include <atom/panic.hpp>
 #include <algorithm>
 
 #include "gpu.hpp"
@@ -56,7 +58,7 @@ void GPU::WriteGXFIFO(u32 value) {
 
 void GPU::WriteCommandPort(uint port, u32 value) {
   if (port <= 0x3F || port >= 0x1CC) {
-    LOG_ERROR("GPU: unknown command port 0x{0:03X}", port);
+    ATOM_ERROR("GPU: unknown command port 0x{0:03X}", port);
     return;
   }
 
@@ -88,7 +90,9 @@ void GPU::Enqueue(CmdArgPack pack) {
 }
 
 auto GPU::Dequeue() -> CmdArgPack {
-  ASSERT(gxpipe.Count() != 0, "GPU: attempted to dequeue entry from empty GXPIPE");
+  if(gxpipe.Count() == 0) {
+    ATOM_PANIC("GPU: attempted to dequeue entry from empty GXPIPE");
+  }
 
   auto entry = gxpipe.Read();
   if (gxpipe.Count() <= 2 && !gxfifo.IsEmpty()) {
@@ -151,7 +155,7 @@ void GPU::ProcessCommands() {
       case 0x41: CMD_EndVertexList(); break;
       case 0x50: CMD_SwapBuffers(); break;
       default: {
-        LOG_ERROR("GPU: unimplemented command 0x{0:02X}", command);
+        ATOM_ERROR("GPU: unimplemented command 0x{0:02X}", command);
         Dequeue();
         for (int i = 1; i < arg_count; i++)
           Dequeue();

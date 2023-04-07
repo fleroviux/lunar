@@ -5,6 +5,7 @@
  * found in the LICENSE file.
  */
 
+#include <atom/panic.hpp>
 #include <algorithm>
 #include <string.h>
 
@@ -249,7 +250,7 @@ void PPU::RenderMasterBrightness(int vcount) {
 }
 
 void PPU::RenderMainMemoryDisplay(u16 vcount) {
-  ASSERT(false, "PPU: unimplemented main memory display mode.");
+  ATOM_PANIC("PPU: unimplemented main memory display mode.");
 
   //RenderMasterBrightness(vcount);
 }
