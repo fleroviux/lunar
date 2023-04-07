@@ -575,10 +575,6 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
       return swram.control.ReadByte();
 
     // Math engine
-    case REG_DIVCNT|0:
-      return math.divcnt.ReadByte(0);
-    case REG_DIVCNT|1:
-      return math.divcnt.ReadByte(1);
     case REG_DIV_NUMER|0:
       return math.div_numer.ReadByte(0);
     case REG_DIV_NUMER|1:
@@ -695,8 +691,18 @@ auto ARM9MemoryBus::ReadByteIO(u32 address) -> u8 {
     case REG_POSTFLG:
       return postflag;
 
-    default:
+    default: {
+      const u32 half_address = address & ~1u;
+      const int shift = (address & 1u) << 3;
+
+      switch(half_address) {
+        case REG_DIVCNT: {
+          return ReadHalfIO(half_address) >> shift;
+        }
+      }
+
       ATOM_WARN("ARM9: MMIO: unhandled read from 0x{0:08X}", address);
+    }
   }
 
   return 0;
@@ -706,6 +712,7 @@ auto ARM9MemoryBus::ReadHalfIO(u32 address) -> u16 {
   auto& gpu_io = video_unit.gpu;
 
   switch (address) {
+    case REG_DIVCNT: return math.divcnt.ReadHalf();
     case REG_IPCFIFORECV|0:
       return ipc.ipcfiforecv.ReadHalf(IPC::Client::ARM9, 0);
     case REG_IPCFIFORECV|2:
@@ -1657,12 +1664,6 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       break;
 
     // Math engine
-    case REG_DIVCNT|0:
-      math.divcnt.WriteByte(0, value);
-      break;
-    case REG_DIVCNT|1:
-      math.divcnt.WriteByte(1, value);
-      break;
     case REG_DIV_NUMER|0:
       math.div_numer.WriteByte(0, value);
       break;
@@ -1827,20 +1828,36 @@ void ARM9MemoryBus::WriteByteIO(u32 address,  u8 value) {
       postflag = (postflag & 1) | (value & 3);
       break;
 
-    default:
-      ATOM_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+    default: {
+      const u16 half_address = address & ~1u;
+      const u16 mask = 0xFFu << ((address & 1u) << 3);
+
+      switch(half_address) {
+        case REG_DIVCNT: {
+          WriteHalfIO(half_address, (ReadHalfIO(half_address) & ~mask) | (value & mask));
+          break;
+        }
+        default: {
+          ATOM_WARN("ARM9: MMIO: unhandled write to 0x{0:08X} = 0x{1:02X}", address, value);
+        }
+      }
+    }
   }
 }
 
 void ARM9MemoryBus::WriteHalfIO(u32 address, u16 value) {
   switch (address) {
+    case REG_DIVCNT: math.divcnt.WriteHalf(value); break;
+
     case REG_IPCFIFOSEND|0:
     case REG_IPCFIFOSEND|2:
       ipc.ipcfifosend.WriteHalf(IPC::Client::ARM9, value);
       break;
+
     case REG_KEYCNT:
       keypad.control9.WriteHalf(value);
       break;
+
     default:
       WriteByteIO(address | 0, value & 0xFF);
       WriteByteIO(address | 1, value >> 8);

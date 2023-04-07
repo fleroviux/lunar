@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atom/bit.hpp>
 #include <atom/integer.hpp>
 
 namespace lunar::nds {
@@ -21,23 +22,28 @@ class Math {
       Reserved = 3
     };
 
-    Math() { Reset(); }
+    Math();
 
     void Reset();
 
     struct DIVCNT {
-      DIVCNT(Math& math) : math(math) {}
+      Math* self{};
 
-      auto ReadByte (uint offset) -> u8;
-      void WriteByte(uint offset, u8 value);
+      union {
+        atom::Bits<0, 2, u16> mode;
+        atom::Bits<14, 1, u16> error_divide_by_zero;
+        u16 half = 0u;
+      };
 
-    private:
-      friend struct lunar::nds::Math;
+      u16 ReadHalf() const {
+        return half;
+      }
 
-      DivisionMode mode = DivisionMode::S32_S32;
-      bool error_divide_by_zero = false;
-      Math& math;
-    } divcnt { *this };
+      void WriteHalf(u16 value) {
+        half = (half & 0xFFFCu) | (value & 3u);
+        self->UpdateDivision();
+      }
+    } divcnt;
 
     struct DIV {
       DIV(Math& math) : math(math) {}

@@ -13,36 +13,14 @@
 
 namespace lunar::nds {
 
+Math::Math() {
+  Reset();
+}
+
 void Math::Reset() {
+  divcnt = {this};
   // TODO!
   sqrt_result = {};
-}
-
-auto Math::DIVCNT::ReadByte(uint offset) -> u8 {
-  switch (offset) {
-    case 0:
-      return static_cast<u8>(mode);
-    case 1:
-      return error_divide_by_zero ? 64 : 0;
-  }
-
-  ATOM_UNREACHABLE();
-}
-
-void Math::DIVCNT::WriteByte(uint offset, u8 value) {
-  switch (offset) {
-    case 0:
-      mode = static_cast<DivisionMode>(value & 3);
-      break;
-    case 1:
-      // TODO: I'm not sure if the error is supposed to be acknowledgable.
-      //error_divide_by_zero &= value & 64;
-      break;
-    default:
-      ATOM_UNREACHABLE();
-  }
-
-  math.UpdateDivision();
 }
 
 auto Math::DIV::ReadByte(uint offset) -> u8 {
@@ -119,7 +97,7 @@ void Math::SQRT_PARAM::WriteByte(uint offset, u8 value) {
 void Math::UpdateDivision() {
   divcnt.error_divide_by_zero = div_denom.value == 0;
 
-  switch (divcnt.mode) {
+  switch (static_cast<DivisionMode>(divcnt.mode)) {
     case DivisionMode::Reserved:
     case DivisionMode::S32_S32: {
       s32 numer = s32(div_numer.value);
