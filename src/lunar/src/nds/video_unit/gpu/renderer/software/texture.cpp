@@ -50,9 +50,9 @@ auto SoftwareRenderer::SampleTexture(
       int alpha = value >> 5;
 
       auto rgb555 = ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF;
-      auto rgb6666 = Color4::from_rgb555(rgb555);
+      auto rgb6666 = Color4::FromRGB555(rgb555);
 
-      rgb6666.a() = (alpha << 3) | alpha; // 3-bit alpha to 6-bit alpha
+      rgb6666.A() = (alpha << 3) | alpha; // 3-bit alpha to 6-bit alpha
       return rgb6666;
     }
     case GPU::TextureParams::Format::Palette2BPP: {
@@ -62,7 +62,7 @@ auto SoftwareRenderer::SampleTexture(
         return Color4{0, 0, 0, 0};
       }
 
-      return Color4::from_rgb555(ReadPaletteVRAM<u16>((palette_addr >> 1) + index * sizeof(u16)) & 0x7FFF);
+      return Color4::FromRGB555(ReadPaletteVRAM<u16>((palette_addr >> 1) + index * sizeof(u16)) & 0x7FFF);
     }
     case GPU::TextureParams::Format::Palette4BPP: {
       auto index = (ReadTextureVRAM<u8>(params.address + (offset >> 1)) >> (4 * (offset & 1))) & 15;
@@ -71,7 +71,7 @@ auto SoftwareRenderer::SampleTexture(
         return Color4{0, 0, 0, 0};
       }
 
-      return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+      return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
     case GPU::TextureParams::Format::Palette8BPP: {
       auto index = ReadTextureVRAM<u8>(params.address + offset);
@@ -80,7 +80,7 @@ auto SoftwareRenderer::SampleTexture(
         return Color4{0, 0, 0, 0};
       }
 
-      return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+      return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
     }
     case GPU::TextureParams::Format::Compressed4x4: {
       auto row_x = coord[0] >> 2;
@@ -109,12 +109,12 @@ auto SoftwareRenderer::SampleTexture(
           if (index == 3) {
             return Color4{0, 0, 0, 0};
           }
-          return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+          return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
         case 1: {
           if (index == 2) {
-            auto color_0 = Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + 0) & 0x7FFF);
-            auto color_1 = Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + 2) & 0x7FFF);
+            auto color_0 = Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + 0) & 0x7FFF);
+            auto color_1 = Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
               color_0[i] = Fixed6{s8((color_0[i].raw() >> 1) + (color_1[i].raw() >> 1))};
@@ -125,18 +125,18 @@ auto SoftwareRenderer::SampleTexture(
           if (index == 3) {
             return Color4{0, 0, 0, 0};
           }
-          return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+          return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
         case 2: {
-          return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+          return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
         default: {
           if (index == 2 || index == 3) {
             int coeff_0 = index == 2 ? 5 : 3;
             int coeff_1 = index == 2 ? 3 : 5;
 
-            auto color_0 = Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + 0) & 0x7FFF);
-            auto color_1 = Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + 2) & 0x7FFF);
+            auto color_0 = Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + 0) & 0x7FFF);
+            auto color_1 = Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + 2) & 0x7FFF);
 
             for (uint i = 0; i < 3; i++) {
               color_0[i] = Fixed6{s8(((color_0[i].raw() * coeff_0) + (color_1[i].raw() * coeff_1)) >> 3)};
@@ -144,7 +144,7 @@ auto SoftwareRenderer::SampleTexture(
 
             return color_0;
           }
-          return Color4::from_rgb555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
+          return Color4::FromRGB555(ReadPaletteVRAM<u16>(palette_addr + index * sizeof(u16)) & 0x7FFF);
         }
       }
     }
@@ -154,16 +154,16 @@ auto SoftwareRenderer::SampleTexture(
       int alpha = value >> 3;
 
       auto rgb555 = ReadPaletteVRAM<u16>((params.palette_base << 4) + index * sizeof(u16)) & 0x7FFF;
-      auto rgb6666 = Color4::from_rgb555(rgb555);
+      auto rgb6666 = Color4::FromRGB555(rgb555);
 
-      rgb6666.a() = (alpha << 1) | (alpha >> 4); // 5-bit alpha to 6-bit alpha
+      rgb6666.A() = (alpha << 1) | (alpha >> 4); // 5-bit alpha to 6-bit alpha
       return rgb6666;
     }
     case GPU::TextureParams::Format::Direct: {
       auto rgb1555 = ReadTextureVRAM<u16>(params.address + offset * sizeof(u16));
-      auto rgb6666 = Color4::from_rgb555(rgb1555);
+      auto rgb6666 = Color4::FromRGB555(rgb1555);
 
-      rgb6666.a() = rgb6666.a().raw() * (rgb1555 >> 15);
+      rgb6666.A() = rgb6666.A().raw() * (rgb1555 >> 15);
       return rgb6666;
     }
   };

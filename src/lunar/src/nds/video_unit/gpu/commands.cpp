@@ -484,7 +484,7 @@ void GPU::CMD_MatrixTranslate() {
 }
 
 void GPU::CMD_SetColor() {
-  vertex_color = Color4::from_rgb555(u16(Dequeue().argument));
+  vertex_color = Color4::FromRGB555(u16(Dequeue().argument));
 }
 
 void GPU::CMD_SetNormal() {
@@ -531,21 +531,21 @@ void GPU::CMD_SetNormal() {
       // TODO!
     }
 
-    auto diffuse_r = (material.diffuse.r().raw() * cos_theta.raw() * light.color.r().raw()) >> 18;
-    auto diffuse_g = (material.diffuse.g().raw() * cos_theta.raw() * light.color.g().raw()) >> 18;
-    auto diffuse_b = (material.diffuse.b().raw() * cos_theta.raw() * light.color.b().raw()) >> 18;
+    auto diffuse_r = (material.diffuse.R().raw() * cos_theta.raw() * light.color.R().raw()) >> 18;
+    auto diffuse_g = (material.diffuse.G().raw() * cos_theta.raw() * light.color.G().raw()) >> 18;
+    auto diffuse_b = (material.diffuse.B().raw() * cos_theta.raw() * light.color.B().raw()) >> 18;
 
-    auto specular_r = (material.specular.r().raw() * shinyness.raw() * light.color.r().raw()) >> 18;
-    auto specular_g = (material.specular.g().raw() * shinyness.raw() * light.color.g().raw()) >> 18;
-    auto specular_b = (material.specular.b().raw() * shinyness.raw() * light.color.b().raw()) >> 18;
+    auto specular_r = (material.specular.R().raw() * shinyness.raw() * light.color.R().raw()) >> 18;
+    auto specular_g = (material.specular.G().raw() * shinyness.raw() * light.color.G().raw()) >> 18;
+    auto specular_b = (material.specular.B().raw() * shinyness.raw() * light.color.B().raw()) >> 18;
 
-    auto ambient_r = (material.ambient.r().raw() * light.color.r().raw()) >> 6;
-    auto ambient_g = (material.ambient.g().raw() * light.color.g().raw()) >> 6;
-    auto ambient_b = (material.ambient.b().raw() * light.color.b().raw()) >> 6;
+    auto ambient_r = (material.ambient.R().raw() * light.color.R().raw()) >> 6;
+    auto ambient_g = (material.ambient.G().raw() * light.color.G().raw()) >> 6;
+    auto ambient_b = (material.ambient.B().raw() * light.color.B().raw()) >> 6;
 
-    vertex_color.r() = std::clamp(vertex_color.r().raw() + diffuse_r + specular_r + ambient_r, 0, 63);
-    vertex_color.g() = std::clamp(vertex_color.g().raw() + diffuse_g + specular_g + ambient_g, 0, 63);
-    vertex_color.b() = std::clamp(vertex_color.b().raw() + diffuse_b + specular_b + ambient_b, 0, 63);
+    vertex_color.R() = std::clamp(vertex_color.R().raw() + diffuse_r + specular_r + ambient_r, 0, 63);
+    vertex_color.G() = std::clamp(vertex_color.G().raw() + diffuse_g + specular_g + ambient_g, 0, 63);
+    vertex_color.B() = std::clamp(vertex_color.B().raw() + diffuse_b + specular_b + ambient_b, 0, 63);
   }
 }
 
@@ -681,8 +681,8 @@ void GPU::CMD_SetPaletteBase() {
 void GPU::CMD_SetMaterialColor0() {
   auto arg = Dequeue().argument;
 
-  material.diffuse = Color4::from_rgb555(arg & 0x7FFF);
-  material.ambient = Color4::from_rgb555(arg >> 16);
+  material.diffuse = Color4::FromRGB555(arg & 0x7FFF);
+  material.ambient = Color4::FromRGB555(arg >> 16);
 
   if (arg & 0x8000) {
     vertex_color = material.diffuse;
@@ -692,8 +692,8 @@ void GPU::CMD_SetMaterialColor0() {
 void GPU::CMD_SetMaterialColor1() {
   auto arg = Dequeue().argument;
 
-  material.specular = Color4::from_rgb555(arg & 0x7FFF);
-  material.emissive = Color4::from_rgb555(arg >> 16);
+  material.specular = Color4::FromRGB555(arg & 0x7FFF);
+  material.emissive = Color4::FromRGB555(arg >> 16);
 
   material.enable_shinyness_table = arg & 0x8000;
 }
@@ -723,7 +723,7 @@ void GPU::CMD_SetLightVector() {
 void GPU::CMD_SetLightColor() {
   auto arg = Dequeue().argument;
 
-  lights[arg >> 30].color = Color4::from_rgb555(arg & 0x7FFF);
+  lights[arg >> 30].color = Color4::FromRGB555(arg & 0x7FFF);
 }
 
 void GPU::CMD_BeginVertexList() {

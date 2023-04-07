@@ -70,7 +70,7 @@ struct Color4 : atom::detail::Vector<Color4, Fixed6, 4> {
       this->data[i] = other[i];
   }
 
-  static auto from_rgb555(u16 color) -> Color4 {
+  static auto FromRGB555(u16 color) -> Color4 {
     auto r = (color << 1) & 62;
     auto g = (color >> 4) & 62;
     auto b = (color >> 9) & 62;
@@ -83,10 +83,10 @@ struct Color4 : atom::detail::Vector<Color4, Fixed6, 4> {
     };
   }
 
-  auto to_rgb555() const -> u16 {
-    return (r().raw() >> 1) |
-          ((g().raw() >> 1) <<  5) |
-          ((b().raw() >> 1) << 10);
+  auto ToRGB555() const -> u16 {
+    return (R().raw() >> 1) |
+          ((G().raw() >> 1) <<  5) |
+          ((B().raw() >> 1) << 10);
   }
 
   auto operator*(Fixed6 other) const -> Color4 {
@@ -115,15 +115,15 @@ struct Color4 : atom::detail::Vector<Color4, Fixed6, 4> {
     return *this;
   }
 
-  auto r() -> Fixed6& { return this->data[0]; }
-  auto g() -> Fixed6& { return this->data[1]; }
-  auto b() -> Fixed6& { return this->data[2]; }
-  auto a() -> Fixed6& { return this->data[3]; }
+  auto R() -> Fixed6& { return this->data[0]; }
+  auto G() -> Fixed6& { return this->data[1]; }
+  auto B() -> Fixed6& { return this->data[2]; }
+  auto A() -> Fixed6& { return this->data[3]; }
 
-  auto r() const -> Fixed6 { return this->data[0]; }
-  auto g() const -> Fixed6 { return this->data[1]; }
-  auto b() const -> Fixed6 { return this->data[2]; }
-  auto a() const -> Fixed6 { return this->data[3]; }
+  auto R() const -> Fixed6 { return this->data[0]; }
+  auto G() const -> Fixed6 { return this->data[1]; }
+  auto B() const -> Fixed6 { return this->data[2]; }
+  auto A() const -> Fixed6 { return this->data[3]; }
 };
 
 } // namespace lunar::nds

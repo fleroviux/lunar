@@ -464,10 +464,10 @@ void OpenGLRenderer::SetupAndUploadVBO(void const** polygons_, int polygon_count
         float position_z =  (float)vert->position.Z().raw() / (float)(1 << 12);
         float position_w =  (float)vert->position.W().raw() / (float)(1 << 12);
 
-        float color_a = (float)vert->color.a().raw() / (float)(1 << 6);
-        float color_r = (float)vert->color.r().raw() / (float)(1 << 6);
-        float color_g = (float)vert->color.g().raw() / (float)(1 << 6);
-        float color_b = (float)vert->color.b().raw() / (float)(1 << 6);
+        float color_a = (float)vert->color.A().raw() / (float)(1 << 6);
+        float color_r = (float)vert->color.R().raw() / (float)(1 << 6);
+        float color_g = (float)vert->color.G().raw() / (float)(1 << 6);
+        float color_b = (float)vert->color.B().raw() / (float)(1 << 6);
 
         float texcoord_s = (float)vert->uv.X().raw() / (float)(1 << 4);
         float texcoord_t = (float)vert->uv.Y().raw() / (float)(1 << 4);

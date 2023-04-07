@@ -41,7 +41,7 @@ void SoftwareRenderer::RenderEdgeMarking() {
 
         if (edge) {
           // TODO: decode color on write to the edge color table.
-          color_buffer[c] = Color4::from_rgb555(edge_color_table[poly_id >> 3]);
+          color_buffer[c] = Color4::FromRGB555(edge_color_table[poly_id >> 3]);
         }
       }
     }
