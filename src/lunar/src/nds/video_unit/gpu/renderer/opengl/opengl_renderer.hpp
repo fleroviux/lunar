@@ -28,150 +28,151 @@
 
 namespace lunar::nds {
 
-struct OpenGLRenderer final : RendererBase {
-  OpenGLRenderer(
-    Region<4, 131072> const& vram_texture,
-    Region<8> const& vram_palette,
-    GPU::DISP3DCNT const& disp3dcnt,
-    GPU::AlphaTest const& alpha_test,
-    GPU::ClearColor const& clear_color,
-    GPU::ClearDepth const& clear_depth,
-    GPU::FogColor const& fog_color,
-    GPU::FogOffset const& fog_offset,
-    std::array<u16, 8> const& edge_color_table
-  );
+class OpenGLRenderer final : public RendererBase {
+  public:
+    OpenGLRenderer(
+      Region<4, 131072> const& vram_texture,
+      Region<8> const& vram_palette,
+      GPU::DISP3DCNT const& disp3dcnt,
+      GPU::AlphaTest const& alpha_test,
+      GPU::ClearColor const& clear_color,
+      GPU::ClearDepth const& clear_depth,
+      GPU::FogColor const& fog_color,
+      GPU::FogOffset const& fog_offset,
+      std::array<u16, 8> const& edge_color_table
+    );
 
- ~OpenGLRenderer() override;
+   ~OpenGLRenderer() override;
 
-  auto GetOutput() -> void const* override {
-    return (void const*)(std::uintptr_t)final_output_texture->Handle();
-  }
-
-  auto GetOutputImageType() const -> VideoDevice::ImageType override {
-    return VideoDevice::ImageType::OpenGL;
-  }
-
-  void Render(void const** polygons, int polygon_count) override;
-  void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
-  void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) override;
-  void SetWBufferEnable(bool enable) override;
-
-  void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) override;
-  void CaptureAlpha(int* buffer, int vcount) override;
-
-private:
-  /**
-   * Up to 2048 n-gons can be rendered in a single frame.
-   * A single n-gon may have up to ten vertices (10-gon).
-   *
-   * We render each n-gon with `n - 2` triangles, meaning there are
-   * up to 8 triangles per n-gon.
-   *
-   * Each triangle consists of three vertices.
-   */
-  static constexpr size_t k_total_vertices = 2048 * 8 * 3;
-
-  enum StencilBufferBits {
-    STENCIL_MASK_POLY_ID = 31,
-    STENCIL_FLAG_SHADOW = 128
-  };
-
-  struct BufferVertex {
-    // clip-space position
-    float x;
-    float y;
-    float z;
-    float w;
-
-    // vertex color
-    float r;
-    float g;
-    float b;
-    float a;
-
-    // texture coordinate
-    float s;
-    float t;
-  } __attribute__((packed));
-
-  struct RenderState {
-    void const* texture_params;
-    int alpha;
-    bool enable_translucent_depth_write;
-    int polygon_id;
-    int polygon_mode; // @todo: use correct data type
-    int depth_test; // @todo: use correct data type
-    bool fog;
-
-    // This flag can be computed from existing render state,
-    // it is just kept here for convenience.
-    bool translucent;
-
-    bool operator==(RenderState const& other) const;
-
-    bool operator!=(RenderState const& other) const {
-      return !(*this == other);
+    auto GetOutput() -> void const* override {
+      return (void const*)(std::uintptr_t)final_output_texture->Handle();
     }
-  };
 
-  struct Batch {
-    RenderState state{};
-    int vertex_start = 0;
-    int vertex_count = 0;
-  };
+    auto GetOutputImageType() const -> VideoDevice::ImageType override {
+      return VideoDevice::ImageType::OpenGL;
+    }
 
-  void RenderRearPlane();
-  void RenderPolygons(void const** polygons, int polygon_count);
-  void RenderEdgeMarking();
-  void RenderFog();
-  void SetupAndUploadVBO(void const** polygons, int polygon_count);
-  void DoCapture();
+    void Render(void const** polygons, int polygon_count) override;
+    void UpdateToonTable(std::array<u16, 32> const& toon_table) override;
+    void UpdateFogDensityTable(std::array<u8, 32> const& fog_density_table) override;
+    void SetWBufferEnable(bool enable) override;
 
-  // FBO
-  FrameBufferObject* fbo;
-  Texture2D* color_texture;
-  Texture2D* attribute_texture;
-  Texture2D* depth_texture;
+    void CaptureColor(u16* buffer, int vcount, int width, bool display_capture) override;
+    void CaptureAlpha(int* buffer, int vcount) override;
 
-  // Geoemtry render pass
-  ProgramObject* program;
-  VertexArrayObject* vao;
-  BufferObject* vbo;
-  StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
-  // @todo: make sure that 2048 *really* is enough.
-  StaticVec<Batch, 2048> batch_list;
+  private:
+    /**
+     * Up to 2048 n-gons can be rendered in a single frame.
+     * A single n-gon may have up to ten vertices (10-gon).
+     *
+     * We render each n-gon with `n - 2` triangles, meaning there are
+     * up to 8 triangles per n-gon.
+     *
+     * Each triangle consists of three vertices.
+     */
+    static constexpr size_t k_total_vertices = 2048 * 8 * 3;
 
-  // Edge-marking pass
-  FrameBufferObject* fbo_edge_marking;
-  ProgramObject* program_edge_marking;
-  VertexArrayObject* quad_vao;
-  BufferObject* quad_vbo;
+    enum StencilBufferBits {
+      STENCIL_MASK_POLY_ID = 31,
+      STENCIL_FLAG_SHADOW = 128
+    };
 
-  // Fog pass
-  FrameBufferObject* fbo_fog;
-  Texture2D* fog_output_texture;
-  ProgramObject* program_fog;
-  Texture2D* fog_density_table_texture;
+    struct BufferVertex {
+      // clip-space position
+      float x;
+      float y;
+      float z;
+      float w;
 
-  Texture2D* toon_table_texture;
+      // vertex color
+      float r;
+      float g;
+      float b;
+      float a;
 
-  TextureCache texture_cache;
+      // texture coordinate
+      float s;
+      float t;
+    } __attribute__((packed));
 
-  // MMIO passed through from the GPU:
-  GPU::DISP3DCNT const& disp3dcnt;
-  GPU::AlphaTest const& alpha_test;
-  GPU::ClearColor const& clear_color;
-  GPU::ClearDepth const& clear_depth;
-  GPU::FogColor const& fog_color;
-  GPU::FogOffset const& fog_offset;
-  std::array<u16, 8> const& edge_color_table;
+    struct RenderState {
+      void const* texture_params;
+      int alpha;
+      bool enable_translucent_depth_write;
+      int polygon_id;
+      int polygon_mode; // @todo: use correct data type
+      int depth_test; // @todo: use correct data type
+      bool fog;
 
-  Texture2D* final_output_texture;
+      // This flag can be computed from existing render state,
+      // it is just kept here for convenience.
+      bool translucent;
 
-  bool use_w_buffer = false;
+      bool operator==(RenderState const& other) const;
 
-  bool captured_current_frame = false;
-  u32 capture[512 * 384];
+      bool operator!=(RenderState const& other) const {
+        return !(*this == other);
+      }
+    };
+
+    struct Batch {
+      RenderState state{};
+      int vertex_start = 0;
+      int vertex_count = 0;
+    };
+
+    void RenderRearPlane();
+    void RenderPolygons(void const** polygons, int polygon_count);
+    void RenderEdgeMarking();
+    void RenderFog();
+    void SetupAndUploadVBO(void const** polygons, int polygon_count);
+    void DoCapture();
+
+    // FBO
+    FrameBufferObject* fbo;
+    Texture2D* color_texture;
+    Texture2D* attribute_texture;
+    Texture2D* depth_texture;
+
+    // Geoemtry render pass
+    ProgramObject* program;
+    VertexArrayObject* vao;
+    BufferObject* vbo;
+    StaticVec<BufferVertex, k_total_vertices> vertex_buffer;
+    // @todo: make sure that 2048 *really* is enough.
+    StaticVec<Batch, 2048> batch_list;
+
+    // Edge-marking pass
+    FrameBufferObject* fbo_edge_marking;
+    ProgramObject* program_edge_marking;
+    VertexArrayObject* quad_vao;
+    BufferObject* quad_vbo;
+
+    // Fog pass
+    FrameBufferObject* fbo_fog;
+    Texture2D* fog_output_texture;
+    ProgramObject* program_fog;
+    Texture2D* fog_density_table_texture;
+
+    Texture2D* toon_table_texture;
+
+    TextureCache texture_cache;
+
+    // MMIO passed through from the GPU:
+    GPU::DISP3DCNT const& disp3dcnt;
+    GPU::AlphaTest const& alpha_test;
+    GPU::ClearColor const& clear_color;
+    GPU::ClearDepth const& clear_depth;
+    GPU::FogColor const& fog_color;
+    GPU::FogOffset const& fog_offset;
+    std::array<u16, 8> const& edge_color_table;
+
+    Texture2D* final_output_texture;
+
+    bool use_w_buffer = false;
+
+    bool captured_current_frame = false;
+    u32 capture[512 * 384];
 };
 
 } // namespace lunar::nds

@@ -14,50 +14,51 @@
 
 namespace lunar::nds {
 
-struct KeyPad {
-  KeyPad(IRQ& irq7, IRQ& irq9);
+class KeyPad {
+  public:
+    KeyPad(IRQ& irq7, IRQ& irq9);
 
-  void Reset();
-  void SetInputDevice(InputDevice& input_device);
+    void Reset();
+    void SetInputDevice(InputDevice& input_device);
 
-  struct KeyInput {
-    u16 value = 0x3FF;
+    struct KeyInput {
+      u16 value = 0x3FF;
 
-    auto ReadByte(uint offset) -> u8;
-  } input;
+      auto ReadByte(uint offset) -> u8;
+    } input;
 
-  struct ExtKeyInput {
-    u16 value = 0x77;
+    struct ExtKeyInput {
+      u16 value = 0x77;
 
-    auto ReadByte() -> u8;
-  } ext_input;
+      auto ReadByte() -> u8;
+    } ext_input;
 
-  struct KeyControl {
-    u16 mask;
-    bool interrupt;
+    struct KeyControl {
+      u16 mask;
+      bool interrupt;
 
-    enum class Mode {
-      LogicalOR  = 0,
-      LogicalAND = 1
-    } mode = Mode::LogicalOR;
-  
-    KeyPad* keypad;
-    IRQ* irq;
+      enum class Mode {
+        LogicalOR  = 0,
+        LogicalAND = 1
+      } mode = Mode::LogicalOR;
 
-    auto ReadByte(uint offset) -> u8;
-    void WriteByte(uint offset, u8 value);
-    void WriteHalf(u16 value);
-  } control7, control9;
+      KeyPad* keypad;
+      IRQ* irq;
 
-private:
-  using Key = InputDevice::Key;
+      auto ReadByte(uint offset) -> u8;
+      void WriteByte(uint offset, u8 value);
+      void WriteHalf(u16 value);
+    } control7, control9;
 
-  void UpdateInput();
-  void UpdateIRQ(KeyControl* control, IRQ* irq);
+  private:
+    using Key = InputDevice::Key;
 
-  IRQ& irq7;
-  IRQ& irq9;
-  InputDevice* input_device = nullptr;
+    void UpdateInput();
+    void UpdateIRQ(KeyControl* control, IRQ* irq);
+
+    IRQ& irq7;
+    IRQ& irq9;
+    InputDevice* input_device = nullptr;
 };
 
 } // namespace lunar::nds

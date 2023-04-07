@@ -15,54 +15,55 @@
 
 namespace lunar {
 
-struct VertexArrayObject {
-  struct Attribute {
-    BufferObject* buffer;
-    int components;
-    GLenum type;
-    GLboolean normalized = GL_FALSE;
-    GLsizei stride = 0;
-    GLsizei offset = 0;
-  };
+class VertexArrayObject {
+  public:
+    struct Attribute {
+      BufferObject* buffer;
+      int components;
+      GLenum type;
+      GLboolean normalized = GL_FALSE;
+      GLsizei stride = 0;
+      GLsizei offset = 0;
+    };
 
-  static auto Create() -> VertexArrayObject* {
-    return new VertexArrayObject{};
-  }
-
- ~VertexArrayObject() {
-    glDeleteVertexArrays(1, &vao);
-  }
-
-  [[nodiscard]] auto Handle() -> GLuint { // NOLINT(readability-make-member-function-const)
-    return vao;
-  }
-
-  void Bind() {
-    glBindVertexArray(vao);
-  }
-
-  void SetAttribute(GLuint index, std::optional<Attribute> attribute) { // NOLINT(readability-make-member-function-const)
-    glBindVertexArray(vao);
-
-    if (attribute.has_value()) {
-      auto const& attr = attribute.value();
-      glBindBuffer(GL_ARRAY_BUFFER, attr.buffer->Handle());
-      glVertexAttribPointer(
-        index, attr.components, attr.type, attr.normalized, attr.stride, (void const*)(std::intptr_t)attr.offset);
-      glEnableVertexAttribArray(index);
-    } else {
-      glDisableVertexAttribArray(index);
+    static auto Create() -> VertexArrayObject* {
+      return new VertexArrayObject{};
     }
 
-    glBindVertexArray(0);
-  }
+   ~VertexArrayObject() {
+      glDeleteVertexArrays(1, &vao);
+    }
 
-private:
-  VertexArrayObject() {
-    glGenVertexArrays(1, &vao);
-  }
+    [[nodiscard]] auto Handle() -> GLuint { // NOLINT(readability-make-member-function-const)
+      return vao;
+    }
 
-  GLuint vao = 0;
+    void Bind() {
+      glBindVertexArray(vao);
+    }
+
+    void SetAttribute(GLuint index, std::optional<Attribute> attribute) { // NOLINT(readability-make-member-function-const)
+      glBindVertexArray(vao);
+
+      if (attribute.has_value()) {
+        auto const& attr = attribute.value();
+        glBindBuffer(GL_ARRAY_BUFFER, attr.buffer->Handle());
+        glVertexAttribPointer(
+          index, attr.components, attr.type, attr.normalized, attr.stride, (void const*)(std::intptr_t)attr.offset);
+        glEnableVertexAttribArray(index);
+      } else {
+        glDisableVertexAttribArray(index);
+      }
+
+      glBindVertexArray(0);
+    }
+
+  private:
+    VertexArrayObject() {
+      glGenVertexArrays(1, &vao);
+    }
+
+    GLuint vao = 0;
 };
 
 } // namespace lunar
