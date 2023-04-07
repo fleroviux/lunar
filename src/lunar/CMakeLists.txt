@@ -66,7 +66,6 @@ set(HEADERS
   src/arm/arm.hpp
   src/arm/state.hpp
   src/common/math/matrix.hpp
-  src/common/math/numeric_traits.hpp
   src/common/math/vector.hpp
   src/common/ogl/buffer_object.hpp
   src/common/ogl/frame_buffer_object.hpp
@@ -134,7 +133,7 @@ set(HEADERS_PUBLIC
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
-target_link_libraries(lunar PRIVATE lunatic)
+target_link_libraries(lunar PRIVATE lunatic atom-common atom-logger atom-math)
 target_link_libraries(lunar PUBLIC fmt)
 
 # TODO: remove this before merging the OpenGL renderer

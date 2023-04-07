@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <atom/math/traits.hpp>
+
 #include <lunar/integer.hpp>
 
 namespace lunar {
@@ -109,26 +111,30 @@ inline auto operator*(Fixed12x4 lhs, Fixed20x12 rhs) -> Fixed12x4 {
 
 } // namespace lunar::nds
 
-template<>
-struct NumericConstants<lunar::nds::Fixed20x12> {
-  static constexpr auto zero() -> lunar::nds::Fixed20x12 {
-    return lunar::nds::Fixed20x12{};
-  }
-  
-  static constexpr auto one() -> lunar::nds::Fixed20x12 {
-    return lunar::nds::Fixed20x12{1 << 12};
-  }
-};
-
-template<>
-struct NumericConstants<lunar::nds::Fixed12x4> {
-  static constexpr auto zero() -> lunar::nds::Fixed12x4 {
-    return lunar::nds::Fixed12x4{};
-  }
-  
-  static constexpr auto one() -> lunar::nds::Fixed12x4 {
-    return lunar::nds::Fixed12x4{1 << 4};
-  }
-};
-
 } // namespace lunar
+
+namespace atom {
+
+  template<>
+  struct NumericConstants<lunar::nds::Fixed20x12> {
+    static constexpr auto Zero() -> lunar::nds::Fixed20x12 {
+      return lunar::nds::Fixed20x12{};
+    }
+
+    static constexpr auto One() -> lunar::nds::Fixed20x12 {
+      return lunar::nds::Fixed20x12{1 << 12};
+    }
+  };
+
+  template<>
+  struct NumericConstants<lunar::nds::Fixed12x4> {
+    static constexpr auto Zero() -> lunar::nds::Fixed12x4 {
+      return lunar::nds::Fixed12x4{};
+    }
+
+    static constexpr auto One() -> lunar::nds::Fixed12x4 {
+      return lunar::nds::Fixed12x4{1 << 4};
+    }
+  };
+
+} // namespace atom

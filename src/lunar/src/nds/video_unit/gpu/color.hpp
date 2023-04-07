@@ -8,14 +8,14 @@
 #pragma once
 
 #include <algorithm>
+#include <atom/math/traits.hpp>
+#include <atom/math/vector.hpp>
 #include <lunar/integer.hpp>
 
 #include "common/math/vector.hpp"
 #include "fixed_point.hpp"
 
-namespace lunar {
-
-namespace nds {
+namespace lunar::nds {
 
 using Fixed6 = detail::FixedBase<s8, int, 6>;
 
@@ -25,9 +25,28 @@ inline auto operator*(Fixed6 lhs, Fixed20x12 rhs) -> Fixed6 {
   return Fixed6{s8((s64(lhs.raw()) * rhs.raw()) >> 12)};
 }
 
-} // namespace detail
+} // namespace lunar::nds::detail
 
-struct Color4 : Vector<Color4, Fixed6, 4> {
+} // namespace lunar::nds
+
+namespace atom {
+
+  template<>
+  struct NumericConstants<lunar::nds::Fixed6> {
+    static constexpr auto Zero() -> lunar::nds::Fixed6 {
+      return lunar::nds::Fixed6{};
+    }
+
+    static constexpr auto One() -> lunar::nds::Fixed6 {
+      return lunar::nds::Fixed6{63};
+    }
+  };
+
+}
+
+namespace lunar::nds {
+
+struct Color4 : atom::detail::Vector<Color4, Fixed6, 4> {
   Color4() {
     for (uint i = 0; i < 4; i++)
       this->data[i] = Fixed6{63};
@@ -110,15 +129,3 @@ struct Color4 : Vector<Color4, Fixed6, 4> {
 
 } // namespace lunar::nds
 
-template<>
-struct NumericConstants<lunar::nds::Fixed6> {
-  static constexpr auto zero() -> lunar::nds::Fixed6 {
-    return lunar::nds::Fixed6{};
-  }
-  
-  static constexpr auto one() -> lunar::nds::Fixed6 {
-    return lunar::nds::Fixed6{63};
-  }
-};
-
-} // namespace lunar

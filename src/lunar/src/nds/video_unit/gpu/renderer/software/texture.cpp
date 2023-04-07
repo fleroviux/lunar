@@ -20,7 +20,7 @@ auto SoftwareRenderer::SampleTexture(
     8 << params.size[1]
   };
 
-  int coord[2] { uv.x().integer(), uv.y().integer() };
+  int coord[2] { uv.X().integer(), uv.Y().integer() };
 
   for (int i = 0; i < 2; i++) {
     if (coord[i] < 0 || coord[i] >= size[i]) {

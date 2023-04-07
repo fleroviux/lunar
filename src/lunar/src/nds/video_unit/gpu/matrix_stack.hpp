@@ -18,7 +18,7 @@ struct MatrixStack {
   void Reset() {
     error = false;
     index = 0;
-    current.identity();
+    current = Matrix4<Fixed20x12>::Identity();
   }
   
   void Push() {

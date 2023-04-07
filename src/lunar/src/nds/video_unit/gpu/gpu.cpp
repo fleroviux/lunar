@@ -61,7 +61,7 @@ void GPU::Reset() {
   modelview.Reset();
   direction.Reset();
   texture.Reset();
-  clip_matrix.identity();
+  clip_matrix = Matrix4<Fixed20x12>::Identity();
 
   manual_translucent_y_sorting = false;
   manual_translucent_y_sorting_pending = false;

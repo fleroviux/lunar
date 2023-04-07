@@ -71,12 +71,12 @@ void SoftwareRenderer::RenderPolygons(int thread_min_y, int thread_max_y) {
       auto& point = points[j];
       auto vertex = poly->vertices[j];
 
-      auto w = vertex->position.w().raw();
+      auto w = vertex->position.W().raw();
       auto two_w = w << 1;
 
-      point.x = ((( (s64)vertex->position.x().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
-      point.y = (((-(s64)vertex->position.y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
-      point.depth = (u32)(((((s64)vertex->position.z().raw() << 14) / w) + 0x3FFF) << 9);
+      point.x = ((( (s64)vertex->position.X().raw() + w) * viewport_width  + 0x800) / two_w) + viewport_x;
+      point.y = (((-(s64)vertex->position.Y().raw() + w) * viewport_height + 0x800) / two_w) + viewport_y;
+      point.depth = (u32)(((((s64)vertex->position.Z().raw() << 14) / w) + 0x3FFF) << 9);
       point.w = w;
       point.vertex = vertex;
 

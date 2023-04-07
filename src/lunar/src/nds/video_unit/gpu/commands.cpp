@@ -272,23 +272,23 @@ void GPU::CMD_LoadIdentity() {
   
   switch (matrix_mode) {
     case MatrixMode::Projection: {
-      projection.current.identity();
+      projection.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Modelview: {
-      modelview.current.identity();
+      modelview.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Simultaneous: {
-      modelview.current.identity();
-      direction.current.identity();
+      modelview.current = Matrix4<Fixed20x12>::Identity();
+      direction.current = Matrix4<Fixed20x12>::Identity();
       UpdateClipMatrix();
       break;
     }
     case MatrixMode::Texture: {
-      texture.current.identity();
+      texture.current = Matrix4<Fixed20x12>::Identity();
       break;
     }
   }
@@ -459,7 +459,7 @@ void GPU::CMD_MatrixScale() {
 void GPU::CMD_MatrixTranslate() {
   Matrix4<Fixed20x12> mat;
 
-  mat.identity();
+  mat = Matrix4<Fixed20x12>::Identity();
   for (int i = 0; i < 3; i++) {
     mat[3][i] = Dequeue().argument;
   }
@@ -497,16 +497,16 @@ void GPU::CMD_SetNormal() {
   if (texture_params.transform == TextureParams::Transform::Normal) {
     auto const& matrix = texture.current;
 
-    auto t_x = Fixed20x12{vertex_uv_source.x().raw() << 12};
-    auto t_y = Fixed20x12{vertex_uv_source.y().raw() << 12};
+    auto t_x = Fixed20x12{vertex_uv_source.X().raw() << 12};
+    auto t_y = Fixed20x12{vertex_uv_source.Y().raw() << 12};
 
     vertex_uv = Vector2<Fixed12x4>{
-      s16((x * matrix[0].x() + y * matrix[1].x() + z * matrix[2].x() + t_x).raw() >> 12),
-      s16((x * matrix[0].y() + y * matrix[1].y() + z * matrix[2].y() + t_y).raw() >> 12)
+      s16((x * matrix[0].X() + y * matrix[1].X() + z * matrix[2].X() + t_x).raw() >> 12),
+      s16((x * matrix[0].Y() + y * matrix[1].Y() + z * matrix[2].Y() + t_y).raw() >> 12)
     };
   }
 
-  auto normal = (direction.current * Vector4<Fixed20x12>{ x, y, z, NumericConstants<Fixed20x12>::zero() }).xyz();
+  auto normal = (direction.current * Vector4<Fixed20x12>{ x, y, z, atom::NumericConstants<Fixed20x12>::Zero() }).XYZ();
 
   vertex_color = material.emissive;
 
@@ -518,12 +518,12 @@ void GPU::CMD_SetNormal() {
 
     auto const& light = lights[i];
 
-    auto cos_theta = -light.direction.dot(normal);
-    auto shinyness = -light.halfway.dot(normal);
+    auto cos_theta = -light.direction.Dot(normal);
+    auto shinyness = -light.halfway.Dot(normal);
 
     // TODO: support min/max/clamp for the fixed point types.
-    if (cos_theta.raw() < 0) cos_theta = NumericConstants<Fixed20x12>::zero();
-    if (shinyness.raw() < 0) shinyness = NumericConstants<Fixed20x12>::zero();
+    if (cos_theta.raw() < 0) cos_theta = atom::NumericConstants<Fixed20x12>::Zero();
+    if (shinyness.raw() < 0) shinyness = atom::NumericConstants<Fixed20x12>::Zero();
 
     shinyness *= shinyness;
 
@@ -563,12 +563,12 @@ void GPU::CMD_SetUV() {
     auto x = Fixed20x12{u << 8};
     auto y = Fixed20x12{v << 8};
 
-    auto t_x = (matrix[2].x() + matrix[3].x()) * Fixed20x12{256};
-    auto t_y = (matrix[2].y() + matrix[3].y()) * Fixed20x12{256};
+    auto t_x = (matrix[2].X() + matrix[3].X()) * Fixed20x12{256};
+    auto t_y = (matrix[2].Y() + matrix[3].Y()) * Fixed20x12{256};
 
     vertex_uv = Vector2<Fixed12x4>{
-      s16((x * matrix[0].x() + y * matrix[1].x() + t_x).raw() >> 8),
-      s16((x * matrix[0].y() + y * matrix[1].y() + t_y).raw() >> 8),
+      s16((x * matrix[0].X() + y * matrix[1].X() + t_x).raw() >> 8),
+      s16((x * matrix[0].Y() + y * matrix[1].Y() + t_y).raw() >> 8),
     };
   } else {
     vertex_uv = vertex_uv_source;
@@ -707,16 +707,16 @@ void GPU::CMD_SetLightVector() {
     s16(((arg >>  0) & 0x3FF) << 6) >> 3,
     s16(((arg >> 10) & 0x3FF) << 6) >> 3,
     s16(((arg >> 20) & 0x3FF) << 6) >> 3,
-    NumericConstants<Fixed20x12>::zero()
+    atom::NumericConstants<Fixed20x12>::Zero()
   };
 
-  light.direction = (this->direction.current * direction).xyz();
+  light.direction = (this->direction.current * direction).XYZ();
   
   // halfway = (direction + (0, 0, -1)) * 0.5
   light.halfway = Vector3<Fixed20x12>{
-    light.direction.x().raw() >> 1,
-    light.direction.y().raw() >> 1,
-   (light.direction.z() - NumericConstants<Fixed20x12>::one()).raw() >> 1
+    light.direction.X().raw() >> 1,
+    light.direction.Y().raw() >> 1,
+   (light.direction.Z() - atom::NumericConstants<Fixed20x12>::One()).raw() >> 1
   };
 }
 
