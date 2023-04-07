@@ -5,11 +5,11 @@
  * found in the LICENSE file.
  */
 
+#include <atom/punning.hpp>
 #include <lunar/log.hpp>
 #include <fstream>
 #include <string.h>
 
-#include "common/punning.hpp"
 #include "bus.hpp"
 #include "buildconfig.hpp"
 
@@ -95,16 +95,16 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
   switch (address >> 24) {
     case 0x00: {
       // TODO: figure out how out-of-bounds reads are supposed to work.
-      return read<T>(bios, address & 0x3FFF);
+      return atom::read<T>(bios, address & 0x3FFF);
     }
     case 0x02: {
-      return read<T>(&ewram[0], address & 0x3FFFFF);
+      return atom::read<T>(&ewram[0], address & 0x3FFFFF);
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.arm7.data == nullptr) {
-        return read<T>(iwram, address & 0xFFFF);
+        return atom::read<T>(iwram, address & 0xFFFF);
       }
-      return read<T>(swram.arm7.data, address & swram.arm7.mask);
+      return atom::read<T>(swram.arm7.data, address & swram.arm7.mask);
     }
     case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
@@ -139,15 +139,15 @@ void ARM7MemoryBus::Write(u32 address, T value) {
 
   switch (address >> 24) {
     case 0x02: {
-      write<T>(&ewram[0], address & 0x3FFFFF, value);
+      atom::write<T>(&ewram[0], address & 0x3FFFFF, value);
       break;
     }
     case 0x03: {
       if ((address & 0x00800000) || swram.arm7.data == nullptr) {
-        write<T>(iwram, address & 0xFFFF, value);
+        atom::write<T>(iwram, address & 0xFFFF, value);
         break;
       }
-      write<T>(swram.arm7.data, address & swram.arm7.mask, value);
+      atom::write<T>(swram.arm7.data, address & swram.arm7.mask, value);
       break;
     }
     case 0x04: {

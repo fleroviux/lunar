@@ -10,12 +10,12 @@
 // Include gpu.hpp for definitions... (need to find a better solution for this)
 #include "nds/video_unit/gpu/gpu.hpp"
 
+#include <atom/punning.hpp>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 
-#include "common/punning.hpp"
 #include "nds/video_unit/gpu/renderer/renderer_base.hpp"
 #include "nds/video_unit/gpu/color.hpp"
 #include "nds/video_unit/vram_region.hpp"
@@ -82,12 +82,12 @@ private:
 
   template<typename T>
   auto ReadTextureVRAM(u32 address) {
-    return read<T>(vram_texture_copy, address & 0x7FFFF & ~(sizeof(T) - 1));
+    return atom::read<T>(vram_texture_copy, address & 0x7FFFF & ~(sizeof(T) - 1));
   }
 
   template<typename T>
   auto ReadPaletteVRAM(u32 address) {
-    return read<T>(vram_palette_copy, address & 0x1FFFF & ~(sizeof(T) - 1));
+    return atom::read<T>(vram_palette_copy, address & 0x1FFFF & ~(sizeof(T) - 1));
   }
 
   void RenderRearPlane(int thread_min_y, int thread_max_y);

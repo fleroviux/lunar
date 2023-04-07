@@ -17,7 +17,6 @@
 
 #include "common/fifo.hpp"
 #include "common/meta.hpp"
-#include "common/punning.hpp"
 #include "common/scheduler.hpp"
 #include "common/static_vec.hpp"
 #include "nds/arm9/dma/dma.hpp"

@@ -77,7 +77,6 @@ set(HEADERS
   src/common/fifo.hpp
   src/common/likely.hpp
   src/common/meta.hpp
-  src/common/punning.hpp
   src/common/scheduler.hpp
   src/common/static_vec.hpp
   src/nds/arm7/apu/apu.hpp

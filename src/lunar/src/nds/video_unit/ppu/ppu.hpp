@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atom/punning.hpp>
 #include <atomic>
 #include <condition_variable>
 #include <functional>
@@ -20,7 +21,6 @@
 #include "common/ogl/program_object.hpp"
 #include "common/ogl/texture_2d.hpp"
 #include "common/ogl/vertex_array_object.hpp"
-#include "common/punning.hpp"
 #include "nds/video_unit/gpu/color.hpp"
 #include "nds/video_unit/gpu/gpu.hpp"
 #include "nds/video_unit/vram.hpp"
@@ -214,7 +214,7 @@ private:
 
   void DecodeTileLine4BPP(u16* buffer, u32 base, uint palette, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
-    u32  data  = read<u32>(render_vram_bg, base + number * 32 + y * 4);
+    u32  data  = atom::read<u32>(render_vram_bg, base + number * 32 + y * 4);
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 15;
@@ -225,14 +225,14 @@ private:
 
   void DecodeTileLine8BPP(u16* buffer, u32 base, uint palette, uint extpal_slot, uint number, uint y, bool flip) {
     uint xor_x = flip ? 7 : 0;
-    u64  data  = read<u64>(render_vram_bg, base + number * 64 + y * 8);
+    u64  data  = atom::read<u64>(render_vram_bg, base + number * 64 + y * 8);
 
     for (uint x = 0; x < 8; x++) {
       auto index = data & 0xFF;
       if (index == 0) {
         buffer[x ^ xor_x] = s_color_transparent;
       } else if (mmio.dispcnt.enable_extpal_bg) {
-        buffer[x ^ xor_x] = read<u16>(render_extpal_bg, 0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
+        buffer[x ^ xor_x] = atom::read<u16>(render_extpal_bg, 0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
       } else {
         buffer[x ^ xor_x] = ReadPalette(0, index);
       }
@@ -241,7 +241,7 @@ private:
   }
 
   auto DecodeTilePixel4BPP_OBJ(u32 address, uint palette, int x, int y) -> u16 {
-    u8 tuple = read<u8>(render_vram_obj, address + (y * 4) + (x / 2));
+    u8 tuple = atom::read<u8>(render_vram_obj, address + (y * 4) + (x / 2));
     u8 index = (x & 1) ? (tuple >> 4) : (tuple & 0xF);
 
     if (index == 0) {
@@ -252,25 +252,25 @@ private:
   }
 
   auto DecodeTilePixel8BPP_BG(u32 address, bool enable_extpal, uint palette, uint extpal_slot, int x, int y) -> u16 {
-    u8 index = read<u8>(render_vram_bg, address + (y * 8) + x);
+    u8 index = atom::read<u8>(render_vram_bg, address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
     } else if (enable_extpal && mmio.dispcnt.enable_extpal_bg) {
-      return read<u16>(render_extpal_bg, 0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
+      return atom::read<u16>(render_extpal_bg, 0x2000 * extpal_slot + (palette * 256 + index) * sizeof(u16));
     } else {
       return ReadPalette(0, index);
     }
   }
 
   auto DecodeTilePixel8BPP_OBJ(u32 address, uint palette, int x, int y) -> u16 {
-    u8 index = read<u8>(render_vram_obj, address + (y * 8) + x);
+    u8 index = atom::read<u8>(render_vram_obj, address + (y * 8) + x);
 
     if (index == 0) {
       return s_color_transparent;
     } else {
       if (mmio.dispcnt.enable_extpal_obj) {
-        return read<u16>(render_extpal_obj, ((palette * 256 + index) * sizeof(u16)) & 0x1FFF);
+        return atom::read<u16>(render_extpal_obj, ((palette * 256 + index) * sizeof(u16)) & 0x1FFF);
       } else {
         return ReadPalette(16, index);
       }  

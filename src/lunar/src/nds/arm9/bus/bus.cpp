@@ -5,11 +5,11 @@
  * found in the LICENSE file.
  */
 
+#include <atom/punning.hpp>
 #include <lunar/log.hpp>
 #include <fstream>
 
 #include "common/meta.hpp"
-#include "common/punning.hpp"
 #include "bus.hpp"
 #include "buildconfig.hpp"
 
@@ -96,26 +96,26 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       bus != Bus::System &&
       address >= itcm.config.base &&
       address <= itcm.config.limit) {
-    return read<T>(itcm_data, (address - itcm.config.base) & 0x7FFF);
+    return atom::read<T>(itcm_data, (address - itcm.config.base) & 0x7FFF);
   }
 
   if (dtcm.config.enable_read &&
       bus == Bus::Data &&
       address >= dtcm.config.base &&
       address <= dtcm.config.limit) {
-    return read<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF);
+    return atom::read<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF);
   }
 
   switch (address >> 24) {
     case 0x02: {
-      return read<T>(&ewram[0], address & 0x3FFFFF);
+      return atom::read<T>(&ewram[0], address & 0x3FFFFF);
     }
     case 0x03: {
       if (swram.arm9.data == nullptr) {
         LOG_ERROR("ARM9: attempted to read SWRAM but it isn't mapped.");
         return 0;
       }
-      return read<T>(swram.arm9.data, address & swram.arm9.mask);
+      return atom::read<T>(swram.arm9.data, address & swram.arm9.mask);
     }
     case 0x04: {
       if constexpr (std::is_same<T, u64>::value) {
@@ -134,13 +134,13 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
       return 0;
     }
     case 0x05: {
-      return read<T>(video_unit.pram, address & 0x7FF);
+      return atom::read<T>(video_unit.pram, address & 0x7FF);
     }
     case 0x06: {
       return VisitVRAMByAddress<ReadFunctor<T>>(address);
     }
     case 0x07: {
-      return read<T>(video_unit.oam, address & 0x7FF);
+      return atom::read<T>(video_unit.oam, address & 0x7FF);
     }
     case 0x08: {
       return 0xFF;
@@ -148,7 +148,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
     case 0xFF: {
       // TODO: clean up address decoding and figure out out-of-bounds reads.
       if ((address & 0xFFFF0000) == 0xFFFF0000)
-        return read<T>(bios, address & 0x7FFF);
+        return atom::read<T>(bios, address & 0x7FFF);
     }
     default: {
       LOG_ERROR("ARM9: unhandled read{0} from 0x{1:08X}", sizeof(T) * 8, address);
@@ -166,21 +166,21 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
     if (itcm.config.enable &&
         address >= itcm.config.base &&
         address <= itcm.config.limit) {
-      write<T>(itcm_data, (address - itcm.config.base) & 0x7FFF, value);
+      atom::write<T>(itcm_data, (address - itcm.config.base) & 0x7FFF, value);
       return;
     }
 
     if (dtcm.config.enable &&
         address >= dtcm.config.base &&
         address <= dtcm.config.limit) {
-      write<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF, value);
+      atom::write<T>(dtcm_data, (address - dtcm.config.base) & 0x3FFF, value);
       return;
     }
   }
 
   switch (address >> 24) {
     case 0x02: {
-      write<T>(&ewram[0], address & 0x3FFFFF, value);
+      atom::write<T>(&ewram[0], address & 0x3FFFFF, value);
       break;
     }
     case 0x03: {
@@ -188,7 +188,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
         LOG_ERROR("ARM9: attempted to read from SWRAM but it isn't mapped.");
         return;
       }
-      write<T>(swram.arm9.data, address & swram.arm9.mask, value);
+      atom::write<T>(swram.arm9.data, address & swram.arm9.mask, value);
       break;
     }
     case 0x04: {
@@ -213,7 +213,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
 
       address &= 0x7FF;
 
-      write<T>(video_unit.pram, address, value);
+      atom::write<T>(video_unit.pram, address, value);
 
       if (address < 0x400) {
         video_unit.ppu_a.OnWritePRAM(address_lo, address_hi);
@@ -245,7 +245,7 @@ void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
 
       address &= 0x7FF;
 
-      write<T>(video_unit.oam, address, value);
+      atom::write<T>(video_unit.oam, address, value);
 
       if (address < 0x400) {
         video_unit.ppu_a.OnWriteOAM(address_lo, address_hi);
