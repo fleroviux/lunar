@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atom/meta.hpp>
 #include <array>
 #include <atomic>
 #include <condition_variable>
@@ -16,7 +17,6 @@
 #include <thread>
 
 #include "common/fifo.hpp"
-#include "common/meta.hpp"
 #include "common/scheduler.hpp"
 #include "common/static_vec.hpp"
 #include "nds/arm9/dma/dma.hpp"
@@ -53,7 +53,7 @@ struct GPU {
 
   template<typename T>
   auto ReadClipMatrix(u32 offset) -> T {
-    static_assert(is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
+    static_assert(atom::is_one_of_v<T, u8, u16, u32>, "T must be u8, u16 or u32");
     if (offset >= 64) {
       UNREACHABLE;
     }

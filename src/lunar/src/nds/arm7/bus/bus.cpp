@@ -6,6 +6,7 @@
  */
 
 #include <atom/punning.hpp>
+#include <atom/meta.hpp>
 #include <lunar/log.hpp>
 #include <fstream>
 #include <string.h>
@@ -90,7 +91,7 @@ void ARM7MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
 
 template<typename T>
 auto ARM7MemoryBus::Read(u32 address) -> T {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   switch (address >> 24) {
     case 0x00: {
@@ -135,7 +136,7 @@ auto ARM7MemoryBus::Read(u32 address) -> T {
 
 template<typename T>
 void ARM7MemoryBus::Write(u32 address, T value) {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   switch (address >> 24) {
     case 0x02: {

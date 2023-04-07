@@ -5,11 +5,11 @@
  * found in the LICENSE file.
  */
 
+#include <atom/meta.hpp>
 #include <atom/punning.hpp>
 #include <lunar/log.hpp>
 #include <fstream>
 
-#include "common/meta.hpp"
 #include "bus.hpp"
 #include "buildconfig.hpp"
 
@@ -90,7 +90,7 @@ void ARM9MemoryBus::UpdateMemoryMap(u32 address_lo, u64 address_hi) {
 
 template <typename T>
 auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (itcm.config.enable_read &&
       bus != Bus::System &&
@@ -160,7 +160,7 @@ auto ARM9MemoryBus::Read(u32 address, Bus bus) -> T {
 
 template<typename T>
 void ARM9MemoryBus::Write(u32 address, T value, Bus bus) {
-  static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
+  static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
   if (bus != Bus::System) {
     if (itcm.config.enable &&

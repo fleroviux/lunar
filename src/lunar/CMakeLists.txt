@@ -76,7 +76,6 @@ set(HEADERS
   src/common/backup_file.hpp
   src/common/fifo.hpp
   src/common/likely.hpp
-  src/common/meta.hpp
   src/common/scheduler.hpp
   src/common/static_vec.hpp
   src/nds/arm7/apu/apu.hpp

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atom/meta.hpp>
 #include <algorithm>
 #include <array>
 #include <lunar/integer.hpp>
@@ -16,7 +17,6 @@
 #include <vector>
 
 #include "common/likely.hpp"
-#include "common/meta.hpp"
 
 namespace lunar::nds {
 
@@ -32,7 +32,7 @@ struct Region {
 
   template<typename T>
   auto Read(u32 offset) const -> T {
-    static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+    static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
     auto const& desc = pages[(offset >> kPageShift) & mask];
     offset &= kPageMask & ~(sizeof(T) - 1);
@@ -52,7 +52,7 @@ struct Region {
 
   template<typename T>
   void Write(u32 offset, T value) {
-    static_assert(is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64"); 
+    static_assert(atom::is_one_of_v<T, u8, u16, u32, u64>, "T must be u8, u16, u32 or u64");
 
     auto const& desc = pages[(offset >> kPageShift) & mask];
     offset &= kPageMask & ~(sizeof(T) - 1);

@@ -5,8 +5,9 @@
  * found in the LICENSE file.
  */
 
+#include <atom/meta.hpp>
+
 #include "arm/arm.hpp"
-#include "common/meta.hpp"
 #include "decoder.hpp"
 
 namespace lunar::arm {
@@ -35,7 +36,7 @@ struct TableGen {
   static constexpr auto GenerateTableThumb() -> std::array<Handler16, 2048> {
     std::array<Handler16, 2048> lut = {};
 
-    static_for<std::size_t, 0, 2048>([&](auto i) {
+    atom::static_for<std::size_t, 0, 2048>([&](auto i) {
       lut[i] = GenerateHandlerThumb<i << 5>();
     });
     return lut;
@@ -45,14 +46,14 @@ struct TableGen {
     std::array<Handler32, 8192> lut = {};
 
     // Conditional instructions
-    static_for<std::size_t, 0, 4096>([&](auto i) {
+    atom::static_for<std::size_t, 0, 4096>([&](auto i) {
       lut[i] = GenerateHandlerARM<
         ((i & 0xFF0) << 16) | 
         ((i & 0xF) << 4)>();
     });
 
     // Unconditional instructions
-    static_for<std::size_t, 0, 4096>([&](auto i) {
+    atom::static_for<std::size_t, 0, 4096>([&](auto i) {
       lut[4096 + i] = GenerateHandlerARM<
         ((i & 0xFF0) << 16) |
         ((i & 0xF) << 4) | 0xF0000000>();
