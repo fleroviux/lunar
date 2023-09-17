@@ -1,7 +1,5 @@
 # lunar🌒
 
-![license](https://img.shields.io/github/license/fleroviux/lunar)
-
 A fast-ish Nintendo DS emulator with a [JIT recompiler](https://github.com/fleroviux/lunatic), OpenGL 3D renderer and threaded 2D renderer.
 
 **This is highly experimental software.** 
@@ -21,7 +19,7 @@ I do **not** intend to replace any of the established DS emulators.
 
 ## Copyright
 
-lunar is Copyright © 2020 - 2022 fleroviux.<br>
-It is licensed under the terms of the BSD 3-Clause license. See [LICENSE](LICENSE) for details.
+lunar is Copyright © 2020 - 2023 fleroviux. All rights reserved.<br>
+lunar is released under a free for non-commercial use license. Refer to the [LICENSE](LICENSE) file for details.
 
 Nintendo DS is a registered trademark of Nintendo Co., Ltd.
