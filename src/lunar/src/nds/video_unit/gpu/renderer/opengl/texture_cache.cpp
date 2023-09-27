@@ -50,8 +50,8 @@ auto TextureCache::Get(void const* params_) -> Texture2D* {
   }
 
   Texture2D* texture = Texture2D::Create(width, height, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE, data);
-  texture->SetMinFilter(GL_LINEAR);
-  texture->SetMagFilter(GL_LINEAR);
+  texture->SetMinFilter(GL_NEAREST);
+  texture->SetMagFilter(GL_NEAREST);
 
   delete[] data;
 

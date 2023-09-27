@@ -30,6 +30,9 @@ struct ARM final : lunatic::CPU {
   auto WaitForIRQ() -> bool& override;
   void ClearICache() override {}
   void ClearICacheRange(u32 address_lo, u32 address_hi) override {}
+  void SetExceptionBase(u32 exception_base) override {
+    this->exception_base = exception_base;
+  }
 
   auto Run(int cycles) -> int override;
 

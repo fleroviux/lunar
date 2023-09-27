@@ -171,7 +171,7 @@ private:
   bool use_w_buffer = false;
 
   bool captured_current_frame = false;
-  u32 capture[512 * 384];
+  u32 capture[1024 * 768];
 };
 
 } // namespace lunar::nds

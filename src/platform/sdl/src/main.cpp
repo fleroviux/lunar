@@ -17,13 +17,13 @@
 void loop(const char* rom_path) {
   SDL_Init(SDL_INIT_VIDEO);
 
-  auto scale = 2;
+  auto scale = 2.5;
   auto window = SDL_CreateWindow(
     "lunar",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
-    256 * scale,
-    384 * scale,
+    (int)(256 * scale),
+    (int)(384 * scale),
     SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
@@ -79,18 +79,18 @@ void loop(const char* rom_path) {
         bool down = event.type == SDL_KEYDOWN;
 
         switch (reinterpret_cast<SDL_KeyboardEvent*>(&event)->keysym.sym) {
-          case SDLK_g: input_device.SetKeyDown(Key::A, down); break;
-          case SDLK_h: input_device.SetKeyDown(Key::B, down); break;
+          case SDLK_a: input_device.SetKeyDown(Key::A, down); break;
+          case SDLK_s: input_device.SetKeyDown(Key::B, down); break;
           case SDLK_BACKSPACE: input_device.SetKeyDown(Key::Select, down); break;
           case SDLK_RETURN: input_device.SetKeyDown(Key::Start, down); break;
-          case SDLK_d: input_device.SetKeyDown(Key::Right, down); break;
-          case SDLK_a: input_device.SetKeyDown(Key::Left, down); break;
-          case SDLK_w: input_device.SetKeyDown(Key::Up, down); break;
-          case SDLK_s: input_device.SetKeyDown(Key::Down, down); break;
-          case SDLK_n: input_device.SetKeyDown(Key::L, down); break;
-          case SDLK_m: input_device.SetKeyDown(Key::R, down); break;
-          case SDLK_v: input_device.SetKeyDown(Key::X, down); break;
-          case SDLK_b: input_device.SetKeyDown(Key::Y, down); break;
+          case SDLK_RIGHT: input_device.SetKeyDown(Key::Right, down); break;
+          case SDLK_LEFT: input_device.SetKeyDown(Key::Left, down); break;
+          case SDLK_UP: input_device.SetKeyDown(Key::Up, down); break;
+          case SDLK_DOWN: input_device.SetKeyDown(Key::Down, down); break;
+          case SDLK_d: input_device.SetKeyDown(Key::L, down); break;
+          case SDLK_f: input_device.SetKeyDown(Key::R, down); break;
+          case SDLK_q: input_device.SetKeyDown(Key::X, down); break;
+          case SDLK_w: input_device.SetKeyDown(Key::Y, down); break;
           case SDLK_SPACE: {
             SDL_GL_SetSwapInterval(down ? 0 : 1);
             break;

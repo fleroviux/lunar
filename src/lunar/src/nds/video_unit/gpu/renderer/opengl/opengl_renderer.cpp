@@ -37,9 +37,9 @@ OpenGLRenderer::OpenGLRenderer(
   glEnable(GL_BLEND);
 
   {
-    color_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
-    attribute_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
-    depth_texture = Texture2D::Create(512, 384, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+    color_texture = Texture2D::Create(1024, 768, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    attribute_texture = Texture2D::Create(1024, 768, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    depth_texture = Texture2D::Create(1024, 768, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
 
     fbo = FrameBufferObject::Create();
     fbo->Attach(GL_COLOR_ATTACHMENT0, color_texture);
@@ -77,7 +77,7 @@ OpenGLRenderer::OpenGLRenderer(
   quad_vbo->Upload(k_quad_vertices, sizeof(k_quad_vertices) / sizeof(float));
 
   fbo_fog = FrameBufferObject::Create();
-  fog_output_texture = Texture2D::Create(512, 384, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+  fog_output_texture = Texture2D::Create(1024, 768, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
   fbo_fog->Attach(GL_COLOR_ATTACHMENT0, fog_output_texture);
   program_fog = ProgramObject::Create(fog_vert, fog_frag);
   program_fog->SetUniformInt("u_color_map", 0);
@@ -123,7 +123,7 @@ void OpenGLRenderer::Render(void const** polygons_, int polygon_count) {
 
   fbo->Bind();
 
-  glViewport(0, 0, 512, 384);
+  glViewport(0, 0, 1024, 768);
   RenderRearPlane();
   RenderPolygons(polygons_, polygon_count);
 
@@ -489,7 +489,7 @@ void OpenGLRenderer::DoCapture() {
     }
 
     glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, 512, 384, GL_BGRA, GL_UNSIGNED_BYTE, capture);
+    glReadPixels(0, 0, 1024, 768, GL_BGRA, GL_UNSIGNED_BYTE, capture);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     captured_current_frame = true;
   }
@@ -500,7 +500,7 @@ void OpenGLRenderer::CaptureColor(u16* buffer, int vcount, int width, bool displ
 
   // @todo: support different upscale factors.
   for(int x = 0; x < width; x++) {
-    u32 argb8888 = capture[(vcount * 512 + x) * 2];
+    u32 argb8888 = capture[(vcount * 1024 + x) * 2];
 
     uint a = (argb8888 >> 24) & 0xFF;
     uint r = (argb8888 >> 16) & 0xFF;
@@ -522,7 +522,7 @@ void OpenGLRenderer::CaptureAlpha(int* buffer, int vcount) {
 
   // @todo: support different upscale factors.
   for (int x = 0; x < 256; x++) {
-    buffer[x] = (int)(capture[(vcount * 512 + x) * 2] >> 28);
+    buffer[x] = (int)(capture[(vcount * 1024 + x) * 2] >> 28);
   }
 }
 

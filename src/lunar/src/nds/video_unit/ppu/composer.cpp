@@ -309,8 +309,8 @@ void PPU::Blend(u16  vcount,
 
 void PPU::Merge2DWithOpenGL3D() {
   // @todo: get the real dimensions from the GPU or config:
-  const int output_width  = 512;
-  const int output_height = 384;
+  const int output_width  = 1024;
+  const int output_height = 768;
 
   if (!gpu) {
     return;
@@ -319,6 +319,7 @@ void PPU::Merge2DWithOpenGL3D() {
   if (!ogl.initialized) {
     ogl.fbo = FrameBufferObject::Create();
     ogl.output_texture = Texture2D::Create(output_width, output_height, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE);
+    ogl.output_texture->SetMinFilter(GL_LINEAR);
     ogl.fbo->Attach(GL_COLOR_ATTACHMENT0, ogl.output_texture);
 
     ogl.program = ProgramObject::Create(merge_3d_vert, merge_3d_frag);
