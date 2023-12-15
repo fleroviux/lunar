@@ -126,6 +126,9 @@ set(HEADERS_PUBLIC
   include/lunar/core.hpp
 )
 
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
+
 add_library(lunar STATIC ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(lunar PRIVATE src)
 target_include_directories(lunar PUBLIC include)
@@ -135,4 +138,4 @@ target_link_libraries(lunar PUBLIC atom-common atom-logger)
 # TODO: remove this before merging the OpenGL renderer
 find_package(SDL2 REQUIRED)
 target_include_directories(lunar PRIVATE ${SDL2_INCLUDE_DIR})
-target_link_libraries(lunar PRIVATE ${SDL2_LIBRARY})
+target_link_libraries(lunar PRIVATE ${SDL2_LIBRARY} OpenGL::GL GLEW::GLEW)

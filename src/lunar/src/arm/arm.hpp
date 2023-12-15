@@ -32,6 +32,10 @@ class ARM final : public lunatic::CPU {
     void ClearICache() override {}
     void ClearICacheRange(u32 address_lo, u32 address_hi) override {}
 
+    void SetExceptionBase(u32 address) {
+      exception_base = address;
+    }
+
     auto Run(int cycles) -> int override;
 
     auto GetGPR(lunatic::GPR reg) const -> u32 override;
